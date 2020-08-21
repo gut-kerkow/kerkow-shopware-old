@@ -1,0 +1,32 @@
+<?php //%255BShopware%255CCore%255CSystem%255CSalesChannel%255CSalesChannel%255CStoreApiInfoController%2523infoHtml%255D%255B1%255D
+
+return [PHP_INT_MAX, static function () { return \Symfony\Component\VarExporter\Internal\Hydrator::hydrate(
+    $o = [
+        clone (\Symfony\Component\VarExporter\Internal\Registry::$prototypes['Symfony\\Component\\Routing\\Annotation\\Route'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('Symfony\\Component\\Routing\\Annotation\\Route')),
+    ],
+    null,
+    [
+        'Symfony\\Component\\Routing\\Annotation\\Route' => [
+            'path' => [
+                '/store-api/v{version}/_info/swagger.html',
+            ],
+            'name' => [
+                'store-api.info.swagger',
+            ],
+            'defaults' => [
+                [
+                    'auth_required' => '%shopware.api.api_browser.auth_required_str%',
+                ],
+            ],
+            'methods' => [
+                [
+                    'GET',
+                ],
+            ],
+        ],
+    ],
+    [
+        $o[0],
+    ],
+    []
+); }];

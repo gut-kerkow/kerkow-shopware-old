@@ -1,0 +1,183 @@
+<?php //%255BShopware%255CCore%255CContent%255CCategory%255CSalesChannel%255CCategoryRoute%2523load%255D%255B1%255D
+
+return [PHP_INT_MAX, static function () { return \Symfony\Component\VarExporter\Internal\Hydrator::hydrate(
+    $o = [
+        clone (($p = &\Symfony\Component\VarExporter\Internal\Registry::$prototypes)['OpenApi\\Annotations\\Post'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Annotations\\Post')),
+        clone ($p['OpenApi\\Annotations\\Parameter'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Annotations\\Parameter')),
+        clone ($p['OpenApi\\Annotations\\Schema'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Annotations\\Schema')),
+        clone ($p['OpenApi\\Context'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Context')),
+        clone $p['OpenApi\\Context'],
+        clone $p['OpenApi\\Annotations\\Parameter'],
+        clone $p['OpenApi\\Context'],
+        clone ($p['OpenApi\\Annotations\\Response'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Annotations\\Response')),
+        clone $p['OpenApi\\Context'],
+        clone ($p['OpenApi\\Annotations\\JsonContent'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Annotations\\JsonContent')),
+        clone $p['OpenApi\\Context'],
+        clone $p['OpenApi\\Annotations\\Response'],
+        clone $p['OpenApi\\Context'],
+        clone $p['OpenApi\\Context'],
+        clone ($p['Symfony\\Component\\Routing\\Annotation\\Route'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('Symfony\\Component\\Routing\\Annotation\\Route')),
+    ],
+    null,
+    [
+        'stdClass' => [
+            'path' => [
+                '/category/{categoryId}',
+            ],
+            'tags' => [
+                [
+                    'Store API',
+                    'Content',
+                ],
+            ],
+            'description' => [
+                'Loads a category with the resolved cms page',
+                'Id of the category',
+                7 => 'The loaded category with cms page',
+            ],
+            'operationId' => [
+                'readCategory',
+            ],
+            'parameters' => [
+                [
+                    $o[1],
+                    $o[5],
+                ],
+            ],
+            'responses' => [
+                [
+                    $o[7],
+                    $o[11],
+                ],
+            ],
+            '_context' => [
+                $o[13],
+                $o[4],
+                $o[3],
+                5 => $o[6],
+                7 => $o[8],
+                9 => $o[10],
+                11 => $o[12],
+            ],
+            'parameter' => [
+                1 => 'categoryId',
+            ],
+            'name' => [
+                1 => 'categoryId',
+                5 => 'Api-Basic-Parameters',
+            ],
+            'in' => [
+                1 => 'query',
+            ],
+            'schema' => [
+                1 => $o[2],
+            ],
+            'type' => [
+                2 => 'string',
+            ],
+            'format' => [
+                2 => 'uuid',
+            ],
+            'filename' => [
+                3 => '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+                '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+                6 => '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+                8 => '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+                10 => '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+                12 => '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+                '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+            ],
+            'line' => [
+                3 => 825,
+                825,
+                6 => 825,
+                8 => 825,
+                10 => 825,
+                12 => 825,
+                825,
+            ],
+            'method' => [
+                3 => 'Annotation',
+                'Annotation',
+                6 => 'Annotation',
+                8 => 'Annotation',
+                10 => 'Annotation',
+                12 => 'Annotation',
+                'Annotation',
+            ],
+            'class' => [
+                3 => 'DocParser',
+                'DocParser',
+                6 => 'DocParser',
+                8 => 'DocParser',
+                10 => 'DocParser',
+                12 => 'DocParser',
+                'DocParser',
+            ],
+            'namespace' => [
+                3 => 'Doctrine\\Common\\Annotations',
+                'Doctrine\\Common\\Annotations',
+                6 => 'Doctrine\\Common\\Annotations',
+                8 => 'Doctrine\\Common\\Annotations',
+                10 => 'Doctrine\\Common\\Annotations',
+                12 => 'Doctrine\\Common\\Annotations',
+                'Doctrine\\Common\\Annotations',
+            ],
+            'annotations' => [
+                3 => [
+                    $o[2],
+                ],
+                [
+                    $o[1],
+                ],
+                6 => [
+                    $o[5],
+                ],
+                8 => [
+                    $o[7],
+                ],
+                10 => [
+                    $o[9],
+                ],
+                12 => [
+                    $o[11],
+                ],
+                [
+                    $o[0],
+                ],
+            ],
+            'response' => [
+                7 => '200',
+                11 => '404',
+            ],
+            '_unmerged' => [
+                7 => [
+                    $o[9],
+                ],
+            ],
+            'ref' => [
+                9 => '#/components/schemas/category_flat',
+                11 => '#/components/responses/404',
+            ],
+        ],
+        'Symfony\\Component\\Routing\\Annotation\\Route' => [
+            'path' => [
+                14 => '/store-api/v{version}/category/{navigationId}',
+            ],
+            'name' => [
+                14 => 'store-api.category.detail',
+            ],
+            'methods' => [
+                14 => [
+                    'GET',
+                    'POST',
+                ],
+            ],
+        ],
+    ],
+    [
+        $o[0],
+        $o[14],
+    ],
+    []
+); }];

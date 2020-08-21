@@ -1,0 +1,188 @@
+<?php //%255BShopware%255CCore%255CSystem%255CCountry%255CSalesChannel%255CCountryRoute%2523load%255D%255B1%255D
+
+return [PHP_INT_MAX, static function () { return \Symfony\Component\VarExporter\Internal\Hydrator::hydrate(
+    $o = [
+        clone (($p = &\Symfony\Component\VarExporter\Internal\Registry::$prototypes)['OpenApi\\Annotations\\Get'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Annotations\\Get')),
+        clone ($p['OpenApi\\Annotations\\Parameter'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Annotations\\Parameter')),
+        clone ($p['OpenApi\\Context'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Context')),
+        clone $p['OpenApi\\Annotations\\Parameter'],
+        clone ($p['OpenApi\\Annotations\\Schema'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Annotations\\Schema')),
+        clone $p['OpenApi\\Context'],
+        clone $p['OpenApi\\Context'],
+        clone ($p['OpenApi\\Annotations\\Response'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Annotations\\Response')),
+        clone $p['OpenApi\\Context'],
+        clone ($p['OpenApi\\Annotations\\JsonContent'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Annotations\\JsonContent')),
+        clone ($p['OpenApi\\Annotations\\Items'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Annotations\\Items')),
+        clone $p['OpenApi\\Context'],
+        clone $p['OpenApi\\Context'],
+        clone $p['OpenApi\\Context'],
+        clone ($p['Shopware\\Core\\Framework\\Routing\\Annotation\\Entity'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('Shopware\\Core\\Framework\\Routing\\Annotation\\Entity')),
+        clone ($p['Symfony\\Component\\Routing\\Annotation\\Route'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('Symfony\\Component\\Routing\\Annotation\\Route')),
+    ],
+    null,
+    [
+        'stdClass' => [
+            'path' => [
+                '/country',
+            ],
+            'tags' => [
+                [
+                    'Store API',
+                    'Country',
+                ],
+            ],
+            'description' => [
+                'Loads all available countries',
+                3 => 'Encoded SwagQL in JSON',
+                7 => 'All available countries',
+            ],
+            'operationId' => [
+                'readCountry',
+            ],
+            'parameters' => [
+                [
+                    $o[1],
+                    $o[3],
+                ],
+            ],
+            'responses' => [
+                [
+                    $o[7],
+                ],
+            ],
+            '_context' => [
+                $o[13],
+                $o[2],
+                3 => $o[6],
+                $o[5],
+                7 => $o[8],
+                9 => $o[12],
+                $o[11],
+            ],
+            'name' => [
+                1 => 'Api-Basic-Parameters',
+                3 => 'onlyAvailable',
+            ],
+            'filename' => [
+                2 => '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+                5 => '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+                '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+                8 => '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+                11 => '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+                '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+                '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+            ],
+            'line' => [
+                2 => 825,
+                5 => 825,
+                825,
+                8 => 825,
+                11 => 825,
+                825,
+                825,
+            ],
+            'method' => [
+                2 => 'Annotation',
+                5 => 'Annotation',
+                'Annotation',
+                8 => 'Annotation',
+                11 => 'Annotation',
+                'Annotation',
+                'Annotation',
+            ],
+            'class' => [
+                2 => 'DocParser',
+                5 => 'DocParser',
+                'DocParser',
+                8 => 'DocParser',
+                11 => 'DocParser',
+                'DocParser',
+                'DocParser',
+            ],
+            'namespace' => [
+                2 => 'Doctrine\\Common\\Annotations',
+                5 => 'Doctrine\\Common\\Annotations',
+                'Doctrine\\Common\\Annotations',
+                8 => 'Doctrine\\Common\\Annotations',
+                11 => 'Doctrine\\Common\\Annotations',
+                'Doctrine\\Common\\Annotations',
+                'Doctrine\\Common\\Annotations',
+            ],
+            'annotations' => [
+                2 => [
+                    $o[1],
+                ],
+                5 => [
+                    $o[4],
+                ],
+                [
+                    $o[3],
+                ],
+                8 => [
+                    $o[7],
+                ],
+                11 => [
+                    $o[10],
+                ],
+                [
+                    $o[9],
+                ],
+                [
+                    $o[0],
+                ],
+            ],
+            'parameter' => [
+                3 => 'onlyAvailable',
+            ],
+            'in' => [
+                3 => 'query',
+            ],
+            'schema' => [
+                3 => $o[4],
+            ],
+            'type' => [
+                4 => 'int',
+                9 => 'array',
+            ],
+            'response' => [
+                7 => '200',
+            ],
+            '_unmerged' => [
+                7 => [
+                    $o[9],
+                ],
+            ],
+            'items' => [
+                9 => $o[10],
+            ],
+            'ref' => [
+                10 => '#/components/schemas/country_flat',
+            ],
+        ],
+        'Shopware\\Core\\Framework\\Routing\\Annotation\\Entity' => [
+            'value' => [
+                14 => 'country',
+            ],
+        ],
+        'Symfony\\Component\\Routing\\Annotation\\Route' => [
+            'path' => [
+                15 => '/store-api/v{version}/country',
+            ],
+            'name' => [
+                15 => 'store-api.country',
+            ],
+            'methods' => [
+                15 => [
+                    'GET',
+                    'POST',
+                ],
+            ],
+        ],
+    ],
+    [
+        $o[0],
+        $o[14],
+        $o[15],
+    ],
+    []
+); }];

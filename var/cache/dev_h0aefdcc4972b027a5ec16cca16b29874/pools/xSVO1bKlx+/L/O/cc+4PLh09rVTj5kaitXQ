@@ -1,0 +1,188 @@
+<?php //%255BShopware%255CCore%255CCheckout%255CShipping%255CSalesChannel%255CShippingMethodRoute%2523load%255D%255B1%255D
+
+return [PHP_INT_MAX, static function () { return \Symfony\Component\VarExporter\Internal\Hydrator::hydrate(
+    $o = [
+        clone (($p = &\Symfony\Component\VarExporter\Internal\Registry::$prototypes)['Shopware\\Core\\Framework\\Routing\\Annotation\\Entity'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('Shopware\\Core\\Framework\\Routing\\Annotation\\Entity')),
+        clone ($p['OpenApi\\Annotations\\Get'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Annotations\\Get')),
+        clone ($p['OpenApi\\Annotations\\Parameter'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Annotations\\Parameter')),
+        clone ($p['OpenApi\\Context'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Context')),
+        clone $p['OpenApi\\Annotations\\Parameter'],
+        clone ($p['OpenApi\\Annotations\\Schema'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Annotations\\Schema')),
+        clone $p['OpenApi\\Context'],
+        clone $p['OpenApi\\Context'],
+        clone ($p['OpenApi\\Annotations\\Response'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Annotations\\Response')),
+        clone $p['OpenApi\\Context'],
+        clone ($p['OpenApi\\Annotations\\JsonContent'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Annotations\\JsonContent')),
+        clone ($p['OpenApi\\Annotations\\Items'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Annotations\\Items')),
+        clone $p['OpenApi\\Context'],
+        clone $p['OpenApi\\Context'],
+        clone $p['OpenApi\\Context'],
+        clone ($p['Symfony\\Component\\Routing\\Annotation\\Route'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('Symfony\\Component\\Routing\\Annotation\\Route')),
+    ],
+    null,
+    [
+        'Shopware\\Core\\Framework\\Routing\\Annotation\\Entity' => [
+            'value' => [
+                'shipping_method',
+            ],
+        ],
+        'stdClass' => [
+            'path' => [
+                1 => '/shipping-method',
+            ],
+            'tags' => [
+                1 => [
+                    'Store API',
+                    'Shipping Method',
+                ],
+            ],
+            'description' => [
+                1 => 'Loads all available shipping methods',
+                4 => 'Encoded SwagQL in JSON',
+                8 => 'All available shipping methods',
+            ],
+            'operationId' => [
+                1 => 'readShippingMethod',
+            ],
+            'parameters' => [
+                1 => [
+                    $o[2],
+                    $o[4],
+                ],
+            ],
+            'responses' => [
+                1 => [
+                    $o[8],
+                ],
+            ],
+            '_context' => [
+                1 => $o[14],
+                $o[3],
+                4 => $o[7],
+                $o[6],
+                8 => $o[9],
+                10 => $o[13],
+                $o[12],
+            ],
+            'name' => [
+                2 => 'Api-Basic-Parameters',
+                4 => 'onlyAvailable',
+            ],
+            'filename' => [
+                3 => '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+                6 => '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+                '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+                9 => '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+                12 => '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+                '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+                '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+            ],
+            'line' => [
+                3 => 825,
+                6 => 825,
+                825,
+                9 => 825,
+                12 => 825,
+                825,
+                825,
+            ],
+            'method' => [
+                3 => 'Annotation',
+                6 => 'Annotation',
+                'Annotation',
+                9 => 'Annotation',
+                12 => 'Annotation',
+                'Annotation',
+                'Annotation',
+            ],
+            'class' => [
+                3 => 'DocParser',
+                6 => 'DocParser',
+                'DocParser',
+                9 => 'DocParser',
+                12 => 'DocParser',
+                'DocParser',
+                'DocParser',
+            ],
+            'namespace' => [
+                3 => 'Doctrine\\Common\\Annotations',
+                6 => 'Doctrine\\Common\\Annotations',
+                'Doctrine\\Common\\Annotations',
+                9 => 'Doctrine\\Common\\Annotations',
+                12 => 'Doctrine\\Common\\Annotations',
+                'Doctrine\\Common\\Annotations',
+                'Doctrine\\Common\\Annotations',
+            ],
+            'annotations' => [
+                3 => [
+                    $o[2],
+                ],
+                6 => [
+                    $o[5],
+                ],
+                [
+                    $o[4],
+                ],
+                9 => [
+                    $o[8],
+                ],
+                12 => [
+                    $o[11],
+                ],
+                [
+                    $o[10],
+                ],
+                [
+                    $o[1],
+                ],
+            ],
+            'parameter' => [
+                4 => 'onlyAvailable',
+            ],
+            'in' => [
+                4 => 'query',
+            ],
+            'schema' => [
+                4 => $o[5],
+            ],
+            'type' => [
+                5 => 'int',
+                10 => 'array',
+            ],
+            'response' => [
+                8 => '200',
+            ],
+            '_unmerged' => [
+                8 => [
+                    $o[10],
+                ],
+            ],
+            'items' => [
+                10 => $o[11],
+            ],
+            'ref' => [
+                11 => '#/components/schemas/shipping_method_flat',
+            ],
+        ],
+        'Symfony\\Component\\Routing\\Annotation\\Route' => [
+            'path' => [
+                15 => '/store-api/v{version}/shipping-method',
+            ],
+            'name' => [
+                15 => 'store-api.shipping.method',
+            ],
+            'methods' => [
+                15 => [
+                    'GET',
+                    'POST',
+                ],
+            ],
+        ],
+    ],
+    [
+        $o[0],
+        $o[1],
+        $o[15],
+    ],
+    []
+); }];

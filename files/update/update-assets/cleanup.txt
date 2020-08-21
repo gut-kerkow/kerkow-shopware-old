@@ -1,0 +1,14 @@
+vendor/composer/spdx-licenses/.php_cs.dist
+vendor/mtdowling/jmespath.php/.gitignore
+vendor/mtdowling/jmespath.php/.travis.yml
+vendor/mtdowling/jmespath.php/CHANGELOG.md
+vendor/mtdowling/jmespath.php/Makefile
+vendor/mtdowling/jmespath.php/phpunit.xml.dist
+vendor/phpdocumentor/reflection-docblock/Makefile
+vendor/phpdocumentor/reflection-docblock/composer-require-config.json
+vendor/phpdocumentor/reflection-docblock/phive.xml
+vendor/phpdocumentor/reflection-docblock/phpcs.xml.dist
+vendor/phpdocumentor/reflection-docblock/phpstan.neon
+vendor/phpdocumentor/reflection-docblock/psalm.xml
+vendor/shopware/administration/Resources/public/static/css/undefined.css
+vendor/shopware/administration/Resources/public/static/js/undefined.js

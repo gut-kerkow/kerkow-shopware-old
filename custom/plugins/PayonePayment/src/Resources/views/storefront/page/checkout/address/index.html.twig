@@ -1,0 +1,17 @@
+{% sw_extends '@Storefront/storefront/page/checkout/address/index.html.twig' %}
+
+{% block page_checkout_address_login_toggle %}
+    {{ parent() }}
+
+    {% if not context.customer %}
+        {% if constant('PayonePayment\\PaymentMethod\\PayonePaypalExpress::UUID') in activePaymentPaymentMethods %}
+            {% block page_checkout_address_payone_paypal_express_button %}
+                <div class="row">
+                    <div class="col-5 pb-2">
+                        {% sw_include '@PayonePayment/storefront/component/checkout/paypal-button.html.twig' %}
+                    </div>
+                </div>
+            {% endblock %}
+        {% endif %}
+    {% endif %}
+{% endblock %}

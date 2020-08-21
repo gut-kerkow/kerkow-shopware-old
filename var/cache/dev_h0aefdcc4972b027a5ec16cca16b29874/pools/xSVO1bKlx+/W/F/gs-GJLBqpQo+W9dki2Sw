@@ -1,0 +1,179 @@
+<?php //%255BSwag%255CPayPal%255CPayment%255CPayPalPaymentController%2523paymentDetails%255D%255B1%255D
+
+return [PHP_INT_MAX, static function () { return \Symfony\Component\VarExporter\Internal\Hydrator::hydrate(
+    $o = [
+        clone (($p = &\Symfony\Component\VarExporter\Internal\Registry::$prototypes)['OpenApi\\Annotations\\Get'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Annotations\\Get')),
+        clone ($p['OpenApi\\Annotations\\Parameter'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Annotations\\Parameter')),
+        clone ($p['OpenApi\\Annotations\\Schema'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Annotations\\Schema')),
+        clone ($p['OpenApi\\Context'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Context')),
+        clone $p['OpenApi\\Context'],
+        clone $p['OpenApi\\Annotations\\Parameter'],
+        clone $p['OpenApi\\Annotations\\Schema'],
+        clone $p['OpenApi\\Context'],
+        clone $p['OpenApi\\Context'],
+        clone ($p['OpenApi\\Annotations\\Response'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Annotations\\Response')),
+        clone $p['OpenApi\\Context'],
+        clone ($p['OpenApi\\Annotations\\JsonContent'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Annotations\\JsonContent')),
+        clone $p['OpenApi\\Context'],
+        clone $p['OpenApi\\Context'],
+        clone ($p['Symfony\\Component\\Routing\\Annotation\\Route'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('Symfony\\Component\\Routing\\Annotation\\Route')),
+    ],
+    null,
+    [
+        'stdClass' => [
+            'path' => [
+                '/paypal/payment-details/{orderId}/{paymentId}',
+            ],
+            'tags' => [
+                [
+                    'Admin API',
+                    'PayPal',
+                ],
+            ],
+            'description' => [
+                'Loads the Payment details of the given PayPal ID',
+                'ID of the order which contains the PayPal payment',
+                5 => 'ID of the PayPal payment',
+                9 => 'Details of the PayPal payment',
+            ],
+            'operationId' => [
+                'paymentDetails',
+            ],
+            'parameters' => [
+                [
+                    $o[1],
+                    $o[5],
+                ],
+            ],
+            'responses' => [
+                [
+                    $o[9],
+                ],
+            ],
+            '_context' => [
+                $o[13],
+                $o[4],
+                $o[3],
+                5 => $o[8],
+                $o[7],
+                9 => $o[10],
+                11 => $o[12],
+            ],
+            'parameter' => [
+                1 => 'orderId',
+                5 => 'paymentId',
+            ],
+            'name' => [
+                1 => 'orderId',
+                5 => 'paymentId',
+            ],
+            'in' => [
+                1 => 'path',
+                5 => 'path',
+            ],
+            'schema' => [
+                1 => $o[2],
+                5 => $o[6],
+            ],
+            'type' => [
+                2 => 'string',
+                6 => 'string',
+                11 => 'array',
+            ],
+            'filename' => [
+                3 => '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+                '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+                7 => '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+                '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+                10 => '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+                12 => '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+                '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+            ],
+            'line' => [
+                3 => 825,
+                825,
+                7 => 825,
+                825,
+                10 => 825,
+                12 => 825,
+                825,
+            ],
+            'method' => [
+                3 => 'Annotation',
+                'Annotation',
+                7 => 'Annotation',
+                'Annotation',
+                10 => 'Annotation',
+                12 => 'Annotation',
+                'Annotation',
+            ],
+            'class' => [
+                3 => 'DocParser',
+                'DocParser',
+                7 => 'DocParser',
+                'DocParser',
+                10 => 'DocParser',
+                12 => 'DocParser',
+                'DocParser',
+            ],
+            'namespace' => [
+                3 => 'Doctrine\\Common\\Annotations',
+                'Doctrine\\Common\\Annotations',
+                7 => 'Doctrine\\Common\\Annotations',
+                'Doctrine\\Common\\Annotations',
+                10 => 'Doctrine\\Common\\Annotations',
+                12 => 'Doctrine\\Common\\Annotations',
+                'Doctrine\\Common\\Annotations',
+            ],
+            'annotations' => [
+                3 => [
+                    $o[2],
+                ],
+                [
+                    $o[1],
+                ],
+                7 => [
+                    $o[6],
+                ],
+                [
+                    $o[5],
+                ],
+                10 => [
+                    $o[9],
+                ],
+                12 => [
+                    $o[11],
+                ],
+                [
+                    $o[0],
+                ],
+            ],
+            'response' => [
+                9 => '200',
+            ],
+            '_unmerged' => [
+                9 => [
+                    $o[11],
+                ],
+            ],
+        ],
+        'Symfony\\Component\\Routing\\Annotation\\Route' => [
+            'path' => [
+                14 => '/api/v{version}/paypal/payment-details/{orderId}/{paymentId}',
+            ],
+            'name' => [
+                14 => 'api.paypal.payment_details',
+            ],
+            'methods' => [
+                14 => [
+                    'GET',
+                ],
+            ],
+        ],
+    ],
+    [
+        $o[0],
+        $o[14],
+    ],
+    []
+); }];

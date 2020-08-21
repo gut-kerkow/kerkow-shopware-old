@@ -1,0 +1,121 @@
+{
+    "payone-payment": {
+        "title": "PAYONE",
+        "general": {
+            "mainMenuItemGeneral": "PAYONE",
+            "descriptionTextModule": "Einstellungen für PAYONE"
+        },
+        "capture": {
+            "buttonTitle": "Capture",
+            "successTitle": "PAYONE",
+            "successMessage": "Capture erfolgreich durchgeführt.",
+            "errorTitle": "PAYONE",
+            "errorMessage": "Capture konnte nicht durchgeführt werden.",
+            "tooltips": {
+                "impossible": "Einzug unmöglich"
+            }
+        },
+        "refund": {
+            "buttonTitle": "Refund",
+            "successTitle": "PAYONE",
+            "successMessage": "Refund erfolgreich durchgeführt.",
+            "errorTitle": "PAYONE",
+            "errorMessage": "Refund konnte nicht durchgeführt werden.",
+            "tooltips": {
+                "impossible": "Erstattung unmöglich"
+            }
+        },
+        "modal": {
+            "capture": {
+                "title": "Einzug",
+                "submit": "Einziehen",
+                "fullSubmit": "Alles Einziehen",
+                "amount": "Einzugswert",
+                "captured": "Eingezogener Wert"
+            },
+            "refund": {
+                "title": "Erstattung",
+                "submit": "Erstatten",
+                "fullSubmit": "Alles Erstatten",
+                "amount": "Erstattungswert",
+                "refunded": "Erstatteter Wert"
+            },
+            "close": "Schließen",
+            "orderAmount": "Bestellungswert",
+            "remainingAmount": "Ausstehender Wert",
+            "labelComment": "Label comment",
+            "descriptionHelpText": "Description help text",
+            "columns": {
+                "reference": "Referenz",
+                "product": "Produkt",
+                "quantity": "Anzahl",
+                "price": "Preis"
+            }
+        },
+        "settingsForm": {
+            "save": "Speichern",
+            "test": "API-Zugangsdaten testen",
+            "titleSuccess": "Erfolg",
+            "titleError": "Fehler",
+            "messageTestSuccess": "Die API-Zugangsdaten wurden erfolgreich validiert.",
+            "messageTestNoTestedPayments": "Bei der Prüfung wurden keine Zahlarten getestet, weil keine der PAYONE Zahlarten aktiviert ist. Bitte aktivieren Sie mindestens eine PAYONE Zahlart unter Einstellungen --> Shop --> Zahlungsarten.",
+            "messageTestError": {
+                "general": "Die API-Zugangsdaten konnten nicht validiert werden.",
+                "creditCard": "Die API-Zugangsdaten für Kreditkarte sind nicht korrekt.",
+                "debit": "Die API-Zugangsdaten für Lastschrift sind nicht korrekt.",
+                "paypalExpress": "Die API-Zugangsdaten für PayPal Express sind nicht korrekt.",
+                "paypal": "Die API-Zugangsdaten für PayPal sind nicht korrekt.",
+                "payolutionInstallment": "Die API-Zugangsdaten für Paysafe Pay Later Ratenzahlung sind nicht korrekt.",
+                "payolutionInvoicing": "Die API-Zugangsdaten für Paysafe Pay Later Rechnungskauf sind nicht korrekt.",
+                "payolutionDebit": "Die API-Zugangsdaten für Paysafe Pay Later Lastschrift sind nicht korrekt.",
+                "sofort": "Die API-Zugangsdaten für SOFORT sind nicht korrekt.",
+                "eps": "Die API-Zugangsdaten für EPS sind nicht korrekt.",
+                "iDeal": "Die API-Zugangsdaten für iDEAL sind nicht korrekt."
+            }
+        },
+        "supportModal": {
+            "menuButton": "Support",
+            "title": "Wie können wir Ihnen helfen?",
+            "documentation": {
+                "description": "Lesen Sie unsere Online-Dokumentation",
+                "button": "Dokumentation"
+            },
+            "support": {
+                "description": "Kontaktieren Sie unseren technischen Support",
+                "button": "Technischer Support"
+            },
+            "repository": {
+                "description": "Melden Sie Fehler und Verbesserungen auf GitHub",
+                "button": "GitHub"
+            }
+        },
+        "transitionActionNames": {
+            "cancel": "Stornieren",
+            "complete": "Abschließen",
+            "pay":  "Bezahlen",
+            "pay_partially": "Teilweise bezahlen",
+            "process":  "Durchführen",
+            "refund": "Rückerstatten",
+            "refund_partially":  "Teilweise rückerstatten",
+            "remind": "Erinnern",
+            "reopen":  "Wieder öffnen",
+            "retour": "Retoure",
+            "retour_partially":  "Teilweise retounieren",
+            "ship": "Versenden",
+            "ship_partially":  "Teilweise versenden"
+        },
+        "messageNotBlank": "Dieser Wert darf nicht leer sein.",
+        "txid": "TXID",
+        "sequenceNumber": {
+            "label": "Sequenznummer",
+            "empty": "keine"
+        },
+        "transactionState": "Status",
+        "error": {
+            "transaction": {
+                "notFound": "Es wurde keine passende Transaktion gefundend",
+                "orderNotFound": "Es wurde keine passende Bestellung gefundend"
+            }
+        }
+    }
+}

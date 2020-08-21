@@ -1,0 +1,25 @@
+{
+  "name": "Kerkow Shop Theme",
+  "author": "Kevin Drossard (Gut Kerkow Bauernmarkt GmbH)",
+  "description": {
+    "en-GB": "The Gut Kerkow Theme",
+    "de-DE": "Dut Kerkow Standard-Theme"
+  },
+  "views": [
+     "@Storefront",
+     "@Plugins",
+     "@Kerkow"
+  ],
+  "style": [
+    "app/storefront/src/scss/overrides.scss",
+    "@Storefront",
+    "app/storefront/src/scss/base.scss"
+  ],
+  "script": [
+    "@Storefront",
+    "app/storefront/dist/storefront/js/kerkow.js"
+  ],
+  "asset": [
+    "app/storefront/src/assets"
+  ]
+}

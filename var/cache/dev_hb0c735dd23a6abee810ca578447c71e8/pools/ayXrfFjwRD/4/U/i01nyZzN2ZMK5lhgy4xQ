@@ -1,0 +1,153 @@
+<?php //%255BShopware%255CCore%255CSystem%255CLanguage%255CSalesChannel%255CLanguageRoute%2523load%255D%255B1%255D
+
+return [PHP_INT_MAX, static function () { return \Symfony\Component\VarExporter\Internal\Hydrator::hydrate(
+    $o = [
+        clone (($p = &\Symfony\Component\VarExporter\Internal\Registry::$prototypes)['Shopware\\Core\\Framework\\Routing\\Annotation\\Entity'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('Shopware\\Core\\Framework\\Routing\\Annotation\\Entity')),
+        clone ($p['OpenApi\\Annotations\\Get'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Annotations\\Get')),
+        clone ($p['OpenApi\\Annotations\\Parameter'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Annotations\\Parameter')),
+        clone ($p['OpenApi\\Context'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Context')),
+        clone ($p['OpenApi\\Annotations\\Response'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Annotations\\Response')),
+        clone $p['OpenApi\\Context'],
+        clone ($p['OpenApi\\Annotations\\JsonContent'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Annotations\\JsonContent')),
+        clone ($p['OpenApi\\Annotations\\Items'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Annotations\\Items')),
+        clone $p['OpenApi\\Context'],
+        clone $p['OpenApi\\Context'],
+        clone $p['OpenApi\\Context'],
+        clone ($p['Symfony\\Component\\Routing\\Annotation\\Route'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('Symfony\\Component\\Routing\\Annotation\\Route')),
+    ],
+    null,
+    [
+        'Shopware\\Core\\Framework\\Routing\\Annotation\\Entity' => [
+            'value' => [
+                'language',
+            ],
+        ],
+        'stdClass' => [
+            'path' => [
+                1 => '/language',
+            ],
+            'tags' => [
+                1 => [
+                    'Store API',
+                    'Language',
+                ],
+            ],
+            'description' => [
+                1 => 'Loads all available languages',
+                4 => 'All available languages',
+            ],
+            'operationId' => [
+                1 => 'readLanguages',
+            ],
+            'parameters' => [
+                1 => [
+                    $o[2],
+                ],
+            ],
+            'responses' => [
+                1 => [
+                    $o[4],
+                ],
+            ],
+            '_context' => [
+                1 => $o[10],
+                $o[3],
+                4 => $o[5],
+                6 => $o[9],
+                $o[8],
+            ],
+            'name' => [
+                2 => 'Api-Basic-Parameters',
+            ],
+            'filename' => [
+                3 => '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+                5 => '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+                8 => '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+                '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+                '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+            ],
+            'line' => [
+                3 => 825,
+                5 => 825,
+                8 => 825,
+                825,
+                825,
+            ],
+            'method' => [
+                3 => 'Annotation',
+                5 => 'Annotation',
+                8 => 'Annotation',
+                'Annotation',
+                'Annotation',
+            ],
+            'class' => [
+                3 => 'DocParser',
+                5 => 'DocParser',
+                8 => 'DocParser',
+                'DocParser',
+                'DocParser',
+            ],
+            'namespace' => [
+                3 => 'Doctrine\\Common\\Annotations',
+                5 => 'Doctrine\\Common\\Annotations',
+                8 => 'Doctrine\\Common\\Annotations',
+                'Doctrine\\Common\\Annotations',
+                'Doctrine\\Common\\Annotations',
+            ],
+            'annotations' => [
+                3 => [
+                    $o[2],
+                ],
+                5 => [
+                    $o[4],
+                ],
+                8 => [
+                    $o[7],
+                ],
+                [
+                    $o[6],
+                ],
+                [
+                    $o[1],
+                ],
+            ],
+            'response' => [
+                4 => '200',
+            ],
+            '_unmerged' => [
+                4 => [
+                    $o[6],
+                ],
+            ],
+            'type' => [
+                6 => 'array',
+            ],
+            'items' => [
+                6 => $o[7],
+            ],
+            'ref' => [
+                7 => '#/components/schemas/language_flat',
+            ],
+        ],
+        'Symfony\\Component\\Routing\\Annotation\\Route' => [
+            'path' => [
+                11 => '/store-api/v{version}/language',
+            ],
+            'name' => [
+                11 => 'store-api.language',
+            ],
+            'methods' => [
+                11 => [
+                    'GET',
+                    'POST',
+                ],
+            ],
+        ],
+    ],
+    [
+        $o[0],
+        $o[1],
+        $o[11],
+    ],
+    []
+); }];

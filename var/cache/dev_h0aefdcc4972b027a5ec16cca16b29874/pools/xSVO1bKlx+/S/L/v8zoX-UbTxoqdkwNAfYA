@@ -1,0 +1,110 @@
+<?php //%255BShopware%255CCore%255CCheckout%255CCart%255CSalesChannel%255CCartLoadRoute%2523load%255D%255B1%255D
+
+return [PHP_INT_MAX, static function () { return \Symfony\Component\VarExporter\Internal\Hydrator::hydrate(
+    $o = [
+        clone (($p = &\Symfony\Component\VarExporter\Internal\Registry::$prototypes)['OpenApi\\Annotations\\Get'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Annotations\\Get')),
+        clone ($p['OpenApi\\Annotations\\Response'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Annotations\\Response')),
+        clone ($p['OpenApi\\Context'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Context')),
+        clone ($p['OpenApi\\Annotations\\JsonContent'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Annotations\\JsonContent')),
+        clone $p['OpenApi\\Context'],
+        clone $p['OpenApi\\Context'],
+        clone ($p['Symfony\\Component\\Routing\\Annotation\\Route'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('Symfony\\Component\\Routing\\Annotation\\Route')),
+    ],
+    null,
+    [
+        'stdClass' => [
+            'path' => [
+                '/checkout/cart',
+            ],
+            'tags' => [
+                [
+                    'Store API',
+                    'Cart',
+                ],
+            ],
+            'description' => [
+                'Fetch current cart',
+                'Cart',
+            ],
+            'operationId' => [
+                'readCart',
+            ],
+            'responses' => [
+                [
+                    $o[1],
+                ],
+            ],
+            '_context' => [
+                $o[5],
+                $o[2],
+                3 => $o[4],
+            ],
+            'response' => [
+                1 => '200',
+            ],
+            '_unmerged' => [
+                1 => [
+                    $o[3],
+                ],
+            ],
+            'filename' => [
+                2 => '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+                4 => '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+                '/Users/kevin/Sites/kerkow_re/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+            ],
+            'line' => [
+                2 => 825,
+                4 => 825,
+                825,
+            ],
+            'method' => [
+                2 => 'Annotation',
+                4 => 'Annotation',
+                'Annotation',
+            ],
+            'class' => [
+                2 => 'DocParser',
+                4 => 'DocParser',
+                'DocParser',
+            ],
+            'namespace' => [
+                2 => 'Doctrine\\Common\\Annotations',
+                4 => 'Doctrine\\Common\\Annotations',
+                'Doctrine\\Common\\Annotations',
+            ],
+            'annotations' => [
+                2 => [
+                    $o[1],
+                ],
+                4 => [
+                    $o[3],
+                ],
+                [
+                    $o[0],
+                ],
+            ],
+            'ref' => [
+                3 => '#/definitions/Cart',
+            ],
+        ],
+        'Symfony\\Component\\Routing\\Annotation\\Route' => [
+            'path' => [
+                6 => '/store-api/v{version}/checkout/cart',
+            ],
+            'name' => [
+                6 => 'store-api.checkout.cart.read',
+            ],
+            'methods' => [
+                6 => [
+                    'GET',
+                    'POST',
+                ],
+            ],
+        ],
+    ],
+    [
+        $o[0],
+        $o[6],
+    ],
+    []
+); }];

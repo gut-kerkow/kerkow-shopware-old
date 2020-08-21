@@ -1,0 +1,15 @@
+{% sw_extends '@Storefront/storefront/layout/header/logo.html.twig' %}
+{% block layout_header_logo_link %}
+
+
+
+    {# 
+        call the `parent` function to keep the old behavior,
+        otherwise the block gets overridden
+    #}
+    {{ parent() }}
+
+    {# modified content added to the block #}
+    <span>Company name of shop owner</span>
+
+{% endblock %}

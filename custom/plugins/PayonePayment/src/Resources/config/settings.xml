@@ -1,0 +1,756 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/platform/master/src/Core/System/SystemConfig/Schema/config.xsd">
+
+    <card>
+        <title>Basic configuration</title>
+        <title lang="de-DE">Grundeinstellungen</title>
+
+        <name>basic_configuration</name>
+
+        <input-field>
+            <name>merchantId</name>
+            <label>Merchant ID</label>
+        </input-field>
+
+        <input-field>
+            <name>accountId</name>
+            <label>Account ID</label>
+        </input-field>
+
+        <input-field>
+            <name>portalId</name>
+            <label>Portal ID</label>
+        </input-field>
+
+        <input-field>
+            <name>portalKey</name>
+            <label>Key</label>
+        </input-field>
+
+        <input-field type="single-select">
+            <name>transactionMode</name>
+            <label>Live or Testmode</label>
+            <label lang="de-DE">Live- / Testbetrieb</label>
+            <options>
+                <option>
+                    <id>test</id>
+                    <name>Test mode</name>
+                    <name lang="de-DE">Test Modus</name>
+                </option>
+                <option>
+                    <id>live</id>
+                    <name>Live mode</name>
+                    <name lang="de-DE">Live Modus</name>
+                </option>
+            </options>
+        </input-field>
+    </card>
+
+    <card>
+        <title>Status Mapping</title>
+        <title lang="de-DE">Statusmapping</title>
+
+        <name>status_mapping</name>
+
+        <input-field type="single-select">
+            <name>paymentStatusAppointed</name>
+            <label>Transition for APPOINTED</label>
+            <label lang="de-DE">Statuswechsel für APPOINTED</label>
+        </input-field>
+
+        <input-field type="single-select">
+            <name>paymentStatusCapture</name>
+            <label>Transition for CAPTURE</label>
+            <label lang="de-DE">Statuswechsel für CAPTURE</label>
+        </input-field>
+
+        <input-field type="single-select">
+            <name>paymentStatusPartialCapture</name>
+            <label>Transition for PARTIAL_CAPTURE</label>
+            <label lang="de-DE">Statuswechsel für PARTIAL_CAPTURE</label>
+        </input-field>
+
+        <input-field type="single-select">
+            <name>paymentStatusPaid</name>
+            <label>Transition for PAID</label>
+            <label lang="de-DE">Statuswechsel für PAID</label>
+        </input-field>
+
+        <input-field type="single-select">
+            <name>paymentStatusUnderpaid</name>
+            <label>Transition for UNDERPAID</label>
+            <label lang="de-DE">Statuswechsel für UNDERPAID</label>
+        </input-field>
+
+        <input-field type="single-select">
+            <name>paymentStatusCancelation</name>
+            <label>Transition for CANCELLATION</label>
+            <label lang="de-DE">Statuswechsel für CANCELLATION</label>
+        </input-field>
+
+        <input-field type="single-select">
+            <name>paymentStatusRefund</name>
+            <label>Transition for REFUND</label>
+            <label lang="de-DE">Statuswechsel für REFUND</label>
+        </input-field>
+
+        <input-field type="single-select">
+            <name>paymentStatusPartialRefund</name>
+            <label>Transition for PARTIAL_REFUND</label>
+            <label lang="de-DE">Statuswechsel für PARTIAL_REFUND</label>
+        </input-field>
+        
+        <input-field type="single-select">
+            <name>paymentStatusDebit</name>
+            <label>Transition for DEBIT</label>
+            <label lang="de-DE">Statuswechsel für DEBIT</label>
+        </input-field>
+
+        <input-field type="single-select">
+            <name>paymentStatusReminder</name>
+            <label>Transition for REMINDER</label>
+            <label lang="de-DE">Statuswechsel für REMINDER</label>
+        </input-field>
+
+        <input-field type="single-select">
+            <name>paymentStatusVauthorization</name>
+            <label>Transition for VAuthorization</label>
+            <label lang="de-DE">Statuswechsel für VAuthorization</label>
+        </input-field>
+
+        <input-field type="single-select">
+            <name>paymentStatusVsettlement</name>
+            <label>Transition for VSettlement</label>
+            <label lang="de-DE">Statuswechsel für VSettlement</label>
+        </input-field>
+
+        <input-field type="single-select">
+            <name>paymentStatusTransfer</name>
+            <label>Transition for TRANSFER</label>
+            <label lang="de-DE">Statuswechsel für TRANSFER</label>
+        </input-field>
+
+        <input-field type="single-select">
+            <name>paymentStatusInvoice</name>
+            <label>Transition for INVOICE</label>
+            <label lang="de-DE">Statuswechsel für INVOICE</label>
+        </input-field>
+
+        <input-field type="single-select">
+            <name>paymentStatusFailed</name>
+            <label>Transition for FAILED</label>
+            <label lang="de-DE">Statuswechsel für FAILED</label>
+        </input-field>
+    </card>
+
+    <card>
+        <title>Credit Card</title>
+        <title lang="de-DE">Kreditkarte</title>
+
+        <name>payment_credit_card</name>
+
+        <input-field>
+            <name>creditCardMerchantId</name>
+            <label>Merchant ID</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>creditCardAccountId</name>
+            <label>Account ID</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>creditCardPortalId</name>
+            <label>Portal ID</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>creditCardPortalKey</name>
+            <label>Key</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field type="single-select">
+            <name>creditCardAuthorizationMethod</name>
+            <label>Authorization Method</label>
+            <label lang="de-DE">Autorisierungsmethode</label>
+            <helpText>Use this option to set the authorization method for this payment type.</helpText>
+            <helpText lang="de-DE">Legt die Autorisierungsmethode für diese Zahlungsart fest.</helpText>
+            <options>
+                <option>
+                    <id>preauthorization</id>
+                    <name>Pre-authorization</name>
+                    <name lang="de-DE">Vorautorisierung</name>
+                </option>
+                <option>
+                    <id>authorization</id>
+                    <name>Authorization</name>
+                    <name lang="de-DE">Autorisierung</name>
+                </option>
+            </options>
+        </input-field>
+    </card>
+
+    <card>
+        <title>PayPal</title>
+
+        <name>payment_paypal</name>
+
+        <input-field>
+            <name>paypalMerchantId</name>
+            <label>Merchant ID</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>paypalAccountId</name>
+            <label>Account ID</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>paypalPortalId</name>
+            <label>Portal ID</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>paypalPortalKey</name>
+            <label>Key</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field type="single-select">
+            <name>paypalAuthorizationMethod</name>
+            <label>Authorization Method</label>
+            <label lang="de-DE">Autorisierungsmethode</label>
+            <helpText>Use this option to set the authorization method for this payment type.</helpText>
+            <helpText lang="de-DE">Legt die Autorisierungsmethode für diese Zahlungsart fest.</helpText>
+            <options>
+                <option>
+                    <id>preauthorization</id>
+                    <name>Pre-authorization</name>
+                    <name lang="de-DE">Vorautorisierung</name>
+                </option>
+                <option>
+                    <id>authorization</id>
+                    <name>Authorization</name>
+                    <name lang="de-DE">Autorisierung</name>
+                </option>
+            </options>
+        </input-field>
+    </card>
+
+    <card>
+        <title>PayPal Express</title>
+
+        <name>payment_paypal_express</name>
+
+        <input-field>
+            <name>paypalExpressMerchantId</name>
+            <label>Merchant ID</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>paypalExpressAccountId</name>
+            <label>Account ID</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>paypalExpressPortalId</name>
+            <label>Portal ID</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>paypalExpressPortalKey</name>
+            <label>Key</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field type="single-select">
+            <name>paypalExpressAuthorizationMethod</name>
+            <label>Authorization Method</label>
+            <label lang="de-DE">Autorisierungsmethode</label>
+            <helpText>Use this option to set the authorization method for this payment type.</helpText>
+            <helpText lang="de-DE">Legt die Autorisierungsmethode für diese Zahlungsart fest.</helpText>
+            <options>
+                <option>
+                    <id>preauthorization</id>
+                    <name>Pre-authorization</name>
+                    <name lang="de-DE">Vorautorisierung</name>
+                </option>
+                <option>
+                    <id>authorization</id>
+                    <name>Authorization</name>
+                    <name lang="de-DE">Autorisierung</name>
+                </option>
+            </options>
+        </input-field>
+    </card>
+
+    <card>
+        <title>Debit</title>
+        <title lang="de-DE">Lastschrift</title>
+
+        <name>payment_debit</name>
+
+        <input-field>
+            <name>debitMerchantId</name>
+            <label>Merchant ID</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>debitAccountId</name>
+            <label>Account ID</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>debitPortalId</name>
+            <label>Portal ID</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>debitPortalKey</name>
+            <label>Key</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field type="single-select">
+            <name>debitAuthorizationMethod</name>
+            <label>Authorization Method</label>
+            <label lang="de-DE">Autorisierungsmethode</label>
+            <helpText>Use this option to set the authorization method for this payment type.</helpText>
+            <helpText lang="de-DE">Legt die Autorisierungsmethode für diese Zahlungsart fest.</helpText>
+            <options>
+                <option>
+                    <id>preauthorization</id>
+                    <name>Pre-authorization</name>
+                    <name lang="de-DE">Vorautorisierung</name>
+                </option>
+                <option>
+                    <id>authorization</id>
+                    <name>Authorization</name>
+                    <name lang="de-DE">Autorisierung</name>
+                </option>
+            </options>
+        </input-field>
+    </card>
+
+    <card>
+        <title>SOFORT</title>
+
+        <name>payment_sofort</name>
+
+        <input-field>
+            <name>sofortMerchantId</name>
+            <label>Merchant ID</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>sofortAccountId</name>
+            <label>Account ID</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>sofortPortalId</name>
+            <label>Portal ID</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>sofortPortalKey</name>
+            <label>Key</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field type="single-select">
+            <name>sofortAuthorizationMethod</name>
+            <label>Authorization Method</label>
+            <label lang="de-DE">Autorisierungsmethode</label>
+            <helpText>Use this option to set the authorization method for this payment type.</helpText>
+            <helpText lang="de-DE">Legt die Autorisierungsmethode für diese Zahlungsart fest.</helpText>
+            <options>
+                <option>
+                    <id>preauthorization</id>
+                    <name>Pre-authorization</name>
+                    <name lang="de-DE">Vorautorisierung</name>
+                </option>
+                <option>
+                    <id>authorization</id>
+                    <name>Authorization</name>
+                    <name lang="de-DE">Autorisierung</name>
+                </option>
+            </options>
+        </input-field>
+    </card>
+
+    <card>
+        <title>EPS</title>
+
+        <name>payment_eps</name>
+
+        <input-field>
+            <name>epsMerchantId</name>
+            <label>Merchant ID</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>epsAccountId</name>
+            <label>Account ID</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>epsPortalId</name>
+            <label>Portal ID</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>epsPortalKey</name>
+            <label>Key</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field type="single-select">
+            <name>epsAuthorizationMethod</name>
+            <label>Authorization Method</label>
+            <label lang="de-DE">Autorisierungsmethode</label>
+            <helpText>Use this option to set the authorization method for this payment type.</helpText>
+            <helpText lang="de-DE">Legt die Autorisierungsmethode für diese Zahlungsart fest.</helpText>
+            <options>
+                <option>
+                    <id>preauthorization</id>
+                    <name>Pre-authorization</name>
+                    <name lang="de-DE">Vorautorisierung</name>
+                </option>
+                <option>
+                    <id>authorization</id>
+                    <name>Authorization</name>
+                    <name lang="de-DE">Autorisierung</name>
+                </option>
+            </options>
+        </input-field>
+    </card>
+
+    <card>
+        <title>iDEAL</title>
+
+        <name>payment_ideal</name>
+
+        <input-field>
+            <name>iDealMerchantId</name>
+            <label>Merchant ID</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>iDealAccountId</name>
+            <label>Account ID</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>iDealPortalId</name>
+            <label>Portal ID</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>iDealPortalKey</name>
+            <label>Key</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field type="single-select">
+            <name>iDealAuthorizationMethod</name>
+            <label>Authorization Method</label>
+            <label lang="de-DE">Autorisierungsmethode</label>
+            <helpText>Use this option to set the authorization method for this payment type.</helpText>
+            <helpText lang="de-DE">Legt die Autorisierungsmethode für diese Zahlungsart fest.</helpText>
+            <options>
+                <option>
+                    <id>preauthorization</id>
+                    <name>Pre-authorization</name>
+                    <name lang="de-DE">Vorautorisierung</name>
+                </option>
+                <option>
+                    <id>authorization</id>
+                    <name>Authorization</name>
+                    <name lang="de-DE">Autorisierung</name>
+                </option>
+            </options>
+        </input-field>
+    </card>
+
+    <card>
+        <title>Payolution Installment</title>
+
+        <name>payment_payolution_installment</name>
+
+        <input-field>
+            <name>payolutionInstallmentMerchantId</name>
+            <label>Merchant ID</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>payolutionInstallmentAccountId</name>
+            <label>Account ID</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>payolutionInstallmentPortalId</name>
+            <label>Portal ID</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>payolutionInstallmentPortalKey</name>
+            <label>Key</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>payolutionInstallmentCompanyName</name>
+            <label>Company Name</label>
+            <label lang="de-DE">Firmenname</label>
+            <helpText>Is displayed in the supplementary notes to the privacy statement for purchase on account.</helpText>
+            <helpText lang="de-DE">Wird in den ergänzenden Hinweisen zur Datenschutzerklärung für Kauf auf Rechnung angezeigt.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>payolutionInstallmentChannelName</name>
+            <label>Channel Name</label>
+            <label lang="de-DE">Channel Name</label>
+            <helpText>Username for the URL to the EU Standard Credit Information hosted by Payolution.</helpText>
+            <helpText lang="de-DE">Benutzername für die URL zu den EU-Standard-Kreditinformationen, die von Payolution gehostet werden.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>payolutionInstallmentChannelPassword</name>
+            <label>Channel Password</label>
+            <label lang="de-DE">Channel Passwort</label>
+            <helpText>Password for the url to the EU Standard Credit Information hosted by Payolution.</helpText>
+            <helpText lang="de-DE">Passwort für die url zu den EU-Standard-Kreditinformationen, die von Payolution gehostet werden.</helpText>
+        </input-field>
+
+        <input-field type="single-select">
+            <name>payolutionInstallmentAuthorizationMethod</name>
+            <label>Authorization Method</label>
+            <label lang="de-DE">Autorisierungsmethode</label>
+            <helpText>Use this option to set the authorization method for this payment type.</helpText>
+            <helpText lang="de-DE">Legt die Autorisierungsmethode für diese Zahlungsart fest.</helpText>
+            <options>
+                <option>
+                    <id>preauthorization</id>
+                    <name>Pre-authorization</name>
+                    <name lang="de-DE">Vorautorisierung</name>
+                </option>
+                <option>
+                    <id>authorization</id>
+                    <name>Authorization</name>
+                    <name lang="de-DE">Autorisierung</name>
+                </option>
+            </options>
+        </input-field>
+    </card>
+
+    <card>
+        <title>Payolution Invoicing</title>
+
+        <name>payment_payolution_invoicing</name>
+
+        <input-field>
+            <name>payolutionInvoicingMerchantId</name>
+            <label>Merchant ID</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>payolutionInvoicingAccountId</name>
+            <label>Account ID</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>payolutionInvoicingPortalId</name>
+            <label>Portal ID</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>payolutionInvoicingPortalKey</name>
+            <label>Key</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>payolutionInvoicingCompanyName</name>
+            <label>Company Name</label>
+            <label lang="de-DE">Firmenname</label>
+            <helpText>Is displayed in the supplementary notes to the privacy statement for purchase on account.</helpText>
+            <helpText lang="de-DE">Wird in den ergänzenden Hinweisen zur Datenschutzerklärung für Kauf auf Rechnung angezeigt.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>payolutionInvoicingIban</name>
+            <label>IBAN</label>
+            <label lang="de-DE">IBAN</label>
+            <helpText>IBAN which is displayed on the invoice next to the payment reference.</helpText>
+            <helpText lang="de-DE">IBAN welche auf der Rechnung neben der Zahlungsreferenz angezeigt wird</helpText>
+        </input-field>
+
+        <input-field>
+            <name>payolutionInvoicingBic</name>
+            <label>BIC</label>
+            <label lang="de-DE">BIC</label>
+            <helpText>BIC which is displayed on the invoice next to the payment reference.</helpText>
+            <helpText lang="de-DE">BIC welche auf der Rechnung neben der Zahlungsreferenz angezeigt wird.</helpText>
+        </input-field>
+
+        <input-field type="bool">
+            <name>payolutionInvoicingTransferCompanyData</name>
+            <label>Sets the b2b flag if the customer's company name is present.</label>
+            <label lang="de-DE">Setzt das b2b-Flag, wenn beim Kunden der Firmennamen gesetzt ist.</label>
+        </input-field>
+
+        <input-field type="single-select">
+            <name>payolutionInvoicingAuthorizationMethod</name>
+            <label>Authorization Method</label>
+            <label lang="de-DE">Autorisierungsmethode</label>
+            <helpText>Use this option to set the authorization method for this payment type.</helpText>
+            <helpText lang="de-DE">Legt die Autorisierungsmethode für diese Zahlungsart fest.</helpText>
+            <options>
+                <option>
+                    <id>preauthorization</id>
+                    <name>Pre-authorization</name>
+                    <name lang="de-DE">Vorautorisierung</name>
+                </option>
+                <option>
+                    <id>authorization</id>
+                    <name>Authorization</name>
+                    <name lang="de-DE">Autorisierung</name>
+                </option>
+            </options>
+        </input-field>
+    </card>
+
+    <card>
+        <title>Payolution Debit</title>
+
+        <name>payment_payolution_debit</name>
+
+        <input-field>
+            <name>payolutionDebitCompanyName</name>
+            <label>Company Name</label>
+            <label lang="de-DE">Firmenname</label>
+            <helpText>Is displayed in the supplementary notes to the privacy statement for purchase on account.</helpText>
+            <helpText lang="de-DE">Wird in den ergänzenden Hinweisen zur Datenschutzerklärung für Kauf auf Rechnung angezeigt.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>payolutionDebitMerchantId</name>
+            <label>Merchant ID</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>payolutionDebitAccountId</name>
+            <label>Account ID</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>payolutionDebitPortalId</name>
+            <label>Portal ID</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field>
+            <name>payolutionDebitPortalKey</name>
+            <label>Key</label>
+            <helpText>Uses the basic configuration value if nothing is entered here.</helpText>
+            <helpText lang="de-DE">Nutzt den Wert der Grundeinstellungen, falls nichts eingetragen wird.</helpText>
+        </input-field>
+
+        <input-field type="bool">
+            <name>payolutionDebitTransferCompanyData</name>
+            <label>Sets the b2b flag if the customer's company name is present.</label>
+            <label lang="de-DE">Setzt das b2b-Flag, wenn beim Kunden der Firmennamen gesetzt ist.</label>
+        </input-field>
+
+        <input-field type="single-select">
+            <name>payolutionDebitAuthorizationMethod</name>
+            <label>Authorization Method</label>
+            <label lang="de-DE">Autorisierungsmethode</label>
+            <helpText>Use this option to set the authorization method for this payment type.</helpText>
+            <helpText lang="de-DE">Legt die Autorisierungsmethode für diese Zahlungsart fest.</helpText>
+            <options>
+                <option>
+                    <id>preauthorization</id>
+                    <name>Pre-authorization</name>
+                    <name lang="de-DE">Vorautorisierung</name>
+                </option>
+                <option>
+                    <id>authorization</id>
+                    <name>Authorization</name>
+                    <name lang="de-DE">Autorisierung</name>
+                </option>
+            </options>
+        </input-field>
+    </card>
+</config>

@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <service id="PayonePayment\PaymentHandler\PayoneCreditCardPaymentHandler">
+            <argument type="service" id="PayonePayment\Components\ConfigReader\ConfigReader" />
+            <argument type="service" id="PayonePayment\Payone\Request\CreditCard\CreditCardPreAuthorizeRequestFactory" />
+            <argument type="service" id="PayonePayment\Payone\Request\CreditCard\CreditCardAuthorizeRequestFactory" />
+            <argument type="service" id="PayonePayment\Payone\Client\PayoneClient" />
+            <argument type="service" id="translator" />
+            <argument type="service" id="PayonePayment\Components\DataHandler\Transaction\TransactionDataHandler" />
+            <argument type="service" id="order_line_item.repository" />
+            <argument type="service" id="PayonePayment\Components\PaymentStateHandler\PaymentStateHandler" />
+            <argument type="service" id="PayonePayment\Components\CardRepository\CardRepository" />
+
+            <tag name="shopware.payment.method.async" />
+        </service>
+
+        <service id="PayonePayment\PaymentHandler\PayoneDebitPaymentHandler">
+            <argument type="service" id="PayonePayment\Components\ConfigReader\ConfigReader" />
+            <argument type="service" id="PayonePayment\Payone\Request\Debit\DebitPreAuthorizeRequestFactory" />
+            <argument type="service" id="PayonePayment\Payone\Request\Debit\DebitAuthorizeRequestFactory" />
+            <argument type="service" id="PayonePayment\Payone\Client\PayoneClient" />
+            <argument type="service" id="translator" />
+            <argument type="service" id="PayonePayment\Components\DataHandler\Transaction\TransactionDataHandler" />
+            <argument type="service" id="order_line_item.repository" />
+            <argument type="service" id="PayonePayment\Components\MandateService\MandateService" />
+
+            <tag name="shopware.payment.method.sync" />
+        </service>
+
+        <service id="PayonePayment\PaymentHandler\PayonePaypalPaymentHandler">
+            <argument type="service" id="PayonePayment\Components\ConfigReader\ConfigReader" />
+            <argument type="service" id="PayonePayment\Payone\Request\Paypal\PaypalPreAuthorizeRequestFactory" />
+            <argument type="service" id="PayonePayment\Payone\Request\Paypal\PaypalAuthorizeRequestFactory" />
+            <argument type="service" id="PayonePayment\Payone\Client\PayoneClient" />
+            <argument type="service" id="translator" />
+            <argument type="service" id="PayonePayment\Components\DataHandler\Transaction\TransactionDataHandler" />
+            <argument type="service" id="order_line_item.repository" />
+            <argument type="service" id="PayonePayment\Components\PaymentStateHandler\PaymentStateHandler" />
+
+            <tag name="shopware.payment.method.async" />
+        </service>
+
+        <service id="PayonePayment\PaymentHandler\PayonePaypalExpressPaymentHandler">
+            <argument type="service" id="PayonePayment\Components\ConfigReader\ConfigReader" />
+            <argument type="service" id="PayonePayment\Payone\Request\Paypal\PaypalPreAuthorizeRequestFactory" />
+            <argument type="service" id="PayonePayment\Payone\Request\Paypal\PaypalAuthorizeRequestFactory" />
+            <argument type="service" id="PayonePayment\Payone\Client\PayoneClient" />
+            <argument type="service" id="translator" />
+            <argument type="service" id="PayonePayment\Components\DataHandler\Transaction\TransactionDataHandler" />
+            <argument type="service" id="order_line_item.repository" />
+            <argument type="service" id="PayonePayment\Components\PaymentStateHandler\PaymentStateHandler" />
+
+            <tag name="shopware.payment.method.async" />
+        </service>
+
+        <service id="PayonePayment\PaymentHandler\PayonePayolutionInvoicingPaymentHandler">
+            <argument type="service" id="PayonePayment\Components\ConfigReader\ConfigReader" />
+            <argument type="service" id="PayonePayment\Payone\Request\PayolutionInvoicing\PayolutionInvoicingPreAuthorizeRequestFactory" />
+            <argument type="service" id="PayonePayment\Payone\Request\PayolutionInvoicing\PayolutionInvoicingAuthorizeRequestFactory" />
+            <argument type="service" id="PayonePayment\Payone\Client\PayoneClient" />
+            <argument type="service" id="translator" />
+            <argument type="service" id="PayonePayment\Components\DataHandler\Transaction\TransactionDataHandler" />
+            <argument type="service" id="order_line_item.repository" />
+
+            <tag name="shopware.payment.method.sync" />
+        </service>
+
+        <service id="PayonePayment\PaymentHandler\PayonePayolutionInstallmentPaymentHandler">
+            <argument type="service" id="PayonePayment\Components\ConfigReader\ConfigReader" />
+            <argument type="service" id="PayonePayment\Payone\Request\PayolutionInstallment\PayolutionInstallmentPreAuthorizeRequestFactory" />
+            <argument type="service" id="PayonePayment\Payone\Request\PayolutionInstallment\PayolutionInstallmentAuthorizeRequestFactory" />
+            <argument type="service" id="PayonePayment\Payone\Client\PayoneClient" />
+            <argument type="service" id="translator" />
+            <argument type="service" id="PayonePayment\Components\DataHandler\Transaction\TransactionDataHandler" />
+            <argument type="service" id="order_line_item.repository" />
+            <argument type="service" id="PayonePayment\Components\CartHasher\CartHasher" />
+
+            <tag name="shopware.payment.method.sync" />
+        </service>
+
+        <service id="PayonePayment\PaymentHandler\PayonePayolutionDebitPaymentHandler">
+            <argument type="service" id="PayonePayment\Components\ConfigReader\ConfigReader" />
+            <argument type="service" id="PayonePayment\Payone\Request\PayolutionDebit\PayolutionDebitPreAuthorizeRequestFactory" />
+            <argument type="service" id="PayonePayment\Payone\Request\PayolutionDebit\PayolutionDebitAuthorizeRequestFactory" />
+            <argument type="service" id="PayonePayment\Payone\Client\PayoneClient" />
+            <argument type="service" id="translator" />
+            <argument type="service" id="PayonePayment\Components\DataHandler\Transaction\TransactionDataHandler" />
+            <argument type="service" id="order_line_item.repository" />
+
+            <tag name="shopware.payment.method.sync" />
+        </service>
+
+        <service id="PayonePayment\PaymentHandler\PayoneSofortBankingPaymentHandler">
+            <argument type="service" id="PayonePayment\Components\ConfigReader\ConfigReader" />
+            <argument type="service" id="PayonePayment\Payone\Request\SofortBanking\SofortBankingPreAuthorizeRequestFactory" />
+            <argument type="service" id="PayonePayment\Payone\Request\SofortBanking\SofortBankingAuthorizeRequestFactory" />
+            <argument type="service" id="PayonePayment\Payone\Client\PayoneClient" />
+            <argument type="service" id="translator" />
+            <argument type="service" id="PayonePayment\Components\DataHandler\Transaction\TransactionDataHandler" />
+            <argument type="service" id="order_line_item.repository" />
+            <argument type="service" id="PayonePayment\Components\PaymentStateHandler\PaymentStateHandler" />
+
+            <tag name="shopware.payment.method.async" />
+        </service>
+
+        <service id="PayonePayment\PaymentHandler\PayoneIDealPaymentHandler">
+            <argument type="service" id="PayonePayment\Components\ConfigReader\ConfigReader" />
+            <argument type="service" id="order_line_item.repository" />
+            <argument type="service" id="PayonePayment\Payone\Request\IDeal\IDealPreAuthorizeRequestFactory" />
+            <argument type="service" id="PayonePayment\Payone\Request\IDeal\IDealAuthorizeRequestFactory" />
+            <argument type="service" id="PayonePayment\Payone\Client\PayoneClient" />
+            <argument type="service" id="translator" />
+            <argument type="service" id="PayonePayment\Components\DataHandler\Transaction\TransactionDataHandler" />
+            <argument type="service" id="PayonePayment\Components\PaymentStateHandler\PaymentStateHandler" />
+
+            <tag name="shopware.payment.method.async" />
+        </service>
+
+        <service id="PayonePayment\PaymentHandler\PayoneEpsPaymentHandler">
+            <argument type="service" id="PayonePayment\Components\ConfigReader\ConfigReader" />
+            <argument type="service" id="order_line_item.repository" />
+            <argument type="service" id="PayonePayment\Payone\Request\Eps\EpsPreAuthorizeRequestFactory" />
+            <argument type="service" id="PayonePayment\Payone\Request\Eps\EpsAuthorizeRequestFactory" />
+            <argument type="service" id="PayonePayment\Payone\Client\PayoneClient" />
+            <argument type="service" id="translator" />
+            <argument type="service" id="PayonePayment\Components\DataHandler\Transaction\TransactionDataHandler" />
+            <argument type="service" id="PayonePayment\Components\PaymentStateHandler\PaymentStateHandler" />
+
+            <tag name="shopware.payment.method.async" />
+        </service>
+    </services>
+</container>
