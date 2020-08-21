@@ -1,4 +1,13 @@
-var/
-var/log/
-/var/log/dev.log
-/var/cache/dev_h82e1004a6ec471e2829242e9a8ab6193/profiler/index.csv
+# Cache, session files and logs (Symfony3)
+/var/cache/*
+/var/logs/*
+/var/sessions/*
+!var/cache/.gitkeep
+!var/logs/.gitkeep
+!var/sessions/.gitkeep
+
+# Logs (Symfony4)
+/var/log/*
+!var/log/.gitkeep
+/public/sitemap/salesChannel-593e9c8cf06b488dbe0a3099d5ab1a10-2fbb5fe2e29a4d70aa5854ce7ce3e20b
+/public/sitemap/salesChannel-98432def39fc4624b33213a56b8c944d-31e36e5d6d8e4bd0b7e924a59bde27c7
