@@ -1,8 +1,7 @@
 <?xml version="1.0" ?>
 
 <container xmlns="http://symfony.com/schema/dic/services"
-           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
 
     <services>
         <service id="Shopware\Core\Framework\DataAbstractionLayer\SchemaGenerator"/>
@@ -36,27 +35,21 @@
             <tag name="kernel.event_subscriber" priority="1000"/>
         </service>
 
-        <service id="Shopware\Core\Framework\DataAbstractionLayer\Cache\CachedEntitySearcher"
-                 decorates="Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearcherInterface"
-                 decoration-priority="-1000">
+        <service id="Shopware\Core\Framework\DataAbstractionLayer\Cache\CachedEntitySearcher" decorates="Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearcherInterface" decoration-priority="-1000">
 
             <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator"/>
             <argument type="service" id="cache.object"/>
             <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Cache\CachedEntitySearcher.inner"/>
         </service>
 
-        <service id="Shopware\Core\Framework\DataAbstractionLayer\Cache\CachedEntityReader"
-                 decorates="Shopware\Core\Framework\DataAbstractionLayer\Read\EntityReaderInterface"
-                 decoration-priority="-1000">
+        <service id="Shopware\Core\Framework\DataAbstractionLayer\Cache\CachedEntityReader" decorates="Shopware\Core\Framework\DataAbstractionLayer\Read\EntityReaderInterface" decoration-priority="-1000">
 
             <argument type="service" id="cache.object"/>
             <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Cache\CachedEntityReader.inner"/>
             <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator"/>
         </service>
 
-        <service id="Shopware\Core\Framework\DataAbstractionLayer\Cache\CachedEntityAggregator"
-                 decorates="Shopware\Core\Framework\DataAbstractionLayer\Search\EntityAggregatorInterface"
-                 decoration-priority="-1000">
+        <service id="Shopware\Core\Framework\DataAbstractionLayer\Cache\CachedEntityAggregator" decorates="Shopware\Core\Framework\DataAbstractionLayer\Search\EntityAggregatorInterface" decoration-priority="-1000">
 
             <argument type="service" id="cache.object"/>
             <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Cache\CachedEntityAggregator.inner"/>
@@ -553,7 +546,7 @@
             <tag name="kernel.event_subscriber"/>
         </service>
 
-        <service id="Shopware\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexerRegistry">
+        <service id="Shopware\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexerRegistry" public="true">
             <argument type="tagged" tag="shopware.entity_indexer"/>
             <argument type="service" id="messenger.bus.shopware"/>
             <tag name="messenger.message_handler" />

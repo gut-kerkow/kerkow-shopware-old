@@ -1,3 +1,0 @@
-<?php //%255BSwag%255CPayPal%255CPayment%255CPayPalPaymentController%2523getSalesChannelIdByOrderId%255D%255B1%255D
-
-return [PHP_INT_MAX, []];

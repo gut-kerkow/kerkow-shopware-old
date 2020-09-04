@@ -1,0 +1,17 @@
+{% block kerkow_product_bundles_list %}
+	<sw-page class="kerkow-product-bundles-list">
+		{% block kerkow_product_bundles_list_smart_bar_actions %}
+			<template slot="smart-bar-actions">
+				<sw-button :routerLink="{ name: 'kerkow.product.bundles.create' }" variant="primary">
+					{{ $t('kerkow-product-bundles.list.addButtonText') }}
+				</sw-button>
+			</template>
+		{% endblock %}
+
+		<template slot="content">
+			{% block kerkow_product_bundles_list_content %}
+				<sw-entity-listing v-if="bundles" :items="bundles" :repository="repository" :showselection="false" :columns="columns" detailroute="kerkow.product.bundles.detail"></sw-entity-listing>
+			{% endblock %}
+		</template>
+	</sw-page>
+{% endblock %}

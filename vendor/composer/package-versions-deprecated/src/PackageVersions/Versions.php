@@ -25,12 +25,12 @@ final class Versions
     const VERSIONS          = array (
   'aws/aws-sdk-php' => '3.133.6@cd7bd2fdd159146ef6c7eeb90b73fae4fd11da57',
   'cocur/slugify' => 'v4.0.0@3f1ffc300f164f23abe8b64ffb3f92d35cec8307',
-  'composer/ca-bundle' => '1.2.7@95c63ab2117a72f48f5a55da9740a3273d45b7fd',
+  'composer/ca-bundle' => '1.2.8@8a7ecad675253e4654ea05505233285377405215',
   'composer/composer' => '1.9.2@7a04aa0201ddaa0b3cf64d41022bd8cdcd7fafeb',
   'composer/package-versions-deprecated' => '1.8.0@98df7f1b293c0550bd5b1ce6b60b59bdda23aa47',
   'composer/semver' => '1.5.1@c6bea70230ef4dd483e6bbcab6005f682ed3a8de',
   'composer/spdx-licenses' => '1.5.4@6946f785871e2314c60b4524851f3702ea4f2223',
-  'composer/xdebug-handler' => '1.4.2@fa2aaf99e2087f013a14f7432c1cd2dd7d8f1f51',
+  'composer/xdebug-handler' => '1.4.3@ebd27a9866ae8254e873866f795491f02418c5a5',
   'defuse/php-encryption' => 'v2.2.1@0f407c43b953d571421e0020ba92082ed5fb7620',
   'doctrine/annotations' => 'v1.8.0@904dca4eb10715b92569fbcd79e201d5c349b6bc',
   'doctrine/cache' => '1.10.2@13e3381b25847283a91948d04640543941309727',
@@ -44,8 +44,8 @@ final class Versions
   'enqueue/amqp-tools' => '0.10.0@e41d56966fdd1c7681d342e431e65bccb1962a9e',
   'enqueue/dbal' => '0.10.0@78bc56f49b247cc58cce3eb77cd3be966d0a3eff',
   'enqueue/dsn' => '0.10.1@e503546bacc0f2e8d45590b089683140ecf91cd3',
-  'enqueue/enqueue' => '0.10.1@c2a32569a6df81c060d9b497b63b6a96b1968ee1',
-  'enqueue/enqueue-bundle' => '0.10.1@1cfa67f17190b38a271e0d66c29036aed102aa79',
+  'enqueue/enqueue' => '0.10.3@49d22d26fc57bd1f17ccd7c22a8b0554c8c1e34c',
+  'enqueue/enqueue-bundle' => '0.10.3@f4fd2b7be3d34c2835451c42f20cda80a3d415f7',
   'enqueue/null' => '0.10.1@7fb83a0f87ce3a95645a9aa2c495200e453dd366',
   'ezyang/htmlpurifier' => 'v4.12.0@a617e55bc62a87eec73bd456d146d134ad716f03',
   'firebase/php-jwt' => 'v5.2.0@feb0e820b8436873675fd3aca04f3728eb2185cb',
@@ -199,7 +199,7 @@ final class Versions
   'tecnickcom/tcpdf' => '6.3.5@19a535eaa7fb1c1cac499109deeb1a7a201b4549',
   'theseer/tokenizer' => '1.2.0@75a63c33a8577608444246075ea0af0d052e452a',
   'webmozart/assert' => '1.9.1@bafc69caeb4d49c39fd0779086c03a3738cbb389',
-  'shopware/production' => 'dev-593f75f1370ba77e6c812807f95d49e0118f8ac0@593f75f1370ba77e6c812807f95d49e0118f8ac0',
+  'shopware/production' => 'dev-master@fdf5c69c5213f27101cf1dc9e772e947eb9b2ea0',
 );
 
     private function __construct()

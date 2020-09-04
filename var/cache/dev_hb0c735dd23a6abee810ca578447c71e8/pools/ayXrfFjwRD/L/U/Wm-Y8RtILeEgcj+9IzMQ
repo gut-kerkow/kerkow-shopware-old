@@ -1,3 +1,0 @@
-<?php //%255BSwag%255CPayPal%255CWebhook%255CWebhookController%2523getShopwareToken%255D%255B1%255D
-
-return [PHP_INT_MAX, []];

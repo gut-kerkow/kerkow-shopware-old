@@ -1,0 +1,1 @@
+$('#kerkowZipModal').modal('show');

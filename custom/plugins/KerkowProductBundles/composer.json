@@ -1,0 +1,32 @@
+{
+    "name": "kerkow/product-bundles",
+    "description": "Create Product Bundles",
+    "version": "v1.0.0",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Gut Kerkow Bauernmarkt GmbH",
+            "role": "Manufacturer",
+            "homepage": "http://www.gut-kerkow.de"
+        },
+        {
+            "name": "Kevin Drossard",
+            "role": "Developer",
+            "email": "kevindrossard@gutkerkow.de"
+        }
+    ],
+    "type": "shopware-platform-plugin",
+    "autoload": {
+        "psr-4": {
+            "Kerkow\\ProductBundles\\": "src/"
+        }
+    },
+    "extra": {
+        "shopware-plugin-class": "Kerkow\\ProductBundles\\ProductBundles",
+        "copyright": "(c) by Gut Kerkow Bauernmarkt GmbH",
+        "label": {
+            "de-DE": "Produkt-Bundles zusammenstellen",
+            "en-GB": "Create product bundles"
+        }
+    }
+}

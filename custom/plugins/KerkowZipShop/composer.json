@@ -1,0 +1,27 @@
+{
+  "name": "kerkow/zip-shop",
+  "description": "Kerkow Zip Shop",
+  "type": "shopware-platform-plugin",
+  "license": "MIT",
+  "version": "v0.0.1",
+  "authors": [
+    {
+      "name": "Gut Kerkow Bauernmarkt GmbH (Kevin Drossard)",
+      "role": "Developer",
+      "email": "kevindrossard@gut-kerkow.de",
+      "homepage": "https://gut-kerkow.de"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Kerkow\\ZipShop\\": "src/"
+    }
+  },
+  "extra": {
+    "shopware-plugin-class": "Kerkow\\ZipShop\\ZipShop",
+    "label": {
+      "de-DE": "Kerkow PLZ Abfrage",
+      "en-GB": "Kerkow Zip Request"
+    }
+  }
+}
