@@ -17186,3 +17186,74 @@ h6, .h6 {
 	-ms-flex-pack: end;
 	justify-content: flex-end;
 }
+
+.payone-payment .card {
+	margin-bottom: 1.5rem;
+}
+
+.payone-payment.credit-card .alert {
+	margin: 0;
+	padding: 5px;
+}
+
+.payone-payment.credit-card .hide {
+	display: none;
+}
+
+.payone-payment.credit-card .form-control.iframe {
+	padding: 0;
+	border: .0625rem solid #d1d9e0;
+	border-radius: 3px;
+	height: calc(5em - 1.9rem);
+}
+
+.payone-payment.credit-card .card-logo-container {
+	padding-left: 10px;
+}
+
+.payone-payment.credit-card #card-logo {
+	display: block;
+	height: calc(4em - 1rem);
+	border: 1px solid transparent;
+	margin: 0 auto;
+}
+
+.payone-debit-mandate-modal .modal-body {
+	padding: 0;
+}
+
+.payone-payment.payolution-invoicing .consent-label a {
+	color: red;
+}
+
+.payone-payment.payolution-installment .consent-label a {
+	color: red;
+}
+
+.payone-payment.payolution-installment .hidden {
+	opacity: 0;
+}
+
+.payone-payment.payolution-installment .headline {
+	color: #3f4c58;
+	font-size: .9rem;
+	font-weight: 700;
+	line-height: 1.2;
+	margin-bottom: 1rem;
+}
+
+.payone-payment.payolution-installment .creditInformationButton {
+	margin-top: 1.25rem;
+}
+
+.payone-payment.payolution-installment .installmentOverview {
+	margin-bottom: 1.25rem;
+}
+
+.payone-payment.payolution-installment .table th, .payone-payment.payolution-installment .table td {
+	padding: 0;
+}
+
+.payone-payment.payolution-installment .installment {
+	font-size: .8rem;
+}

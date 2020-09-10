@@ -1,10 +1,19 @@
 <?xml version="1.0" ?>
 
 <container xmlns="http://symfony.com/schema/dic/services"
-           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
 
     <services>
+        <service id="Kerkow\ZipShop\Core\Content\Postalcodes\PostalcodesDefinition">
+            <tag name="shopware.entity.definition" entity="kerkow_postalcodes" />
+        </service>
+
+        <service id="Kerkow\ZipShop\Storefront\Controller\ClearCartController" public="true">
+        </service>
+        <service id="Kerkow\ZipShop\Storefront\Subscriber\FooterZipSubscriber">
+            <argument type="service" id="session"/>
+            <tag name="kernel.event_subscriber"/>
+        </service>
 
     </services>
 </container>

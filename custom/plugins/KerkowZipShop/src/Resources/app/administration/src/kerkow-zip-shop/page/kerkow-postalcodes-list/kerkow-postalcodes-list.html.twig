@@ -1,0 +1,17 @@
+{% block kerkow_postalcodes %}
+	<sw-page class="kerkow-postalcodes-list">
+		{% block kerkow_postalcodes_smart_bar_actions %}
+			<template slot="smart-bar-actions">
+				<sw-button :routerLink="{ name: 'kerkow.postalcodes.create' }" variant="primary">
+					{{ "Postleitzahl hinzufügen" }}
+				</sw-button>
+			</template>
+		{% endblock %}
+
+		<template slot="content">
+			{% block kerkow_postalcodes_content %}
+				<sw-entity-listing v-if="postalcodes" :items="postalcodes" :repository="repository" :showselection="false" :columns="columns" detailroute="kerkow.postalcodes.detail"></sw-entity-listing>
+			{% endblock %}
+		</template>
+	</sw-page>
+{% endblock %}

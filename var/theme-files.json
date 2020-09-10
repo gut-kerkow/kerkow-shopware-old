@@ -1,0 +1,56 @@
+{
+    "script": [
+        {
+            "filepath": "\/Users\/kevin\/Sites\/kerkow_re\/vendor\/shopware\/storefront\/Resources\/app\/storefront\/src\/main.js",
+            "resolveMapping": [],
+            "extensions": []
+        },
+        {
+            "filepath": "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/PayonePayment\/src\/Resources\/app\/storefront\/src\/main.js",
+            "resolveMapping": [],
+            "extensions": []
+        },
+        {
+            "filepath": "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/KerkowZipShop\/src\/Resources\/app\/storefront\/src\/main.js",
+            "resolveMapping": [],
+            "extensions": []
+        },
+        {
+            "filepath": "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/Kerkow\/src\/Resources\/app\/storefront\/src\/main.js",
+            "resolveMapping": [],
+            "extensions": []
+        }
+    ],
+    "style": [
+        {
+            "filepath": "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/Kerkow\/src\/Resources\/app\/storefront\/src\/scss\/overrides.scss",
+            "resolveMapping": [],
+            "extensions": []
+        },
+        {
+            "filepath": "\/Users\/kevin\/Sites\/kerkow_re\/vendor\/shopware\/storefront\/Resources\/app\/storefront\/src\/scss\/base.scss",
+            "resolveMapping": {
+                "vendor": "\/Users\/kevin\/Sites\/kerkow_re\/vendor\/shopware\/storefront\/Resources\/app\/storefront\/vendor"
+            },
+            "extensions": []
+        },
+        {
+            "filepath": "\/Users\/kevin\/Sites\/kerkow_re\/vendor\/shopware\/storefront\/Resources\/app\/storefront\/src\/scss\/skin\/shopware\/_base.scss",
+            "resolveMapping": {
+                "vendor": "\/Users\/kevin\/Sites\/kerkow_re\/vendor\/shopware\/storefront\/Resources\/app\/storefront\/vendor"
+            },
+            "extensions": []
+        },
+        {
+            "filepath": "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/PayonePayment\/src\/Resources\/app\/storefront\/src\/scss\/base.scss",
+            "resolveMapping": [],
+            "extensions": []
+        },
+        {
+            "filepath": "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/Kerkow\/src\/Resources\/app\/storefront\/src\/scss\/base.scss",
+            "resolveMapping": [],
+            "extensions": []
+        }
+    ],
+    "basePath": "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/Kerkow\/src\/Resources"
+}

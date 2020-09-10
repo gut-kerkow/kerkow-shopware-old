@@ -1,1 +1,1 @@
-import '.module/kerkow-zip-shop';
+import "./kerkow-zip-shop";

@@ -1,1 +1,1 @@
-$('#kerkowZipModal').modal('show');
+$("#kerkowZipModal").modal("show");

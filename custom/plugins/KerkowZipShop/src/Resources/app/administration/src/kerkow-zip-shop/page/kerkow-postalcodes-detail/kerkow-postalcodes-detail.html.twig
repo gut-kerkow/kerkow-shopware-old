@@ -1,0 +1,27 @@
+{% block kerkow_postalcodes_detail %}
+    <sw-page class="kerkow-postalcodes-detail">
+        <template slot="smart-bar-actions">
+            <sw-button :routerLink="{ name: 'kerkow.postalcodes.list' }">
+                {{ "Abbrechen" }}
+            </sw-button>
+
+            <sw-button-process
+                :isLoading="isLoading"
+                :processSuccess="processSuccess"
+                variant="primary"
+                @process-finish="saveFinish"
+                @click="onClickSave">
+                {{ "Speichern" }}
+            </sw-button-process>
+        </template>
+
+        <template slot="content">
+            <sw-card-view>
+                <sw-card v-if="postalcode" :isLoading="isLoading">
+                    <sw-field :label='"PLZ"' v-model="postalcode.zip" type="number"></sw-field>
+                    <sw-field :label='"Ort"' v-model="postalcode.city"></sw-field>                    
+                </sw-card>
+            </sw-card-view>
+        </template>
+    </sw-page>
+{% endblock %}
