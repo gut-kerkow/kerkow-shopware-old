@@ -48,6 +48,46 @@ class AddZipController extends StorefrontController
         } else {
             $result = false;
         }
-        return $this->renderStorefront('@KerkowZipShop/storefront/custom/response.html.twig', ['result' => $session->get('zip')]);
+        return $this->renderStorefront('@KerkowZipShop/storefront/custom/response.html.twig', ['result' => $session->get('postalcode')]);
+    }
+
+    /**
+     * @HttpCache()
+     * @Route("/zip-header/add", name="frontend.custom.addZipHeader", options={"seo"="false"}, methods={"GET"}, defaults={"XmlHttpRequest"=true})
+     */
+    public function addZipHeader(Request $request, Session $session, SalesChannelContext $context)
+    {
+        $param = $request->get('zip');
+        // Call the service to query the zip
+        /** @var EntityRepositoryInterface $postalcodeRepository */
+        $postalcodeRepository = $this->container->get('kerkow_postalcodes.repository');
+        /** @var EntityCollection $entities */
+        $postalcode = $postalcodeRepository->search(
+            (new Criteria())->addFilter(new EqualsFilter('zip', $param)),
+            \Shopware\Core\Framework\Context::createDefaultContext()
+        )->first();
+        // Check if user entered a valid zip
+        if ($postalcode) {
+            $result = $postalcode->getZip();
+            $session->set('postalcode', $result);
+            $postalcode_error = false;
+        } else {
+            $postalcode_error = true;
+            $result = false;
+        }
+        return $this->renderStorefront('@KerkowZipShop/storefront/layout/header/header-zip-menu-form.html.twig', ['postalcode' => $result, 'postalcode_error' => $postalcode_error]);
+    }
+
+    /**
+     * @HttpCache()
+     * @Route("/zip-header/remove", name="frontend.custom.removeZip", options={"seo"="false"}, methods={"GET"}, defaults={"XmlHttpRequest"=true})
+     */
+    public function removeZip(Request $request, Session $session, SalesChannelContext $context)
+    {
+        $session->remove('postalcode');
+        $postalcode_error = false;
+        $result = false;
+
+        return $this->renderStorefront('@KerkowZipShop/storefront/layout/header/header-zip-menu-form.html.twig', ['postalcode' => $result, 'postalcode_error' => $postalcode_error]);
     }
 }

@@ -1,0 +1,49 @@
+.zip-menu-dropdown {
+  padding: $spacer-sm $spacer;
+  min-width: 200px;
+}
+.zip-menu-btn {
+  cursor: pointer;
+}
+
+.zip-menu-offcanvas,
+.zip-menu-dropdown {
+  .zip-menu-inner {
+    border: 0;
+  }
+
+  .zip-aside-item {
+    padding: $spacer-sm 0;
+  }
+
+  .zip-aside-footer {
+    background: none;
+    padding: $spacer-xs 0;
+  }
+}
+
+.zip-menu-header {
+  border-bottom: 1px solid $border-color;
+  font-size: $font-size-base;
+  font-weight: $font-weight-bold;
+  padding: $spacer-sm 0;
+  color: $headings-color;
+}
+.header-zip-form-container {
+  padding-top: 1rem;
+  margin-bottom: 0.25rem;
+  border-bottom: 1px solid $border-color;
+}
+.zip-widget-remove-zip {
+  text-align: center;
+}
+.header-zip-form-success,
+.header-zip-form-error {
+  text-align: center;
+  padding-bottom: 1rem;
+}
+.zip-search-btn {
+  .loader ~ .zip-search-icon {
+    display: none;
+  }
+}

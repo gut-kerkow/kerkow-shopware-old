@@ -36,7 +36,8 @@ class FooterZipSubscriber implements EventSubscriberInterface
             $postalcode = $this->session->get('postalcode');
             $event->getPagelet()->setExtensions(["postalcode" => $postalcode]);
         } else {
-            return;
+            $postalcode_error = "not_available";
+            $event->getPagelet()->setExtensions(["postalcode_error" => $postalcode_error]);
         }
     }
 }

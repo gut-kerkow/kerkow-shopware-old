@@ -1,0 +1,49 @@
+{% block header_zip_menu_form %}
+	<div class="header-zip-form-container">
+		<form action="{{ path('frontend.custom.addZipHeader') }}" method="get" data-url="{{ path('frontend.custom.addZipHeader') }}?zip=" id="js-add-zip-form-header" class="add-zip-header">
+			<div class="form-row add-zip-container">
+				<div class="input-group mb-3">
+					{% if postalcode %}
+						<input type="text" name="zip" class="form-control" placeholder="Postleitzahl" aria-label="Postleitzahl" value="{{ postalcode }}" required>
+					{% else %}
+						<input type="text" name="zip" class="form-control" placeholder="Postleitzahl" aria-label="Postleitzahl" value="{{ page.header.extensions.postalcode ? page.header.extensions.postalcode : "" }}" required>
+					{% endif %}
+					<div class="input-group-append">
+						<button class="btn btn-outline-secondary zip-search-btn" type="submit">
+							<span class="zip-search-icon">
+								>
+							</span>
+						</button>
+					</div>
+					<div class="invalid-feedback">
+						{{ 'kerkow.zipShop.enterValidZip' | trans }}
+					</div>
+				</div>
+				<input type="hidden" name="redirectTo" value="frontend.home.page"/>
+
+			</div>
+		</form>
+		{% if page.header.extensions.postalcode_error or postalcode_error %}
+			<div class="header-zip-form-error">
+				{{ 'kerkow.zipShop.notInDeliveryArea' | trans }}
+			</div>
+		{% endif %}
+		{% if page.header.extensions.postalcode or postalcode %}
+			<div class="header-zip-form-success">
+				{{ 'kerkow.zipShop.successDeliveryArea' | trans }}
+			</div>
+		{% endif %}
+		{% if not postalcode and not page.header.extensions.postalcode %}
+			<div class="header-zip-form-success">
+				{{ 'kerkow.zipShop.pleaseAddZip' | trans }}
+			</div>
+		{% endif %}
+	</div>
+	{% block layout_header_actions_zip_widget_remove_zip %}
+		<div class="zip-widget-remove-zip {{ postalcode or page.header.extensions.postalcode ? '' :'d-none' }}">
+			<a href="{{ path('frontend.custom.removeZip') }}" data-url="{{ path('frontend.custom.removeZip') }}" title="{{ "kerkow.zipShop.removeZip"|trans|striptags }}" class="js-header-zip-widget-remove-link">
+				{{ "kerkow.zipShop.removeZip"|trans|sw_sanitize }}
+			</a>
+		</div>
+	{% endblock %}
+{% endblock %}

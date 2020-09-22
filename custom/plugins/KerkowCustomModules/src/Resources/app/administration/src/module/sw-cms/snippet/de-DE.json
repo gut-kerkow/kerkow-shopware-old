@@ -1,0 +1,14 @@
+{
+  "sw-cms": {
+    "blocks": {
+      "commerce": {
+        "productFourColumn": {
+          "label": "Vier Spalten, Produkt-Boxen"
+        },
+        "productFourColumnBadge": {
+          "label": "Vier Spalten, Produkt-Boxen und Störer"
+        }
+      }
+    }
+  }
+}

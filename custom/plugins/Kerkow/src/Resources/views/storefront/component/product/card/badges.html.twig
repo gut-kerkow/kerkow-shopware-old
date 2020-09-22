@@ -1,0 +1,30 @@
+{% sw_extends '@Storefront/storefront/component/product/card/badges.html.twig' %}
+{% block component_product_badges %}
+	<div class="product-badges">
+		{% block component_product_badges_discount %}
+			{{ parent() }}
+		{% endblock %}
+
+		{% block component_product_badges_topseller %}
+			{{ parent() }}
+		{% endblock %}
+
+		{% block component_product_badges_new %}
+			{{ parent() }}
+		{% endblock %}
+	</div>
+	<div class="product-badges custom">
+
+		{% block component_product_badges_custom %}
+
+			{% if product.customFields["custom_badges_content"] %}
+				<div>
+					<span class="badge badge-custom">
+						{{ product.customFields["custom_badges_content"] }}
+					</span>
+				</div>
+			{% endif %}
+
+		{% endblock %}
+	</div>
+{% endblock %}

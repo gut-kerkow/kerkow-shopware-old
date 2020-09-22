@@ -1,0 +1,47 @@
+.cms-image-full-stretch-image {
+  min-height: 36rem;
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  margin-right: calc(-50vw + 50%);
+  background-size: cover;
+}
+.cms-two-image-full-stretch-images {
+  min-height: 32rem;
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  margin-right: calc(-50vw + 50%);
+  background-size: cover;
+}
+.cms-block-full-stretch-image {
+  .cms-block-container {
+    padding: 0 !important;
+  }
+}
+.cms-image-first-full-stretch-image {
+  min-height: 32rem;
+  background-size: contain;
+  background-repeat: no-repeat;
+  .cms-element-text {
+    position: relative;
+    top: 20rem;
+    left: 3rem;
+    h2 {
+      @include gt-bold-italic;
+      font-size: 3.5rem;
+      color: white;
+    }
+    p,
+    a {
+      margin-top: 2.5rem;
+      font-size: 1.1rem;
+      font-family: $kerkow-font-family-base;
+      color: white;
+      font-weight: 600;
+    }
+  }
+}
+.cms-image-second-full-stretch-image {
+  min-height: 32rem;
+  background-size: contain;
+  background-repeat: no-repeat;
+}

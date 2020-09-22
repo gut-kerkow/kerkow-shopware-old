@@ -1,0 +1,17 @@
+{% sw_extends '@Storefront/storefront/base.html.twig' %}
+
+
+{% block base_body_inner %}
+
+
+	{{ parent() }}
+	{% block final_footer %}
+		<footer class="footer-final">
+			{% block final_footer_inner %}
+				<div class="container">
+					{% sw_include '@kerkow/storefront/layout/footer/footer-final.html.twig' %}
+				</div>
+			{% endblock %}
+		</footer>
+	{% endblock %}
+{% endblock %}

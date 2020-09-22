@@ -1,0 +1,40 @@
+@import "abstract/variables";
+@import "abstract/mixins";
+@import "abstract/partials/fonts";
+@import "abstract/partials/colors";
+@import "abstract/header";
+@import "abstract/navigation";
+@import "abstract/footer";
+@import "abstract/product-box";
+@import "abstract/four-column-badge";
+@import "abstract/full-stretch-image";
+@import "abstract/blocks";
+
+body {
+  font-family: $kerkow-font-family-base;
+  color: $kerkow-grey;
+}
+h2 {
+  font-family: $kerkow-font-family-base;
+  font-weight: 600;
+  color: $kerkow-grey;
+  text-transform: uppercase;
+  font-size: 1rem;
+}
+a {
+  color: $kerkow-blue;
+}
+.btn-primary {
+  &:not(disabled) {
+    &:active,
+    &:hover {
+      background-color: white;
+      color: $kerkow-blue;
+      border-color: $kerkow-blue;
+    }
+    background-color: $kerkow-blue;
+    font-family: $kerkow-font-family-base;
+    font-weight: 600;
+    border-radius: 1px;
+  }
+}

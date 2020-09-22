@@ -1,0 +1,15 @@
+{% block block_full_stretch_image %}
+	{% set element = block.slots.getSlot('image') %}
+	{% set columns = 1 %}
+
+
+	<style>
+		.cms-image-full-stretch-image
+		{
+			background-image: url('{{ element.data.media.url }}');
+			background-image: -webkit-image-set(url({{element.data.media.url}}) 2x);
+			background-image: image-set(url({{element.data.media.url}}) 1x,url({{element.data.media.url}}) 2x);
+		}
+	</style>
+	<div class="cms-image-full-stretch-image"></div>
+{% endblock %}

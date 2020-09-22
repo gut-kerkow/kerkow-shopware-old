@@ -1,0 +1,28 @@
+{% block layout_navigation_search_flyout %}
+	{% block layout_navigation_search_flyout_bar %}
+		<div class="row d-flex justify-content-end navigation-search-flyout-bar">
+
+
+			{% block layout_navigation_search_flyout_bar_close %}
+				<div class="col-auto">
+					<div class="navigation-search-flyout-close js-close-search-flyout-menu">
+						{% block layout_navigation_search_flyout_bar_close_content %}
+							{% block layout_utilities_offcanvas_close_icon %}
+								{% sw_icon 'x' %}
+							{% endblock %}
+						{% endblock %}
+					</div>
+				</div>
+			{% endblock %}
+		</div>
+	{% endblock %}
+
+	{% block layout_navigation_search_flyout_content %}
+		<div class="row navigation-search-flyout-content d-flex justify-content-center">
+
+			{% block layout_navigation_search_flyout_teaser %}
+				{% sw_include '@Kerkow/storefront/layout/navigation/search-bar.html.twig' %}
+			{% endblock %}
+		</div>
+	{% endblock %}
+{% endblock %}

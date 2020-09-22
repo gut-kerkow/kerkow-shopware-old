@@ -1,0 +1,16 @@
+<li class="nav-item">
+	<div class="dropdown">
+		{% block layout_header_actions_zip_widget_dropdown_button %}
+			<div class="nav-link zip-menu-btn header-actions-btn" id="zipWidget" data-zip-menu="true" data-offcanvas-zip-menu="true" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" aria-label="{{ "account.myZip"|trans|striptags }}">
+				Postleitzahl
+			</div>
+		{% endblock %}
+
+		{% block layout_header_actions_zip_widget_dropdown_menu %}
+			<div class="dropdown-menu dropdown-menu-right zip-menu-dropdown js-zip-menu-dropdown" aria-labelledby="zipWidget">
+				{% sw_include '@kerkowZipShop/storefront/layout/header/zip-menu.html.twig' %}
+			</div>
+		{% endblock %}
+	</div>
+
+</li>

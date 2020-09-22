@@ -1,0 +1,58 @@
+.product-box {
+  border: none;
+}
+.product-image-wrapper {
+  max-width: 18.75rem;
+  max-height: 18.75rem;
+  height: 18.75rem;
+  flex-grow: 0;
+  .product-image {
+    max-height: 18.75rem;
+  }
+}
+.product-box .card-body {
+  padding: 0;
+}
+.product-name {
+  @include gt-bold;
+  color: $kerkow-blue;
+  font-size: 2rem;
+  line-height: 2rem;
+  margin-bottom: 0;
+  &:hover {
+    color: $kerkow-blue;
+  }
+}
+.product-price {
+  font-family: $kerkow-font-family-base;
+  color: $kerkow-blue;
+  font-weight: 400;
+  font-size: 2rem;
+  line-height: 2rem;
+  height: 2rem;
+  margin-top: 0;
+}
+.product-variant-characteristics {
+  min-height: 0em;
+}
+.product-price-unit,
+.price-unit-reference {
+  font-family: $kerkow-font-family-base;
+  color: $kerkow-blue;
+  font-weight: 400;
+  font-size: 1rem;
+  line-height: 1rem;
+  height: 1.2rem;
+  margin-top: 0.3rem;
+  margin-bottom: 0;
+}
+.badge-custom {
+  background: rgba(255, 255, 255, 0.6);
+  @include gt-bold;
+  font-weight: bold !important;
+  color: $kerkow-blue !important;
+}
+.product-badges.custom {
+  top: 1rem;
+  left: 1rem;
+}

@@ -1,0 +1,43 @@
+{% block block_product_four_column %}
+	{% set columns = 4 %}
+	{% set id = element.id %}
+	{% block block_product_four_column_one %}
+		{% set element = block.slots.getSlot('one') %}
+
+		<div class="col-md-3 card-col" data-cms-element-id="{{ id }}">
+			{% block block_product_four_column_one_inner %}
+				{% sw_include "@Storefront/storefront/element/cms-element-" ~ element.type ~ ".html.twig" ignore missing %}
+			{% endblock %}
+		</div>
+	{% endblock %}
+
+	{% block block_product_four_column_two %}
+		{% set element = block.slots.getSlot('two') %}
+
+		<div class="col-md-3 card-col" data-cms-element-id="{{ id }}">
+			{% block block_product_four_column_two_inner %}
+				{% sw_include "@Storefront/storefront/element/cms-element-" ~ element.type ~ ".html.twig" ignore missing %}
+			{% endblock %}
+		</div>
+	{% endblock %}
+
+	{% block block_product_four_column_three %}
+		{% set element = block.slots.getSlot('three') %}
+
+		<div class="col-md-3 card-col" data-cms-element-id="{{ id }}">
+			{% block block_product_four_column_three_inner %}
+				{% sw_include "@Storefront/storefront/element/cms-element-" ~ element.type ~ ".html.twig" ignore missing %}
+			{% endblock %}
+		</div>
+	{% endblock %}
+
+	{% block block_product_four_column_four %}
+		{% set element = block.slots.getSlot('four') %}
+
+		<div class="col-md-3 card-col" data-cms-element-id="{{ id }}">
+			{% block block_product_four_column_four_inner %}
+				{% sw_include "@Storefront/storefront/element/cms-element-" ~ element.type ~ ".html.twig" ignore missing %}
+			{% endblock %}
+		</div>
+	{% endblock %}
+{% endblock %}

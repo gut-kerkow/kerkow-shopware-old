@@ -1,0 +1,137 @@
+{% sw_extends '@Storefront/storefront/layout/footer/footer.html.twig' %}
+{% block layout_footer_inner_container %}
+	{% block layout_footer_navigation %}
+		<div id="footerColumns" class="footer-columns" data-collapse-footer="true">
+			<div class="d-flex justify-content-around">
+				{% block layout_footer_navigation_columns %}
+					<div class="footer-column js-footer-column">
+						<span class="footer-column-headline">
+							{{ "kerkow.footer.headlineQuickStart" |trans}}
+						</span>
+						<ul class="list-unstyled">
+							{% for root in page.footer.navigation.tree %}
+								{% block layout_footer_navigation_column %}
+									{% block layout_footer_navigation_information_headline %}
+										<li class="footer-column-link">
+											{% block layout_footer_navigation_information_link %}
+												<a class="footer-link" href="{% if externalLink %}{{ externalLink }}{% else %}{{ seoUrl('frontend.navigation.page', { navigationId: root.category.id }) }}{% endif %}" title="{{ root.category.translated.name }}">
+													{{ root.category.translated.name }}
+												</a>
+											{% endblock %}
+
+										</li>
+									{% endblock %}
+
+
+								{% endblock %}
+							{% endfor %}
+							// Hier noch weitere Links einbauen
+						</ul>
+					</div>
+				{% endblock %}
+
+				{% block layout_footer_navigation_social %}
+
+					<div class="footer-column js-footer-column">
+						<span class="footer-column-headline">
+							{{ "kerkow.footer.headlineSocial" |trans}}
+						</span>
+						<ul class="list-unstyled">
+							<li class="footer-column-link">
+								<a href="https://www.facebook.com/gutkerkow/" target="_blank" title='{{ "kerkow.social.onFacebook" |trans }}'>
+									<span class="social-icon">
+										{% block layout_footer_navigation_social_facebook %}
+											{% sw_include '@kerkow/storefront/custom/icons/facebook.html.twig' %}
+										{% endblock %}
+									</span>
+									<span>
+										Facebook
+									</span>
+								</a>
+							</li>
+							<li class="footer-column-link">
+								<a href="https://www.instagram.com/gutkerkow/" target="_blank" title='{{ "kerkow.social.onInstagram" |trans }}'>
+									<span class="social-icon">
+										{% block layout_footer_navigation_social_instagram %}
+											{% sw_include '@kerkow/storefront/custom/icons/instagram.html.twig' %}
+										{% endblock %}
+									</span>
+									<span>
+										Instagram
+									</span>
+								</a>
+							</li>
+						</ul>
+					</div>
+
+				{% endblock %}
+
+				{% block layout_footer_navigation_contact %}
+					<div class="footer-column js-footer-column">
+						<span class="footer-column-headline">
+							{{ "kerkow.footer.headlineContact" |trans}}
+						</span>
+						<div class="footer-column-address">
+							<p class="address-component">
+								{{ "kerkow.company.name" |trans}}
+							</p>
+							<p class="address-component">
+								{{ "kerkow.company.street" |trans}}
+							</p>
+							<p class="address-component">
+								{{ "kerkow.company.zipCity" |trans}}
+							</p>
+							<p class="address-component-gap">
+								{{ "kerkow.company.phone" |trans |raw}}
+							</p>
+							<p class="address-component">
+								{{ "kerkow.company.fax" |trans}}
+							</p>
+							<p class="address-component">
+								{{ "kerkow.company.mail" |trans |raw}}
+							</p>
+						</div>
+						<div class="footer-column-seals">
+							<span class="seals-icon">
+								{% block layout_footer_navigation_contact_bio %}
+									{% sw_include '@kerkow/storefront/custom/icons/eu-bio.html.twig' %}
+								{% endblock %}
+							</span>
+							<span class="seals-icon">
+								{% block layout_footer_navigation_contact_fair %}
+									{% sw_include '@kerkow/storefront/custom/icons/fair-regional.html.twig' %}
+								{% endblock %}
+							</span>
+						</div>
+					</div>
+
+				{% endblock %}
+
+
+			</div>
+			{% block layout_footer_vat %}
+				<div class="footer-vat">
+					{% if context.taxState == "gross" %}
+						<p>
+							{{ "footer.includeVat"|trans({
+                                '%url%': path('frontend.cms.page',{ id: shopware.config.core.basicInformation.shippingPaymentInfoPage })
+                            })|raw }}
+						</p>
+					{% else %}
+						<p>
+							{{ "footer.excludeVat"|trans({
+                                '%url%': path('frontend.cms.page',{ id: shopware.config.core.basicInformation.shippingPaymentInfoPage })
+                            })|raw }}
+						</p>
+					{% endif %}
+				</div>
+			{% endblock %}
+
+		</div>
+	{% endblock %}
+
+	{% block layout_footer_payment_shipping_logos %}
+	{% endblock %}
+
+
+{% endblock %}

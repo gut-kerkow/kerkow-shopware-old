@@ -1,0 +1,27 @@
+{% block block_two_full_stretch_images %}
+	{% set left = block.slots.getSlot('left') %}
+	{% set right = block.slots.getSlot('right') %}
+	{% set content = block.slots.getSlot('content') %}
+
+	<style>
+		.cms-image-first-full-stretch-image
+		{
+			background-image: url('{{ left.data.media.url }}');
+			background-image: -webkit-image-set(url({{left.data.media.url}}) 2x);
+			background-image: image-set(url({{left.data.media.url}}) 1x,url({{left.data.media.url}}) 2x);
+		}
+		.cms-image-second-full-stretch-image
+		{
+			background-image: url('{{ right.data.media.url }}');
+			background-image: -webkit-image-set(url({{right.data.media.url}}) 2x);
+			background-image: image-set(url({{right.data.media.url}}) 1x,url({{right.data.media.url}}) 2x);
+		}
+	</style>
+	<div class="cms-two-image-full-stretch-images d-flex flex-row">
+		<div class="cms-image-first-full-stretch-image col-md-6">
+			{% sw_include "@Storefront/storefront/element/cms-element-" ~ content.type ~ ".html.twig" ignore missing with {"element": content} %}
+
+		</div>
+		<div class="cms-image-second-full-stretch-image col-md-6"></div>
+	</div>
+{% endblock %}

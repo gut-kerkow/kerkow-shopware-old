@@ -1,0 +1,84 @@
+.main-navigation-menu {
+  border-bottom: solid 1px #d6d6d6;
+  a {
+    text-transform: uppercase;
+    font-weight: 600;
+    color: $kerkow-blue;
+  }
+}
+.main-navigation-search {
+  .icon {
+    width: 1.1rem;
+    height: 1.1rem;
+    cursor: pointer;
+    svg path {
+      fill: $kerkow-blue;
+    }
+  }
+}
+
+.navigation-search-flyout-bar {
+  align-items: center;
+  padding: 1.25rem 0;
+}
+.navigation-search-flyout-close {
+  padding: 0.625rem 0 0.625rem 0.625rem;
+  cursor: pointer;
+}
+.navigation-flyout.navigation-flyout-search {
+  width: 80%;
+  min-height: 400px;
+}
+.navigation-search {
+  width: 55%;
+}
+.navigation-search-input,
+.navigation-search-input:focus {
+  @include gt-bold;
+  color: $kerkow-blue;
+  font-size: 2rem;
+  outline: 0;
+  border-width: 0 0 2px;
+  border-color: #d6d6d6;
+  border-radius: 0;
+  padding: 5px 25px 0 25px;
+}
+.header-search-btn {
+  border-width: 0 0 2px 0;
+  border-style: solid;
+  border-color: #d6d6d6;
+}
+.navigation-flyout {
+  width: 100%;
+  box-shadow: 0 100rem 0 100rem rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+  pointer-events: none;
+  position: absolute;
+  opacity: 0;
+  height: 0;
+}
+
+@include media-breakpoint-up(md) {
+  .main-navigation-link {
+    padding-left: 0;
+    padding-right: 32px;
+
+    .main-navigation-link-text {
+      border-bottom: 3px solid transparent;
+      padding-bottom: 3px;
+    }
+
+    &.active,
+    &:hover {
+      .main-navigation-link-text {
+        border-color: $kerkow-blue;
+        color: $kerkow-blue;
+      }
+    }
+  }
+}
+.main-navigation-menu {
+  .nav-link {
+    padding-bottom: 0;
+  }
+}

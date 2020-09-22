@@ -1,0 +1,30 @@
+{% block layout_footer_bottom %}
+	<div class="footer-bottom">
+		<div class="d-flex">
+			{% block layout_footer_copyright %}
+				<div class="footer-copyright mr-auto">
+					{{ "footer.copyrightInfo"|trans|sw_sanitize }}
+				</div>
+			{% endblock %}
+			{% block layout_footer_service_menu %}
+				{% block layout_footer_service_menu_content %}
+					<div class="footer-legal">
+						<ul class="footer-service-legal-list list-unstyled">
+							{% for serviceMenuItem in page.header.serviceMenu %}
+								{% block layout_footer_service_menu_item %}
+									<li class="footer-service-legal-item">
+										<a class="footer-service-legal-link" href="{% if serviceMenuItem.externalLink %}{{ serviceMenuItem.externalLink }}{% else %}{{ seoUrl('frontend.navigation.page', { navigationId: serviceMenuItem.id }) }}{% endif %}" title="{{ serviceMenuItem.translated.name }}">
+											{{ serviceMenuItem.translated.name }}
+										</a>
+									</li>
+								{% endblock %}
+							{% endfor %}
+						</ul>
+					</div>
+				{% endblock %}
+			{% endblock %}
+
+		</div>
+
+	</div>
+{% endblock %}

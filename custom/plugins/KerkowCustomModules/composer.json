@@ -1,0 +1,27 @@
+{
+  "name": "kerkow/custom-modules",
+  "description": "Kerkow Custom Modules",
+  "type": "shopware-platform-plugin",
+  "license": "MIT",
+  "version": "v0.0.1",
+  "authors": [
+    {
+      "name": "Gut Kerkow Bauernmarkt GmbH (Kevin Drossard)",
+      "role": "Developer",
+      "email": "kevindrossard@gut-kerkow.de",
+      "homepage": "https://gut-kerkow.de"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Kerkow\\CustomModules\\": "src/"
+    }
+  },
+  "extra": {
+    "shopware-plugin-class": "Kerkow\\CustomModules\\CustomModules",
+    "label": {
+      "de-DE": "Custom Modules",
+      "en-GB": "Custom Modules"
+    }
+  }
+}

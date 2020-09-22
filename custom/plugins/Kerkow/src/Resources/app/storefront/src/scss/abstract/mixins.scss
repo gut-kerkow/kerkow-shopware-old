@@ -1,0 +1,36 @@
+@mixin kerkow-input {
+  border: solid 1px rgb(191, 198, 217);
+  border-radius: 1px;
+  color: $kerkow-grey;
+  &::-webkit-input-placeholder {
+    /* Edge */
+    color: black;
+  }
+
+  &:-ms-input-placeholder {
+    /* Internet Explorer 10-11 */
+    color: black;
+  }
+
+  &::placeholder {
+    color: black;
+  }
+}
+
+// Fonts
+@mixin gt-medium {
+  font-family: "GT-Sectra";
+}
+@mixin gt-bold {
+  font-family: "GT-Sectra";
+  font-weight: bold;
+}
+@mixin gt-italic {
+  font-family: "GT-Sectra";
+  font-style: italic;
+}
+@mixin gt-bold-italic {
+  font-family: "GT-Sectra";
+  font-weight: bold;
+  font-style: italic;
+}

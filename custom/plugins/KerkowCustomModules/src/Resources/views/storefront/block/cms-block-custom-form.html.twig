@@ -1,0 +1,59 @@
+{% block kerkow_custom_newsletter_box %}
+	{% set action = 'frontend.form.newsletter.register.handle' %}
+	{% set submitText = 'newsletter.formSubmit' %}
+	<div class="newsletter-promotion">
+		<p class="kerkow-newsletter-headline">
+			{{ "kerkow.newsletter.promoHeadline" | trans }}
+		</p>
+		<p>
+			{{ "kerkow.newsletter.promoContent" | trans }}
+		</p>
+	</div>
+	<div class="d-flex justify-content-center kerkow-newsletter-form-container form-content cms-element-form">
+		<form action="{{ path(action) }}" method="post" data-form-csrf-handler="true" data-form-validation="true" class="form-inline">
+
+
+			<div class="form-row">
+				{% block cms_form_newsletter_input_email %}
+					{% sw_include '@Storefront/storefront/element/cms-element-form/form-components/cms-element-form-input.html.twig'
+                with {
+                fieldName: 'email',
+                type: 'email',
+                required: true,
+                additionalClass: 'col-12',
+                label: null,
+                placeholder: 'kerkow.newsletter.placeholderMail'
+            }
+            %}
+				{% endblock %}
+			</div>
+
+
+			{% block cms_form_newsletter_captcha %}
+				{% sw_include '@Storefront/storefront/component/captcha/base.html.twig' with { 'captchas': shopware.config.core.basicInformation.activeCaptchas } %}
+			{% endblock %}
+
+
+			{% block cms_form_newsletter_submit %}
+				{% sw_include '@Storefront/storefront/element/cms-element-form/form-components/cms-element-form-submit.html.twig' with {'submitText': 'kerkow.newsletter.subscribeNow'} %}
+			{% endblock %}
+
+			{% block cms_form_newsletter_hidden_fields %}
+				<div class="form-hidden-fields">
+					{% block cms_form_newsletter_csrf %}
+						{{ sw_csrf(action) }}
+					{% endblock %}
+
+					<input type="submit" class="submit--hidden d-none"/>
+					<input type="hidden" name="option" value="subscribe"/>
+				</div>
+			{% endblock %}
+		</form>
+	</div>
+	<div class="newsletter-privacy">
+
+		<p>
+			{{ "kerkow.newsletter.privacy" | trans | raw }}
+		</p>
+	</div>
+{% endblock %}

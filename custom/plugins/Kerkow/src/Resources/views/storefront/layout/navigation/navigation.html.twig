@@ -1,0 +1,96 @@
+{% sw_extends '@Storefront/storefront/layout/navigation/navigation.html.twig' %}
+{% block layout_main_navigation %}
+
+	<div class="main-navigation" id="mainNavigation" data-flyout-menu="true">
+		{% block layout_main_navigation_navbar %}
+			<div class="container">
+				{% block layout_main_navigation_menu %}
+					<nav class="nav main-navigation-menu d-flex justify-content-center" itemscope="itemscope" itemtype="http://schema.org/SiteNavigationElement">
+						{% block layout_main_navigation_menu_home %}
+						{% endblock %}
+
+						{% block layout_main_navigation_menu_items %}
+							{% for treeItem in page.header.navigation.tree %}
+								{% set category = treeItem.category %}
+								{% set name = category.translated.name %}
+								{% set categorId = category.id %}
+
+								{% block layout_main_navigation_menu_item %}
+									{% if category.type == 'folder' %}
+										<div class="nav-link main-navigation-link" {% if treeItem.children|length > 0 %} data-flyout-menu-trigger="{{ categorId }}" {% endif %} title="{{ name }}">
+											<div class="main-navigation-link-text">
+												<span itemprop="name">
+													{{ name }}
+												</span>
+											</div>
+										</div>
+									{% else %}
+										<a class="nav-link main-navigation-link{% if categorId is same as(page.header.navigation.active.id) %} active{% endif %}" href="{% if category.externalLink %}{{ category.externalLink }}{% else %}{{ seoUrl('frontend.navigation.page', { navigationId: categorId }) }}{% endif %}" itemprop="url" {% if treeItem.children|length > 0 %} data-flyout-menu-trigger="{{ categorId }}" {% endif %} title="{{ name }}">
+											<div class="main-navigation-link-text">
+												<span itemprop="name">
+													{{ name }}
+												</span>
+											</div>
+										</a>
+									{% endif %}
+								{% endblock %}
+							{% endfor %}
+						{% endblock %}
+						{% block layout_main_navigation_menu_dearch %}
+							{% sw_include '@Kerkow/storefront/layout/navigation/search.html.twig' %}
+						{% endblock %}
+					</nav>
+				{% endblock %}
+			</div>
+		{% endblock %}
+
+		{% block layout_main_navigation_menu_flyout_wrapper %}
+			{% set navigationChildrenCount = 0 %}
+			{% for treeItem in page.header.navigation.tree %}
+				{% if treeItem.category.childCount > 0 %}
+					{% set navigationChildrenCount = navigationChildrenCount + 1 %}
+				{% endif %}
+			{% endfor %}
+
+			{% if navigationChildrenCount > 0 %}
+				{% block layout_main_navigation_menu_flyout_container %}
+					<div class="navigation-flyouts">
+						{% block layout_main_navigation_menu_flyouts %}
+							{% for treeItem in page.header.navigation.tree %}
+								{% if treeItem.children|length > 0 %}
+									{% block layout_main_navigation_menu_flyout %}
+										<div class="navigation-flyout" data-flyout-menu-id="{{ treeItem.category.id }}">
+											<div class="container">
+												{% block layout_main_navigation_menu_flyout_include %}
+													{% sw_include '@Storefront/storefront/layout/navigation/flyout.html.twig' with {navigationTree: treeItem, level: level+1, page: page} only %}
+												{% endblock %}
+											</div>
+										</div>
+									{% endblock %}
+								{% endif %}
+							{% endfor %}
+						{% endblock %}
+					</div>
+				{% endblock %}
+			{% endif %}
+		{% endblock %}
+
+		{% block layout_main_navigation_search_flyout_wrapper %}
+			{% block layout_main_navigation_search_flyout_container %}
+				<div class="navigation-flyouts d-flex justify-content-center">
+					{% block layout_main_navigation_search_flyouts %}
+						{% block layout_main_navigation_menu_search_flyout %}
+							<div class="navigation-flyout navigation-flyout-search" data-search-flyout-menu="true">
+								<div class="container">
+									{% block layout_main_navigation_search_flyout_include %}
+										{% sw_include '@kerkow/storefront/layout/navigation/search-flyout.html.twig' %}
+									{% endblock %}
+								</div>
+							</div>
+						{% endblock %}
+					{% endblock %}
+				</div>
+			{% endblock %}
+		{% endblock %}
+	</div>
+{% endblock %}
