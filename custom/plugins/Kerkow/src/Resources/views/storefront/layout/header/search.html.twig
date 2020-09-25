@@ -1,7 +1,8 @@
+{% sw_extends '@Storefront/storefront/layout/header/search.html.twig' %}
 {% block layout_header_search %}
 	<div class="mobile-search" id="searchCollapse">
 		<div class="header-search">
-			<form action="{{ path('frontend.search.page') }}" method="get" data-search-form="true" data-url="{{ path('frontend.search.suggest') }}?search=" class="header-search-form">
+			<form action="{{ path('frontend.search.page') }}" method="get" data-offcanvas-search-form="true" data-url="{{ path('frontend.search.suggest') }}?search=" class="header-search-form js-header-search-form">
 				{% block layout_header_search_input_group %}
 					<div class="input-group">
 						{% block layout_header_search_input %}

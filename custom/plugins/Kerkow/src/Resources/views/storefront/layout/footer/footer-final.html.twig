@@ -10,15 +10,18 @@
 				{% block layout_footer_service_menu_content %}
 					<div class="footer-legal">
 						<ul class="footer-service-legal-list list-unstyled">
-							{% for serviceMenuItem in page.header.serviceMenu %}
-								{% block layout_footer_service_menu_item %}
-									<li class="footer-service-legal-item">
-										<a class="footer-service-legal-link" href="{% if serviceMenuItem.externalLink %}{{ serviceMenuItem.externalLink }}{% else %}{{ seoUrl('frontend.navigation.page', { navigationId: serviceMenuItem.id }) }}{% endif %}" title="{{ serviceMenuItem.translated.name }}">
-											{{ serviceMenuItem.translated.name }}
-										</a>
-									</li>
-								{% endblock %}
-							{% endfor %}
+							{% block layout_footer_service_menu_item %}
+								<li class="footer-service-legal-item">
+									<a class="footer-service-legal-link" href="/Impressum/" title="Impressum">
+										Impressum
+									</a>
+								</li>
+								<li class="footer-service-legal-item">
+									<a class="footer-service-legal-link" href="/Datenschutz/" title="Datenschutz">
+										Datenschutz
+									</a>
+								</li>
+							{% endblock %}
 						</ul>
 					</div>
 				{% endblock %}

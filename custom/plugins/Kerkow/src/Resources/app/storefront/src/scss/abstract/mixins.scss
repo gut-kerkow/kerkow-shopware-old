@@ -4,16 +4,16 @@
   color: $kerkow-grey;
   &::-webkit-input-placeholder {
     /* Edge */
-    color: black;
+    color: #5f5f5f;
   }
 
   &:-ms-input-placeholder {
     /* Internet Explorer 10-11 */
-    color: black;
+    color: #5f5f5f;
   }
 
   &::placeholder {
-    color: black;
+    color: #5f5f5f;
   }
 }
 

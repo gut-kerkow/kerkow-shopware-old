@@ -1,18 +1,54 @@
+.offcanvas {
+  width: 100%;
+}
+@include media-breakpoint-up(md) {
+  .main-navigation-menu {
+    border-bottom: solid 1px #9c8f8f;
+  }
+}
+.main-navigation {
+  display: inherit;
+}
 .main-navigation-menu {
-  border-bottom: solid 1px #d6d6d6;
   a {
     text-transform: uppercase;
     font-weight: 600;
     color: $kerkow-blue;
   }
 }
+.nav-main-toggle-btn,
+.nav-main-close-btn {
+  position: absolute;
+  top: 2.2rem;
+  left: 1rem;
+  .menu-icon,
+  .close-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    display: inline-flex;
+    align-self: center;
+    overflow: visible;
+    svg {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+  }
+}
+
 .main-navigation-search {
-  .icon {
+  span {
     width: 1.1rem;
     height: 1.1rem;
     cursor: pointer;
-    svg path {
-      fill: $kerkow-blue;
+    display: inline-flex;
+    align-self: center;
+    overflow: visible;
+    vertical-align: top;
+    svg {
+      width: 100%;
+      height: 100%;
+      position: relative;
     }
   }
 }
@@ -47,6 +83,9 @@
   border-width: 0 0 2px 0;
   border-style: solid;
   border-color: #d6d6d6;
+  .icon {
+    color: $kerkow-blue;
+  }
 }
 .navigation-flyout {
   width: 100%;
@@ -62,6 +101,7 @@
   .main-navigation-link {
     padding-left: 0;
     padding-right: 32px;
+    padding-bottom: 0;
 
     .main-navigation-link-text {
       border-bottom: 3px solid transparent;
@@ -77,8 +117,62 @@
     }
   }
 }
-.main-navigation-menu {
-  .nav-link {
-    padding-bottom: 0;
+@include media-breakpoint-only(xs) {
+  .search-suggest {
+    ul {
+      background-color: rgba(0, 0, 0, 0.06);
+      .search-suggest-product-link,
+      .search-suggest-product.is-active {
+        font-size: 1rem !important;
+        padding: 0.2rem 0;
+      }
+    }
+  }
+  .navigation-offcanvas-list {
+    margin-bottom: 0;
+  }
+  .navigation-offcanvas-list-item {
+    border-top: 0.0625rem solid rgb(212, 212, 212);
+
+    margin: 0 1rem;
+    &:first-child {
+      border-top: 0;
+    }
+    &:last-child {
+      border-bottom: 0;
+    }
+    &.last {
+      border-bottom: 0.0625rem solid rgb(212, 212, 212);
+    }
+    .navigation-offcanvas-link {
+      color: $kerkow-blue;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+  }
+  .divider {
+    height: 0.5rem;
+    background-color: rgb(232, 232, 232);
+  }
+  .is-home-link {
+    border-bottom: 0.0625rem solid rgb(212, 212, 212);
+    color: #314e92 !important;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin: 0 1rem;
+  }
+  .footer-actions {
+    margin-top: 5rem;
+    padding: 0 1rem;
+  }
+  .header-search {
+    input[type="search"] {
+      @include kerkow-input;
+      color: #5f5f5f;
+    }
+    button[type="submit"] {
+      @include kerkow-input;
+      border-left: none;
+    }
   }
 }

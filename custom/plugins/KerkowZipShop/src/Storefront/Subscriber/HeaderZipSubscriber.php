@@ -30,13 +30,16 @@ class HeaderZipSubscriber implements EventSubscriberInterface
 
     public function onStorefrontLoaded(HeaderPageletLoadedEvent $event): void
     {
+        $extensions = $event->getPagelet()->getExtensions();
         if ($this->session->has('postalcode')) {
             //$this->session->clear();
-
             $postalcode = $this->session->get('postalcode');
-            $event->getPagelet()->setExtensions(["postalcode" => $postalcode], ["postalcode_error" => false]);
+            $extensions['postalcode'] = $postalcode;
+            $extensions['postalcode_error'] = false;
+            $event->getPagelet()->setExtensions($extensions);
         } else {
-            $event->getPagelet()->setExtensions(["postalcode_error" => false]);
+            $extensions['postalcode_error'] = false;
+            $event->getPagelet()->setExtensions($extensions);
         }
     }
 }

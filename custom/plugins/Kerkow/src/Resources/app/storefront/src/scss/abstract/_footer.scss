@@ -72,7 +72,7 @@ li.footer-column-link {
   color: white;
   background-color: $kerkow-blue;
   max-height: 4rem;
-  padding: 0 15rem;
+  padding: 0;
   @include gt-medium;
   line-height: 2rem;
   .footer-service-legal-list {

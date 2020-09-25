@@ -4,9 +4,9 @@
 	{% endblock %}
 
 	{% block layout_header_navigation %}
-		<div class="d-flex justify-content-between mb-3">
+		<div class="d-flex justify-content-center justify-content-sm-between mb-3">
 			{% block layout_header_content_navigation %}
-				<div class="p-2">
+				<div class="p-2 d-none d-sm-block">
 					{% sw_include '@kerkow/storefront/layout/header/content-navigation.html.twig' %}
 				</div>
 			{% endblock %}
@@ -16,7 +16,7 @@
 				</div>
 			{% endblock %}
 			{% block layout_header_actions %}
-				<div class="p-2">
+				<div class="p-2 d-none d-sm-block">
 					{% block layout_header_actions_account %}
 						{% sw_include '@kerkow/storefront/layout/header/header-actions.html.twig' %}
 					{% endblock %}

@@ -1,0 +1,18 @@
+{% sw_extends '@Storefront/storefront/layout/navigation/offcanvas/show-all-link.html.twig' %}
+
+{% block layout_navigation_offcanvas_navigation_home_link %}
+	{% set name = item.translated.name %}
+
+	<a class="nav-item nav-link is-home-link navigation-offcanvas-link js-navigation-offcanvas-link" href="{{ path('frontend.menu.offcanvas') }}" itemprop="url" title="{{ "general.mainMenu"|trans|striptags }}">
+		{% block layout_navigation_offcanvas_navigation_home_link_text %}
+			<span class="navigation-offcanvas-link-icon js-navigation-offcanvas-loading-icon">
+				{% block layout_utilities_offcanvas_close_icon %}
+					{% sw_icon 'arrow-medium-left' style { 'pack':'solid', 'size': 'sm' } %}
+				{% endblock %}
+			</span>
+			<span itemprop="{{ "general.mainMenu"|trans|striptags }}">
+				{{ name }}
+			</span>
+		{% endblock %}
+	</a>
+{% endblock %}

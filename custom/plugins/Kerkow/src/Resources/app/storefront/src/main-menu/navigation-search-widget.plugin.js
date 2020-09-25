@@ -23,32 +23,36 @@ export default class NavigationSearchWidgetPlugin extends Plugin {
   };
 
   init() {
+    console.log("navsearch called");
     try {
-      this._inputField = DomAccess.querySelector(
-        this.el,
+      this._inputEls = document.querySelectorAll(
         this.options.searchWidgetInputFieldSelector
       );
-      this._submitButton = DomAccess.querySelector(
-        this.el,
+      this._buttonEls = this.el.querySelectorAll(
         this.options.searchWidgetButtonFieldSelector
       );
+
       this._url = DomAccess.getAttribute(
         this.el,
         this.options.searchWidgetUrlDataAttribute
       );
     } catch (e) {
+      console.log(e);
+      console.log(e);
       return;
     }
 
     this._client = new HttpClient();
 
     // initialize the arrow navigation
-    this._navigationHelper = new ArrowNavigationHelper(
-      this._inputField,
-      this.options.searchWidgetResultSelector,
-      this.options.searchWidgetResultItemSelector,
-      true
-    );
+    Iterator.iterate(this._inputEls, (el) => {
+      this._navigationHelper = new ArrowNavigationHelper(
+        el,
+        this.options.searchWidgetResultSelector,
+        this.options.searchWidgetResultItemSelector,
+        true
+      );
+    });
 
     this._registerEvents();
   }
@@ -58,18 +62,21 @@ export default class NavigationSearchWidgetPlugin extends Plugin {
    * @private
    */
   _registerEvents() {
-    // add listener to the form's input event
-    this._inputField.addEventListener(
-      "input",
-      Debouncer.debounce(
-        this._handleInputEvent.bind(this),
-        this.options.searchWidgetDelay
-      ),
-      {
-        capture: true,
-        passive: true,
-      }
-    );
+    // register opening triggers
+    Iterator.iterate(this._inputEls, (el) => {
+      console.log(el);
+      el.addEventListener(
+        "input",
+        Debouncer.debounce(
+          this._handleInputEvent.bind(this, el),
+          this.options.searchWidgetDelay
+        ),
+        {
+          capture: true,
+          passive: true,
+        }
+      );
+    });
 
     this.el.addEventListener("submit", this._handleSearchEvent.bind(this));
 
@@ -97,8 +104,9 @@ export default class NavigationSearchWidgetPlugin extends Plugin {
    * Fire the XHR request if user inputs a search term
    * @private
    */
-  _handleInputEvent() {
-    const value = this._inputField.value;
+  _handleInputEvent(el) {
+    console.log("inputevent triggered");
+    const value = el.value;
 
     // stop search if minimum input value length has not been reached
     if (value.length < this.options.searchWidgetMinChars) {
@@ -214,8 +222,10 @@ export default class NavigationSearchWidgetPlugin extends Plugin {
       )
     ) {
       this._toggleButton.blur(); // otherwise iOS won´t focus the field.
-      this._inputField.setAttribute("tabindex", "-1");
-      this._inputField.focus();
+      Iterator.iterate(this._inputEls, (el) => {
+        el.setAttribute("tabindex", "-1");
+        el.focus();
+      });
     }
 
     this.$emitter.publish("focusInput");

@@ -1,10 +1,10 @@
 {% block layout_navigation_search %}
 
 	{% block layout_navigation_search_button %}
-		<div class="nav-link main-navigation-link main-navigation-search" data-search-flyout-menu-trigger="true">
+		<div class="nav-link main-navigation-link main-navigation-search d-none d-sm-block" data-search-flyout-menu-trigger="true">
 			<div class="main-navigation-link-text">
 				<span itemprop="name">
-					{% sw_icon 'search' %}
+					{% sw_include '@kerkow/storefront/custom/icons/search-icon.html.twig' %}
 				</span>
 			</div>
 		</div>

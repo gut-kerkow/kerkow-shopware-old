@@ -1,0 +1,8 @@
+{% sw_extends '@Storefront/storefront/layout/navigation/offcanvas/categories.html.twig' %}
+
+
+{% block header_navigation_offcanvas_footer_action %}
+	{{ parent() }}
+
+	{% sw_include '@KerkowZipShop/storefront/layout/header/actions/zip-widget.html.twig' %}
+{% endblock %}
