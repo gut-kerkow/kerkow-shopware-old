@@ -6,3 +6,20 @@ This file is used to override default SCSS variables from the Shopware Storefron
 Because of the !default flags, theme variable overrides have to be declared beforehand.
 https://getbootstrap.com/docs/4.0/getting-started/theming/#variable-defaults
 */
+
+@import "abstract/partials/fonts";
+@import "abstract/partials/colors";
+@import "abstract/variables";
+@import "abstract/mixins";
+
+//buttons
+$btn-font-family: $kerkow-font-family-base;
+$btn-font-weight: 600;
+$body-color: $kerkow-blue;
+$btn-border-width: 1px;
+
+//links
+$link-color: $kerkow-blue;
+
+// mix
+$background: $kerkow-blue;

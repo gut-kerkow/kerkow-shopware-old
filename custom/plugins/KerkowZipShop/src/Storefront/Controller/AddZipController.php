@@ -73,7 +73,7 @@ class AddZipController extends StorefrontController
             $postalcode_error = false;
         } else {
             $postalcode_error = true;
-            $result = false;
+            $result = $param;
         }
         return $this->renderStorefront('@KerkowZipShop/storefront/layout/header/header-zip-menu-form.html.twig', ['postalcode' => $result, 'postalcode_error' => $postalcode_error]);
     }

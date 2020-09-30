@@ -18,10 +18,10 @@
 		}
 	</style>
 	<div class="cms-two-image-full-stretch-images d-flex flex-row">
-		<div class="cms-image-first-full-stretch-image col-md-6">
+		<div class="cms-image-first-full-stretch-image col-12 col-md-6">
 			{% sw_include "@Storefront/storefront/element/cms-element-" ~ content.type ~ ".html.twig" ignore missing with {"element": content} %}
 
 		</div>
-		<div class="cms-image-second-full-stretch-image col-md-6"></div>
+		<div class="cms-image-second-full-stretch-image col-12 col-md-6"></div>
 	</div>
 {% endblock %}

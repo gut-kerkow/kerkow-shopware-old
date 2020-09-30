@@ -1,13 +1,97 @@
-.offcanvas {
-  width: 100%;
-}
-@include media-breakpoint-up(md) {
-  .main-navigation-menu {
-    border-bottom: solid 1px #9c8f8f;
+.search-suggest {
+  ul {
+    background-color: rgba(0, 0, 0, 0.06);
+    .search-suggest-product-link,
+    .search-suggest-product.is-active {
+      font-size: 1rem !important;
+      padding: 0.2rem 0;
+    }
   }
 }
-.main-navigation {
-  display: inherit;
+.navigation-offcanvas-list {
+  margin-bottom: 0;
+}
+.navigation-offcanvas-list-item {
+  border-top: 0.0625rem solid rgb(212, 212, 212);
+
+  margin: 0 1rem;
+  &:first-child {
+    border-top: 0;
+  }
+  &:last-child {
+    border-bottom: 0;
+  }
+  &.last {
+    border-bottom: 0.0625rem solid rgb(212, 212, 212);
+  }
+  .navigation-offcanvas-link {
+    color: $kerkow-blue;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+}
+.divider {
+  height: 0.5rem;
+  background-color: rgb(232, 232, 232);
+}
+.is-home-link {
+  border-bottom: 0.0625rem solid rgb(212, 212, 212);
+  color: #314e92 !important;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin: 0 1rem;
+}
+.footer-actions {
+  margin-top: 5rem;
+  padding: 0 1rem;
+  .navbar-nav {
+    margin: 0 1rem;
+  }
+  ul {
+    flex-direction: row;
+    font-size: 1rem;
+    .icon {
+      width: 2rem;
+      height: 2rem;
+      display: inline-flex;
+      align-self: center;
+      overflow: visible;
+      margin-right: 0.5rem;
+      svg {
+        width: 100%;
+        height: 100%;
+        top: 0.25em;
+        position: relative;
+        color: $kerkow-blue;
+      }
+    }
+  }
+}
+.header-search {
+  input[type="search"] {
+    @include kerkow-input;
+    color: #5f5f5f;
+  }
+  button[type="submit"] {
+    @include kerkow-input;
+    border-left: none;
+    z-index: inherit;
+  }
+}
+.search-suggest-total {
+  padding: 1rem 0.5rem 0 0;
+  font-size: 0.8rem;
+  a {
+    margin-right: 0.5rem;
+    .icon {
+      width: 1rem;
+      height: 1rem;
+      margin: 0;
+    }
+  }
+}
+.offcanvas {
+  width: 100%;
 }
 .main-navigation-menu {
   a {
@@ -16,6 +100,9 @@
     color: $kerkow-blue;
   }
 }
+.main-navigation {
+  display: inherit;
+}
 .nav-main-toggle-btn,
 .nav-main-close-btn {
   position: absolute;
@@ -23,8 +110,8 @@
   left: 1rem;
   .menu-icon,
   .close-icon {
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 1.7rem;
+    height: 1.7rem;
     display: inline-flex;
     align-self: center;
     overflow: visible;
@@ -35,7 +122,6 @@
     }
   }
 }
-
 .main-navigation-search {
   span {
     width: 1.1rem;
@@ -97,82 +183,26 @@
   height: 0;
 }
 
-@include media-breakpoint-up(md) {
-  .main-navigation-link {
-    padding-left: 0;
-    padding-right: 32px;
-    padding-bottom: 0;
+.main-navigation-link {
+  padding-left: 0;
+  padding-right: 32px;
+  padding-bottom: 0;
 
+  .main-navigation-link-text {
+    border-bottom: 3px solid transparent;
+    padding-bottom: 3px;
+  }
+
+  &.active,
+  &:hover {
     .main-navigation-link-text {
-      border-bottom: 3px solid transparent;
-      padding-bottom: 3px;
-    }
-
-    &.active,
-    &:hover {
-      .main-navigation-link-text {
-        border-color: $kerkow-blue;
-        color: $kerkow-blue;
-      }
+      border-color: $kerkow-blue;
+      color: $kerkow-blue;
     }
   }
 }
-@include media-breakpoint-only(xs) {
-  .search-suggest {
-    ul {
-      background-color: rgba(0, 0, 0, 0.06);
-      .search-suggest-product-link,
-      .search-suggest-product.is-active {
-        font-size: 1rem !important;
-        padding: 0.2rem 0;
-      }
-    }
-  }
-  .navigation-offcanvas-list {
-    margin-bottom: 0;
-  }
-  .navigation-offcanvas-list-item {
-    border-top: 0.0625rem solid rgb(212, 212, 212);
-
-    margin: 0 1rem;
-    &:first-child {
-      border-top: 0;
-    }
-    &:last-child {
-      border-bottom: 0;
-    }
-    &.last {
-      border-bottom: 0.0625rem solid rgb(212, 212, 212);
-    }
-    .navigation-offcanvas-link {
-      color: $kerkow-blue;
-      text-transform: uppercase;
-      font-weight: 600;
-    }
-  }
-  .divider {
-    height: 0.5rem;
-    background-color: rgb(232, 232, 232);
-  }
-  .is-home-link {
-    border-bottom: 0.0625rem solid rgb(212, 212, 212);
-    color: #314e92 !important;
-    text-transform: uppercase;
-    font-weight: 600;
-    margin: 0 1rem;
-  }
-  .footer-actions {
-    margin-top: 5rem;
-    padding: 0 1rem;
-  }
-  .header-search {
-    input[type="search"] {
-      @include kerkow-input;
-      color: #5f5f5f;
-    }
-    button[type="submit"] {
-      @include kerkow-input;
-      border-left: none;
-    }
+@include media-breakpoint-up(sm) {
+  .main-navigation-menu {
+    border-bottom: solid 1px #9c8f8f;
   }
 }

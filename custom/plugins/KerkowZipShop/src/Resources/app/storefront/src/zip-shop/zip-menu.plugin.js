@@ -21,7 +21,7 @@ export default class OffCanvasZipMenu extends Plugin {
     /**
      * ID for the form
      */
-    headerZipFormSelector: "#js-add-zip-form-header",
+    headerZipFormSelector: ".js-add-zip-form-header",
 
     headerZipShopUrlDataAttribute: "data-url",
 
@@ -69,7 +69,6 @@ export default class OffCanvasZipMenu extends Plugin {
       return;
     }
     this._client = new HttpClient();
-    console.log(this);
 
     this._registerEventListeners();
   }
@@ -172,7 +171,6 @@ export default class OffCanvasZipMenu extends Plugin {
    * @private
    */
   _queryZip(value) {
-    console.log("querying");
     const url = this._url + encodeURIComponent(value);
 
     // init loading indicator
@@ -204,8 +202,6 @@ export default class OffCanvasZipMenu extends Plugin {
    * @private
    */
   _onZipHeaderRemoveZip() {
-    console.log("triggered");
-
     event.preventDefault();
     event.stopPropagation();
     const url = this._removeUrl;

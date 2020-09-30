@@ -1,6 +1,6 @@
 {% block header_zip_menu_form %}
 	<div class="header-zip-form-container">
-		<form action="{{ path('frontend.custom.addZipHeader') }}" method="get" data-url="{{ path('frontend.custom.addZipHeader') }}?zip=" id="js-add-zip-form-header" class="add-zip-header">
+		<form action="{{ path('frontend.custom.addZipHeader') }}" method="get" data-url="{{ path('frontend.custom.addZipHeader') }}?zip=" class="js-add-zip-form-header add-zip-header">
 			<div class="form-row add-zip-container">
 				<div class="input-group mb-3">
 					{% if postalcode %}
@@ -28,7 +28,7 @@
 				{{ 'kerkow.zipShop.notInDeliveryArea' | trans }}
 			</div>
 		{% endif %}
-		{% if page.header.extensions.postalcode or postalcode %}
+		{% if page.header.extensions.postalcode or (postalcode and not postalcode_error) %}
 			<div class="header-zip-form-success">
 				{{ 'kerkow.zipShop.successDeliveryArea' | trans }}
 			</div>

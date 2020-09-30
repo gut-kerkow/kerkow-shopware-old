@@ -3,11 +3,10 @@
     @extend .d-flex, .justify-content-center;
   }
   .cms-element-text {
-    width: 50%;
     h2,
     p {
       @include gt-bold-italic;
-      font-size: 2.5rem;
+      font-size: 1.5rem;
       color: $kerkow-blue;
     }
     p {
@@ -28,10 +27,10 @@
   .cms-element-text {
     background-color: $kerkow-blue;
     color: white;
-    padding: 3.5rem;
+    padding: 2.5rem;
     h2 {
       @include gt-bold-italic;
-      font-size: 3rem;
+      font-size: 2rem;
       color: white;
       margin-bottom: 2rem;
     }
@@ -47,7 +46,6 @@
 }
 .kerkow-newsletter-form {
   border-top: 12px solid rgb(235, 235, 235);
-  padding: 0 20rem;
   width: 100%;
   .form-label {
     display: none;
@@ -59,12 +57,11 @@
   }
   .kerkow-newsletter-headline {
     font-weight: bold;
-    margin: 4rem 9rem 0.2rem;
+    margin: 4rem 0 0.2rem;
   }
   input[type="email"] {
     @include kerkow-input;
     width: 300px;
-    margin-right: 30px;
     &::-webkit-input-placeholder {
       /* Edge */
       text-align: center;
@@ -89,6 +86,7 @@
     width: 100%;
     margin-top: 2rem;
     text-align: center;
+    padding: 0 1rem;
     p {
       a {
         font-family: $kerkow-font-family-base;
@@ -106,4 +104,14 @@
 }
 .kerkow-newsletter-form-container {
   width: 100%;
+}
+.cms-block-image-text-cover {
+  .cms-image-container {
+    &.is-cover {
+      height: 16rem;
+    }
+  }
+  .cms-row > :first-child {
+    margin-bottom: 0;
+  }
 }

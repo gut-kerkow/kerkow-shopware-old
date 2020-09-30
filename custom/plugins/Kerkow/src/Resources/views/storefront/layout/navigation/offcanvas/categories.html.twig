@@ -32,7 +32,7 @@
 			{% block utilities_offcanvas_footer_actions %}
 				<nav class="footer-actions">
 					{% sw_include '@Storefront/storefront/layout/header/search.html.twig' %}
-					<ul class="navbar-nav mr-auto">
+					<ul class="navbar-nav d-flex justify-content-between">
 						{% block header_navigation_offcanvas_footer_action %}
 							{% sw_include '@kerkow/storefront/layout/header/actions/account-widget.html.twig' %}
 						{% endblock %}

@@ -1,7 +1,10 @@
-@import "abstract/variables";
-@import "abstract/mixins";
+/*
+ * Vendors
+ * ------- */
 @import "abstract/partials/fonts";
 @import "abstract/partials/colors";
+@import "abstract/variables";
+@import "abstract/mixins";
 @import "abstract/header";
 @import "abstract/navigation";
 @import "abstract/footer";

@@ -1,11 +1,11 @@
 {% sw_extends '@Storefront/storefront/layout/footer/footer.html.twig' %}
 {% block layout_footer_inner_container %}
 	{% block layout_footer_navigation %}
-		<div id="footerColumns" class="footer-columns" data-collapse-footer="true">
-			<div class="d-flex justify-content-around">
+		<div id="footerColumns" class="footer-columns">
+			<div class="d-flex row">
 				{% block layout_footer_navigation_columns %}
-					<div class="footer-column js-footer-column">
-						<span class="footer-column-headline">
+					<div class="col-6 footer-column">
+						<span class="footer-column-headline d-none d-sm-block">
 							{{ "kerkow.footer.headlineQuickStart" |trans}}
 						</span>
 						<ul class="list-unstyled">
@@ -25,49 +25,81 @@
 
 								{% endblock %}
 							{% endfor %}
-							// Hier noch weitere Links einbauen
+							<li class="footer-column-link">
+								<a class="footer-link" href="/Hof-Handwerk/" title="Hof und Handwerk">
+									Hof & Handwerk
+								</a>
+							</li>
+							<li class="footer-column-link">
+								<a class="footer-link" href="Laeden-Verkauf" title="Läden und Verkauf">
+									Läden & Verkauf
+								</a>
+							</li>
 						</ul>
 					</div>
 				{% endblock %}
 
 				{% block layout_footer_navigation_social %}
 
-					<div class="footer-column js-footer-column">
-						<span class="footer-column-headline">
-							{{ "kerkow.footer.headlineSocial" |trans}}
-						</span>
-						<ul class="list-unstyled">
-							<li class="footer-column-link">
-								<a href="https://www.facebook.com/gutkerkow/" target="_blank" title='{{ "kerkow.social.onFacebook" |trans }}'>
-									<span class="social-icon">
-										{% block layout_footer_navigation_social_facebook %}
-											{% sw_include '@kerkow/storefront/custom/icons/facebook.html.twig' %}
+					<div class="col-6 footer-column footer-column-social">
+						<div class="d-flex align-items-start flex-column">
+							<div class="mb-auto">
+								<span class="footer-column-headline d-none d-sm-block">
+									{{ "kerkow.footer.headlineSocial" |trans}}
+								</span>
+								<ul class="list-unstyled">
+									<li class="footer-column-link">
+										<a href="https://www.facebook.com/gutkerkow/" target="_blank" title='{{ "kerkow.social.onFacebook" |trans }}'>
+											<span class="social-icon">
+												{% block layout_footer_navigation_social_facebook %}
+													{% sw_include '@kerkow/storefront/custom/icons/facebook.html.twig' %}
+												{% endblock %}
+											</span>
+											<span>
+												Facebook
+											</span>
+										</a>
+									</li>
+									<li class="footer-column-link">
+										<a href="https://www.instagram.com/gutkerkow/" target="_blank" title='{{ "kerkow.social.onInstagram" |trans }}'>
+											<span class="social-icon">
+												{% block layout_footer_navigation_social_instagram %}
+													{% sw_include '@kerkow/storefront/custom/icons/instagram.html.twig' %}
+												{% endblock %}
+											</span>
+											<span>
+												Instagram
+											</span>
+										</a>
+									</li>
+								</ul>
+							</div>
+							<div class="d-block d-sm-none">
+								{% block layout_footer_service_menu_content %}
+									<ul class="footer-service-legal-list list-unstyled">
+										{% block layout_footer_service_menu_item %}
+											<li class="footer-column-link">
+												<a class="footer-service-legal-link" href="/Impressum/" title="Impressum">
+													Impressum
+												</a>
+											</li>
+											<li class="footer-column-link">
+												<a class="footer-service-legal-link" href="/Datenschutz/" title="Datenschutz">
+													Datenschutz
+												</a>
+											</li>
 										{% endblock %}
-									</span>
-									<span>
-										Facebook
-									</span>
-								</a>
-							</li>
-							<li class="footer-column-link">
-								<a href="https://www.instagram.com/gutkerkow/" target="_blank" title='{{ "kerkow.social.onInstagram" |trans }}'>
-									<span class="social-icon">
-										{% block layout_footer_navigation_social_instagram %}
-											{% sw_include '@kerkow/storefront/custom/icons/instagram.html.twig' %}
-										{% endblock %}
-									</span>
-									<span>
-										Instagram
-									</span>
-								</a>
-							</li>
-						</ul>
+									</ul>
+								{% endblock %}
+							</div>
+						</div>
+
 					</div>
 
 				{% endblock %}
 
 				{% block layout_footer_navigation_contact %}
-					<div class="footer-column js-footer-column">
+					<div class="footer-column col-12">
 						<span class="footer-column-headline">
 							{{ "kerkow.footer.headlineContact" |trans}}
 						</span>

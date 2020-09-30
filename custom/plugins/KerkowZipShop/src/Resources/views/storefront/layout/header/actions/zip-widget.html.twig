@@ -3,7 +3,12 @@
 		<div class="dropdown">
 			{% block layout_header_actions_zip_widget_dropdown_button %}
 				<div class="nav-link zip-menu-btn header-actions-btn js-zip-menu-btn" id="zipWidget" data-zip-menu="true" data-offcanvas-zip-menu="true" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" aria-label="{{ "account.myZip"|trans|striptags }}">
-					Postleitzahl
+					<span class="icon location-icon d-sm-none">
+						{% sw_include '@kerkow/storefront/custom/icons/location-icon.html.twig' %}
+					</span>
+					<span>
+						Postleitzahl
+					</span>
 				</div>
 			{% endblock %}
 

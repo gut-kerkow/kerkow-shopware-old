@@ -1,62 +1,139 @@
+@include media-breakpoint-only(xs) {
+  // Switch positions of products to have the badge placed 2nd
+  .card-col {
+    &:first-of-type {
+      -webkit-box-ordinal-group: 1;
+      -moz-box-ordinal-group: 1;
+      -ms-flex-order: 1;
+      -webkit-order: 1;
+      order: 1;
+    }
+    &:nth-of-type(2) {
+      -webkit-box-ordinal-group: 3;
+      -moz-box-ordinal-group: 3;
+      -ms-flex-order: 3;
+      -webkit-order: 3;
+      order: 3;
+    }
+    &:nth-of-type(3) {
+      -webkit-box-ordinal-group: 4;
+      -moz-box-ordinal-group: 4;
+      -ms-flex-order: 4;
+      -webkit-order: 4;
+      order: 4;
+    }
+    &:nth-of-type(4) {
+      -webkit-box-ordinal-group: 2;
+      -moz-box-ordinal-group: 2;
+      -ms-flex-order: 2;
+      -webkit-order: 2;
+      order: 2;
+    }
+  }
+  .card-col {
+    &:nth-child(1) {
+      padding-right: $grid-gutter-width/4;
+    }
+    &:nth-child(2) {
+      padding-right: $grid-gutter-width/4;
+    }
+    &:nth-child(3) {
+      padding-left: $grid-gutter-width/4;
+    }
+    &:nth-child(4) {
+      padding-left: $grid-gutter-width/4;
+    }
+  }
+}
 .cms-block-product-four-column-badge {
   .badge-container {
     width: 100%;
     position: relative;
-    top: -40px;
-    right: -20px;
+    top: -1.5rem;
+    right: -0.5rem;
+    .cms-element-text {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      a:hover {
+        text-decoration: none;
+      }
+      h2 {
+        text-align: center;
+        position: relative;
+        width: 100%;
+        top: 2.5rem;
+        right: -0.25rem;
+        font-size: 1.2rem;
+        line-height: normal;
+        vertical-align: middle;
+        color: white;
+        @include gt-bold-italic;
+        transform: rotate(15deg);
+      }
+      p {
+        text-align: center;
+        position: relative;
+        width: 80%;
+        font-size: 0.8rem;
+        line-height: normal;
+        top: 2rem;
+        right: -0.5rem;
+        vertical-align: middle;
+        color: white;
+        font-weight: 400;
+        font-family: $kerkow-font-family-base;
+        transform: rotate(15deg);
+      }
+    }
+    &:after {
+      content: "";
+      display: block;
+      padding-bottom: 100%;
+    }
   }
-  .badge-container:after {
-    content: "";
-    display: block;
-    padding-bottom: 100%;
-  }
+
   .square {
     position: relative;
     width: 100%;
     background-color: $kerkow-blue;
     border-radius: 50%;
-  }
-  .square:after {
-    content: "";
-    display: block;
-    padding-bottom: 100%;
-  }
-  .cms-element-text {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    a:hover {
-      text-decoration: none;
-    }
-    h2 {
-      text-align: center;
-      position: relative;
-      width: 15vw;
-      top: 5vw;
-      right: -3.75vw;
-      vertical-align: middle;
-      color: white;
-      @include gt-bold-italic;
-      font-size: 2.2vw;
-      transform: rotate(15deg);
-      line-height: 3vw;
-    }
-    p {
-      text-align: center;
-      position: relative;
-      width: 15vw;
-      top: 6vw;
-      right: -2.2vw;
-      vertical-align: middle;
-      color: white;
-      font-weight: 400;
-      font-family: $kerkow-font-family-base;
-      font-size: 1.2vw;
-      transform: rotate(15deg);
-      line-height: 1.4vw;
+    &:after {
+      content: "";
+      display: block;
+      padding-bottom: 100%;
     }
   }
 }
 .cms-block {
   overflow: visible;
+}
+//
+
+@include media-breakpoint-up(sm) {
+  .cms-block-product-four-column-badge {
+    .badge-container {
+      top: -40px;
+      right: -20px;
+    }
+
+    .cms-element-text {
+      h2 {
+        width: 15vw;
+        top: 5vw;
+        right: -3.75vw;
+
+        font-size: 2.2vw;
+        line-height: 3vw;
+      }
+      p {
+        width: 15vw;
+        top: 6vw;
+        right: -2.2vw;
+
+        font-size: 1.2vw;
+        line-height: 1.4vw;
+      }
+    }
+  }
 }

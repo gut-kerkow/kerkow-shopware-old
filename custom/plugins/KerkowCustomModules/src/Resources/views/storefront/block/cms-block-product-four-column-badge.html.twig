@@ -4,7 +4,7 @@
 	{% block block_product_four_column_badge_one %}
 		{% set element = block.slots.getSlot('one') %}
 
-		<div class="col-md-3 card-col" data-cms-element-id="{{ id }}">
+		<div class="col-6 col-md-3 card-col" data-cms-element-id="{{ id }}">
 			{% block block_product_four_column_badge_one_inner %}
 				{% sw_include "@Storefront/storefront/element/cms-element-" ~ element.type ~ ".html.twig" ignore missing %}
 			{% endblock %}
@@ -14,7 +14,7 @@
 	{% block block_product_four_column_badge_two %}
 		{% set element = block.slots.getSlot('two') %}
 
-		<div class="col-md-3 card-col" data-cms-element-id="{{ id }}">
+		<div class="col-6 col-md-3 card-col" data-cms-element-id="{{ id }}">
 			{% block block_product_four_column_badge_two_inner %}
 				{% sw_include "@Storefront/storefront/element/cms-element-" ~ element.type ~ ".html.twig" ignore missing %}
 			{% endblock %}
@@ -24,7 +24,7 @@
 	{% block block_product_four_column_badge_three %}
 		{% set element = block.slots.getSlot('three') %}
 
-		<div class="col-md-3 card-col" data-cms-element-id="{{ id }}">
+		<div class="col-6 col-md-3 card-col" data-cms-element-id="{{ id }}">
 			{% block block_product_four_column_badge_three_inner %}
 				{% sw_include "@Storefront/storefront/element/cms-element-" ~ element.type ~ ".html.twig" ignore missing %}
 			{% endblock %}
@@ -34,7 +34,7 @@
 	{% block block_product_four_column_badge_four %}
 		{% set element = block.slots.getSlot('four') %}
 
-		<div class="col-md-3 card-col" data-cms-element-id="{{ id }}">
+		<div class="col-6 col-md-3 card-col" data-cms-element-id="{{ id }}">
 			<div class="badge-container">
 				<div class="square">
 					{% block block_product_four_column_badge_four_inner %}

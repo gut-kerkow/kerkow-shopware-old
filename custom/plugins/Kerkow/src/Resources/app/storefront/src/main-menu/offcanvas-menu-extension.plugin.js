@@ -50,10 +50,14 @@ export default class OffcanvasMenuExtensionPlugin extends OffcanvasMenuPlugin {
     accountDropdownMenuSelector: ".js-account-menu-dropdown",
     accountMenuOffcanvas: "account-menu-offcanvas",
 
-    // add Elements for account widget
+    // add Elements for zip widget
     zipWidgetTriggerButton: ".js-zip-menu-btn",
     zipDropdownMenuSelector: ".js-zip-menu-dropdown",
+    zipFormSelector: ".js-add-zip-form-header",
     zipMenuOffcanvas: "zip-menu-offcanvas",
+    headerZipBodySelector: ".js-zip-form-container",
+    headerZipRemoveLinkSelector: ".js-header-zip-widget-remove-link",
+    zipShopZipRegex: /^01\d{2}[1-9]|0[2-9]\d{3}|[1-9]\d{3}[0-8]|[1-9]\d{3}(?<!9999)9$/,
   };
   /**
    * register triggers
@@ -99,16 +103,17 @@ export default class OffcanvasMenuExtensionPlugin extends OffcanvasMenuPlugin {
    * @private
    */
   _appendZipWidget(offcanvas) {
-    this._zipButton = DomAccess.querySelector(
-      offcanvas,
+    this._zipButtons = offcanvas.querySelectorAll(
       this.options.zipWidgetTriggerButton
     );
     const event = DeviceDetection.isTouchDevice() ? "touchstart" : "click";
 
-    this._zipButton.addEventListener(
-      event,
-      this._onClickZipMenuTrigger.bind(this, this._zipButton)
-    );
+    Iterator.iterate(this._zipButtons, (button) => {
+      button.addEventListener(
+        event,
+        this._onClickZipMenuTrigger.bind(this, button)
+      );
+    });
 
     document.addEventListener(
       "Viewport/hasChanged",
@@ -122,16 +127,17 @@ export default class OffcanvasMenuExtensionPlugin extends OffcanvasMenuPlugin {
    * @private
    */
   _appendAccountWidget(offcanvas) {
-    this._accountButton = DomAccess.querySelector(
-      offcanvas,
+    this._accountButtons = offcanvas.querySelectorAll(
       this.options.accountWidgetTriggerButton
     );
     const event = DeviceDetection.isTouchDevice() ? "touchstart" : "click";
 
-    this._accountButton.addEventListener(
-      event,
-      this._onClickAccountMenuTrigger.bind(this, this._accountButton)
-    );
+    Iterator.iterate(this._accountButtons, (button) => {
+      button.addEventListener(
+        event,
+        this._onClickAccountMenuTrigger.bind(this, button)
+      );
+    });
 
     document.addEventListener(
       "Viewport/hasChanged",
@@ -145,28 +151,37 @@ export default class OffcanvasMenuExtensionPlugin extends OffcanvasMenuPlugin {
    * @private
    */
   _appendSearchWidget(offcanvas) {
-    this._searchForm = DomAccess.querySelector(
-      offcanvas,
-      this.options.searchForm
-    );
-    this._inputEl = DomAccess.querySelector(
-      this._searchForm,
-      this.options.searchInputField
-    );
-    this._submitButton = DomAccess.querySelector(
-      this._searchForm,
-      this.options.searchSubmitButton
-    );
-    // Add EventListeners
-    this._inputEl.addEventListener("input", this._handleInputEvent.bind(this));
-    this._navigationHelper = new ArrowNavigationHelper(
-      this._inputEl,
-      this.options.searchFormSearchResults,
-      this.options.searchFormSearchResult,
-      true
-    );
-    this._url = DomAccess.getAttribute(this._searchForm, this.options.dataUrl);
-    this._client = new HttpClient();
+    this._searchForms = offcanvas.querySelectorAll(this.options.searchForm);
+    Iterator.iterate(this._searchForms, (form) => {
+      const inputEl = DomAccess.querySelector(
+        form,
+        this.options.searchInputField
+      );
+      const submitButton = DomAccess.querySelector(
+        form,
+        this.options.searchSubmitButton
+      );
+      // Add EventListeners
+      this._navigationHelper = new ArrowNavigationHelper(
+        inputEl,
+        this.options.searchFormSearchResults,
+        this.options.searchFormSearchResult,
+        true
+      );
+      const url = form.getAttribute(this.options.dataUrl);
+      const client = new HttpClient();
+      inputEl.addEventListener(
+        "input",
+        this._handleInputEvent.bind(
+          this,
+          form,
+          inputEl,
+          submitButton,
+          client,
+          url
+        )
+      );
+    });
     // add click event listener to body
     const event = DeviceDetection.isTouchDevice() ? "touchstart" : "click";
     document.body.addEventListener(event, this._onBodyClick.bind(this));
@@ -186,7 +201,9 @@ export default class OffcanvasMenuExtensionPlugin extends OffcanvasMenuPlugin {
     style.innerHTML =
       ".account-menu-offcanvas {top: " +
       header.offsetHeight +
-      "px; } .modal-backdrop {top: " +
+      "px; height: " +
+      (window.innerHeight - header.offsetHeight) +
+      "px;} .modal-backdrop {top: " +
       header.offsetHeight +
       "px;}";
     header.appendChild(style);
@@ -205,6 +222,7 @@ export default class OffcanvasMenuExtensionPlugin extends OffcanvasMenuPlugin {
       true,
       OffCanvas.REMOVE_OFF_CANVAS_DELAY()
     );
+
     OffCanvas.setAdditionalClassName(this.options.accountMenuOffcanvas);
 
     this.$emitter.publish("onClickAccountMenuTrigger");
@@ -224,7 +242,9 @@ export default class OffcanvasMenuExtensionPlugin extends OffcanvasMenuPlugin {
     style.innerHTML =
       ".zip-menu-offcanvas {top: " +
       header.offsetHeight +
-      "px; } .modal-backdrop {top: " +
+      "px; height: " +
+      (window.innerHeight - header.offsetHeight) +
+      "px;} .modal-backdrop {top: " +
       header.offsetHeight +
       "px;}";
     header.appendChild(style);
@@ -244,8 +264,148 @@ export default class OffcanvasMenuExtensionPlugin extends OffcanvasMenuPlugin {
       OffCanvas.REMOVE_OFF_CANVAS_DELAY()
     );
     OffCanvas.setAdditionalClassName(this.options.zipMenuOffcanvas);
+    const offcanvas = OffCanvas.getOffCanvas();
 
+    const zipForm = DomAccess.querySelector(
+      offcanvas[0],
+      this.options.zipFormSelector
+    );
+
+    zipForm.addEventListener(
+      "submit",
+      this._onZipFormSubmission.bind(event, this, offcanvas[0])
+    );
+
+    const zipRemove = DomAccess.querySelector(
+      offcanvas[0],
+      this.options.headerZipRemoveLinkSelector
+    );
+    zipRemove.addEventListener(
+      "click",
+      this._onZipHeaderRemoveZip.bind(event, this, offcanvas[0])
+    );
     this.$emitter.publish("onClickZipMenuTrigger");
+  }
+
+  /**
+   * On submiting the form validate if the entered zip is valid and
+   * if so trigger the actual query
+   * @private
+   */
+  _onZipFormSubmission(This, offcanvas) {
+    event.preventDefault();
+    event.stopPropagation();
+    const form = DomAccess.querySelector(offcanvas, "form");
+    const inputField = DomAccess.querySelector(form, "input");
+    const value = inputField.value;
+    const url = form.getAttribute(This.options.dataUrl);
+    const submitButton = DomAccess.querySelector(form, "button[type=submit]");
+    if (!This._validateZip(value)) {
+      inputField.classList.add("is-invalid");
+      return;
+    }
+    inputField.classList.add("is-valid");
+    inputField.classList.remove("is-invalid");
+
+    This._queryZip(form, value, url, submitButton, offcanvas);
+
+    This.$emitter.publish("handleZipFormSubmissionEvent", { value });
+  }
+
+  /**
+   * Process the AJAX suggest and show results
+   * @param {string} value
+   * @private
+   */
+  _queryZip(form, value, url, submitButton, offcanvas) {
+    const encodedUrl = url + encodeURIComponent(value);
+
+    // init loading indicator
+    const indicator = new ButtonLoadingIndicator(submitButton);
+    indicator.create();
+
+    this.$emitter.publish("beforeSearch");
+
+    this._client.abort();
+    this._client.get(encodedUrl, (response) => {
+      // remove indicator
+      indicator.remove();
+
+      // attach zip query result to modal
+      const body = DomAccess.querySelector(
+        offcanvas,
+        this.options.headerZipBodySelector
+      );
+      body.innerHTML = response;
+      const newZipForm = DomAccess.querySelector(body, "form");
+      newZipForm.addEventListener(
+        "submit",
+        this._onZipFormSubmission.bind(event, this, offcanvas)
+      );
+
+      const zipRemove = DomAccess.querySelector(
+        body,
+        this.options.headerZipRemoveLinkSelector
+      );
+      zipRemove.addEventListener(
+        "click",
+        this._onZipHeaderRemoveZip.bind(event, this, offcanvas)
+      );
+
+      this.$emitter.publish("afterSuggest");
+    });
+  }
+
+  /**
+   * Process the AJAX suggest and show results
+   * @param {string} value
+   * @private
+   */
+  _validateZip(value) {
+    if (!value.match(this.options.zipShopZipRegex)) {
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * On clicking the remove link
+   * @param trigger
+   * @private
+   */
+  _onZipHeaderRemoveZip(This, offcanvas) {
+    event.preventDefault();
+    event.stopPropagation();
+    const url = DomAccess.getAttribute(event.target, "data-url");
+
+    This.$emitter.publish("beforeRemove");
+
+    const body = DomAccess.querySelector(
+      offcanvas,
+      This.options.headerZipBodySelector
+    );
+    This._client.abort();
+    This._client.get(url, (response) => {
+      // attach result to header action
+      body.innerHTML = response;
+
+      const newZipForm = DomAccess.querySelector(body, "form");
+      newZipForm.addEventListener(
+        "submit",
+        This._onZipFormSubmission.bind(event, This, offcanvas)
+      );
+
+      const zipRemove = DomAccess.querySelector(
+        body,
+        This.options.headerZipRemoveLinkSelector
+      );
+      zipRemove.addEventListener(
+        "click",
+        This._onZipHeaderRemoveZip.bind(event, This, body)
+      );
+
+      This.$emitter.publish("afterRemove");
+    });
   }
 
   /**
@@ -282,8 +442,8 @@ export default class OffcanvasMenuExtensionPlugin extends OffcanvasMenuPlugin {
    * Fire the XHR request if user inputs a search term
    * @private
    */
-  _handleInputEvent() {
-    const value = this._inputEl.value;
+  _handleInputEvent(form, inputEl, submitButton, client, url) {
+    const value = inputEl.value;
 
     // stop search if minimum input value length has not been reached
     if (value.length < 3) {
@@ -292,7 +452,7 @@ export default class OffcanvasMenuExtensionPlugin extends OffcanvasMenuPlugin {
       return;
     }
 
-    this._suggest(value);
+    this._suggest(value, form, submitButton, client, url);
 
     this.$emitter.publish("handleInputEvent", { value });
   }
@@ -302,17 +462,17 @@ export default class OffcanvasMenuExtensionPlugin extends OffcanvasMenuPlugin {
    * @param {string} value
    * @private
    */
-  _suggest(value) {
-    const url = this._url + encodeURIComponent(value);
+  _suggest(value, form, submitButton, client, url) {
+    const encodedUrl = url + encodeURIComponent(value);
 
     // init loading indicator
-    const indicator = new ButtonLoadingIndicator(this._submitButton);
+    const indicator = new ButtonLoadingIndicator(submitButton);
     indicator.create();
 
     this.$emitter.publish("beforeSearch");
 
-    this._client.abort();
-    this._client.get(url, (response) => {
+    client.abort();
+    client.get(encodedUrl, (response) => {
       // remove existing search results popover first
       this._clearSuggestResults();
 
@@ -320,7 +480,7 @@ export default class OffcanvasMenuExtensionPlugin extends OffcanvasMenuPlugin {
       indicator.remove();
 
       // attach search results to the DOM
-      this._searchForm.insertAdjacentHTML("beforeend", response);
+      form.insertAdjacentHTML("beforeend", response);
 
       this.$emitter.publish("afterSuggest");
     });
@@ -375,7 +535,9 @@ export default class OffcanvasMenuExtensionPlugin extends OffcanvasMenuPlugin {
     style.innerHTML =
       ".navigation-offcanvas {top: " +
       header.offsetHeight +
-      "px; } .modal-backdrop {top: " +
+      "px; height: " +
+      (window.innerHeight - header.offsetHeight) +
+      "px;} .modal-backdrop {top: " +
       header.offsetHeight +
       "px;}";
     header.appendChild(style);

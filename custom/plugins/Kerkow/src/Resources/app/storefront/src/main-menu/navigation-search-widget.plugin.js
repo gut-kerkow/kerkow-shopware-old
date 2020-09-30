@@ -23,7 +23,6 @@ export default class NavigationSearchWidgetPlugin extends Plugin {
   };
 
   init() {
-    console.log("navsearch called");
     try {
       this._inputEls = document.querySelectorAll(
         this.options.searchWidgetInputFieldSelector
@@ -37,7 +36,6 @@ export default class NavigationSearchWidgetPlugin extends Plugin {
         this.options.searchWidgetUrlDataAttribute
       );
     } catch (e) {
-      console.log(e);
       console.log(e);
       return;
     }
@@ -64,7 +62,6 @@ export default class NavigationSearchWidgetPlugin extends Plugin {
   _registerEvents() {
     // register opening triggers
     Iterator.iterate(this._inputEls, (el) => {
-      console.log(el);
       el.addEventListener(
         "input",
         Debouncer.debounce(
@@ -105,7 +102,6 @@ export default class NavigationSearchWidgetPlugin extends Plugin {
    * @private
    */
   _handleInputEvent(el) {
-    console.log("inputevent triggered");
     const value = el.value;
 
     // stop search if minimum input value length has not been reached
