@@ -25,6 +25,7 @@
     padding: 0;
   }
   .cms-element-text {
+    height: 100%;
     background-color: $kerkow-blue;
     color: white;
     padding: 2.5rem;
@@ -51,12 +52,14 @@
     display: none;
   }
   p {
+    padding: 0 10px;
     @include gt-medium;
     font-size: 1.2rem;
     color: $kerkow-blue;
   }
   .kerkow-newsletter-headline {
     font-weight: bold;
+    padding: 0 10px;
     margin: 4rem 0 0.2rem;
   }
   input[type="email"] {
@@ -113,5 +116,99 @@
   }
   .cms-row > :first-child {
     margin-bottom: 0;
+  }
+}
+
+@include media-breakpoint-up(md) {
+  .kerkow-center-hero {
+    padding: 0 5rem;
+  }
+  .kerkow-full-stretch-text {
+    .cms-image-container {
+      &.is-cover {
+        height: 20rem;
+      }
+    }
+    max-height: 20rem;
+    min-height: auto;
+    overflow: hidden;
+
+    .cms-element-text {
+      padding: 1.5rem 2.5rem 1.5rem 1.5rem;
+      h2 {
+        font-size: 2rem;
+      }
+      p {
+        font-size: 1rem;
+      }
+    }
+  }
+}
+
+@include media-breakpoint-up(lg) {
+  .kerkow-center-hero {
+    padding: 0 15rem;
+  }
+
+  .kerkow-full-stretch-text {
+    .cms-image-container {
+      &.is-cover {
+        height: 25rem;
+      }
+    }
+    max-height: 25rem;
+
+    .cms-element-text {
+      padding: 2.5rem 4.5rem 2.5rem 2.5rem;
+      h2 {
+        font-size: 2.5rem;
+      }
+      p {
+        font-size: 1.2rem;
+      }
+    }
+  }
+  .kerkow-newsletter-form {
+    form {
+      display: -webkit-box;
+      display: -ms-flexbox;
+      display: flex;
+      -webkit-box-orient: horizontal;
+      -webkit-box-direction: normal;
+      -ms-flex-flow: row wrap;
+      flex-flow: row wrap;
+      -webkit-box-align: center;
+      -ms-flex-align: center;
+      align-items: center;
+      margin-top: 2rem;
+      .form-group {
+        margin-bottom: 0;
+        input[type="email"] {
+          margin-right: 2rem;
+        }
+      }
+    }
+    .newsletter-promotion {
+      padding: 0 10rem;
+      .kerkow-newsletter-headline {
+        padding: 0 7rem;
+      }
+    }
+  }
+}
+
+@include media-breakpoint-only(xl) {
+  .kerkow-center-hero {
+    padding: 0 20rem;
+    .cms-element-text {
+      h2,
+      p {
+        font-size: 2.2rem;
+      }
+      p {
+        font-size: 2.5rem;
+        line-height: 1.5rem;
+      }
+    }
   }
 }

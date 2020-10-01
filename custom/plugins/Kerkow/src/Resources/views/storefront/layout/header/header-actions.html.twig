@@ -1,13 +1,13 @@
 {% block header_navigation_header_actions %}
-	<nav class="navbar">
+	<nav class="navbar navbar-expand-sm navbar-light navbar-actions">
 		<div class="navbar-collapse" id="navbarSupportedContent">
 			<ul class="navbar-nav mr-auto">
-				<div class="d-none d-sm-block">
+				<div class="d-none d-md-block">
 					{% block header_navigation_account_widget %}
 						{% sw_include '@kerkow/storefront/layout/header/actions/account-widget.html.twig' %}
 					{% endblock %}
 				</div>
-				<div class="d-none d-sm-block">
+				<div class="d-none d-md-block">
 					{% block header_navigation_zip_placeholder %}
 					{% endblock %}
 				</div>

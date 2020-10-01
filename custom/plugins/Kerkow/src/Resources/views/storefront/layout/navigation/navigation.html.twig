@@ -6,21 +6,21 @@
 			<div class="container">
 				{% block layout_main_navigation_menu %}
 					<nav class="nav main-navigation-menu d-flex navbar-expand-md justify-content-center" itemscope="itemscope" itemtype="http://schema.org/SiteNavigationElement">
-						<button class="btn nav-main-toggle-btn header-actions-btn js-offcanvas-open-button js-search-toggle-btn d-sm-none" type="button" data-offcanvas-menu="true" aria-label="Menu">
+						<button class="btn nav-main-toggle-btn header-actions-btn js-offcanvas-open-button js-search-toggle-btn d-md-none" type="button" data-offcanvas-menu="true" aria-label="Menu">
 							{% block layout_main_navigation_menu_icon %}
 								<span class="menu-icon">
 									{% sw_include '@kerkow/storefront/custom/icons/menu-icon.html.twig' %}
 								</span>
 							{% endblock %}
 						</button>
-						<button class="btn nav-main-close-btn header-actions-btn js-offcanvas-close js-offcanvas-close-button d-none d-sm-none" type="button">
+						<button class="btn nav-main-close-btn header-actions-btn js-offcanvas-close js-offcanvas-close-button d-none d-md-none" type="button">
 							{% block layout_main_navigation_clos_icon %}
 								<span class="close-icon">
 									{% sw_include '@kerkow/storefront/custom/icons/close-icon.html.twig' %}
 								</span>
 							{% endblock %}
 						</button>
-						<div class="collapse navbar-collapse" id="navbarNavDropdown">
+						<div class="collapse navbar-collapse justify-content-center" id="navbarNavDropdown">
 							{% block layout_main_navigation_menu_home %}
 							{% endblock %}
 

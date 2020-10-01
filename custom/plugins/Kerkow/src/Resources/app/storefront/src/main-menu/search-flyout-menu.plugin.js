@@ -59,7 +59,7 @@ export default class SearchFlyoutMenuPlugin extends Plugin {
    * @private
    */
   _registerEvents() {
-    const clickEvent = DeviceDetection.isTouchDevice() ? "touchstart" : "click";
+    const clickEvent = DeviceDetection.isTouchDevice() ? "click" : "click";
     const openEvent = DeviceDetection.isTouchDevice()
       ? "touchstart"
       : "mouseenter";
@@ -139,6 +139,7 @@ export default class SearchFlyoutMenuPlugin extends Plugin {
    * @private
    */
   _openSearchFlyout(triggerEl, event) {
+    event.stopPropagation();
     const flyoutEl = this.el.querySelector(
       `[${this.options.flyoutIdDataAttribute}]`
     );

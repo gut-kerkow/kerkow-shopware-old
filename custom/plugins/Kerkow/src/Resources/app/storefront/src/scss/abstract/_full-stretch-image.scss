@@ -50,23 +50,69 @@
     min-height: 36rem;
   }
   .cms-two-image-full-stretch-images {
-    display: flex !important;
-  }
-
-  .cms-image-first-full-stretch-image,
-  .cms-image-second-full-stretch-image {
-    min-height: 32rem;
-    background-size: contain;
-    background-repeat: no-repeat;
-    .cms-element-text {
-      top: 20rem;
-      left: 3rem;
-      h2 {
-        font-size: 3.5rem;
+    .cms-image-first-full-stretch-image,
+    .cms-image-second-full-stretch-image {
+      height: 25rem;
+      background-size: cover;
+      background-repeat: no-repeat;
+      .cms-element-text {
+        top: 20rem;
+        left: 3rem;
+        h2 {
+          font-size: 2.5rem;
+        }
+        p,
+        a {
+          margin-top: 2.5rem;
+        }
       }
-      p,
-      a {
-        margin-top: 2.5rem;
+    }
+  }
+}
+@include media-breakpoint-up(md) {
+  .cms-two-image-full-stretch-images {
+    min-height: 18rem;
+    display: flex !important;
+    .cms-image-first-full-stretch-image,
+    .cms-image-second-full-stretch-image {
+      height: 18rem;
+      background-size: cover;
+      background-repeat: no-repeat;
+      .cms-element-text {
+        top: 12rem;
+        left: 3rem;
+        h2 {
+          font-size: 2rem;
+        }
+        p,
+        a {
+          margin-top: 0.5rem;
+        }
+      }
+    }
+  }
+}
+
+@include media-breakpoint-only(xl) {
+  .cms-two-image-full-stretch-images {
+    min-height: 36rem;
+    display: flex !important;
+    .cms-image-first-full-stretch-image,
+    .cms-image-second-full-stretch-image {
+      height: 36rem;
+      background-size: cover;
+      background-repeat: no-repeat;
+      .cms-element-text {
+        top: 27rem;
+        left: 5rem;
+        h2 {
+          font-size: 4rem;
+        }
+        p,
+        a {
+          font-size: 1.5rem;
+          margin-top: 1.5rem;
+        }
       }
     }
   }

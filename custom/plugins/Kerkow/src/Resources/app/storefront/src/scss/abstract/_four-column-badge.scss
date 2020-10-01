@@ -1,4 +1,4 @@
-@include media-breakpoint-only(xs) {
+@include media-breakpoint-down(sm) {
   // Switch positions of products to have the badge placed 2nd
   .card-col {
     &:first-of-type {
@@ -86,11 +86,6 @@
         transform: rotate(15deg);
       }
     }
-    &:after {
-      content: "";
-      display: block;
-      padding-bottom: 100%;
-    }
   }
 
   .square {
@@ -113,26 +108,89 @@
 @include media-breakpoint-up(sm) {
   .cms-block-product-four-column-badge {
     .badge-container {
-      top: -40px;
-      right: -20px;
-    }
+      top: -2.5rem;
+      right: -0.25rem;
 
-    .cms-element-text {
-      h2 {
-        width: 15vw;
-        top: 5vw;
-        right: -3.75vw;
+      .cms-element-text {
+        h2 {
+          width: 90%;
+          top: 4rem;
+          right: -1.75rem;
 
-        font-size: 2.2vw;
-        line-height: 3vw;
+          font-size: 2rem;
+          line-height: 2.5rem;
+        }
+        p {
+          width: 80%;
+          top: 5rem;
+          right: -1.1rem;
+
+          font-size: 1.2rem;
+          line-height: 1.6rem;
+        }
       }
-      p {
-        width: 15vw;
-        top: 6vw;
-        right: -2.2vw;
+    }
+  }
+}
 
-        font-size: 1.2vw;
-        line-height: 1.4vw;
+@include media-breakpoint-up(md) {
+  .cms-block-product-four-column-badge {
+    .badge-container {
+      top: -1.5rem;
+      right: -0.25rem;
+
+      .cms-element-text {
+        h2 {
+          top: 3rem;
+          right: -1rem;
+          font-size: 1.25rem;
+          line-height: 1.5rem;
+        }
+        p {
+          width: 85%;
+          top: 2.5rem;
+          right: -0.5rem;
+          font-size: 1rem;
+          line-height: 1.2rem;
+        }
+      }
+    }
+  }
+}
+
+@include media-breakpoint-up(lg) {
+  .cms-block-product-four-column-badge {
+    .badge-container {
+      .cms-element-text {
+        h2 {
+          top: 4rem;
+          font-size: 1.8rem;
+          line-height: 2.2rem;
+        }
+        p {
+          top: 4rem;
+        }
+      }
+    }
+  }
+}
+
+@include media-breakpoint-up(xl) {
+  .cms-block-product-four-column-badge {
+    .badge-container {
+      .cms-element-text {
+        h2 {
+          top: 5rem;
+          right: -1.5rem;
+          font-size: 2.5rem;
+          line-height: 2.9rem;
+        }
+        p {
+          top: 5rem;
+          right: -1rem;
+          font-size: 1.5rem;
+          line-height: 1.6rem;
+        }
       }
     }
   }

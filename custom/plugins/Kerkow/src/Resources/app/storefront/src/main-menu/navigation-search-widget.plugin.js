@@ -24,10 +24,12 @@ export default class NavigationSearchWidgetPlugin extends Plugin {
 
   init() {
     try {
-      this._inputEls = document.querySelectorAll(
+      this._inputEl = DomAccess.querySelector(
+        this.el,
         this.options.searchWidgetInputFieldSelector
       );
-      this._buttonEls = this.el.querySelectorAll(
+      this._submitButton = DomAccess.querySelector(
+        this.el,
         this.options.searchWidgetButtonFieldSelector
       );
 
@@ -43,14 +45,13 @@ export default class NavigationSearchWidgetPlugin extends Plugin {
     this._client = new HttpClient();
 
     // initialize the arrow navigation
-    Iterator.iterate(this._inputEls, (el) => {
-      this._navigationHelper = new ArrowNavigationHelper(
-        el,
-        this.options.searchWidgetResultSelector,
-        this.options.searchWidgetResultItemSelector,
-        true
-      );
-    });
+
+    this._navigationHelper = new ArrowNavigationHelper(
+      this._inputEl,
+      this.options.searchWidgetResultSelector,
+      this.options.searchWidgetResultItemSelector,
+      true
+    );
 
     this._registerEvents();
   }
@@ -61,19 +62,18 @@ export default class NavigationSearchWidgetPlugin extends Plugin {
    */
   _registerEvents() {
     // register opening triggers
-    Iterator.iterate(this._inputEls, (el) => {
-      el.addEventListener(
-        "input",
-        Debouncer.debounce(
-          this._handleInputEvent.bind(this, el),
-          this.options.searchWidgetDelay
-        ),
-        {
-          capture: true,
-          passive: true,
-        }
-      );
-    });
+
+    this._inputEl.addEventListener(
+      "input",
+      Debouncer.debounce(
+        this._handleInputEvent.bind(this, this._inputEl),
+        this.options.searchWidgetDelay
+      ),
+      {
+        capture: true,
+        passive: true,
+      }
+    );
 
     this.el.addEventListener("submit", this._handleSearchEvent.bind(this));
 
@@ -218,10 +218,9 @@ export default class NavigationSearchWidgetPlugin extends Plugin {
       )
     ) {
       this._toggleButton.blur(); // otherwise iOS won´t focus the field.
-      Iterator.iterate(this._inputEls, (el) => {
-        el.setAttribute("tabindex", "-1");
-        el.focus();
-      });
+
+      this._inputEl.setAttribute("tabindex", "-1");
+      this._inputEl.focus();
     }
 
     this.$emitter.publish("focusInput");

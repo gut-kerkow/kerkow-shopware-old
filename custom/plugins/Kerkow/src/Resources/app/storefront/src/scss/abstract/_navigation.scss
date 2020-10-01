@@ -148,6 +148,7 @@
   cursor: pointer;
 }
 .navigation-flyout.navigation-flyout-search {
+  border-top: solid 1px #d6d6d6;
   width: 80%;
   min-height: 400px;
 }
@@ -201,8 +202,31 @@
     }
   }
 }
-@include media-breakpoint-up(sm) {
-  .main-navigation-menu {
-    border-bottom: solid 1px #9c8f8f;
+@include media-breakpoint-up(md) {
+  .main-navigation {
+    border-bottom: 0.0625rem solid rgb(212, 212, 212);
+    .main-navigation-link-text {
+      font-size: 0.9rem;
+    }
+  }
+  .search-suggest {
+    ul {
+      background-color: unset;
+      .search-suggest-product-link,
+      .search-suggest-product {
+        font-size: 1.5rem !important;
+        padding: 0.4rem 0;
+        &.is-active {
+          text-decoration: underline;
+          padding: 0.4rem 0;
+        }
+      }
+    }
+  }
+  .offcanvas {
+    width: auto;
+    &.cart-offcanvas {
+      border-top: 0.0625rem solid rgb(212, 212, 212);
+    }
   }
 }
