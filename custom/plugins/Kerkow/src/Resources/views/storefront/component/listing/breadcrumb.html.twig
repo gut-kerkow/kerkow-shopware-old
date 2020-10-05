@@ -1,0 +1,48 @@
+{% sw_extends '@Storefront/storefront/component/listing/breadcrumb.html.twig' %}
+{% block component_listing_breadcrumb %}
+	{% set breadcrumb = category.buildSeoBreadcrumb(context.salesChannel.navigationCategoryId) %}
+
+
+	<div class="breadcrumb-container">
+		{% block component_listing_breadcrumb_home %}
+			<a href="{{ path('frontend.home.page') }}">
+				{% block component_listing_breadcrumb_home_link_name %}
+					{{ "general.HomeLink" |trans }}
+				{% endblock %}
+			</a>
+		{% endblock %}
+		{% block component_listing_breadcrumb_home_placeholder %}
+			{% if item != breadcrumb|last %}
+				<div class="breadcrumb-placeholder">
+					{% sw_icon 'arrow-medium-right' style { 'size': 'fluid', 'pack': 'solid'} %}
+				</div>
+			{% endif %}
+		{% endblock %}
+	</div>
+	{% for key, item in breadcrumb %}
+		<div class="breadcrumb-container">
+			{% block component_listing_breadcrumb_category %}
+				{% if item != breadcrumb|last %}
+					<a class="{% if key is same as(category.id) %} is-active{% endif %}" href="{{ seoUrl('frontend.navigation.page', { navigationId: key }) }}">
+						{% block component_listing_breadcrumb_link_name %}
+							{{ item }}
+						{% endblock %}
+					</a>
+				{% else %}
+					<span class="{% if key is same as(category.id) %} is-active{% endif %}">
+						{% block component_listing_breadcrumb_link_name_last %}
+							{{ item }}
+						{% endblock %}
+					</span>
+				{% endif %}
+			{% endblock %}
+			{% block component_listing_breadcrumb_placeholder %}
+				{% if item != breadcrumb|last %}
+					<div class="breadcrumb-placeholder">
+						{% sw_icon 'arrow-medium-right' style { 'size': 'fluid', 'pack': 'solid'} %}
+					</div>
+				{% endif %}
+			{% endblock %}
+		</div>
+	{% endfor %}
+{% endblock %}

@@ -1,0 +1,122 @@
+{% set currentPage = ((searchResult.criteria.offset + 1) / searchResult.criteria.limit )|round(0, 'ceil') %}
+{% set paginationConfig = { page: currentPage }|json_encode %}
+
+{% set listingPagination = {
+    sidebar: sidebar,
+    params: params,
+    dataUrl: dataUrl,
+    filterUrl: filterUrl,
+    snippets: {
+        resetAllButtonText: 'listing.filterPanelResetAll'|trans|sw_sanitize
+    }
+} %}
+
+{% set animals = ["beef", "pork"] %}
+{% set beefPartIds = 'animalParts.beefPartsIds'|trans|replace({' ': ''})|split(',') %}
+{% set animalsHash = {} %}
+{% set partsHash = {} %}
+{% for animal in animals %}
+	{% if animal == "beef" %}
+		{% for id in beefPartIds %}
+			{% set partHeadline = 'animalParts.'~id~'.headline' %}
+			{% set partContent = 'animalParts.'~id~'.content' %}
+			{% set partLink = 'animalParts.'~id~'.link' %}
+			{% set partsHash = partsHash|merge({(id): {"headline": (partHeadline|trans), "content": (partContent|trans), "link": (partLink|trans)} }) %}
+		{% endfor %}
+	{% endif %}
+	{% set animalsHash = animalsHash|merge({(animal):(partsHash)}) %}
+{% endfor %}
+{% set animalPartsTranslations = {"animals":(animalsHash)} %}
+
+<script id="animal-parts-translations" type="application/json">
+	{{ animalPartsTranslations|json_encode|sw_sanitize }}
+</script>
+
+{% block content_product_listing %}
+
+
+	<div class="cms-element-product-listing-wrapper" data-listing-pagination="true" data-listing-pagination-options='{{ paginationConfig }}' data-listing="true" data-listing-options='{{ listingPagination|json_encode }}'>
+
+		{% block element_content_product_listing_wrapper_content %}
+			<div class="cms-element-product-listing">
+				{% if searchResult.total > 0 %}
+					{% block element_content_product_listing_pagination_nav_actions %}
+					<div class="cms-element-product-listing-actions row justify-content-between">
+						{% if searchResult.total > 24 %}
+							<div class="col-md-auto">
+								{% block element_content_product_listing_pagination_nav_top %}
+									{% sw_include '@Storefront/storefront/component/pagination.html.twig' with {
+                                        entities: searchResult,
+                                        criteria: searchResult.criteria
+                                    } %}
+								{% endblock %}
+							</div>
+						{% endif %}
+						{#no sorting currently 
+											<div class="col-md-auto">
+												{% block element_content_product_listing_sorting %}
+													{% sw_include '@Storefront/storefront/component/sorting.html.twig' with { current: searchResult.sorting, sortings: searchResult.sortings } %}
+												{% endblock %}
+											</div>
+											#}
+						</div>
+					{% endblock %}
+				{% endif %}
+
+				{% block element_content_product_listing_row %}
+					<div class="row cms-listing-row js-listing-wrapper">
+						{% if searchResult.total > 0 %}
+							{% block element_content_product_listing_col %}
+								{% for product in searchResult %}
+									<div class="cms-listing-col {{ listingColumns }}">
+										{% block element_content_product_listing_box %}
+											{% sw_include '@Storefront/storefront/component/product/card/box.html.twig' with {
+				                                                'layout': boxLayout,
+				                                                'displayMode': displayMode
+				                                            } %}
+										{% endblock %}
+									</div>
+									{% if (loop.length < 4 and loop.last) or (loop.index == 4) %}
+										{% block element_content_product_listing_col_content %}
+											<div class="cms-listing-col col-sm-6 col-lg-4 col-xl-3">
+												<div class="animal-part-container">
+													{% set element = animal %}
+													{% sw_include "@Storefront/storefront/element/cms-element-" ~ content.type ~ ".html.twig" ignore missing with {"isProductListAnimal": true} %}
+												</div>
+												<div class="content-product-listing-content-container">
+													{% set element = content %}
+													{% sw_include "@Storefront/storefront/element/cms-element-" ~ content.type ~ ".html.twig" ignore missing with {"isProductListContent": true} %}
+												</div>
+											</div>
+										{% endblock %}
+									{% endif %}
+								{% endfor %}
+							{% endblock %}
+						{% else %}
+							{% block element_content_product_listing_col_empty %}
+								<div class="cms-listing-col col-sm-6 col-lg-4 col-xl-3">
+									{% block element_content_product_listing_col_empty_alert %}
+										{% sw_include '@Storefront/storefront/utilities/alert.html.twig' with {
+				                                            type: 'info',
+				                                            content: 'listing.emptyResultMessage'|trans|sw_sanitize
+				                                        } %}
+									{% endblock %}
+								</div>
+							{% endblock %}
+						{% endif %}
+					</div>
+				{% endblock %}
+
+				{% if searchResult.total > searchResult.limit %}
+					{% block element_content_product_listing_pagination_nav_bottom %}
+						{% sw_include '@Storefront/storefront/component/pagination.html.twig' with {
+				                            entities: searchResult,
+				                            criteria: searchResult.criteria
+				                        } %}
+					{% endblock %}
+				{% endif %}
+			</div>
+		{% endblock %}
+	</div>
+{% endblock %}
+

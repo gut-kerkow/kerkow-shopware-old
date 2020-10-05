@@ -1,0 +1,65 @@
+.cms-block-content-product-listing {
+  .cms-listing-col {
+    .cms-element-text {
+      [data-animal-parts] {
+        position: relative;
+        svg {
+          #parts {
+            path {
+              stroke: #2b2c2e;
+              stroke-width: 15px;
+              &:hover,
+              &:focus,
+              &.is-active {
+                fill: $kerkow-blue;
+              }
+              cursor: pointer;
+            }
+          }
+        }
+        .parts-instruction {
+          display: none;
+        }
+        .parts-instruction,
+        .parts-instruction-mobile {
+          position: absolute;
+          bottom: 0;
+          width: 100%;
+          background-color: rgba(235, 235, 235, 0.9);
+          font-size: 1rem;
+          text-align: center;
+          line-height: 3rem;
+        }
+        .parts-info-overlay {
+          background-color: rgba(235, 235, 235, 0.9);
+          position: absolute;
+          top: -7rem;
+          left: 0;
+          max-width: -webkit-fill-available;
+          text-align: start !important;
+          margin: 0 2rem;
+          padding: 0.5rem;
+          overflow: hidden;
+          color: $kerkow-blue;
+          p {
+            padding: 0;
+          }
+          .info-headline {
+            @include gt-bold;
+            font-size: 1.2rem;
+            margin: 0;
+          }
+          .info-content,
+          .info-link {
+            @include gt-medium;
+            font-size: 1rem;
+            margin-bottom: 0;
+          }
+          .info-link {
+            margin-top: 1rem;
+          }
+        }
+      }
+    }
+  }
+}

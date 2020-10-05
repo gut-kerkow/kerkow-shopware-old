@@ -1,0 +1,55 @@
+/*
+Breadcrumb
+==============================================
+Custom skin styling for bootstrap breadcrumb component.
+
+https://getbootstrap.com/docs/4.3/components/breadcrumb/
+*/
+
+.breadcrumb {
+  padding: 0 1.25rem;
+  margin-bottom: 0;
+  .icon {
+    color: $kerkow-blue;
+    svg {
+      height: 1rem;
+      width: auto;
+      top: 4px;
+    }
+  }
+
+  .breadcrumb-container {
+    display: flex;
+  }
+
+  .breadcrumb-placeholder {
+    margin: 0 $spacer-sm;
+  }
+
+  a {
+    color: $kerkow-grey;
+    font-size: 1rem;
+
+    &:hover {
+      color: $kerkow-blue;
+      text-decoration: none;
+    }
+
+    &.is-active {
+      color: $kerkow-blue;
+    }
+  }
+  span {
+    color: $kerkow-grey;
+    font-size: 1rem;
+
+    &:hover {
+      color: $kerkow-blue;
+      text-decoration: none;
+    }
+
+    &.is-active {
+      color: $kerkow-blue;
+    }
+  }
+}

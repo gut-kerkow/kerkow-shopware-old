@@ -7,6 +7,9 @@
         },
         "productFourColumnBadge": {
           "label": "Vier Spalten, Produkt-Boxen und Störer"
+        },
+        "contentProductLisitng": {
+          "label": "Kerkow Kategorie-Layout"
         }
       }
     }

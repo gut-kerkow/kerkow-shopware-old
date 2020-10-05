@@ -1,5 +1,6 @@
 import "./module/sw-cms/blocks/commerce/product-four-column";
 import "./module/sw-cms/blocks/commerce/product-four-column-badge";
+import "./module/sw-cms/blocks/commerce/content-product-listing";
 import "./module/sw-cms/blocks/image/full-stretch-image";
 import "./module/sw-cms/blocks/text-image/two-full-stretch-images";
 import "./module/sw-cms/blocks/form/custom-form";
