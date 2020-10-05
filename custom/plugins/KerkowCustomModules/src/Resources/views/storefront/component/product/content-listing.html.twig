@@ -76,9 +76,9 @@
 				                                            } %}
 										{% endblock %}
 									</div>
-									{% if (loop.length < 4 and loop.last) or (loop.index == 4) %}
+									{% if (loop.length < 4 and loop.last) or (loop.index == 3) %}
 										{% block element_content_product_listing_col_content %}
-											<div class="cms-listing-col col-sm-6 col-lg-4 col-xl-3">
+											<div class="cms-listing-col col-sm-6 col-lg-8 col-xl-6">
 												<div class="animal-part-container">
 													{% set element = animal %}
 													{% sw_include "@Storefront/storefront/element/cms-element-" ~ content.type ~ ".html.twig" ignore missing with {"isProductListAnimal": true} %}
@@ -119,4 +119,3 @@
 		{% endblock %}
 	</div>
 {% endblock %}
-

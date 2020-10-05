@@ -1,0 +1,9 @@
+@include media-breakpoint-down(md) {
+  .btn.filter-panel-wrapper-toggle {
+    display: none;
+  }
+}
+
+.offcanvas-filter {
+  overflow: hidden;
+}

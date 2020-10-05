@@ -16,6 +16,7 @@ export default class AnimalPartsPlugin extends Plugin {
     partsMobileInstructorSelector: ".parts-instruction-mobile",
     partsInstructorSelector: ".parts-instruction",
     partsIsActiveClass: "is-active",
+    hiddenClass: "d-none",
   };
 
   init() {
@@ -45,6 +46,14 @@ export default class AnimalPartsPlugin extends Plugin {
     } catch (e) {
       console.log(e);
       return;
+    }
+    // hide mobile instruction if is desktop device-detection
+    if (DeviceDetection.isTouchDevice()) {
+      this._instruction.classList.add(this.options.hiddenClass);
+      this._mobileInstruction.classList.remove(this.options.hiddenClass);
+    } else {
+      this._instruction.classList.remove(this.options.hiddenClass);
+      this._mobileInstruction.classList.add(this.options.hiddenClass);
     }
     this._registerEvents();
   }

@@ -1,0 +1,10 @@
+.pagination {
+  @extend .d-flex, .justify-content-center;
+}
+.page-item.active {
+  .page-link {
+    color: #fff;
+    background-color: $kerkow-blue;
+    border-color: $kerkow-blue;
+  }
+}

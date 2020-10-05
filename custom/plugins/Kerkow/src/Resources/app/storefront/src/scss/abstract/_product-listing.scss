@@ -1,4 +1,9 @@
-.cms-block-content-product-listing {
+.cms-block-content-product-listing,
+.cms-element-product-listing,
+.cms-block-product-listing {
+  .cms-block-container {
+    padding: 0 !important;
+  }
   .cms-listing-col {
     .product-image-wrapper {
       max-width: 100%;
@@ -58,6 +63,59 @@
     .icon-fluid {
       height: 3rem;
       color: rgba(49, 78, 146, 0.7);
+    }
+  }
+}
+@include media-breakpoint-only(xl) {
+  .cms-block-content-product-listing {
+    .cms-listing-col {
+      @for $i from 1 through 3 {
+        &:nth-child(#{$i}) {
+          -webkit-box-ordinal-group: #{$i};
+          -moz-box-ordinal-group: #{$i};
+          -ms-flex-order: #{$i};
+          -webkit-order: #{$i};
+          order: #{$i};
+        }
+      }
+
+      &:nth-child(5) {
+        -webkit-box-ordinal-group: 4;
+        -moz-box-ordinal-group: 4;
+        -ms-flex-order: 4;
+        -webkit-order: 4;
+        order: 4;
+      }
+      &:nth-child(4) {
+        -webkit-box-ordinal-group: 7;
+        -moz-box-ordinal-group: 7;
+        -ms-flex-order: 7;
+        -webkit-order: 7;
+        order: 7;
+      }
+      &:nth-child(6) {
+        -webkit-box-ordinal-group: 5;
+        -moz-box-ordinal-group: 5;
+        -ms-flex-order: 5;
+        -webkit-order: 5;
+        order: 5;
+      }
+      &:nth-child(7) {
+        -webkit-box-ordinal-group: 6;
+        -moz-box-ordinal-group: 6;
+        -ms-flex-order: 6;
+        -webkit-order: 6;
+        order: 6;
+      }
+      @for $i from 8 through 24 {
+        &:nth-child(#{$i}) {
+          -webkit-box-ordinal-group: #{$i};
+          -moz-box-ordinal-group: #{$i};
+          -ms-flex-order: #{$i};
+          -webkit-order: #{$i};
+          order: #{$i};
+        }
+      }
     }
   }
 }
