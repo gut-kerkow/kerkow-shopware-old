@@ -1,0 +1,256 @@
+.product-detail {
+  .product-detail-name {
+    @include gt-bold;
+    color: $kerkow-blue;
+
+    font-size: 1.6rem;
+    line-height: 1.5rem;
+    height: 2.2rem;
+    margin-bottom: 0;
+  }
+  .product-detail-headline {
+    margin-bottom: 1rem;
+    .product-detail-manufacturer-link {
+      @include gt-medium;
+      color: $kerkow-blue;
+      font-size: 1rem;
+    }
+    .product-organic-icon {
+      width: 3.5rem;
+      height: 3rem;
+      display: inline-flex;
+      svg {
+        width: 100%;
+        height: 100%;
+      }
+    }
+  }
+  .product-detail-description-short {
+    @include gt-medium;
+    color: $kerkow-blue;
+    font-size: 1rem;
+    margin-bottom: 2rem;
+    padding-right: 3rem;
+  }
+  .product-detail-price {
+    font-size: 1.8rem;
+    font-family: $kerkow-font-family-base;
+    color: $kerkow-blue;
+    font-weight: 400;
+    line-height: 2rem;
+  }
+  .product-detail-content,
+  .product-detail-reference-content,
+  .product-detail-tax,
+  .product-detail-deliver-date {
+    font-size: 1rem;
+    font-family: $kerkow-font-family-base;
+    color: $kerkow-blue;
+    font-weight: 200;
+    margin-bottom: 0;
+    .product-detail-tax-link {
+      text-decoration: underline;
+    }
+    .product-detail-delivery-container {
+      padding-top: 1rem;
+    }
+    .product-detail-custom-delivery-time {
+      font-size: 0.8rem;
+      font-family: $kerkow-font-family-base;
+      color: $kerkow-blue;
+      font-weight: 200;
+      margin-bottom: 0;
+    }
+    .btn-buy {
+      border-color: $kerkow-blue;
+      .button-cart-icon {
+        position: absolute;
+        left: 1.5rem;
+        top: 0.6rem;
+        width: 1.5rem;
+        height: 1.5rem;
+        display: inline-flex;
+        color: white;
+        svg {
+          path {
+            fill: white;
+          }
+          width: 100%;
+          height: 100%;
+        }
+      }
+      &:hover {
+        .button-cart-icon {
+          svg {
+            path {
+              fill: $kerkow-blue;
+            }
+          }
+        }
+      }
+    }
+    .product-detail-qty-select {
+      margin-bottom: 1.5rem;
+    }
+    .product-detail-configurator-option-input:checked
+      + .product-detail-configurator-option-label.is-display-text {
+      background-color: $kerkow-blue;
+      color: #fff;
+    }
+    .product-detail-configurator-option-input:checked
+      + .product-detail-configurator-option-label {
+      border: 0.0625rem solid $kerkow-blue;
+    }
+  }
+  .page-product-detail-description {
+    color: $kerkow-blue;
+    @include gt-medium;
+    font-size: 1rem;
+    h2 {
+      @include gt-bold;
+      color: $kerkow-blue;
+    }
+    .product-detail-animal {
+      padding: 2rem;
+    }
+  }
+  .product-detail-cross-selling {
+    .cross-selling-item {
+      &:nth-of-type(even) {
+        padding-right: $grid-gutter-width/4;
+      }
+      &:nth-of-type(odd) {
+        padding-left: $grid-gutter-width/4;
+      }
+      .product-name {
+        font-size: 1.1rem;
+      }
+      .product-price-info {
+        .product-price {
+          font-size: 1.5rem;
+        }
+        .product-price-unit,
+        .price-unit-reference {
+          margin-top: 0;
+          font-size: 0.9rem;
+        }
+      }
+      .badge {
+        &.badge-custom {
+          font-size: 1rem;
+        }
+      }
+      p {
+        margin-bottom: 0;
+      }
+    }
+    .cross-selling-headline {
+      font-family: $kerkow-font-family-base;
+      color: $kerkow-grey;
+      text-transform: uppercase;
+      font-weight: bold;
+    }
+  }
+  .kerkow-newsletter-form {
+    margin-top: 2rem;
+  }
+  .product-detail-configurator-container {
+    margin-top: 1rem;
+  }
+}
+@include media-breakpoint-up(sm) {
+  .product-detail {
+    .product-buy-content-container {
+      padding-left: 0;
+    }
+    .product-detail-description-short {
+      margin-bottom: 0.5rem;
+    }
+    .product-detail-price {
+      font-size: 1.5rem;
+    }
+    .product-detail-content,
+    .product-detail-reference-content,
+    .product-detail-tax,
+    .product-detail-deliver-date {
+      font-size: 0.8rem;
+    }
+    .product-detail-content {
+      .product-detail-delivery-container {
+        padding-top: 0.5rem;
+      }
+      .product-detail-qty-select {
+        margin-bottom: 0.5rem;
+      }
+    }
+    .product-detail-configurator-container {
+      margin-top: 0.5rem;
+    }
+    .page-product-detail-description {
+      .product-detail-animal {
+        margin-top: 1.5rem;
+        padding: 0 15rem;
+      }
+    }
+    .product-detail-cross-selling {
+      .cross-selling-item {
+        padding-left: $grid-gutter-width/2;
+        padding-right: $grid-gutter-width/2;
+        &:nth-of-type(even) {
+          padding-right: $grid-gutter-width/2;
+        }
+        &:nth-of-type(odd) {
+          padding-left: $grid-gutter-width/2;
+        }
+      }
+    }
+  }
+}
+@include media-breakpoint-up(lg) {
+  .product-content-position {
+    div:nth-child(1) {
+      order: 2;
+    }
+    div:nth-child(2) {
+      order: 1;
+    }
+  }
+  .product-detail {
+    .page-product-detail-description {
+      .product-detail-animal {
+        padding: 0 7rem;
+      }
+    }
+  }
+}
+@include media-breakpoint-only(xl) {
+  .product-detail {
+    .product-buy-content-container {
+      padding: 0 5rem;
+    }
+    .product-detail-price {
+      margin-top: 2rem;
+      font-size: 2rem;
+    }
+    .product-detail-content,
+    .product-detail-reference-content,
+    .product-detail-tax,
+    .product-detail-deliver-date {
+      font-size: 1rem;
+      line-height: 2rem;
+      .product-detail-custom-delivery-time {
+        line-height: 1rem;
+        font-size: 0.9rem;
+      }
+    }
+    .product-detail-content {
+      margin-top: 1rem;
+      .product-detail-qty-select {
+        margin-bottom: 1rem;
+      }
+    }
+    .product-detail-configurator-container {
+      margin-top: 1.5rem;
+    }
+  }
+}

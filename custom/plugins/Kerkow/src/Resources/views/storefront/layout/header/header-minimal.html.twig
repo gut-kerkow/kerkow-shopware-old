@@ -1,0 +1,31 @@
+{% sw_extends '@Storefront/storefront/layout/header/header-minimal.html.twig' %}
+
+{% block layout_header %}
+	{# @deprecated tag:6.4.0 class 'fixed-top' will be removed in version 6.4.0 #}
+	<header class="header-minimal fixed-top">
+		{% block layout_header_minimal_inner %}
+			<div class="container">
+				{% block layout_header_minimal_row %}
+					<div class="d-flex justify-content-center">
+						{% block layout_header_minimal_logo %}
+							<div class="header-minimal-logo">
+								{% sw_include '@Storefront/storefront/layout/header/logo.html.twig' %}
+							</div>
+						{% endblock %}
+
+						{% block layout_header_minimal_contact %}
+						{% endblock %}
+
+						{# @deprecated tag:v6.4.0 #}
+						{% block layout_header_minimal_switch %}
+						{% endblock %}
+
+						{% block layout_header_minimal_button %}
+
+						{% endblock %}
+					</div>
+				{% endblock %}
+			</div>
+		{% endblock %}
+	</header>
+{% endblock %}

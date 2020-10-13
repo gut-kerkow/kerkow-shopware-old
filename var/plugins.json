@@ -244,5 +244,23 @@
             "webpack": null,
             "styleFiles": []
         }
+    },
+    "DeliveryDate": {
+        "basePath": "custom\/plugins\/KerkowDeliveryDate\/src\/",
+        "views": [
+            "Resources\/views"
+        ],
+        "technicalName": "delivery-date",
+        "administration": {
+            "path": "Resources\/app\/administration\/src",
+            "entryFilePath": null,
+            "webpack": null
+        },
+        "storefront": {
+            "path": "Resources\/app\/storefront\/src",
+            "entryFilePath": null,
+            "webpack": null,
+            "styleFiles": []
+        }
     }
 }

@@ -19,5 +19,11 @@
             <tag name="kernel.event_subscriber"/>
         </service>
 
+        <service id="Kerkow\ZipShop\Storefront\Subscriber\CheckoutRegisterPageSubscriber">
+            <argument type="service" id="session"/>
+            <argument type="service" id="kerkow_postalcodes.repository"/>
+            <tag name="kernel.event_subscriber"/>
+        </service>
+
     </services>
 </container>

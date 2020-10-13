@@ -1,0 +1,27 @@
+{% sw_extends '@Storefront/storefront/layout/header/header.html.twig' %}
+{% block layout_header %}
+	{% block layout_top_bar %}
+	{% endblock %}
+
+	{% block layout_header_navigation %}
+		<div class="d-flex justify-content-center justify-content-md-between mb-3">
+			{% block layout_header_content_navigation %}
+				<div class="d-none d-md-block">
+					{% sw_include '@kerkow/storefront/layout/header/content-navigation.html.twig' %}
+				</div>
+			{% endblock %}
+			{% block layout_header_logo %}
+				<div class="p-2">
+					{% sw_include '@kerkow/storefront/layout/header/logo.html.twig' %}
+				</div>
+			{% endblock %}
+			{% block layout_header_actions %}
+				<div class="navbar-header-actions">
+					{% block layout_header_actions_account %}
+						{% sw_include '@KerkowZipShop/storefront/layout/header/header-actions.html.twig' %}
+					{% endblock %}
+				</div>
+			{% endblock %}
+		</div>
+	{% endblock %}
+{% endblock %}

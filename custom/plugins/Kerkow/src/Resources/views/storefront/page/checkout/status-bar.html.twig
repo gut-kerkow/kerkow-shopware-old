@@ -1,0 +1,58 @@
+{% block page_checkout_status_bar_inner %}
+	<div class="status-bar-container">
+		<div class="status-position">
+			<div class="status-bar d-flex justify-content-between">
+				<div class="status">
+					<div class="pill-container">
+						<div class="pill {% if isRegister %} active {% endif %}">
+							1
+						</div>
+						<div class="status-label">
+							Anmelden
+						</div>
+					</div>
+				</div>
+				<div class="status">
+					<div class="pill-container">
+						<div class="pill {% if isAddress %} active {% endif %}">
+							2
+						</div>
+						<div class="status-label second">
+							Adresse
+						</div>
+					</div>
+				</div>
+				<div class="status">
+					<div class="pill-container">
+						<div class="pill {% if isPayment %} active {% endif %}">
+							3
+						</div>
+						<div class="status-label third">
+							Zahlungsart
+						</div>
+					</div>
+				</div>
+				<div class="status">
+					<div class="pill-container">
+						<div class="pill {% if isConfirm %} active {% endif %}">
+							4
+						</div>
+						<div class="status-label fourth">
+							Bestätigen
+						</div>
+					</div>
+				</div>
+				<div class="status">
+					<div class="pill-container">
+						<div class="pill {% if isDone %} active {% endif %}">
+							5
+						</div>
+						<div class="status-label fifth">
+							Fertig
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+{% endblock %}

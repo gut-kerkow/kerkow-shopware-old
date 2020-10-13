@@ -1,0 +1,55 @@
+.status-bar-container {
+  border-bottom: 1px solid $kerkow-blue;
+  position: relative;
+  margin: 1rem 0 5rem 0;
+  .status-position {
+    width: 100%;
+    position: absolute;
+    top: -1.3rem;
+    .status {
+      position: relative;
+      .pill-container {
+        width: 3rem;
+        background-color: white;
+
+        .pill {
+          color: rgb(175, 175, 175);
+          border: 1px solid rgb(175, 175, 175);
+          border-radius: 3.125rem;
+          box-sizing: content-box;
+          height: 2.25rem;
+          line-height: 1.9rem;
+          margin: 0 0.3125rem;
+          min-width: 1.625rem;
+          text-align: center;
+          @include gt-bold;
+          font-size: 1.2rem;
+          &.active {
+            background-color: $kerkow-blue;
+            color: #fff;
+            border: 1px solid $kerkow-blue;
+          }
+        }
+        .status-label {
+          position: absolute;
+          margin-top: 0.5rem;
+          left: -0.4rem;
+          color: $kerkow-blue;
+          font-size: 0.8rem;
+          &.second {
+            left: 0;
+          }
+          &.third {
+            left: -0.7rem;
+          }
+          &.fourth {
+            left: -0.2rem;
+          }
+          &.fifth {
+            left: 0.4rem;
+          }
+        }
+      }
+    }
+  }
+}

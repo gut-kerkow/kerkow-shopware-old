@@ -1,0 +1,27 @@
+.product-detail-media {
+  .product-badges {
+    &.custom {
+      top: 1rem;
+      left: 2rem;
+    }
+    .badge-custom {
+      font-size: 1rem;
+      background: rgba(255, 255, 255, 0.6);
+      @include gt-bold;
+      font-weight: bold !important;
+      color: $kerkow-blue !important;
+    }
+  }
+}
+
+.gallery-slider-single-image {
+  &.is-cover,
+  &.is-contain {
+    .gallery-slider-image {
+      height: 100%;
+      width: 100%;
+      object-fit: unset;
+      position: relative;
+    }
+  }
+}

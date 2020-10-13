@@ -1,18 +1,29 @@
-{% sw_extends '@Storefront/storefront/utilities/offcanvas.html.twig' %}
+{% sw_extends '@KerkowZipShop/storefront/utilities/offcanvas.html.twig' %}
 
-{% block utilities_offcanvas_content %}
-	<div class="account-menu">
-		{% block layout_header_actions_zip_widget_dropdown_header %}
-			{% if not context.customer.guest %}
-				<div class="dropdown-header zip-menu-header">
-					{{ "account.myZip"|trans|sw_sanitize }}
+
+{% block utilities_offcanvas %}
+	{% block utilities_offcanvas_close %}
+
+	{% endblock %}
+
+	{% block utilities_offcanvas_content_container %}
+		<div class="offcanvas-content-container">
+			{% block utilities_offcanvas_content %}
+				<div class="account-menu">
+					{% block layout_header_actions_zip_widget_dropdown_header %}
+						{% if not context.customer.guest %}
+							<div class="dropdown-header zip-menu-header">
+								{{ "account.myZip"|trans|sw_sanitize }}
+							</div>
+						{% endif %}
+					{% endblock %}
+					{% block layout_header_actions_zip_widget_dropdown_form %}
+						<div class="js-zip-form-container">
+							{% sw_include '@KerkowZipShop/storefront/layout/header/header-zip-menu-form.html.twig' %}
+						</div>
+					{% endblock %}
 				</div>
-			{% endif %}
-		{% endblock %}
-		{% block layout_header_actions_zip_widget_dropdown_form %}
-			<div class="js-zip-form-container">
-				{% sw_include '@KerkowZipShop/storefront/layout/header/header-zip-menu-form.html.twig' %}
-			</div>
-		{% endblock %}
-	</div>
+			{% endblock %}
+		</div>
+	{% endblock %}
 {% endblock %}

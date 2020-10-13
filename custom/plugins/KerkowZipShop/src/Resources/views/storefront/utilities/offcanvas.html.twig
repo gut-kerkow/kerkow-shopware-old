@@ -1,0 +1,13 @@
+{% sw_extends '@Storefront/storefront/utilities/offcanvas.html.twig' %}
+
+{% block utilities_offcanvas %}
+	{% block utilities_offcanvas_close %}
+	{% endblock %}
+
+	{% block utilities_offcanvas_content_container %}
+		<div class="offcanvas-content-container">
+			{% block utilities_offcanvas_content %}
+			{% endblock %}
+		</div>
+	{% endblock %}
+{% endblock %}

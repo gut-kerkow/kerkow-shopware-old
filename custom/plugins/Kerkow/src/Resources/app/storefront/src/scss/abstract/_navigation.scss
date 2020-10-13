@@ -230,3 +230,10 @@
     }
   }
 }
+@include media-breakpoint-up(lg) {
+  .main-navigation {
+    .main-navigation-link-text {
+      font-size: 1rem;
+    }
+  }
+}

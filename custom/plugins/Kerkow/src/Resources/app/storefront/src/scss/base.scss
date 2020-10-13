@@ -17,6 +17,10 @@
 @import "abstract/info-overlay";
 @import "abstract/pagination";
 @import "abstract/filter-panel";
+@import "abstract/gallery-slider";
+@import "abstract/product-detail";
+@import "abstract/status-bar";
+@import "abstract/register";
 
 body {
   font-family: $kerkow-font-family-base;
@@ -49,4 +53,25 @@ a {
 .loader {
   border-color: $kerkow-blue;
   border-right-color: transparent;
+}
+
+.btn-secondary {
+  &:not(disabled) {
+    &:active,
+    &:hover {
+      background-color: $kerkow-blue;
+      color: white;
+      border-color: $kerkow-blue;
+    }
+    border-color: $kerkow-blue;
+    color: $kerkow-blue;
+    background-color: white;
+    font-family: $kerkow-font-family-base;
+    font-weight: 600;
+    text-transform: uppercase;
+    border-radius: 1px;
+  }
+}
+.alert {
+  padding: 1rem;
 }

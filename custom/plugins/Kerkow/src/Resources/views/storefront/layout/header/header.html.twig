@@ -16,11 +16,7 @@
 				</div>
 			{% endblock %}
 			{% block layout_header_actions %}
-				<div class="navbar-header-actions">
-					{% block layout_header_actions_account %}
-						{% sw_include '@kerkow/storefront/layout/header/header-actions.html.twig' %}
-					{% endblock %}
-				</div>
+				{{ parent() }}
 			{% endblock %}
 		</div>
 	{% endblock %}

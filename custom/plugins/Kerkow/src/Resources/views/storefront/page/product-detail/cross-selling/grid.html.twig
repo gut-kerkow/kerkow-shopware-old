@@ -1,0 +1,25 @@
+{% set boxLayout = "minimal" %}
+{% block cross_selling_grid %}
+	<div class="col-12">
+		<span class="cross-selling-headline">
+			{{ "kerkow.crossSelling.headline"|trans }}
+		</span>
+	</div>
+
+	{% for item in crossSellings %}
+		{% set products = item.getProducts() %}
+		{% for product in products %}
+
+			<div class="cross-selling-item cms-listing-col col-6 col-sm-3">
+				{% block element_content_product_listing_box %}
+					{% sw_include '@Storefront/storefront/component/product/card/box.html.twig' with {
+				                                                'layout': boxLayout,
+				                                                'displayMode': displayMode
+				                                            } %}
+				{% endblock %}
+			</div>
+		{% endfor %}
+
+	{% endfor %}
+
+{% endblock %}

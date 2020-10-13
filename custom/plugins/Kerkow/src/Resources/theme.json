@@ -5,7 +5,7 @@
     "en-GB": "The Gut Kerkow Theme",
     "de-DE": "Dut Kerkow Standard-Theme"
   },
-  "views": ["@Storefront", "@Kerkow", "@Plugins"],
+  "views": ["@Storefront", "@Plugins", "@Kerkow"],
   "style": [
     "app/storefront/src/scss/overrides.scss",
     "@Storefront",

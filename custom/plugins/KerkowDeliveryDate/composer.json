@@ -1,0 +1,27 @@
+{
+  "name": "kerkow/delivery-date",
+  "description": "Kerkow Delivery Date",
+  "type": "shopware-platform-plugin",
+  "license": "MIT",
+  "version": "v0.0.1",
+  "authors": [
+    {
+      "name": "Gut Kerkow Bauernmarkt GmbH (Kevin Drossard)",
+      "role": "Developer",
+      "email": "kevindrossard@gut-kerkow.de",
+      "homepage": "https://gut-kerkow.de"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Kerkow\\DeliveryDate\\": "src/"
+    }
+  },
+  "extra": {
+    "shopware-plugin-class": "Kerkow\\DeliveryDate\\DeliveryDate",
+    "label": {
+      "de-DE": "Kerkow Liefertag anzeigen",
+      "en-GB": "Kerkow Show Delivery Date"
+    }
+  }
+}

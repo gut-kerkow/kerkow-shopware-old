@@ -14,6 +14,7 @@ export default class ZipShopPlugin extends Plugin {
     zipShopUrlDataAttribute: "data-url",
     zipShopBodyContentSelector: ".js-modal-body",
     zipShopCloseModalSelector: ".js-close-modal",
+    zipShopOpenOnLoadAttribute: "data-open-on-load",
 
     zipShopOverlayDelay: 250,
     zipShopZipRegex: /^01\d{2}[1-9]|0[2-9]\d{3}|[1-9]\d{3}[0-8]|[1-9]\d{3}(?<!9999)9$/,
@@ -21,7 +22,6 @@ export default class ZipShopPlugin extends Plugin {
 
   init() {
     try {
-      console.log("klar");
       this._form = DomAccess.querySelector(
         this.el,
         this.options.zipShopOverlayFormSelector
@@ -38,6 +38,10 @@ export default class ZipShopPlugin extends Plugin {
         this._form,
         this.options.zipShopUrlDataAttribute
       );
+      this._openOnLoad = DomAccess.getAttribute(
+        this.el,
+        this.options.zipShopOpenOnLoadAttribute
+      );
     } catch (e) {
       console.log(e);
       return;
@@ -52,10 +56,12 @@ export default class ZipShopPlugin extends Plugin {
    * @private
    */
   _showModal() {
+    this._registerEvents();
+    if (!this._openOnLoad) {
+      return;
+    }
     // Show the modal
     $("#kerkowZipModal").modal("show");
-
-    this._registerEvents();
   }
 
   /**

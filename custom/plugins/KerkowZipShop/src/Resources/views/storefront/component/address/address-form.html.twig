@@ -1,0 +1,102 @@
+{% sw_extends '@Storefront/storefront/component/address/address-form.html.twig' %}
+{% block component_address_form %}
+	{% block component_address_form_addressId %}
+		{{ parent() }}
+	{% endblock %}
+
+	{% block component_address_form_company %}
+		{{ parent() }}
+	{% endblock %}
+
+	{% block component_address_form_address_fields %}
+		<div class="form-row">
+			{% block component_address_form_street %}
+				{{ parent() }}
+			{% endblock %}
+
+			{% block component_address_form_zipcode_city %}
+				{% set zipcodeField %}
+				{% if formViolations.getViolations("/zipcode") is not empty %}
+					{% set violationPath = "/zipcode" %}
+				{% elseif formViolations.getViolations("/#{prefix}/zipcode") is not empty %}
+					{% set violationPath = "/#{prefix}/zipcode" %}
+				{% endif %}
+
+				{% block component_address_form_zipcode_label %}
+					{{ parent() }}
+				{% endblock %}
+
+				{% block component_address_form_zipcode_input %}
+					<input type="text" class="form-control{% if violationPath %} is-invalid{% endif %}" id="{{ prefix }}AddressZipcode" placeholder="{{ "address.zipcodePlaceholder"|trans|striptags }}" name="{{ prefix }}[zipcode]" value="{% if data.get('zipcode') %} {{ data.get('zipcode') }} {% elseif page.extensions.postalcode %} {{page.extensions.postalcode.zip}} {% endif %}" required="required">
+				{% endblock %}
+
+				{% block component_address_form_zipcode_error %}
+					{{ parent() }}
+				{% endblock %}
+				{% endset %}
+
+				{% set cityField %}
+				{% if formViolations.getViolations("/city") is not empty %}
+					{% set violationPath = "/city" %}
+				{% elseif formViolations.getViolations("/#{prefix}/city") is not empty %}
+					{% set violationPath = "/#{prefix}/city" %}
+				{% else %}
+					{% set violationPath = null %}
+				{% endif %}
+
+				{% block component_address_form_city_label %}
+					{{ parent() }}
+				{% endblock %}
+
+				{% block component_address_form_city_input %}
+					<input type="text" class="form-control{% if violationPath %} is-invalid{% endif %}" id="{{ prefix }}AddressCity" placeholder="{{ "address.cityPlaceholder"|trans|striptags }}" name="{{ prefix }}[city]" value="{% if data.get('city') %} {{ data.get('city') }} {% elseif page.extensions.postalcode %} {{page.extensions.postalcode.city}} {% endif %}" required="required">
+				{% endblock %}
+
+				{% block component_address_form_city_error %}
+					{{ parent() }}
+				{% endblock %}
+				{% endset %}
+
+				{% if shopware.config.core.address.showZipcodeInFrontOfCity %}
+					<div class="form-group col-md-2 col-4">
+						{{ zipcodeField }}
+					</div>
+
+					<div class="form-group col-md-4 col-8">
+						{{ cityField }}
+					</div>
+				{% else %}
+					<div class="form-group col-md-4 col-8">
+						{{ cityField }}
+					</div>
+
+					<div class="form-group col-md-2 col-4">
+						{{ zipcodeField }}
+					</div>
+				{% endif %}
+			{% endblock %}
+
+			{% block component_address_form_additional_field1 %}
+				{{ parent() }}
+			{% endblock %}
+
+			{% block component_address_form_additional_field2 %}
+				{{ parent() }}
+			{% endblock %}
+		</div>
+
+		<div class="form-row country-and-state-form-elements">
+			{% block component_address_form_country %}
+				{{ parent() }}
+			{% endblock %}
+		</div>
+
+		<div class="form-row">
+			{% block component_address_form_phone_number %}
+				{{ parent() }}
+			{% endblock %}
+		</div>
+	{% endblock %}
+
+	{#TODO: NEXT-2671 - country states#}
+{% endblock %}

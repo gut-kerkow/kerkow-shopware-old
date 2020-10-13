@@ -12,7 +12,7 @@
                 &:hover,
                 &:focus,
                 &.is-active {
-                  fill: $kerkow-blue;
+                  fill: rgb(114, 131, 175);
                 }
                 cursor: pointer;
               }
@@ -84,7 +84,7 @@
                   &:hover,
                   &:focus,
                   &.is-active {
-                    fill: $kerkow-blue;
+                    fill: rgb(114, 131, 175);
                   }
                   cursor: pointer;
                 }

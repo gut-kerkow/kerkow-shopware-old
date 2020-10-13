@@ -1,8 +1,10 @@
 {% sw_extends '@Storefront/storefront/layout/footer/footer.html.twig' %}
 
 {% block layout_footer_inner_container %}
-    {{ parent() }}
-    {% if page.footer.extensions.postalcode is empty %}
-        {% sw_include '@KerkowZipShop/storefront/custom/modal.html.twig' %}
-    {% endif %}
+	{{ parent() }}
+	{% block footer_zip_modal %}
+		{% if page.footer.extensions.postalcode is empty %}
+			{% sw_include '@KerkowZipShop/storefront/custom/modal.html.twig' with {"openOnLoad": true } %}
+		{% endif %}
+	{% endblock %}
 {% endblock %}

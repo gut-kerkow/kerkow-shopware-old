@@ -1,0 +1,23 @@
+{% sw_extends '@Storefront/storefront/page/checkout/address/index.html.twig' %}
+
+{% block page_checkout_address %}
+	{% block page_checkout_address_delivery_alerts %}
+		{% if not page.extensions.postalcode_valid %}
+			<div class="alert alert-warning" role="alert">
+				{{"kerkow.canNotDliver"|trans}}
+				<div class="check-alternative-address" data-check-alternative-zip="true">
+					<a href="#" class="js_check_alternative_zip">
+						{{"kerkow.checkAlternativeAdress"|trans}}
+					</a>
+				</div>
+			</div>
+		{% endif %}
+
+	{% endblock %}
+	{{ parent() }}
+{% endblock %}
+
+{% block base_footer %}
+	{{ parent() }}
+	{% sw_include '@KerkowZipShop/storefront/custom/modal.html.twig' with {"openOnLoad": false} %}
+{% endblock %}

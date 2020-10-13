@@ -79,6 +79,7 @@ export default class AnimalPartsPlugin extends Plugin {
   _handlePartInfoEvent() {
     //fade out instructions
     this._fadeOutEffect(this._mobileInstruction);
+    this._fadeOutEffect(this._instruction);
     const id = event.target.getAttribute("id");
     // Find translations
     const partContent = this._partsTranslations["animals"][this._animalType][

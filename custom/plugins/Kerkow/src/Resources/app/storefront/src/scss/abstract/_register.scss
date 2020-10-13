@@ -1,0 +1,54 @@
+.is-act-checkoutregisterpage {
+  h2,
+  .card-title {
+    @include gt-bold;
+    color: $kerkow-blue;
+    text-align: center;
+    font-size: 1.2rem;
+    text-transform: unset;
+  }
+  .register-personal {
+    margin-bottom: 0;
+    .card-title {
+      margin-top: 1rem;
+    }
+  }
+  .card-title {
+    border: 0;
+    margin: 0;
+  }
+  .checkout {
+    padding-top: 0;
+
+    .checkout-main {
+      @extend .col-lg-12;
+      margin-bottom: $spacer-lg;
+    }
+  }
+
+  .register-guest-control {
+    margin-bottom: $spacer;
+  }
+
+  .register-login-collapse-toogle {
+    margin-bottom: $spacer;
+  }
+  .btn-checkout {
+    width: 100%;
+  }
+  .form-label {
+    color: $kerkow-blue;
+  }
+  .register-guest-control {
+    display: none;
+  }
+}
+@include media-breakpoint-up(lg) {
+  .is-act-checkoutregisterpage {
+    .checkout {
+      .checkout-main {
+        margin-bottom: 0;
+      }
+    }
+  }
+}
