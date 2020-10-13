@@ -1,3 +1,0 @@
-1597932871
-request_transformer_domains
-a:1:{s:21:"http://kerkow2.local/";a:13:{s:3:"url";s:21:"http://kerkow2.local/";s:2:"id";s:32:"1b654dcf5c004d0b90605e1e8d065301";s:14:"salesChannelId";s:32:"593e9c8cf06b488dbe0a3099d5ab1a10";s:6:"typeId";s:32:"8a243080f92e4c719546314b577cf82b";s:12:"snippetSetId";s:32:"eb1a6ddcf193437aac07017647662b8c";s:10:"currencyId";s:32:"b7d2554b0ce847cd82f3ac9bd1c0dfca";s:10:"languageId";s:32:"2fbb5fe2e29a4d70aa5854ce7ce3e20b";s:7:"themeId";s:32:"b9ff500f36c7405891c265ca091e3499";s:11:"maintenance";s:1:"0";s:22:"maintenanceIpWhitelist";N;s:6:"locale";s:5:"de-DE";s:9:"themeName";s:10:"Storefront";s:15:"parentThemeName";N;}}
