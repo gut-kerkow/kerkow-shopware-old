@@ -5,6 +5,11 @@
 !var/cache/.gitkeep
 !var/logs/.gitkeep
 !var/sessions/.gitkeep
+!var/cache/composer/*
+!var/plugins.json
+!var/theme-entry.scss
+!var/theme-files.json
+!var/theme-variables.scss
 
 # Logs (Symfony4)
 /var/log/*
@@ -14,3 +19,7 @@
 .DS_Store
 
 
+# Media
+/public/media/
+/public/thumbnail/
+/public/theme/
