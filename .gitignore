@@ -23,3 +23,6 @@
 /public/media/
 /public/thumbnail/
 /public/theme/
+
+# Config
+/config/jwt/
