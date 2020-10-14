@@ -35,11 +35,21 @@ ssh sw6_kerkow << EOF
     ln -nsf ${SHARED_DIR}/${THUMBNAIL_FOLDER} ${THUMBNAIL_FOLDER}
     echo "Symlinking LOG Folder (ln -nsf ${SHARED_DIR}/${LOG_FOLDER} ${LOG_FOLDER})"
     ln -nsf ${SHARED_DIR}/${LOG_FOLDER} ${LOG_FOLDER}
-    echo "Symlinking JWT Folder (ln -nsf ${SHARED_DIR}/${JWT_FOLDER} ${JWT_FOLDER})"
-    ln -nsf ${SHARED_DIR}/${JWT_FOLDER} ${JWT_FOLDER}
     echo "Compile Theme"
     bin/console theme:compile
+    echo "Create JWT Keys Folder"
+    mkdir ${JWT_FOLDER}
+    echo "Create JWT Keys"
+    bin/console system:generate-jwt-secret
     cd ${PROJECT_DIR}
     echo "Symlinking current Release: (ln -nsf ${CURRENT_RELEASE_DIR} ${CURRENT_DIR})"
     ln -nsf ${CURRENT_RELEASE_DIR} ${CURRENT_DIR}
+    echo "Set Permissions sudo chmod 0777 -R ${CURRENT_DIR}"
+    chmod 0777 -R ${CURRENT_DIR}
+    echo "Set Permissions for JWT Keys"
+    setfacl -m u:www-data:r ${CURRENT_DIR}/${JWT_FOLDER}/public.pem
+    chmod 600 ${CURRENT_DIR}/${JWT_FOLDER}/public.pem
+    setfacl -m u:www-data:r ${CURRENT_DIR}/${JWT_FOLDER}/private.pem
+    chmod 600 ${CURRENT_DIR}/${JWT_FOLDER}/private.pem
+    
 EOF
