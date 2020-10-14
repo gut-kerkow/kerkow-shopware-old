@@ -36,7 +36,8 @@ ssh sw6_kerkow << EOF
     echo "Symlinking LOG Folder (ln -nsf ${SHARED_DIR}/${LOG_FOLDER} ${LOG_FOLDER})"
     ln -nsf ${SHARED_DIR}/${LOG_FOLDER} ${LOG_FOLDER}
     echo "Build"
-    bin/build.sh
+    bin/theme:compile
+    bin/cache:clear
     echo "Create JWT Keys Folder"
     mkdir ${JWT_FOLDER}
     echo "Create JWT Keys"
