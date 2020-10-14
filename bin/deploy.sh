@@ -5,7 +5,7 @@ timestamp() {
   date +"%Y%m%d%H%M%S" # current time
 }
 RELEASE_STAMP=$(timestamp)
-PROJECT_DIR="/home/deploy/shop_kerkow"
+PROJECT_DIR="/home/deploy/kerkow"
 SHARED_DIR="${PROJECT_DIR}/shared"
 CURRENT_DIR="${PROJECT_DIR}/current"
 RELEASES_DIR="${PROJECT_DIR}/releases"
@@ -17,7 +17,7 @@ THUMBNAIL_FOLDER="public/thumbnail"
 LOG_FOLDER="var/log"
 JWT_FOLDER="config/jwt"
 # Login via SSH
-ssh kerkow << EOF
+ssh sw6_kerkow << EOF
     cd ${RELEASES_DIR} 
     echo "Create directory for new release ${RELEASE_STAMP}"
     mkdir ${RELEASE_STAMP} 

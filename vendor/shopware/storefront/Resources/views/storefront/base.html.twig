@@ -1,6 +1,6 @@
-{# Set variable to "true" to enable HMR (hot page reloading) mode #} {#% set
-isHMRMode = app.request.headers.get('hot-reload-mode') %#} {% set isHMRMode =
-true %} {% block base_doctype %}
+{# Set variable to "true" to enable HMR (hot page reloading) mode #} {% set
+isHMRMode = app.request.headers.get('hot-reload-mode') %} {#% set isHMRMode =
+true %#} {% block base_doctype %}
 <!DOCTYPE html>
 {% endblock %} {% block base_html %}
 <html
