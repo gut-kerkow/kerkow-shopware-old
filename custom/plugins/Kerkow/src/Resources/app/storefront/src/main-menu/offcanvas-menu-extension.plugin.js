@@ -57,7 +57,7 @@ export default class OffcanvasMenuExtensionPlugin extends OffcanvasMenuPlugin {
     zipMenuOffcanvas: "zip-menu-offcanvas",
     headerZipBodySelector: ".js-zip-form-container",
     headerZipRemoveLinkSelector: ".js-header-zip-widget-remove-link",
-    zipShopZipRegex: /^01\d{2}[1-9]|0[2-9]\d{3}|[1-9]\d{3}[0-8]|[1-9]\d{3}(?<!9999)9$/,
+    zipShopZipRegex: /e/,
   };
   /**
    * register triggers

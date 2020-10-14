@@ -17,7 +17,7 @@ export default class ZipShopPlugin extends Plugin {
     zipShopOpenOnLoadAttribute: "data-open-on-load",
 
     zipShopOverlayDelay: 250,
-    zipShopZipRegex: /^01\d{2}[1-9]|0[2-9]\d{3}|[1-9]\d{3}[0-8]|[1-9]\d{3}(?<!9999)9$/,
+    zipShopZipRegex: /\d{5}/,
   };
 
   init() {

@@ -47,9 +47,9 @@ ssh sw6_kerkow << EOF
     echo "Set Permissions sudo chmod 0777 -R ${CURRENT_DIR}"
     chmod 0777 -R ${CURRENT_DIR}
     echo "Set Permissions for JWT Keys"
-    setfacl -m u:www-data:r ${CURRENT_DIR}/${JWT_FOLDER}/public.pem
-    chmod 600 ${CURRENT_DIR}/${JWT_FOLDER}/public.pem
-    setfacl -m u:www-data:r ${CURRENT_DIR}/${JWT_FOLDER}/private.pem
-    chmod 600 ${CURRENT_DIR}/${JWT_FOLDER}/private.pem
+    setfacl -m u:www-data:r ${CURRENT_RELEASE_DIR}/${JWT_FOLDER}/public.pem
+    #chmod 600 ${CURRENT_RELEASE_DIR}/${JWT_FOLDER}/public.pem
+    setfacl -m u:www-data:r ${CURRENT_RELEASE_DIR}/${JWT_FOLDER}/private.pem
+    #chmod 600 ${CURRENT_RELEASE_DIR}/${JWT_FOLDER}/private.pem
     
 EOF
