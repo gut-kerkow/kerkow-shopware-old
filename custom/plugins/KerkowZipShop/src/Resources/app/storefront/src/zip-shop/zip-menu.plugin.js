@@ -69,7 +69,7 @@ export default class OffCanvasZipMenu extends Plugin {
       return;
     }
     this._client = new HttpClient();
-    console.log("neu");
+    console.log("alt");
     this._registerEventListeners();
   }
 

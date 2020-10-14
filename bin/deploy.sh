@@ -21,8 +21,6 @@ ssh sw6_kerkow << EOF
     cd ${RELEASES_DIR} 
     echo "Create directory for new release ${RELEASE_STAMP}"
     mkdir ${RELEASE_STAMP} 
-    echo "Deleting old releases"
-    ls -t | sed -e '1,5d' | xargs -d '\n' rm -rf 
     echo "cd ${CURRENT_RELEASE_DIR}" 
     cd ${CURRENT_RELEASE_DIR} 
     echo "Pull Master Branch from ${REPOSITORY}"
@@ -36,8 +34,11 @@ ssh sw6_kerkow << EOF
     echo "Symlinking LOG Folder (ln -nsf ${SHARED_DIR}/${LOG_FOLDER} ${LOG_FOLDER})"
     ln -nsf ${SHARED_DIR}/${LOG_FOLDER} ${LOG_FOLDER}
     echo "Build"
-    bin/theme:compile
-    bin/cache:clear
+    bin/build-js.sh
+    echo "Set Permissions sudo chmod 0777 -R ${CURRENT_RELEASE_DIR}"
+    chmod 0777 -R ${CURRENT_RELEASE_DIR}
+    bin/console theme:compile
+    bin/console cache:clear
     echo "Create JWT Keys Folder"
     mkdir ${JWT_FOLDER}
     echo "Create JWT Keys"
