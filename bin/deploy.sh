@@ -22,7 +22,7 @@ ssh sw6_kerkow << EOF
     echo "Create directory for new release ${RELEASE_STAMP}"
     mkdir ${RELEASE_STAMP} 
     echo "Deleting old releases"
-    #ls -t | sed -e '1,5d' | xargs -d '\n' rm -rf 
+    ls -t | sed -e '1,5d' | xargs -d '\n' rm -rf 
     echo "cd ${CURRENT_RELEASE_DIR}" 
     cd ${CURRENT_RELEASE_DIR} 
     echo "Pull Master Branch from ${REPOSITORY}"

@@ -24,7 +24,6 @@
 /public/thumbnail/
 /public/theme/
 /public/recovery/
-/public/bundles/
 
 # Config
 /config/jwt/
