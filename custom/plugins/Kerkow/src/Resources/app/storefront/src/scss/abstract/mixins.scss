@@ -18,8 +18,19 @@
 }
 
 // Fonts
-@mixin gt-medium {
+@mixin gt-regular {
   font-family: "GT-Sectra";
+}
+@mixin gt-regular-italic {
+  font-family: "GT-Sectra";
+  font-style: italic;
+}
+@mixin gt-medium {
+  font-family: "GT-Sectra-Medium";
+}
+@mixin gt-medium-italic {
+  font-family: "GT-Sectra-Medium";
+  font-style: italic;
 }
 @mixin gt-bold {
   font-family: "GT-Sectra";
@@ -33,4 +44,29 @@
   font-family: "GT-Sectra";
   font-weight: bold;
   font-style: italic;
+}
+@mixin gt-black {
+  font-family: "GT-Sectra-Black";
+}
+@mixin gt-black-italic {
+  font-family: "GT-Sectra-Black";
+  font-style: italic;
+}
+@mixin gt-book {
+  font-family: "GT-Sectra-Book";
+}
+@mixin source-regular {
+  font-family: "Source Sans Pro", sans-serif;
+}
+@mixin source-light {
+  font-family: "Source Sans Pro", sans-serif;
+  font-weight: 300;
+}
+@mixin source-medium {
+  font-family: "Source Sans Pro", sans-serif;
+  font-weight: 600;
+}
+@mixin source-bold {
+  font-family: "Source Sans Pro", sans-serif;
+  font-weight: 700;
 }

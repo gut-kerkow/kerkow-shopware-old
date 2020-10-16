@@ -1,38 +1,48 @@
-<div class="modal fade" id="kerkowZipModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" data-zip-modal="true" data-open-on-load="{{ openOnLoad }}">
+<div class="modal fade" id="kerkowZipModal" tabindex="-1" role="dialog" aria-labelledby="zipModalTitle" data-zip-modal="true" data-open-on-load="{{ openOnLoad }}">
 	<div class="modal-dialog modal-dialog-centered" role="document">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title" id="exampleModalLongTitle">
+				<h5 class="modal-title" id="zipModalTitle">
 					Unser Liefergebiet
 				</h5>
 				<button type="button" class="close js-close-modal" data-dismiss="modal" aria-label="Close">
-					<span aria-hidden="true">
-						&times;
+					<span class="close-icon">
+						{% sw_include '@kerkow/storefront/custom/icons/close-icon.html.twig' %}
 					</span>
 				</button>
 			</div>
 			<div class="modal-body js-modal-body">
+				<div class="modal-body-content">
+					{{ 'kerkow.zipShop.pleaseEnterZip' | trans }}
+				</div>
 				<form action="{{ path('frontend.custom.addZip') }}" method="get" data-url="{{ path('frontend.custom.addZip') }}?zip=" id="js-add-zip-form" class="add-zip">
 					<div class="form-row add-zip-container">
 						<div class="input-group mb-3">
 							<input type="text" name="zip" class="form-control" placeholder="Postleitzahl" aria-label="Postleitzahl" required>
 
-							<div class="input-group-append">
-								<button class="btn btn-outline-secondary" type="submit">
-									>
-								</button>
-							</div>
+							<button class="btn btn-outline-secondary zip-search-btn" type="submit">
+								<span class="zip-search-icon">
+									{% sw_icon 'arrow-right' %}
+								</span>
+							</button>
 							<div class="invalid-feedback">
 								{{ 'kerkow.zipShop.enterValidZip' | trans }}
 							</div>
+
 						</div>
 						<input type="hidden" name="redirectTo" value="frontend.home.page"/>
 
 					</div>
 				</form>
+				<div class="zip-valid-feedback js-modal-success-message d-none">
+					{{ 'kerkow.zipShop.successDeliveryArea' | trans }}
+				</div>
+				<div class="zip-invalid-feedback js-modal-failure-message d-none">
+					{{ 'kerkow.zipShop.failureDeliveryArea' | trans }}
+				</div>
 			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-secondary js-close-modal" data-dismiss="modal">
+			<div class="modal-footer js-modal-footer">
+				<button type="button" class="btn js-deny-zip">
 					Jetzt nicht
 				</button>
 			</div>

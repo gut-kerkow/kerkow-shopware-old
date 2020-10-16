@@ -4,9 +4,9 @@
 			<div class="form-row add-zip-container">
 				<div class="input-group mb-3">
 					{% if postalcode %}
-						<input type="text" name="zip" class="form-control" placeholder="Postleitzahl" aria-label="Postleitzahl" value="{{ postalcode }}" required>
+						<input type="text" name="zip" class="form-control js-zip-input" placeholder="Postleitzahl" aria-label="Postleitzahl" value="{{ postalcode }}" required>
 					{% else %}
-						<input type="text" name="zip" class="form-control" placeholder="Postleitzahl" aria-label="Postleitzahl" value="{{ page.header.extensions.postalcode ? page.header.extensions.postalcode : "" }}" required>
+						<input type="text" name="zip" class="form-control js-zip-input" placeholder="Postleitzahl" aria-label="Postleitzahl" value="{{ page.header.extensions.postalcode ? page.header.extensions.postalcode : "" }}" required>
 					{% endif %}
 					<div class="input-group-append">
 						<button class="btn btn-outline-secondary zip-search-btn" type="submit">

@@ -44,13 +44,13 @@ class CheckoutRegisterPageSubscriber implements EventSubscriberInterface
             // Call the service to query the zip
 
             /** @var EntityCollection $entities */
-            $postalcode = $this->postalcodeRepository->search(
+            $query = $this->postalcodeRepository->search(
                 (new Criteria())->addFilter(new EqualsFilter('zip', $postalcode)),
                 \Shopware\Core\Framework\Context::createDefaultContext()
             )->first();
             // Check if user entered a valid zip
-            if ($postalcode) {
-                $result = $postalcode;
+            if ($query) {
+                $result = $query;
                 $extensions['postalcode_valid'] = true;
             } else {
                 // Postalcode saved in session was not valid

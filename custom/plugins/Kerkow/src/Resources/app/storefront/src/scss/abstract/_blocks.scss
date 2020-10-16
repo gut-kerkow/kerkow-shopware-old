@@ -3,16 +3,20 @@
     @extend .d-flex, .justify-content-center;
   }
   .cms-element-text {
-    h2,
-    p {
-      @include gt-bold-italic;
+    h2 {
+      @include gt-black-italic;
       font-size: 1.5rem;
+      text-align: center;
       color: $kerkow-blue;
+      text-transform: none;
     }
     p {
-      font-style: normal;
+      @include gt-book;
+      text-align: center;
+      color: $kerkow-blue;
       font-size: 2rem;
-      line-height: 1.5rem;
+      line-height: 2.5rem;
+      font-style: normal;
     }
   }
 }
@@ -30,7 +34,7 @@
     color: white;
     padding: 2.5rem;
     h2 {
-      @include gt-bold-italic;
+      @include gt-black-italic;
       font-size: 2rem;
       color: white;
       margin-bottom: 2rem;
@@ -206,7 +210,7 @@
         font-size: 2.2rem;
       }
       p {
-        font-size: 2.5rem;
+        font-size: 1.5rem;
         line-height: 1.5rem;
       }
     }

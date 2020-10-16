@@ -68,7 +68,7 @@
         line-height: normal;
         vertical-align: middle;
         color: white;
-        @include gt-bold-italic;
+        @include gt-black-italic;
         transform: rotate(15deg);
       }
       p {

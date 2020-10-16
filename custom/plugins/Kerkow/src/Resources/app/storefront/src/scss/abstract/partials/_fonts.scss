@@ -1,38 +1,49 @@
+// GT-Sectra
 @font-face {
   font-family: "GT-Sectra";
-  src: url("/bundles/kerkow/fonts/GT-Sectra-Medium.eot");
-  src: url("/bundles/kerkow/fonts/GT-Sectra-Medium.eot?#iefix")
-      format("embedded-opentype"),
-    url("/bundles/kerkow/fonts/GT-Sectra-Medium.woff") format("woff"),
-    url("/bundles/kerkow/fonts/GT-Sectra-Medium.ttf") format("truetype");
+  src: url("/bundles/kerkow/fonts/GT-Sectra-Regular.woff") format("woff");
 }
+// GT-Sectra
 @font-face {
   font-family: "GT-Sectra";
-  src: url("/bundles/kerkow/fonts/GT-Sectra-Bold.eot");
-  src: url("/bundles/kerkow/fonts/GT-Sectra-Bold.eot?#iefix")
-      format("embedded-opentype"),
-    url("/bundles/kerkow/fonts/GT-Sectra-Bold.woff") format("woff"),
-    url("/bundles/kerkow/fonts/GT-Sectra-Bold.ttf") format("truetype");
-  font-weight: bold;
-}
-@font-face {
-  font-family: "GT-Sectra";
-  src: url("/bundles/kerkow/fonts/GT-Sectra-Medium-Italic.eot");
-  src: url("/bundles/kerkow/fonts/GT-Sectra-Medium-Italic.eot?#iefix")
-      format("embedded-opentype"),
-    url("/bundles/kerkow/fonts/GT-Sectra-Medium-Italic.woff") format("woff"),
-    url("/bundles/kerkow/fonts/GT-Sectra-Medium-Italic.ttf") format("truetype");
+  src: url("/bundles/kerkow/fonts/GT-Sectra-Regular-Italic.woff") format("woff");
   font-style: italic;
 }
 @font-face {
   font-family: "GT-Sectra";
-  src: url("/bundles/kerkow/fonts/GT-Sectra-Bold-Italic.eot");
-  src: url("/bundles/kerkow/fonts/GT-Sectra-Bold-Italic.eot?#iefix")
-      format("embedded-opentype"),
-    url("/bundles/kerkow/fonts/GT-Sectra-Bold-Italic.woff") format("woff"),
-    url("/bundles/kerkow/fonts/GT-Sectra-Bold-Italic.ttf") format("truetype");
+  src: url("/bundles/kerkow/fonts/GT-Sectra-Bold.woff") format("woff");
+  font-weight: bold;
+}
+@font-face {
+  font-family: "GT-Sectra";
+  src: url("/bundles/kerkow/fonts/GT-Sectra-Bold-Italic.woff") format("woff");
   font-weight: bold;
   font-style: italic;
+}
+// Gt-Sectra Medium
+@font-face {
+  font-family: "GT-Sectra-Medium";
+  src: url("/bundles/kerkow/fonts/GT-Sectra-Medium.woff") format("woff");
+}
+@font-face {
+  font-family: "GT-Sectra-Medium";
+  src: url("/bundles/kerkow/fonts/GT-Sectra-Medium-Italic.woff") format("woff");
+  font-style: italic;
+}
+// GT-Sectra-Black
+@font-face {
+  font-family: "GT-Sectra-Black";
+  src: url("/bundles/kerkow/fonts/GT-Sectra-Black.woff") format("woff");
+}
+@font-face {
+  font-family: "GT-Sectra-Black";
+  src: url("/bundles/kerkow/fonts/GT-Sectra-Black-Italic.woff") format("woff");
+  font-style: italic;
+}
+// GT-Sectra-Book
+@font-face {
+  font-family: "GT-Sectra-Book";
+  src: url("/bundles/kerkow/fonts/GT-Sectra-Book.woff") format("woff");
 }
 // Source-Sans
 @font-face {
@@ -49,4 +60,9 @@
   src: url("/bundles/kerkow/fonts/SourceSansPro-SemiBold.ttf")
     format("truetype");
   font-weight: 600;
+}
+@font-face {
+  font-family: "Source Sans Pro", sans-serif;
+  src: url("/bundles/kerkow/fonts/SourceSansPro-Bold.ttf") format("truetype");
+  font-weight: 700;
 }

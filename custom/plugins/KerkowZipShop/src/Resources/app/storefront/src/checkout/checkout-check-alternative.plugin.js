@@ -51,7 +51,9 @@ export default class CheckoutCheckAlternative extends Plugin {
    * @private
    */
   _onClickCheckAlternativeZip(e) {
-    e.preventDefault();
+    if (e.cancelable) {
+      e.preventDefault();
+    }
     // Show the modal
     $("#kerkowZipModal").modal("show");
   }

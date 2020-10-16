@@ -21,14 +21,14 @@
 @import "abstract/product-detail";
 @import "abstract/status-bar";
 @import "abstract/register";
+@import "abstract/modal";
 
 body {
   font-family: $kerkow-font-family-base;
   color: $kerkow-grey;
 }
 h2 {
-  font-family: $kerkow-font-family-base;
-  font-weight: 600;
+  @include source-medium;
   color: $kerkow-grey;
   text-transform: uppercase;
   font-size: 1rem;
@@ -74,4 +74,19 @@ a {
 }
 .alert {
   padding: 1rem;
+}
+.alert-kerkow {
+  background-color: rgba(49, 78, 146, 0.6);
+  color: white;
+  @include source-regular;
+  font-size: 1rem;
+  a {
+    color: white;
+    text-decoration: underline;
+  }
+}
+.was-validated .form-control:valid:focus,
+.form-control.is-valid:focus {
+  border-color: $kerkow-blue;
+  box-shadow: none;
 }

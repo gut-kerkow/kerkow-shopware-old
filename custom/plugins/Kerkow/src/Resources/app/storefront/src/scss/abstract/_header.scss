@@ -34,8 +34,8 @@
   }
 }
 .navbar-light .navbar-nav .nav-link {
+  @include source-regular;
   color: $kerkow-grey;
-  font-size: 1rem;
 }
 .logo-container {
   width: 100%;

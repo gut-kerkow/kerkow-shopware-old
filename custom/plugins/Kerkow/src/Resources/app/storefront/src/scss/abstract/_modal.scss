@@ -1,0 +1,33 @@
+.modal-content {
+  h5 {
+    @include gt-black;
+    color: $kerkow-blue;
+  }
+  .modal-body-content {
+    @include gt-book;
+    color: $kerkow-blue;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+  }
+  .close-icon {
+    display: block;
+    width: 1.2rem;
+    height: 1.2rem;
+    align-self: center;
+    overflow: visible;
+    svg {
+      width: 100%;
+      height: 100%;
+    }
+  }
+  .zip-valid-feedback,
+  .zip-invalid-feedback {
+    @include gt-bold;
+    font-size: 1rem;
+    color: $kerkow-blue;
+    text-align: center;
+  }
+  .zip-invalid-feedback {
+    color: $kerkow-grey;
+  }
+}

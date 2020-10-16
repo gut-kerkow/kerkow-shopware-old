@@ -95,8 +95,8 @@
 }
 .main-navigation-menu {
   a {
+    @include source-medium;
     text-transform: uppercase;
-    font-weight: 600;
     color: $kerkow-blue;
   }
 }

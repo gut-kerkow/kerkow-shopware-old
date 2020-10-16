@@ -2,6 +2,7 @@
 import ZipShopPlugin from "./zip-shop/zip-shop.plugin";
 import OffCanvasZipMenu from "./zip-shop/zip-menu.plugin";
 import CheckoutCheckAlternative from "./checkout/checkout-check-alternative.plugin";
+import CheckZip from "./checkout/check-zip.plugin";
 
 // Register them via the existing PluginManager
 const PluginManager = window.PluginManager;
@@ -12,3 +13,4 @@ PluginManager.register(
   CheckoutCheckAlternative,
   "[data-check-alternative-zip]"
 );
+PluginManager.register("CheckZip", CheckZip, "[data-check-zip]");

@@ -2,17 +2,22 @@
 
 {% block page_checkout_address %}
 	{% block page_checkout_address_delivery_alerts %}
-		{% if not page.extensions.postalcode_valid %}
-			<div class="alert alert-warning" role="alert">
-				{{"kerkow.canNotDliver"|trans}}
-				<div class="check-alternative-address" data-check-alternative-zip="true">
-					<a href="#" class="js_check_alternative_zip">
-						{{"kerkow.checkAlternativeAdress"|trans}}
-					</a>
-				</div>
+		<div id="js-zip-no-zip" class="alert alert-kerkow {% if page.extensions.postalcode is empty %}d-block{% else %}d-none{% endif %}" role="alert">
+			{{"kerkow.noValidZipYet"|trans}}
+			<div class="check-alternative-address" data-check-alternative-zip="true">
+				<a href="#" class="js_check_alternative_zip">
+					{{"kerkow.checkZip"|trans}}
+				</a>
 			</div>
-		{% endif %}
-
+		</div>
+		<div id="js-zip-invalid" class="alert alert-warning {% if page.extensions.postalcode is not empty and not page.extensions.postalcode_valid%}d-block{% else %}d-none{% endif %}" role="alert">
+			{{"kerkow.canNotDliver"|trans}}
+			<div class="check-alternative-address" data-check-alternative-zip="true">
+				<a href="#" class="js_check_alternative_zip">
+					{{"kerkow.checkAlternativeAdress"|trans}}
+				</a>
+			</div>
+		</div>
 	{% endblock %}
 	{{ parent() }}
 {% endblock %}

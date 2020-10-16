@@ -30,14 +30,17 @@ class FooterZipSubscriber implements EventSubscriberInterface
 
     public function onStorefrontLoaded(FooterPageletLoadedEvent $event): void
     {
+        $pagelet = $event->getPagelet();
+        $extensions = $event->getPagelet()->getExtensions();
+        if ($this->session->has('postalcode_denied')) {
+            $extensions['hide_zip_modal'] = true;
+            $pagelet->setExtensions($extensions);
+            return;
+        }
         if ($this->session->has('postalcode')) {
-            //$this->session->clear();
-
             $postalcode = $this->session->get('postalcode');
-            $event->getPagelet()->setExtensions(["postalcode" => $postalcode]);
-        } else {
-            $postalcode_error = "not_available";
-            $event->getPagelet()->setExtensions(["postalcode_error" => $postalcode_error]);
+            $extensions['postalcode'] = $postalcode;
+            $pagelet->setExtensions($extensions);
         }
     }
 }

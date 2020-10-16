@@ -33,23 +33,31 @@ class AddZipController extends StorefrontController
     public function addZip(Request $request, Session $session, SalesChannelContext $context)
     {
         $param = $request->get('zip');
-        // Call the service to query the zip
-        /** @var EntityRepositoryInterface $postalcodeRepository */
-        $postalcodeRepository = $this->container->get('kerkow_postalcodes.repository');
-        /** @var EntityCollection $entities */
-        $postalcode = $postalcodeRepository->search(
-            (new Criteria())->addFilter(new EqualsFilter('zip', $param)),
-            \Shopware\Core\Framework\Context::createDefaultContext()
-        )->first();
-        // Check if user entered a valid zip
-        if ($postalcode) {
-            $result = $postalcode->getZip();
-            $session->set('postalcode', $result);
-        } else {
-            $session->set('postalcode', $param);
+        if ($param == "denied") {
+            $session->set('postalcode_denied', true);
             $result = false;
+        } else {
+
+            // Call the service to query the zip
+            /** @var EntityRepositoryInterface $postalcodeRepository */
+            $postalcodeRepository = $this->container->get('kerkow_postalcodes.repository');
+            /** @var EntityCollection $entities */
+            $postalcode = $postalcodeRepository->search(
+                (new Criteria())->addFilter(new EqualsFilter('zip', $param)),
+                \Shopware\Core\Framework\Context::createDefaultContext()
+            )->first();
+            // Check if user entered a valid zip
+            if ($postalcode) {
+                $result = $postalcode->getZip();
+                $session->set('postalcode', $result);
+            } else {
+                $session->set('postalcode', $param);
+                $result = false;
+            }
         }
-        return $this->renderStorefront('@KerkowZipShop/storefront/custom/response.html.twig', ['result' => $result]);
+        return new JsonResponse([
+            "postalcode" => $result
+        ]);
     }
 
     /**

@@ -23,15 +23,14 @@
       left: 0.5rem;
     }
     .badge-custom {
-      font-size: 1rem;
+      @include gt-black;
+      font-size: 1.2;
       background: rgba(255, 255, 255, 0.6);
-      @include gt-bold;
-      font-weight: bold !important;
       color: $kerkow-blue !important;
     }
   }
   .product-name {
-    @include gt-bold;
+    @include gt-black;
     color: $kerkow-blue;
 
     font-size: 1.2rem;
@@ -44,9 +43,8 @@
   }
   .product-price {
     font-size: 1.8rem;
-    font-family: $kerkow-font-family-base;
+    @include source-medium;
     color: $kerkow-blue;
-    font-weight: 400;
     line-height: 2rem;
     height: 2rem;
     margin-top: 0;
@@ -56,9 +54,8 @@
   }
   .product-price-unit,
   .price-unit-reference {
-    font-family: $kerkow-font-family-base;
+    @include source-light;
     color: $kerkow-blue;
-    font-weight: 400;
     font-size: 1rem;
     line-height: 1rem;
     height: 1.2rem;
