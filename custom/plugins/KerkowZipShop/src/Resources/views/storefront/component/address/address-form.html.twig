@@ -61,19 +61,19 @@
 				{% endset %}
 
 				{% if shopware.config.core.address.showZipcodeInFrontOfCity %}
-					<div class="form-group col-md-2 col-4">
+					<div class="form-group col-12">
 						{{ zipcodeField }}
 					</div>
 
-					<div class="form-group col-md-4 col-8">
+					<div class="form-group col-12">
 						{{ cityField }}
 					</div>
 				{% else %}
-					<div class="form-group col-md-4 col-8">
+					<div class="form-group col-12">
 						{{ cityField }}
 					</div>
 
-					<div class="form-group col-md-2 col-4">
+					<div class="form-group col-12">
 						{{ zipcodeField }}
 					</div>
 				{% endif %}

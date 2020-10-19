@@ -1,0 +1,70 @@
+{% sw_extends '@Storefront/storefront/component/address/address-personal.html.twig' %}
+{% block component_address_personal_fields %}
+	{% block component_address_personal_account_type %}
+		{{ parent() }}
+	{% endblock %}
+
+	{% block component_address_personal_fields_salutation_title %}
+		<div class="form-row">
+			{% block component_address_personal_fields_salutation %}
+				<div class="form-group col-12">
+					{% block component_address_personal_fields_salutation_label %}
+						{{ parent() }}
+					{% endblock %}
+
+					{% block component_address_form_salutation_select %}
+						{{ parent() }}
+					{% endblock %}
+
+					{% block component_address_form_salutation_select_error %}
+						{{ parent() }}
+					{% endblock %}
+				</div>
+			{% endblock %}
+
+			{% block component_address_personal_fields_title %}
+				{{ parent() }}
+			{% endblock %}
+		</div>
+	{% endblock %}
+
+	{% block component_address_personal_fields_name %}
+		<div class="form-row">
+			{% block component_address_personal_fields_first_name %}
+				<div class="form-group col-12">
+					{% block component_address_personal_fields_first_name_label %}
+						{{ parent() }}
+					{% endblock %}
+
+					{% block component_address_personal_fields_first_name_input %}
+						{{ parent() }}
+					{% endblock %}
+
+					{% block component_address_personal_fields_first_name_input_error %}
+						{{ parent() }}
+					{% endblock %}
+				</div>
+			{% endblock %}
+
+			{% block component_address_personal_fields_last_name %}
+				<div class="form-group col-12">
+					{% block component_address_personal_fields_last_name_label %}
+						{{ parent() }}
+					{% endblock %}
+
+					{% block component_address_personal_fields_last_name_input %}
+						{{ parent() }}
+					{% endblock %}
+
+					{% block component_address_personal_fields_last_name_input_error %}
+						{{ parent() }}
+					{% endblock %}
+				</div>
+			{% endblock %}
+		</div>
+	{% endblock %}
+
+	{% block component_address_personal_fields_birthday %}
+		{{ parent() }}
+	{% endblock %}
+{% endblock %}

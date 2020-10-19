@@ -1,6 +1,10 @@
 {% sw_extends '@Storefront/storefront/component/account/register.html.twig' %}
 {% block component_account_register %}
-	<div data-check-zip="true" data-url="{{ path('frontend.custom.addZip') }}?zip=">
+	{% block component_account_register_add_zip_check %}
+		<div data-check-zip="true" data-url="{{ path('frontend.custom.addZip') }}?zip=">
+		{% endblock %}
 		{{ parent() }}
-	</div>
+		{% block component_account_register_add_zip_check_end %}
+		</div>
+	{% endblock %}
 {% endblock %}

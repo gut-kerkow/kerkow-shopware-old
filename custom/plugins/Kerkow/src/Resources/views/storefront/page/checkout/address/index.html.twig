@@ -17,36 +17,41 @@
 		{% block page_checkout_address_delivery_alerts %}
 			{{ parent() }}
 		{% endblock %}
+		<div class="row register-login-container" data-toggle-login-register="true">
+			<div class="col-12 col-md-6">
+				{% block page_checkout_address_login_toggle %}
+					<div class="register-login-collapse-toogle">
+						<h2>
+							Willkommen zurück
+						</h2>
+						<a href="#loginCollapse" class="login-collapse-toggle js-login-toggle" data-toggle="collapse" aria-expanded="false">
+							<button class="btn btn-secondary btn-checkout">
+								{{ "checkout.addressLoginToggle"|trans|sw_sanitize }}
+							</button>
+						</a>
+					</div>
+				{% endblock %}
 
-		{% block page_checkout_address_login_toggle %}
-			<div class="register-login-collapse-toogle">
-				<h2>
-					Willkommen zurück
-				</h2>
-				<a href="#loginCollapse" class="login-collapse-toggle" data-toggle="collapse" aria-expanded="false">
-					<button class="btn btn-secondary btn-checkout">
-						{{ "checkout.addressLoginToggle"|trans|sw_sanitize }}
-					</button>
-				</a>
-			</div>
-		{% endblock %}
-
-		{% block page_checkout_address_login %}
-			<div class="collapse" id="loginCollapse">
-				{% block page_checkout_address_login_card %}
-					{% sw_include '@Storefront/storefront/component/account/login.html.twig' %}
+				{% block page_checkout_address_login %}
+					<div class="collapse" id="loginCollapse">
+						{% block page_checkout_address_login_card %}
+							{% sw_include '@Storefront/storefront/component/account/login.html.twig' %}
+						{% endblock %}
+					</div>
 				{% endblock %}
 			</div>
-		{% endblock %}
+			<div class="col-12 col-md-6">
 
-		{% block page_checkout_address_register %}
-			{% block page_checkout_address_register_card %}
-				{% sw_include '@Storefront/storefront/page/checkout/address/register.html.twig' with {
+				{% block page_checkout_address_register %}
+					{% block page_checkout_address_register_card %}
+						{% sw_include '@Storefront/storefront/page/checkout/address/register.html.twig' with {
                     'cardTitle': "checkout.addressRegisterCardTitle"|trans|sw_sanitize
                 } %}
+					{% endblock %}
+				{% endblock %}
 			{% endblock %}
-		{% endblock %}
-	{% endblock %}
+		</div>
+	</div>
 {% endblock %}
 
 {% block page_checkout_aside_summary %}

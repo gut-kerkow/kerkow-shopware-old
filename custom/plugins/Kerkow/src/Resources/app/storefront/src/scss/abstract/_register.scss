@@ -1,4 +1,7 @@
 .is-act-checkoutregisterpage {
+  .checkout-container {
+    min-height: 30rem;
+  }
   h2,
   .card-title {
     @include gt-bold;
@@ -15,11 +18,11 @@
   }
   .card-title {
     border: 0;
-    margin: 0;
+    margin: 10px 0;
   }
   .checkout {
     padding-top: 0;
-
+    padding-bottom: 150px;
     .checkout-main {
       @extend .col-lg-12;
       margin-bottom: $spacer-lg;
@@ -36,11 +39,27 @@
   .btn-checkout {
     width: 100%;
   }
+  .login-submit {
+    .btn {
+      width: 100%;
+    }
+  }
   .form-label {
     color: $kerkow-blue;
   }
   .register-guest-control {
     display: none;
+  }
+  .register-address {
+    margin-bottom: 0;
+  }
+  .register-submit {
+    button {
+      width: 100%;
+    }
+  }
+  label {
+    @include source-regular;
   }
 }
 @include media-breakpoint-up(lg) {
@@ -50,5 +69,31 @@
         margin-bottom: 0;
       }
     }
+  }
+}
+@include media-breakpoint-up(md) {
+  .is-act-checkoutregisterpage {
+    h2,
+    .card-title {
+      line-height: 2.125rem;
+      margin: 0;
+      margin-bottom: 2rem;
+      padding-bottom: 0;
+    }
+  }
+  .register-personal,
+  .login-card {
+    position: relative;
+    top: -1.6rem;
+  }
+}
+@include media-breakpoint-only(xl) {
+  .register-login-container {
+    max-width: 80%;
+    margin: auto;
+  }
+  .status-bar-container {
+    max-width: 70%;
+    margin: 1rem auto 5rem auto;
   }
 }

@@ -1,0 +1,39 @@
+.is-act-confirmpage {
+  .confirm-main-header {
+    @include gt-black;
+    color: $kerkow-blue;
+    margin-bottom: 0.5rem;
+  }
+  .card-body {
+    border-bottom: 1px solid $kerkow-light-grey;
+    .card-title {
+      @include gt-black;
+      color: $kerkow-blue;
+      font-size: 1.2rem;
+      border: 0;
+    }
+  }
+  .confirm-payment-shipping {
+    padding-top: 1rem;
+    border-top: 1px solid $kerkow-light-grey;
+  }
+  .confirm-payment {
+    .card-body {
+      border-bottom: none;
+    }
+  }
+  .payment-method {
+    border-bottom: 1px solid $kerkow-light-grey;
+
+    .payment-method-description {
+      @include gt-bold;
+      color: $kerkow-blue;
+      font-size: 1.1rem;
+      line-height: 1.5rem;
+    }
+    .payment-method-image {
+      max-height: 22px;
+      margin-right: 0;
+    }
+  }
+}

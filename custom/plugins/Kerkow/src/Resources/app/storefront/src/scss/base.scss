@@ -22,10 +22,19 @@
 @import "abstract/status-bar";
 @import "abstract/register";
 @import "abstract/modal";
+@import "abstract/confirm";
 
 body {
   font-family: $kerkow-font-family-base;
   color: $kerkow-grey;
+  position: relative;
+  min-height: 100vh;
+  background-color: $kerkow-light-grey;
+}
+.page-container {
+  max-width: 1420px;
+  margin: 10px auto;
+  background-color: white;
 }
 h2 {
   @include source-medium;

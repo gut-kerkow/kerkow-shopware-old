@@ -1,0 +1,33 @@
+{% sw_extends '@Storefront/storefront/page/checkout/confirm/confirm-payment.html.twig' %}
+{% block page_checkout_confirm_payment_inner %}
+	<div class="card checkout-card">
+		<div class="card-body">
+			{% set paymentMethodInvalid = true %}
+
+			{% for payment in page.paymentMethods %}
+				{% if payment.id is same as(context.paymentMethod.id) %}
+					{% set paymentMethodInvalid = false %}
+				{% endif %}
+			{% endfor %}
+
+			{% block page_checkout_confirm_payment_title %}
+				{{ parent() }}
+			{% endblock %}
+
+			{% block page_checkout_confirm_payment_current %}
+			{% endblock %}
+
+			{% block page_checkout_confirm_payment_select %}
+				{% sw_include '@kerkow/storefront/page/checkout/confirm/change-payment.html.twig' with { 'redirect': 'frontend.checkout.confirm.page', 'action':  'frontend.checkout.configure'} %}
+			{% endblock %}
+
+			{% block page_checkout_confirm_payment_modal_toggle %}
+
+			{% endblock %}
+
+			{% block page_checkout_confirm_payment_modal %}
+				{{ parent() }}
+			{% endblock %}
+		</div>
+	</div>
+{% endblock %}

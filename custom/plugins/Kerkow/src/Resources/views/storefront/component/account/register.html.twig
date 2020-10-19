@@ -1,0 +1,32 @@
+{% sw_extends '@Storefront/storefront/component/account/register.html.twig' %}
+{% block component_account_register %}
+	{% block component_account_register_add_zip_check %}
+		{{ parent() }}
+	{% endblock %}
+	<div class="card register-card">
+		<div class="card-body">
+			{% block component_account_register_header %}
+				{% if cardTitle %}
+					<div class="card-title">
+						{{ cardTitle }}
+					</div>
+					<a href="#registerCollapse" class="login-collapse-toggle" data-toggle="collapse" aria-expanded="false">
+						<button class="btn btn-secondary btn-checkout js-register-collapse">
+							{{ "account.orRegisterLink"|trans|sw_sanitize }}
+						</button>
+					</a>
+				{% endif %}
+			{% endblock %}
+
+			{% block component_account_register_form %}
+				<div class="collapse" id="registerCollapse">
+					{{ parent() }}
+				</div>
+
+			{% endblock %}
+		</div>
+	</div>
+	{% block component_account_register_add_zip_check_end %}
+		{{ parent() }}
+	{% endblock %}
+{% endblock %}

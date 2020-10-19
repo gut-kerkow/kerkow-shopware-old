@@ -11,7 +11,25 @@
 	{% block component_address_form_address_fields %}
 		<div class="form-row">
 			{% block component_address_form_street %}
-				{{ parent() }}
+				<div class="form-group col-md-12">
+					{% if formViolations.getViolations("/street") is not empty %}
+						{% set violationPath = "/street" %}
+					{% elseif formViolations.getViolations("/#{prefix}/street") is not empty %}
+						{% set violationPath = "/#{prefix}/street" %}
+					{% endif %}
+
+					{% block component_address_form_street_label %}
+						{{ parent() }}
+					{% endblock %}
+
+					{% block component_address_form_street_input %}
+						{{ parent() }}
+					{% endblock %}
+
+					{% block component_address_form_street_input_error %}
+						{{ parent() }}
+					{% endblock %}
+				</div>
 			{% endblock %}
 
 			{% block component_address_form_zipcode_city %}

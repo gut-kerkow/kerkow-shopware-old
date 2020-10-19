@@ -2,16 +2,41 @@
 
 
 {% block base_body_inner %}
-
-
-	{{ parent() }}
-	{% block final_footer %}
-		<footer class="footer-final">
-			{% block final_footer_inner %}
-				<div class="container">
-					{% sw_include '@kerkow/storefront/layout/footer/footer-final.html.twig' %}
-				</div>
+	<div class="page-container">
+		{% block base_noscript %}
+			{{ parent() }}
+		{% endblock %}
+		{% block base_header %}
+			{{ parent() }}
+		{% endblock %}
+		{% block base_navigation %}
+			{{ parent() }}
+		{% endblock %}
+		{% block base_offcanvas_navigation %}
+			{{ parent() }}
+		{% endblock %}
+		{% block base_main %}
+			{{ parent() }}
+		{% endblock %}
+		{% block base_footer %}
+			<footer class="footer-main">
+				{% block base_footer_inner %}
+					<div class="container">
+						{% sw_include '@Storefront/storefront/layout/footer/footer.html.twig' %}
+					</div>
+				{% endblock %}
+			</footer>
+			{% block layout_footer_bottom %}
+				{% block final_footer %}
+					<footer class="footer-final">
+						{% block final_footer_inner %}
+							<div class="container">
+								{% sw_include '@Storefront/storefront/layout/footer/footer-final.html.twig' %}
+							</div>
+						{% endblock %}
+					</footer>
+				{% endblock %}
 			{% endblock %}
-		</footer>
-	{% endblock %}
+		{% endblock %}
+	</div>
 {% endblock %}

@@ -53,7 +53,7 @@
 									{% if page.product.customFields["custom_product_description_short_text"] %}
 										<div class="align-items-center product-detail-description-short">
 											<div class="product-short-description-container">
-												{{ page.product.customFields["custom_product_description_short_text"] }}
+												{{ page.product.customFields["custom_product_description_short_text"]|trans|raw }}
 											</div>
 										</div>
 									{% endif %}
