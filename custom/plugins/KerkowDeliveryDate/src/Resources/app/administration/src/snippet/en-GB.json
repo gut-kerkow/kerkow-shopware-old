@@ -1,0 +1,10 @@
+{
+  "sw-order": {
+    "detailBase": {
+      "labelDeliveryDate": "Delivery Day",
+      "labelDeliverySlot": "Delivery Slot",
+      "18to20": "6 to 8 pm",
+      "19to21": "7 to 9 pm"
+    }
+  }
+}

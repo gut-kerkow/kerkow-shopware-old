@@ -99,3 +99,9 @@ a {
   border-color: $kerkow-blue;
   box-shadow: none;
 }
+.modal-title {
+  &.h5 {
+    @include gt-black;
+    color: $kerkow-blue;
+  }
+}

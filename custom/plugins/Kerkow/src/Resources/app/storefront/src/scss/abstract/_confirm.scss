@@ -36,4 +36,82 @@
       margin-right: 0;
     }
   }
+  label {
+    color: $kerkow-blue;
+  }
+  .product-detail-delivery-container {
+    padding-left: 1rem;
+    .delivery-headline {
+      margin-bottom: 0;
+      color: $kerkow-blue;
+    }
+    .product-detail-deliver-date,
+    .product-detail-deliver-tomorrow {
+      color: green;
+    }
+  }
+  .change-delivery-date-container {
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    text-align: center;
+    button {
+      padding: 0;
+      text-decoration: underline;
+      &:focus {
+        box-shadow: none;
+      }
+    }
+  }
+  .select-date-picker {
+    display: none;
+  }
+  .select-delivery-time-slot-label {
+    color: $kerkow-blue;
+  }
+  .select-delivery-time-slot-select {
+    padding-left: 1rem;
+    min-width: 10rem;
+  }
+  .delivery-calender-container {
+    margin-top: 1rem;
+    .flatpickr-calendar {
+      margin: 0 auto;
+    }
+  }
+  .delivery-calender-label {
+    margin-top: 1rem;
+    color: $kerkow-blue;
+  }
+}
+//Payone styles overwrites
+.payone-payment {
+  &.credit-card {
+    @extend .row;
+    margin-top: 1rem;
+    .card-title {
+      display: none;
+    }
+    .credit-card-input {
+      .col-md-4 {
+        @extend .col-8;
+        padding-right: $form-grid-gutter-width / 2;
+        padding-left: $form-grid-gutter-width / 2;
+      }
+      .col-md-2 {
+        &:not(.card-logo-container) {
+          @extend .col-4;
+          padding-right: $form-grid-gutter-width / 2;
+          padding-left: $form-grid-gutter-width / 2;
+        }
+      }
+      .card-logo-container {
+        @extend .col-4;
+        img {
+          max-width: 100%;
+          height: auto !important;
+          margin-top: 0.6rem !important;
+        }
+      }
+    }
+  }
 }

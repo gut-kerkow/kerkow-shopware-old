@@ -1,0 +1,20 @@
+{% block sw_order_detail_base_secondary_info_delivery %}
+	<dt>
+		{{ $tc('sw-order.detailBase.labelShippingMethod') }}
+	</dt>
+	<dd>
+		{{ hasDeliveries ? delivery.shippingMethod.translated.name :$tc('sw-order.detailBase.labelNoDeliveriesYet')  }}
+	</dd>
+	<dt>
+		{{ $tc('sw-order.detailBase.labelDeliveryDate') }}
+	</dt>
+	<dd>
+		{{currentOrder.customFields.delivery_date | date("d.m.Y") }}
+	</dd>
+	<dt>
+		{{ $tc('sw-order.detailBase.labelDeliverySlot') }}
+	</dt>
+	<dd>
+		{{ $tc('sw-order.detailBase.' + currentOrder.customFields.delivery_slot) }}
+	</dd>
+{% endblock %}

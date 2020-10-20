@@ -5,8 +5,16 @@
 
     <services>
         <service id="Kerkow\DeliveryDate\Storefront\Subscriber\ProductDeliveryDateSubscriber">
-
             <tag name="kernel.event_subscriber"/>
         </service>
+        <service id="Kerkow\DeliveryDate\Storefront\Subscriber\ConfirmDeliveryDateSubscriber">
+            <tag name="kernel.event_subscriber"/>
+        </service>
+        <service id="Kerkow\DeliveryDate\Storefront\Subscriber\OrderDeliveryDateSubscriber">
+            <tag name="kernel.event_subscriber"/>
+            <argument type="service" id="request_stack" />
+             <argument type="service" id="order.repository" />
+        </service>
+        
     </services>
 </container>

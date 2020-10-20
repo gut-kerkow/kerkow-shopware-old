@@ -6,6 +6,8 @@ import OffCanvasCartPluginExtension from "./offcanvas-cart/offcanvas-cart-extens
 import ContenProductListPlugin from "./conten-product-list/content-product-list.plugin";
 import toggleLoginRegisterPlugin from "./checkout-register/toggle-login-register.plugin";
 import changePaymentPlugin from "./checkout-confirm/change-payment.plugin";
+import DatePickerExtensionPlugin from "./checkout-confirm/date-picker-extension.plugin";
+import changeDeliveryDatePlugin from "./checkout-confirm/change-delivery-date.plugin";
 
 // Register them via the existing PluginManager
 const PluginManager = window.PluginManager;
@@ -40,4 +42,14 @@ PluginManager.register(
   "ChangePayment",
   changePaymentPlugin,
   "[data-change-payment]"
+);
+PluginManager.override(
+  "DatePicker",
+  DatePickerExtensionPlugin,
+  "[data-date-picker]"
+);
+PluginManager.register(
+  "changeDeliveryDateP",
+  changeDeliveryDatePlugin,
+  "[data-change-delivery-date]"
 );

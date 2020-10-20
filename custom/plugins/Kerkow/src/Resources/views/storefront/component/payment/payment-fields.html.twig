@@ -1,30 +1,36 @@
 {% sw_extends '@Storefront/storefront/component/payment/payment-fields.html.twig' %}
-
-{% block component_payment_method_control %}
-	<div class="custom-control custom-radio payment-control">
-		<div class="d-flex justify-content-between">
-			<div class="payment-label">
-				{% block component_payment_method_input %}
-					<input type="radio" id="paymentMethod{{ loop.index }}" name="paymentMethodId" value="{{ payment.id }}" {% if payment.id is same as(defaultPaymentMethodId) %} checked="checked" {% endif %} class="custom-control-input payment-method-input">
-				{% endblock %}
-				<label class="custom-control-label payment-method-label" for="paymentMethod{{ loop.index }}">
-					{% block component_payment_method_description %}
-						<div class="payment-method-description">
-							{{ payment.translated.name }}
-							{% if payment.translated.description %}
-								<p>
-									{{ payment.translated.description|raw }}
-								</p>
-							{% endif %}
-						</div>
-					{% endblock %}
-				</label>
-			</div>
-			<div class="payment-logo">
-				{% block component_payment_method_label %}
-					{% block component_payment_method_image %}
-						{% if payment.media %}
-							{% sw_thumbnails 'payment-method-image-thumbnails' with {
+{% block component_payment_methods %}
+	<div class="payment-methods">
+		{% for payment in page.paymentMethods %}
+			{% block component_payment_method %}
+				<div class="payment-method">
+					{% block component_payment_method_field %}
+						<div class="payment-form-group form-group">
+							{% block component_payment_method_control %}
+								<div class="custom-control custom-radio payment-control">
+									<div class="d-flex justify-content-between">
+										<div class="payment-label">
+											{% block component_payment_method_input %}
+												<input type="radio" id="paymentMethod{{ loop.index }}" name="paymentMethodId" value="{{ payment.id }}" {% if payment.id is same as(defaultPaymentMethodId) %} checked="checked" {% endif %} class="custom-control-input payment-method-input">
+											{% endblock %}
+											<label class="custom-control-label payment-method-label" for="paymentMethod{{ loop.index }}">
+												{% block component_payment_method_description %}
+													<div class="payment-method-description">
+														{{ payment.translated.name }}
+														{% if payment.translated.description %}
+															<p>
+																{{ payment.translated.description|raw }}
+															</p>
+														{% endif %}
+													</div>
+												{% endblock %}
+											</label>
+										</div>
+										<div class="payment-logo">
+											{% block component_payment_method_label %}
+												{% block component_payment_method_image %}
+													{% if payment.media %}
+														{% sw_thumbnails 'payment-method-image-thumbnails' with {
                                                         media: payment.media,
                                                         sizes: {
                                                             'default': '100px'
@@ -35,20 +41,30 @@
                                                             'title': (payment.media.translated.title ?: payment.translated.name)
                                                         }
                                                     } %}
-						{% endif %}
+													{% endif %}
+												{% endblock %}
+
+
+											{% endblock %}
+										</div>
+									</div>
+									{% if context.paymentMethod.uniqueIdentifier == payment.uniqueIdentifier %}
+										<div class="payment-method-input-fields">
+											{% if page.extensions.payone and page.extensions.payone.template %}
+												{% sw_include page.extensions.payone.template %}
+											{% endif %}
+										</div>
+									{% endif %}
+
+								</div>
+							{% endblock %}
+						</div>
 					{% endblock %}
 
-
-				{% endblock %}
-			</div>
-		</div>
-		{% if context.paymentMethod.uniqueIdentifier == payment.uniqueIdentifier %}
-			<div class="payment-method-input-fields">
-				{% if page.extensions.payone and page.extensions.payone.template %}
-					{% sw_include page.extensions.payone.template %}
-				{% endif %}
-			</div>
-		{% endif %}
-
+					{% block component_payment_fieldset_template %}
+					{% endblock %}
+				</div>
+			{% endblock %}
+		{% endfor %}
 	</div>
 {% endblock %}

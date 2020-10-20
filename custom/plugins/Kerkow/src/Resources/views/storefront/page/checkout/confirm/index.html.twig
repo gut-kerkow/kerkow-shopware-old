@@ -157,12 +157,22 @@
 
 {% block page_checkout_aside_actions %}
 	<div class="checkout-aside-action">
+		<pre>
+		{{ dump(page.extensions.payone) }}
+	</pre>
 		<form id="confirmOrderForm" action="{{ path('frontend.checkout.finish.order') }}" data-form-csrf-handler="true" data-form-preserver="true" method="post">
 
 			{% block page_checkout_aside_actions_csrf %}
 				{{ sw_csrf('frontend.checkout.finish.order') }}
 			{% endblock %}
 
+
+			{% block page_delivery_date_input_field %}
+				<input type="hidden" name="deliveryDate" class="js-delivery-date-input-field" value="{{ page.extensions["delivery_date"]|date("Y-m-d") }}">
+			{% endblock %}
+			{% block page_delivery_slot_input_field %}
+				<input type="hidden" name="deliverySlot" class="js-delivery-slot-input-field" value="18to20">
+			{% endblock %}
 			{% block page_checkout_confirm_form_submit %}
 				{{ parent() }}
 			{% endblock %}

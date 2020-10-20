@@ -233,7 +233,7 @@
         "technicalName": "delivery-date",
         "administration": {
             "path": "Resources\/app\/administration\/src",
-            "entryFilePath": null,
+            "entryFilePath": "Resources\/app\/administration\/src\/main.js",
             "webpack": null
         },
         "storefront": {

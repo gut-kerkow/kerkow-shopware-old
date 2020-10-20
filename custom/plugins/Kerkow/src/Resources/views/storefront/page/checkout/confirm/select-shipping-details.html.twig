@@ -1,0 +1,53 @@
+{% block page_checkout_confirm_shipping_date_modal %}
+	<div class="modal fade confirm-shipping-date-modal" id="confirmShippingDateModal" tabindex="-1" role="dialog">
+		<div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<div class="modal-title h5">
+						{{ "kerkow.deliveryModalHeading"|trans|sw_sanitize }}
+					</div>
+					<button type="button" class="modal-close close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">
+							{% sw_icon 'x' style { 'size': 'sm' } %}
+						</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div class="select-delivery-time-slot-container d-flex">
+						<div class="select-delivery-time-slot-label align-self-center">
+							{{ "kerkow.selectTimeSlot"|trans|raw }}
+						</div>
+						<div class="select-delivery-time-slot-select">
+							<select class="js-delivery-date-select">
+								<option value="18to20">
+									18:00 - 20:00 Uhr
+								</option>
+								<option value="19to21">
+									19:00 - 21:00 Uhr
+								</option>
+							</select>
+						</div>
+					</div>
+					{% block page_checkout_confirm_shipping_form %}
+						<div class="row">
+							<div class="col-12 delivery-calender-label">
+								{{ "kerkow.selectDeliveryDay"|trans|raw }}
+							</div>
+							<div class="col-12 delivery-calender-container">
+								<input class="select-date-picker js-select-date-picker" data-date-picker="true" data-mindate="{{ page.extensions["delivery_date"]|date("Y-m-d") }}">
+							</div>
+						</div>
+					{% endblock %}
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">
+						{{ "kerkow.keepDates" |trans }}
+					</button>
+					<button type="button" class="btn btn-primary js-save-delivery-time-slot">
+						{{ "kerkow.saveDates" |trans }}
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+{% endblock %}
