@@ -13,11 +13,20 @@
 
 {% set animals = ["beef", "pork"] %}
 {% set beefPartIds = 'animalParts.beefPartsIds'|trans|replace({' ': ''})|split(',') %}
+{% set beefPartIds = 'animalParts.porkPartsIds'|trans|replace({' ': ''})|split(',') %}
 {% set animalsHash = {} %}
 {% set partsHash = {} %}
 {% for animal in animals %}
 	{% if animal == "beef" %}
 		{% for id in beefPartIds %}
+			{% set partHeadline = 'animalParts.'~id~'.headline' %}
+			{% set partContent = 'animalParts.'~id~'.content' %}
+			{% set partLink = 'animalParts.'~id~'.link' %}
+			{% set partsHash = partsHash|merge({(id): {"headline": (partHeadline|trans), "content": (partContent|trans), "link": (partLink|trans)} }) %}
+		{% endfor %}
+	{% endif %}
+	{% if animal == "pork" %}
+		{% for id in porkPartIds %}
 			{% set partHeadline = 'animalParts.'~id~'.headline' %}
 			{% set partContent = 'animalParts.'~id~'.content' %}
 			{% set partLink = 'animalParts.'~id~'.link' %}
