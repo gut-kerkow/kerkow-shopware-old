@@ -13,7 +13,7 @@
 
 {% set animals = ["beef", "pork"] %}
 {% set beefPartIds = 'animalParts.beefPartsIds'|trans|replace({' ': ''})|split(',') %}
-{% set beefPartIds = 'animalParts.porkPartsIds'|trans|replace({' ': ''})|split(',') %}
+{% set porkPartIds = 'animalParts.porkPartsIds'|trans|replace({' ': ''})|split(',') %}
 {% set animalsHash = {} %}
 {% set partsHash = {} %}
 {% for animal in animals %}

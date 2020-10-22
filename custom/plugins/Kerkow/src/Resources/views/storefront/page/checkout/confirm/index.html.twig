@@ -44,6 +44,12 @@
 			</div>
 		{% endblock %}
 
+		{% block page_checkout_confirm_address %}
+			<div class="confirm-address">
+				{% sw_include '@Storefront/storefront/page/checkout/confirm/confirm-address.html.twig' %}
+			</div>
+		{% endblock %}
+
 		{% block page_checkout_confirm_tos %}
 			<div class="confirm-tos">
 				<div class="card checkout-card">
@@ -83,12 +89,6 @@
 						{% endblock %}
 					</div>
 				</div>
-			</div>
-		{% endblock %}
-
-		{% block page_checkout_confirm_address %}
-			<div class="confirm-address">
-				{% sw_include '@Storefront/storefront/page/checkout/confirm/confirm-address.html.twig' %}
 			</div>
 		{% endblock %}
 
