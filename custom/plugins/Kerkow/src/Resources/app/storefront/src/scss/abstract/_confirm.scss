@@ -1,35 +1,54 @@
 .is-act-confirmpage {
+  .content-main {
+    padding-bottom: 10rem;
+  }
+  .confirm-address {
+    margin-bottom: 0;
+  }
+  .confirm-billing-address,
+  .confirm-shipping-address,
+  .confirm-voucher,
+  .confirm-shipping {
+    border-bottom: 1px solid $kerkow-line-grey;
+    margin-bottom: 1rem;
+  }
   .confirm-main-header {
     @include gt-black;
+    font-size: 1.2rem;
     color: $kerkow-blue;
     margin-bottom: 0.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid $kerkow-line-grey;
   }
   .card-body {
-    border-bottom: 1px solid $kerkow-light-grey;
     .card-title {
       @include gt-black;
       color: $kerkow-blue;
-      font-size: 1.2rem;
+      font-size: 1rem;
       border: 0;
     }
   }
   .confirm-payment-shipping {
     padding-top: 1rem;
-    border-top: 1px solid $kerkow-light-grey;
+    margin-bottom: 0;
   }
   .confirm-payment {
     .card-body {
       border-bottom: none;
     }
+    margin-bottom: 0.5rem;
   }
   .payment-method {
-    border-bottom: 1px solid $kerkow-light-grey;
+    border-bottom: 1px solid $kerkow-line-grey;
 
     .payment-method-description {
-      @include gt-bold;
+      @include gt-black;
       color: $kerkow-blue;
-      font-size: 1.1rem;
+      font-size: 1rem;
       line-height: 1.5rem;
+      p {
+        @include source-light;
+      }
     }
     .payment-method-image {
       max-height: 22px;
@@ -96,6 +115,66 @@
       }
     }
   }
+  .confirm-voucher {
+    padding-bottom: 1rem;
+    .icon-arrow-right {
+      color: $kerkow-blue;
+    }
+  }
+  .confirm-tos {
+    a {
+      text-decoration: underline;
+    }
+  }
+  .checkout-aside-container {
+    padding-top: 1rem;
+    background-color: $kerkow-light-grey;
+    button {
+      text-transform: uppercase;
+      font-size: 1.2rem;
+    }
+  }
+  .checkout-aside-action {
+    padding: 0 2rem 2rem 2rem;
+  }
+  .checkout-aside-summary {
+    background-color: initial;
+  }
+  .checkout-aside-summary-label {
+    @include gt-black;
+    color: $kerkow-blue;
+    font-size: 0.9rem;
+    &.tax {
+      color: $kerkow-grey;
+      @include source-regular;
+    }
+  }
+  .checkout-aside-summary-value {
+    @include source-bold;
+    color: $kerkow-blue;
+    font-size: 1rem;
+    &.tax {
+      color: $kerkow-grey;
+      @include source-regular;
+      font-weight: initial;
+    }
+  }
+  .checkout-aside-summary-total {
+    font-size: 1.1rem;
+  }
+  dl {
+    margin: 0;
+  }
+  .checkout-aside-calculations {
+    border-bottom: 1px solid $kerkow-line-grey;
+    margin-bottom: 0.6rem;
+  }
+}
+.confirm-address-billing,
+.confirm-address-shipping,
+.address {
+  @include gt-medium;
+  color: $kerkow-blue;
 }
 .address-editor-edit {
   margin-bottom: 1rem;
@@ -103,6 +182,23 @@
 .address-form-submit {
   width: 100%;
   text-transform: uppercase;
+}
+.btn-save-delivery-slot {
+  text-transform: uppercase;
+}
+.confirm-payment-info {
+  margin-bottom: 1.5rem;
+  .confirm-payment-info-icon {
+    .icon-info {
+      width: 1.2rem;
+      color: $kerkow-blue;
+    }
+  }
+  .confirm-payment-info-label {
+    padding-left: 1rem;
+    @include source-medium;
+    color: $kerkow-blue;
+  }
 }
 //Payone styles overwrites
 .payone-payment {
@@ -134,5 +230,37 @@
         }
       }
     }
+  }
+}
+@include media-breakpoint-up(md) {
+  .cart-table-header {
+    display: none;
+  }
+  .is-act-confirmpage {
+    .confirm-payment-shipping {
+      padding-top: 0;
+    }
+    .checkout {
+      .checkout-aside {
+        margin-left: 0;
+        width: 100%;
+        max-width: 100%;
+        flex: none;
+      }
+    }
+  }
+}
+
+@include media-breakpoint-up(lg) {
+  .is-act-confirmpage {
+    .checkout {
+      .checkout-main {
+        @extend .col-lg-10;
+        margin-left: 8.33333%;
+      }
+    }
+  }
+  .cart-table-header {
+    display: none;
   }
 }

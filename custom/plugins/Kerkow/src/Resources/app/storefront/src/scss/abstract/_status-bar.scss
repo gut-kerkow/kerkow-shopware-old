@@ -1,7 +1,7 @@
 .status-bar-container {
   border-bottom: 1px solid $kerkow-blue;
   position: relative;
-  margin: 1rem 0 5rem 0;
+  margin: 5rem 0 5rem 0;
   .status-position {
     width: 100%;
     position: absolute;
@@ -29,27 +29,36 @@
             color: #fff;
             border: 1px solid $kerkow-blue;
           }
+          &.done {
+            border: 1px solid $kerkow-blue;
+            span {
+              height: 1rem;
+              svg {
+                color: $kerkow-blue;
+              }
+            }
+          }
         }
         .status-label {
           position: absolute;
           margin-top: 0.5rem;
-          left: -0.4rem;
+          left: -0.1rem;
           color: $kerkow-blue;
           font-size: 0.8rem;
           &.second {
-            left: 0;
+            left: -0.5rem;
           }
           &.third {
-            left: -0.7rem;
-          }
-          &.fourth {
-            left: -0.2rem;
-          }
-          &.fifth {
-            left: 0.4rem;
+            left: 0.6rem;
           }
         }
       }
     }
+  }
+}
+@include media-breakpoint-only(xl) {
+  .status-bar-container {
+    max-width: 70%;
+    margin: 3rem auto 5rem auto;
   }
 }

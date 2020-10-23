@@ -9,7 +9,7 @@
 					<div class="d-flex justify-content-center">
 						{% block layout_header_minimal_logo %}
 							<div class="header-minimal-logo">
-								{% sw_include '@Storefront/storefront/layout/header/logo.html.twig' %}
+								{% sw_include '@Storefront/storefront/layout/header/logo.html.twig' with {"isCheckout": true} %}
 							</div>
 						{% endblock %}
 

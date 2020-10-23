@@ -28,6 +28,15 @@
 			{% block page_checkout_confirm_payment_modal %}
 
 			{% endblock %}
+
+			<div class="d-flex confirm-payment-info">
+				<div class="confirm-payment-info-icon">
+					{% sw_icon 'info' %}
+				</div>
+				<div class="confirm-payment-info-label">
+					{{ "kerkow.paymentMessage"|trans }}
+				</div>
+			</div>
 		</div>
 	</div>
 {% endblock %}

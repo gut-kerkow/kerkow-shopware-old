@@ -4,10 +4,10 @@
   }
   h2,
   .card-title {
-    @include gt-bold;
+    @include gt-black;
     color: $kerkow-blue;
     text-align: center;
-    font-size: 1.2rem;
+    font-size: 1.4rem;
     text-transform: unset;
   }
   .register-personal {
@@ -46,6 +46,7 @@
   }
   .form-label {
     color: $kerkow-blue;
+    font-size: 14px;
   }
   .register-guest-control {
     display: none;
@@ -60,6 +61,14 @@
   }
   label {
     @include source-regular;
+    color: $kerkow-blue;
+    font-size: 1rem;
+  }
+  button {
+    text-transform: uppercase;
+  }
+  .register-newsletter {
+    margin: 2rem 0;
   }
 }
 @include media-breakpoint-up(lg) {
@@ -91,9 +100,5 @@
   .register-login-container {
     max-width: 80%;
     margin: auto;
-  }
-  .status-bar-container {
-    max-width: 70%;
-    margin: 1rem auto 5rem auto;
   }
 }

@@ -2,7 +2,9 @@
 
 {% block base_header %}
 	{% sw_include '@Storefront/storefront/layout/header/header-minimal.html.twig' %}
-
+	{% block page_checkout_address_status_bar %}
+		{% sw_include '@kerkow/storefront/page/checkout/status-bar.html.twig' with {"isRegister": true} %}
+	{% endblock %}
 {% endblock %}
 
 {% block base_navigation %}
@@ -10,9 +12,6 @@
 
 {% block page_checkout_main_content %}
 
-	{% block page_checkout_address_status_bar %}
-		{% sw_include '@kerkow/storefront/page/checkout/status-bar.html.twig' with {"isRegister": true} %}
-	{% endblock %}
 	{% block page_checkout_address %}
 		{% block page_checkout_address_delivery_alerts %}
 			{{ parent() }}

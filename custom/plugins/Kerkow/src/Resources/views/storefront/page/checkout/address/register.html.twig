@@ -3,9 +3,17 @@
 
 {% block component_account_register_personal_account_fields %}
 	{% block page_checkout_register_personal_guest %}
-		<input type="hidden" name="guest" value="1" id="personalGuest">
-	{% endblock %}
-	{% block page_checkout_register_personal_guest_label %}
+		<div class="custom-control custom-checkbox register-guest-control">
+			{% block page_checkout_register_personal_guest_input %}
+				<input type="hidden" class="custom-control-input" name="guest" value="0" id="personalGuest" {% if data.get('guest') %} checked="checked" {% endif %}>
+			{% endblock %}
+
+			{% block page_checkout_register_personal_guest_label %}
+				<label class="custom-control-label" for="personalGuest">
+					{{ "checkout.registerGuestmodeLabel"|trans|sw_sanitize }}
+				</label>
+			{% endblock %}
+		</div>
 	{% endblock %}
 	<div class="form-row">
 		<div class="form-group col-12">

@@ -4,8 +4,12 @@
 			<div class="status-bar d-flex justify-content-between">
 				<div class="status">
 					<div class="pill-container">
-						<div class="pill {% if isRegister %} active {% endif %}">
-							1
+						<div class="pill{% if isRegister %} active{% endif %}{% if isConfirm or isDone %} done{% endif %}">
+							{% if isConfirm or isDone %}
+								{% sw_icon "checkmark" %}
+							{% else %}
+								{{ "1" }}
+							{% endif %}
 						</div>
 						<div class="status-label">
 							Anmelden
@@ -14,41 +18,25 @@
 				</div>
 				<div class="status">
 					<div class="pill-container">
-						<div class="pill {% if isAddress %} active {% endif %}">
-							2
+						<div class="pill{% if isConfirm %} active{% endif %}{% if isDone %} done{% endif %}">
+							{% if isDone %}
+								{% sw_icon "checkmark" %}
+							{% else %}
+								{{ "2" }}
+							{% endif %}
 						</div>
 						<div class="status-label second">
-							Adresse
+							{{ "Abschließen" }}
 						</div>
 					</div>
 				</div>
 				<div class="status">
 					<div class="pill-container">
-						<div class="pill {% if isPayment %} active {% endif %}">
-							3
+						<div class="pill{% if isDone %} active{% endif %}">
+							{{ "3" }}
 						</div>
 						<div class="status-label third">
-							Zahlungsart
-						</div>
-					</div>
-				</div>
-				<div class="status">
-					<div class="pill-container">
-						<div class="pill {% if isConfirm %} active {% endif %}">
-							4
-						</div>
-						<div class="status-label fourth">
-							Bestätigen
-						</div>
-					</div>
-				</div>
-				<div class="status">
-					<div class="pill-container">
-						<div class="pill {% if isDone %} active {% endif %}">
-							5
-						</div>
-						<div class="status-label fifth">
-							Fertig
+							{{ "Fertig" }}
 						</div>
 					</div>
 				</div>

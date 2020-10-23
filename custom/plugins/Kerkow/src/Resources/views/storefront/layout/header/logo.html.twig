@@ -2,9 +2,13 @@
 	{% block layout_header_logo_image_default %}
 		<nav class="navbar">
 			<div class="logo-container">
-				<a href="{{ path('frontend.home.page') }}">
+				{% if isCheckout %}
 					<img src="{{ asset('bundles/kerkow/img/kerkow-logo.png') }}" alt="{{ "header.logoLink"|trans|striptags }}" class="header-logo-main-img" onerror="this.src=this.src.replace('.svg','.png'); this.onerror=null;">
-				</a>
+				{% else %}
+					<a href="{{ path('frontend.home.page') }}">
+						<img src="{{ asset('bundles/kerkow/img/kerkow-logo.png') }}" alt="{{ "header.logoLink"|trans|striptags }}" class="header-logo-main-img" onerror="this.src=this.src.replace('.svg','.png'); this.onerror=null;">
+					</a>
+				{% endif %}
 			</div>
 		</nav>
 	{% endblock %}

@@ -13,8 +13,12 @@
         <service id="Kerkow\DeliveryDate\Storefront\Subscriber\OrderDeliveryDateSubscriber">
             <tag name="kernel.event_subscriber"/>
             <argument type="service" id="request_stack" />
-             <argument type="service" id="order.repository" />
+            <argument type="service" id="order.repository" />
         </service>
-        
+
+        <service id="Kerkow\DeliveryDate\Storefront\Subscriber\RegisterNewsletterSubscriber">
+            <tag name="kernel.event_subscriber"/>
+        </service>
+
     </services>
 </container>
