@@ -87,7 +87,7 @@
 									</div>
 									{% if (loop.length < 4 and loop.last) or (loop.index == 3) %}
 										{% block element_content_product_listing_col_content %}
-											<div class="cms-listing-col col-sm-6 col-lg-8 col-xl-6">
+											<div class="cms-listing-col col-sm-6 col-lg-8 col-xl-8">
 												<div class="animal-part-container">
 													{% set element = animal %}
 													{% sw_include "@Storefront/storefront/element/cms-element-" ~ content.type ~ ".html.twig" ignore missing with {"isProductListAnimal": true} %}
@@ -103,7 +103,7 @@
 							{% endblock %}
 						{% else %}
 							{% block element_content_product_listing_col_empty %}
-								<div class="cms-listing-col col-sm-6 col-lg-4 col-xl-3">
+								<div class="cms-listing-col col-sm-6 col-lg-4 col-xl-4">
 									{% block element_content_product_listing_col_empty_alert %}
 										{% sw_include '@Storefront/storefront/utilities/alert.html.twig' with {
 				                                            type: 'info',

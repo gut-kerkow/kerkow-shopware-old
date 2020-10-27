@@ -1,19 +1,25 @@
-{% sw_extends '@Storefront/storefront/base.html.twig' %}
-
-{% block base_head %}
-	{% sw_include '@Storefront/storefront/page/account/register/meta.html.twig' %}
-{% endblock %}
+{% sw_extends '@Storefront/storefront/page/account/register/index.html.twig' %}
 
 {% block base_content %}
 	{% block page_account_register %}
-		<div class="account-register">
+		<div class="account-register" data-toggle-login-register="true">
 			{% block page_account_register_inner %}
 				<div class="row">
 					{% block page_account_register_login_container %}
-						<div class="col-lg-4">
-							{% sw_include '@Storefront/storefront/component/account/login.html.twig' with {
-                                'cardTitle': "account.loginHeader"|trans|sw_sanitize
-                            } %}
+						<div class="col-lg-6">
+							<div class="register-login-collapse-toogle">
+								<h2>
+									Willkommen zurück
+								</h2>
+								<a href="#loginCollapse" class="login-collapse-toggle js-login-toggle" data-toggle="collapse" aria-expanded="false">
+									<button class="btn btn-secondary btn-checkout">
+										{{ "checkout.addressLoginToggle"|trans|sw_sanitize }}
+									</button>
+								</a>
+							</div>
+							<div class="collapse" id="loginCollapse">
+								{% sw_include '@Storefront/storefront/component/account/login.html.twig'  %}
+							</div>
 
 							{% block page_account_register_advantages %}
 								<div class="login-advantages">
@@ -56,7 +62,7 @@
 					{% endblock %}
 
 					{% block page_account_register_container %}
-						<div class="col-lg-8">
+						<div class="col-lg-6">
 							{% sw_include '@Storefront/storefront/component/account/register.html.twig' with {
                                 'cardTitle': "account.registerPersonalHeader"|trans|sw_sanitize
                             } %}

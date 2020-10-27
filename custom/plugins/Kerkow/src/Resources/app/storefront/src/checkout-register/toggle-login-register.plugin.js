@@ -13,6 +13,7 @@ export default class toggleLoginRegisterPlugin extends Plugin {
 
     hiddenClass: "d-none",
     validatedClass: "was-validated",
+    isInvalidClass: "is-invalid",
   };
 
   init() {
@@ -105,16 +106,32 @@ export default class toggleLoginRegisterPlugin extends Plugin {
       this._registerCollapse,
       this.options.formSelector
     );
-
-    if (loginForm.classList.contains(this.options.validatedClass)) {
-      console.log("toggle login");
+    const loginFields = loginForm.querySelectorAll(
+      `.${this.options.isInvalidClass}`
+    );
+    const registerFields = registerForm.querySelectorAll(
+      `.${this.options.isInvalidClass}`
+    );
+    const loginFormValidated = loginForm.classList.contains(
+      this.options.validatedClass
+    )
+      ? true
+      : false;
+    const loginFieldsValidated = loginFields.length ? true : false;
+    const registerFieldsValidated = registerFields.length ? true : false;
+    const registerFormValidated = registerForm.classList.contains(
+      this.options.validatedClass
+    )
+      ? true
+      : false;
+    console.log(registerForm, registerFields);
+    if (loginFormValidated || loginFieldsValidated) {
       const showButton = this._registerButton;
       const hideButton = this._loginButton;
       const showCollapse = this._loginCollapse;
       const hideCollapse = this._registerCollapse;
       this._toggleCollapse(showButton, hideButton, showCollapse, hideCollapse);
-    } else if (registerForm.classList.contains(this.options.validatedClass)) {
-      var itsLogin = false;
+    } else if (registerFormValidated || registerFieldsValidated) {
       const showButton = this._loginButton;
       const hideButton = this._registerButton;
       const showCollapse = this._registerCollapse;
@@ -133,8 +150,6 @@ export default class toggleLoginRegisterPlugin extends Plugin {
    * @private
    */
   _toggleCollapse(showButton, hideButton, showCollapse, hideCollapse) {
-    console.log("hide", hideCollapse);
-    console.log("show", showCollapse);
     // Show Button
     hideButton.classList.add(this.options.hiddenClass);
     $(showCollapse).collapse("show");

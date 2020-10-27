@@ -4,9 +4,7 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
 
     <services>
-        <service id="Kerkow\DeliveryDate\Storefront\Subscriber\ProductDeliveryDateSubscriber">
-            <tag name="kernel.event_subscriber"/>
-        </service>
+
         <service id="Kerkow\DeliveryDate\Storefront\Subscriber\ConfirmDeliveryDateSubscriber">
             <tag name="kernel.event_subscriber"/>
         </service>
@@ -16,7 +14,7 @@
             <argument type="service" id="order.repository" />
         </service>
 
-        <service id="Kerkow\DeliveryDate\Storefront\Subscriber\RegisterNewsletterSubscriber">
+        <service id="Kerkow\DeliveryDate\EventListener\StorefrontRenderEventListener">
             <tag name="kernel.event_subscriber"/>
         </service>
 

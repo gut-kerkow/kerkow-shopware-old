@@ -70,6 +70,7 @@
         color: white;
         @include gt-black-italic;
         transform: rotate(15deg);
+        text-transform: none;
       }
       p {
         text-align: center;
@@ -182,7 +183,7 @@
         h2 {
           top: 5rem;
           right: -1.5rem;
-          font-size: 2.5rem;
+          font-size: 2.3rem;
           line-height: 2.9rem;
         }
         p {

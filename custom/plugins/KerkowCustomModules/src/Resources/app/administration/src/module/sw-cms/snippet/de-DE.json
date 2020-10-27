@@ -11,6 +11,14 @@
         "contentProductLisitng": {
           "label": "Kerkow Kategorie-Layout"
         }
+      },
+      "textImage": {
+        "galleryText": {
+          "label": "Gallery und Text"
+        },
+        "twoFullStretchImages": {
+          "label": "Zwei Bilder nebeneinander Full-Screen"
+        }
       }
     }
   }

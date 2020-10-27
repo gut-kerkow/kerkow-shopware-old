@@ -1,0 +1,117 @@
+{% sw_extends '@Storefront/storefront/page/checkout/cart/index.html.twig' %}
+{% block page_checkout_container %}
+	<div class="checkout-container">
+		{% block page_checkout_header %}
+			<div class="checkout-cart-header">
+				{% block base_flashbags_checkout %}
+					{% block page_checkout_cart_header %}
+						<h1 class="cart-main-header">
+							{{ "checkout.cartHeader"|trans|sw_sanitize }}
+						</h1>
+					{% endblock %}
+					{% block page_checkout_cart_messages %}
+						{% block page_checkout_confirm_errors %}
+							{%  sw_include '@Storefront/storefront/component/checkout/cart-alerts.html.twig' %}
+						{% endblock %}
+					{% endblock %}
+					<div class="flashbags">
+						{% for type, messages in app.flashes %}
+							{% sw_include '@Storefront/storefront/utilities/alert.html.twig' with { type: type, list: messages } %}
+						{% endfor %}
+					</div>
+				{% endblock %}
+			</div>
+		{% endblock %}
+		{% block page_checkout_main %}
+			<div class="checkout-cart-main d-lg-flex justify-content-lg-between">
+
+				<div class="page-checkout-actions-container">
+					<div class="page-checkout-actions-items">
+						{% block page_checkout_cart_product_table %}
+							<div class="card checkout-product-table">
+								<div class="card-body">
+									{% block page_checkout_cart_table_items %}
+										{% for lineItem in page.cart.lineItems %}
+											{% block page_checkout_cart_table_item %}
+												{% block page_checkout_item %}
+													{% sw_include '@Storefront/storefront/page/checkout/checkout-item.html.twig' %}
+												{% endblock %}
+											{% endblock %}
+										{% endfor %}
+									{% endblock %}
+								</div>
+							</div>
+						{% endblock %}
+					</div>
+					<div class="page-checkout-actions-delivery">
+						<div class="cart-headline">
+							{{ "kerkow.deliveryDateHeadline"|trans }}
+						</div>
+						{% set dayString =  'general.day.'~deliveryInfo.date|date("D") %}
+						{% set day =  dayString|trans %}
+						{% set monthString =  'general.month.'~deliveryInfo.date|date("M") %}
+						{% set month =  monthString|trans %}
+						{% if deliveryInfo.date|date("m/d/Y") == ("now"|date_modify("+1 day")|date("m/d/Y")) %}
+							<div class="delivery-time">
+								<span class="product-detail-deliver-tomorrow">
+									{{ "kerkow.actualDeliverTomorrow"|trans|raw }}
+								</span>
+							</div>
+						{% else %}
+							<div class="delivery-time">
+								<span class="product-detail-deliver-date">
+									{{ "kerkow.actualDeliverTime"|trans({'%day%': day, '%date%': deliverInfo.date|date("d"), '%month%': month}) }}
+								</span>
+							</div>
+						{% endif %}
+					</div>
+					<div class="page-checkout-actions-payment">
+						<div class="cart-headline">
+							{{ "kerkow.ShippingCartHeadline"|trans }}
+						</div>
+						<ul class="list-inline">
+							{% for payment in page.paymentMethods %}
+								<li class="list-inline-item">
+									<img src="{{ payment.media.url }}" alt="">
+								</li>
+							{% endfor %}
+						</ul>
+					</div>
+					{% block page_checkout_additional %}
+					{% endblock %}
+				</div>
+				<div class="page-checkout-summary-container align-self-stretch">
+					{% block page_checkout_aside %}
+						<div class="page-checkout-summary">
+							{% block page_checkout_aside_container %}
+								<div class="checkout-cart-summary-container">
+									{% block page_checkout_aside_summary %}
+										<div class="checkout-summary">
+											{% block page_checkout_summary_header %}
+												<h2 class="checkout-summary-header">
+													{{ "checkout.summaryHeader"|trans|sw_sanitize }}
+												</h2>
+											{% endblock %}
+
+											{% block page_checkout_summary_list %}
+												<div class="checkout-summary-list-container">
+													{% block page_checkout_summary_list_container %}
+														{% sw_include '@Storefront/storefront/page/checkout/summary.html.twig' %}
+													{% endblock %}
+												</div>
+											{% endblock %}
+										</div>
+									{% endblock %}
+
+									{% block page_checkout_aside_actions %}
+										{{ parent() }}
+									{% endblock %}
+								</div>
+							{% endblock %}
+						</div>
+					{% endblock %}
+				</div>
+			</div>
+		{% endblock %}
+	</div>
+{% endblock %}

@@ -66,7 +66,16 @@
     }
   }
 }
-@include media-breakpoint-only(xl) {
+@include media-breakpoint-up(lg) {
+  .cms-block-content-product-listing,
+  .cms-element-product-listing,
+  .cms-block-product-listing {
+    .cms-listing-col {
+      .product-name {
+        height: 2rem;
+      }
+    }
+  }
   .cms-block-content-product-listing {
     .cms-listing-col {
       @for $i from 1 through 3 {
@@ -78,7 +87,13 @@
           order: #{$i};
         }
       }
-
+      &:nth-child(4) {
+        -webkit-box-ordinal-group: 5;
+        -moz-box-ordinal-group: 5;
+        -ms-flex-order: 5;
+        -webkit-order: 5;
+        order: 5;
+      }
       &:nth-child(5) {
         -webkit-box-ordinal-group: 4;
         -moz-box-ordinal-group: 4;
@@ -86,28 +101,8 @@
         -webkit-order: 4;
         order: 4;
       }
-      &:nth-child(4) {
-        -webkit-box-ordinal-group: 7;
-        -moz-box-ordinal-group: 7;
-        -ms-flex-order: 7;
-        -webkit-order: 7;
-        order: 7;
-      }
-      &:nth-child(6) {
-        -webkit-box-ordinal-group: 5;
-        -moz-box-ordinal-group: 5;
-        -ms-flex-order: 5;
-        -webkit-order: 5;
-        order: 5;
-      }
-      &:nth-child(7) {
-        -webkit-box-ordinal-group: 6;
-        -moz-box-ordinal-group: 6;
-        -ms-flex-order: 6;
-        -webkit-order: 6;
-        order: 6;
-      }
-      @for $i from 8 through 24 {
+
+      @for $i from 6 through 24 {
         &:nth-child(#{$i}) {
           -webkit-box-ordinal-group: #{$i};
           -moz-box-ordinal-group: #{$i};

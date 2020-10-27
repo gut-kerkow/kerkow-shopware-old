@@ -10,7 +10,7 @@
 		{% set products = item.getProducts() %}
 		{% for product in products %}
 
-			<div class="cross-selling-item cms-listing-col col-6 col-sm-3">
+			<div class="cross-selling-item cms-listing-col col-6 col-sm-4">
 				{% block element_content_product_listing_box %}
 					{% sw_include '@Storefront/storefront/component/product/card/box.html.twig' with {
 				                                                'layout': boxLayout,

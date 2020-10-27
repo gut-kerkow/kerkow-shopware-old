@@ -109,11 +109,11 @@
 						</div>
 					{% endblock %}
 					{% block page_product_delivery_date %}
-						{% set dayString =  'general.day.'~page.extensions["delivery_date"]|date("D") %}
+						{% set dayString =  'general.day.'~deliveryInfo.date|date("D") %}
 						{% set day =  dayString|trans %}
-						{% set monthString =  'general.month.'~page.extensions["delivery_date"]|date("M") %}
+						{% set monthString =  'general.month.'~deliveryInfo.date|date("M") %}
 						{% set month =  monthString|trans %}
-						{% if page.extensions["delivery_date"]|date("m/d/Y") == ("now"|date_modify("+1 day")|date("m/d/Y")) %}
+						{% if deliveryInfo.date|date("m/d/Y") == ("now"|date_modify("+1 day")|date("m/d/Y")) %}
 							<div class="product-detail-delivery-container">
 								<span class="product-detail-deliver-tomorrow">
 									{{ "kerkow.deliverTomorrow"|trans|raw }}
@@ -122,7 +122,7 @@
 						{% else %}
 							<div class="product-detail-delivery-container">
 								<span class="product-detail-deliver-date">
-									{{ "kerkow.deliverTime"|trans({'%day%': day, '%date%': page.extensions["delivery_date"]|date("d"), '%month%': month}) }}
+									{{ "kerkow.deliverTime"|trans({'%day%': day, '%date%': deliverInfo.date|date("d"), '%month%': month}) }}
 								</span>
 							</div>
 						{% endif %}

@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 
-namespace Kerkow\DeliveryDate\Storefront\Subscriber;
+namespace Kerkow\Storefront\Subscriber;
 
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Shopware\Core\Checkout\Customer\CustomerEvents;

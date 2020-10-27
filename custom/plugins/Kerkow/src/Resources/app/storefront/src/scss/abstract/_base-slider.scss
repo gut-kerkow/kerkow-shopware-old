@@ -1,0 +1,48 @@
+.base-slider {
+  .tns-nav {
+    margin: 1.5rem 0;
+    button {
+      background-color: unset;
+      border: 2px solid white;
+      height: 6px;
+      width: 6px;
+      padding: 6px;
+      border-radius: 50%;
+      margin: 0 0.5rem;
+      &.tns-nav-active {
+        background-color: white;
+      }
+      &:hover {
+        background-color: white;
+      }
+    }
+  }
+}
+.base-slider-controls {
+  button {
+    .icon {
+      width: 40px;
+      height: 40px;
+      color: $kerkow-blue;
+    }
+  }
+  .image-slider-controls-next {
+    &.is-nav-next-outside {
+      right: -80px;
+    }
+  }
+  .image-slider-controls-prev {
+    &.is-nav-prev-outside {
+      left: -80px;
+    }
+  }
+}
+
+@include media-breakpoint-down(md) {
+  .base-slider {
+    &.has-nav-outside {
+      padding-left: 0;
+      padding-right: 0;
+    }
+  }
+}

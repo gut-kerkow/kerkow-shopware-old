@@ -2,31 +2,36 @@
 
 declare(strict_types=1);
 
-namespace Kerkow\DeliveryDate\Storefront\Subscriber;
+namespace Kerkow\DeliveryDate\EventListener;
 
 use DateInterval;
 use DateTime;
-use Shopware\Storefront\Page\Product\ProductPageLoadedEvent;
+use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Shopware\Storefront\Event\StorefrontRenderEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
-
-class ProductDeliveryDateSubscriber implements EventSubscriberInterface
+class StorefrontRenderEventListener implements EventSubscriberInterface
 {
 
-
-
-    public function __construct()
-    {
-    }
 
     public static function getSubscribedEvents(): array
     {
         return [
-            ProductPageLoadedEvent::class => 'OnProductPageLoaded'
+            StorefrontRenderEvent::class       => 'onRender'
         ];
     }
 
-    public function OnProductPageLoaded(ProductPageLoadedEvent $event): void
+    public function onRender(StorefrontRenderEvent $event): void
+    {
+
+        $event->setParameter('deliveryInfos', $this->getDelierableDate(
+            $event->getSalesChannelContext()
+        ));
+    }
+
+
+
+    private function getDelierableDate(SalesChannelContext $context): array
     {
         // Define the deliverable days of the week
         $deliverable_dates = [1, /*monda*/ 3, /*wednesday*/ 5 /*friday*/];
@@ -58,10 +63,7 @@ class ProductDeliveryDateSubscriber implements EventSubscriberInterface
         $date = new DateTime();
 
 
-        $next_delivery_date = $this->getNextDeliverableDay($date, $deliverable_dates, $holidays, $latest_hour, false);
-        $extensions = $event->getPage()->getExtensions();
-        $extensions['delivery_date'] = $next_delivery_date;
-        $event->getPage()->setExtensions($extensions);
+        return $this->getNextDeliverableDay($date, $deliverable_dates, $holidays, $latest_hour, false);
     }
 
     private function getNextDeliverableDay($date, $deliverable_dates, $holidays, $latest_hour, $holiday_mode)
@@ -130,7 +132,7 @@ class ProductDeliveryDateSubscriber implements EventSubscriberInterface
                     $this->getNextDeliverableDay($last, $deliverable_dates, $holidays, $latest_hour, true);
                 }
 
-                return $last; // found it, return quickly
+                return ["date" => $last]; // found it, return quickly
             }
         }
     }

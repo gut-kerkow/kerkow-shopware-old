@@ -4,10 +4,15 @@
       "commerce": {
         "productFourColumn": {
           "label": "Four Columns, Product Boxes"
+        },
+        "productFourColumnBadge": {
+          "label": "Four Columns, Product Boxes and Badge"
         }
       },
-      "productFourColumnBadge": {
-        "label": "Four Columns, Product Boxes and Badge"
+      "textImage": {
+        "galleryText": {
+          "label": "Gallery und Text"
+        }
       }
     }
   }

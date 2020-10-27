@@ -5,6 +5,7 @@
 @import "abstract/partials/colors";
 @import "abstract/variables";
 @import "abstract/mixins";
+@import "abstract/grid";
 @import "abstract/header";
 @import "abstract/navigation";
 @import "abstract/footer";
@@ -25,18 +26,24 @@
 @import "abstract/confirm";
 @import "abstract/cart-item";
 @import "abstract/header-minimal";
+@import "abstract/base-slider";
+@import "abstract/cart";
 
 body {
   font-family: $kerkow-font-family-base;
   color: $kerkow-grey;
-  position: relative;
-  min-height: 100vh;
   background-color: $kerkow-light-grey;
+  font-size: 1rem;
 }
 .page-container {
+  min-height: 100vh;
   max-width: 1420px;
-  margin: 10px auto;
   background-color: white;
+  overflow: visible;
+  box-sizing: border-box;
+}
+.container-main {
+  padding: 0.625rem 0;
 }
 h2 {
   @include source-medium;
@@ -123,4 +130,9 @@ a {
 .break {
   flex-basis: 100%;
   height: 0;
+}
+@include media-breakpoint-up(xl) {
+  .page-container {
+    margin: 10px auto;
+  }
 }

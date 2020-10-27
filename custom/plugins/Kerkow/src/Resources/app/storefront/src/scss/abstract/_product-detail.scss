@@ -253,4 +253,13 @@
       margin-top: 1.5rem;
     }
   }
+  .cross-selling-item {
+    .product-image-wrapper {
+      max-width: 28rem;
+      max-height: 28rem;
+      .product-image {
+        max-height: 28rem;
+      }
+    }
+  }
 }

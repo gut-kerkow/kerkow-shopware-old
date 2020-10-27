@@ -23,8 +23,8 @@
       left: 0.5rem;
     }
     .badge-custom {
-      @include gt-black;
-      font-size: 1.2;
+      @include gt-medium;
+      font-size: 0.9rem;
       background: rgba(255, 255, 255, 0.6);
       color: $kerkow-blue !important;
     }
@@ -33,9 +33,9 @@
     @include gt-black;
     color: $kerkow-blue;
 
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     line-height: 1.5rem;
-    height: 2.2rem;
+    height: 1.6rem;
     margin-bottom: 0;
     &:hover {
       color: $kerkow-blue;
@@ -94,8 +94,8 @@
   .cms-block-product-four-column-badge,
   .cms-block-product-four-column {
     .cms-block-container-row {
-      margin-left: -0.75rem;
-      margin-right: -0.75rem;
+      margin-left: -0.625rem;
+      margin-right: -0.625rem;
     }
   }
 }
@@ -112,14 +112,18 @@
   .card-col,
   .cms-listing-col {
     .product-image-wrapper {
-      max-height: 20rem;
+      max-height: 280px;
+      max-width: 280px;
       height: auto;
       flex-basis: auto;
       flex-grow: 0;
-      max-width: 20rem;
-      max-height: 20rem;
       .product-image {
-        max-height: 20rem;
+        max-height: 280px;
+      }
+    }
+    .product-badges {
+      .badge-custom {
+        font-size: 1.1rem;
       }
     }
   }

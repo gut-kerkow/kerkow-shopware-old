@@ -8,6 +8,7 @@ https://getbootstrap.com/docs/4.3/components/breadcrumb/
 
 .breadcrumb {
   padding: 0 1.25rem;
+  margin-top: 0.75rem;
   margin-bottom: 0;
   .icon {
     color: $kerkow-blue;
@@ -51,5 +52,10 @@ https://getbootstrap.com/docs/4.3/components/breadcrumb/
     &.is-active {
       color: $kerkow-blue;
     }
+  }
+}
+@include media-breakpoint-only(xl) {
+  .breadcrumb {
+    padding: 0 5.625rem;
   }
 }

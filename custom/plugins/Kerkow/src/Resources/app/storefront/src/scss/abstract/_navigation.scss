@@ -1,3 +1,6 @@
+.navigation-flyouts {
+  left: 0;
+}
 .search-suggest {
   ul {
     background-color: rgba(0, 0, 0, 0.06);
@@ -190,8 +193,8 @@
   padding-bottom: 0;
 
   .main-navigation-link-text {
-    border-bottom: 3px solid transparent;
-    padding-bottom: 3px;
+    border-bottom: 4px solid transparent;
+    padding-bottom: 10px;
   }
 
   &.active,
@@ -203,10 +206,12 @@
   }
 }
 @include media-breakpoint-up(md) {
-  .main-navigation {
+  .nav-main {
     border-bottom: 0.0625rem solid rgb(212, 212, 212);
-    .main-navigation-link-text {
-      font-size: 0.9rem;
+    .main-navigation {
+      .main-navigation-link-text {
+        font-size: 0.9rem;
+      }
     }
   }
   .search-suggest {
@@ -231,9 +236,11 @@
   }
 }
 @include media-breakpoint-up(lg) {
-  .main-navigation {
-    .main-navigation-link-text {
-      font-size: 1rem;
+  .nav-main {
+    .main-navigation {
+      .main-navigation-link-text {
+        font-size: 1rem;
+      }
     }
   }
 }
