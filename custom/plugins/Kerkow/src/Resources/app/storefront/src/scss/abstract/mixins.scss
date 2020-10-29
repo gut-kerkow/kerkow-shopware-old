@@ -70,3 +70,23 @@
   font-family: "Source Sans Pro", sans-serif;
   font-weight: 700;
 }
+@mixin alright-light {
+  font-family: "Alright-v2-Normal-Light", sans-serif;
+  font-variant-numeric: lining-nums;
+  font-weight: normal;
+}
+@mixin alright-regular {
+  font-family: "Alright-v2-Normal-Regular", sans-serif;
+  font-variant-numeric: lining-nums;
+  font-weight: normal;
+}
+@mixin alright-medium {
+  font-family: "Alright-v2-Normal-Medium", sans-serif;
+  font-variant-numeric: lining-nums;
+  font-weight: normal;
+}
+@mixin alright-bold {
+  font-family: "Alright-v2-Normal-Bold", sans-serif;
+  font-variant-numeric: lining-nums;
+  font-weight: normal;
+}

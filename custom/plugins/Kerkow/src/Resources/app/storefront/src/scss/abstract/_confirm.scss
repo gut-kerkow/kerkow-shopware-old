@@ -146,7 +146,7 @@
     font-size: 0.9rem;
     &.tax {
       color: $kerkow-grey;
-      @include source-regular;
+      @include alright-regular;
     }
   }
   .checkout-aside-summary-value {
@@ -155,8 +155,7 @@
     font-size: 1rem;
     &.tax {
       color: $kerkow-grey;
-      @include source-regular;
-      font-weight: initial;
+      @include alright-regular;
     }
   }
   .checkout-aside-summary-total {

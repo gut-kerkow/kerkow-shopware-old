@@ -30,7 +30,6 @@
   .navigation-offcanvas-link {
     color: $kerkow-blue;
     text-transform: uppercase;
-    font-weight: 600;
   }
 }
 .divider {
@@ -41,7 +40,6 @@
   border-bottom: 0.0625rem solid rgb(212, 212, 212);
   color: #314e92 !important;
   text-transform: uppercase;
-  font-weight: 600;
   margin: 0 1rem;
 }
 .footer-actions {
@@ -98,7 +96,7 @@
 }
 .main-navigation-menu {
   a {
-    @include source-medium;
+    @include alright-medium;
     text-transform: uppercase;
     color: $kerkow-blue;
   }

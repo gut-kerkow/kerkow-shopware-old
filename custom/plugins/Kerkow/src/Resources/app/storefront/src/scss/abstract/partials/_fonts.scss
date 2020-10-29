@@ -66,3 +66,35 @@
   src: url("/bundles/kerkow/fonts/SourceSansPro-Bold.ttf") format("truetype");
   font-weight: 700;
 }
+//Alright Sans
+
+@font-face {
+  font-family: "Alright-v2-Normal-Regular";
+  src: url("/bundles/kerkow/fonts/Alright-v2-Normal-Regular.woff2")
+      format("woff2"),
+    url("/bundles/kerkow/fonts/Alright-v2-Normal-Regular.woff") format("woff");
+  font-weight: normal;
+}
+
+@font-face {
+  font-family: "Alright-v2-Normal-Medium";
+  src: url("/bundles/kerkow/fonts/Alright-v2-Normal-Medium.woff2")
+      format("woff2"),
+    url("/bundles/kerkow/fonts/Alright-v2-Normal-Medium.woff") format("woff");
+  font-weight: normal;
+}
+
+@font-face {
+  font-family: "Alright-v2-Normal-Light";
+  src: url("/bundles/kerkow/fonts/Alright-v2-Normal-Light.woff2")
+      format("woff2"),
+    url("/bundles/kerkow/fonts/Alright-v2-Normal-Light.woff") format("woff");
+  font-weight: normal;
+}
+
+@font-face {
+  font-family: "Alright-v2-Normal-Bold";
+  src: url("/bundles/kerkow/fonts/Alright-v2-Normal-Bold.woff2") format("woff2"),
+    url("/bundles/kerkow/fonts/Alright-v2-Normal-Bold.woff") format("woff");
+  font-weight: normal;
+}

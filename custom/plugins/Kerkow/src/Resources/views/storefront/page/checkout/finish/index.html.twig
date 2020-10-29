@@ -8,10 +8,6 @@
 {% endblock %}
 
 {% block page_checkout_main_content %}
-	<pre>
-    {{ dump() }}
-</pre>
-
 	{% block base_flashbags_checkout %}
 		<div class="flashbags">
 			{% for type, messages in app.flashes %}

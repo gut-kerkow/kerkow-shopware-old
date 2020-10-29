@@ -25,13 +25,13 @@
 						</span>
 					{% endif %}
 				{% endblock %}
-			</p>
-			<p>
+
 
 				{# Unit price is based on a reference unit #}
 				{% block component_product_box_price_reference_unit %}
 					{% if referncePrice is not null %}
 						<span class="price-unit-reference">
+
 							{% if product.priceRange %}
 
 								{{ "listing.listingTextFrom"|trans|sw_sanitize }}
@@ -43,11 +43,12 @@
 
 							{% else %}
 
-								{{ referncePrice.price|currency }}
+								{{ "(#{referncePrice.price|currency}" }}
 								/
 								{{ referncePrice.referenceUnit }}
-								{{ referncePrice.unitName }}
+								{{ "#{referncePrice.unitName})" }}
 							{% endif %}
+
 						</span>
 					{% endif %}
 				{% endblock %}

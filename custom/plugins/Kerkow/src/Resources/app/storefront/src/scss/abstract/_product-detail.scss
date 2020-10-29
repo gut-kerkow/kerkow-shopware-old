@@ -1,11 +1,14 @@
+.product-detail-name-container {
+  display: block;
+}
 .product-detail {
   .product-detail-name {
-    @include gt-bold;
+    @include gt-black;
     color: $kerkow-blue;
 
     font-size: 1.6rem;
     line-height: 1.5rem;
-    height: 2.2rem;
+    height: 1.9rem;
     margin-bottom: 0;
   }
   .product-detail-headline {
@@ -34,31 +37,32 @@
   }
   .product-detail-price {
     font-size: 1.8rem;
-    font-family: $kerkow-font-family-base;
+    @include alright-regular;
     color: $kerkow-blue;
-    font-weight: 400;
     line-height: 2rem;
+    letter-spacing: 1px;
   }
   .product-detail-content,
   .product-detail-reference-content,
   .product-detail-tax,
   .product-detail-deliver-date {
     font-size: 1rem;
-    font-family: $kerkow-font-family-base;
+    @include alright-light;
     color: $kerkow-blue;
-    font-weight: 200;
     margin-bottom: 0;
     .product-detail-tax-link {
       text-decoration: underline;
     }
     .product-detail-delivery-container {
       padding-top: 1rem;
+      p {
+        margin-bottom: 0;
+      }
     }
     .product-detail-custom-delivery-time {
-      font-size: 0.8rem;
-      font-family: $kerkow-font-family-base;
+      font-size: 0.7rem;
+      @include alright-light;
       color: $kerkow-blue;
-      font-weight: 200;
       margin-bottom: 0;
     }
     .btn-buy {
@@ -148,7 +152,6 @@
       font-family: $kerkow-font-family-base;
       color: $kerkow-grey;
       text-transform: uppercase;
-      font-weight: bold;
     }
   }
   .kerkow-newsletter-form {
@@ -177,14 +180,14 @@
     }
     .product-detail-content {
       .product-detail-delivery-container {
-        padding-top: 0.5rem;
+        padding-top: 1rem;
       }
       .product-detail-qty-select {
         margin-bottom: 0.5rem;
       }
     }
     .product-detail-configurator-container {
-      margin-top: 0.5rem;
+      margin-top: 1.5rem;
     }
     .page-product-detail-description {
       .product-detail-animal {
@@ -207,6 +210,22 @@
   }
 }
 @include media-breakpoint-up(lg) {
+  .product-detail-price {
+    margin-top: 1.5rem;
+    font-size: 26px;
+  }
+  .product-detail {
+    .product-detail-content,
+    .product-detail-reference-content,
+    .product-detail-tax,
+    .product-detail-deliver-date {
+      font-size: 1rem;
+      .product-detail-custom-delivery-time {
+        line-height: 1rem;
+        font-size: 0.7rem;
+      }
+    }
+  }
   .product-content-position {
     div:nth-child(1) {
       order: 2;
@@ -226,25 +245,15 @@
 @include media-breakpoint-only(xl) {
   .product-detail {
     .product-buy-content-container {
-      padding: 0 5rem;
+      padding: 4rem 7rem 0 7rem;
     }
     .product-detail-price {
-      margin-top: 2rem;
-      font-size: 2rem;
+      margin-top: 2.5rem;
+      font-size: 26px;
     }
-    .product-detail-content,
-    .product-detail-reference-content,
-    .product-detail-tax,
-    .product-detail-deliver-date {
-      font-size: 1rem;
-      line-height: 2rem;
-      .product-detail-custom-delivery-time {
-        line-height: 1rem;
-        font-size: 0.9rem;
-      }
-    }
+
     .product-detail-content {
-      margin-top: 1rem;
+      margin-top: 0;
       .product-detail-qty-select {
         margin-bottom: 1rem;
       }

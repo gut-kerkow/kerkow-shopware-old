@@ -28,6 +28,7 @@
 @import "abstract/header-minimal";
 @import "abstract/base-slider";
 @import "abstract/cart";
+@import "abstract/offcanvas-cart";
 
 body {
   font-family: $kerkow-font-family-base;
@@ -46,10 +47,10 @@ body {
   padding: 0.625rem 0;
 }
 h2 {
-  @include source-medium;
+  @include alright-medium;
   color: $kerkow-grey;
   text-transform: uppercase;
-  font-size: 1rem;
+  font-size: 15px;
 }
 a {
   color: $kerkow-blue;
@@ -63,7 +64,7 @@ a {
       border-color: $kerkow-blue;
     }
     background-color: $kerkow-blue;
-    @include source-medium;
+    @include alright-medium;
     border-radius: 1px;
   }
 }
@@ -84,7 +85,6 @@ a {
     color: $kerkow-blue;
     background-color: white;
     font-family: $kerkow-font-family-base;
-    font-weight: 600;
     border-radius: 1px;
   }
 }
@@ -94,7 +94,7 @@ a {
 .alert-kerkow {
   background-color: rgba(49, 78, 146, 0.6);
   color: white;
-  @include source-regular;
+  @include alright-regular;
   font-size: 1rem;
   a {
     color: white;
@@ -122,10 +122,9 @@ a {
   }
 }
 .remove-label {
-  @include source-regular;
+  @include alright-regular;
   color: $kerkow-blue;
   margin-left: 0.5rem;
-  font-weight: initial;
 }
 .break {
   flex-basis: 100%;

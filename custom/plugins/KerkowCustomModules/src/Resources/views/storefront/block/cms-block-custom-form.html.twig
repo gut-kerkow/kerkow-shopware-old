@@ -53,7 +53,7 @@
 	<div class="newsletter-privacy">
 
 		<p>
-			{{ "kerkow.newsletter.privacy" | trans | raw }}
+			{{ "kerkow.newsletter.privacy"|trans({'%url%': path('frontend.cms.page',{ id: shopware.config.core.basicInformation.privacyPage })})|raw }}
 		</p>
 	</div>
 {% endblock %}

@@ -115,16 +115,28 @@
 						{% set month =  monthString|trans %}
 						{% if deliveryInfo.date|date("m/d/Y") == ("now"|date_modify("+1 day")|date("m/d/Y")) %}
 							<div class="product-detail-delivery-container">
+								<p>
+									{{ "kerkow.deliveryDateHeadline"|trans }}
+								</p>
+
 								<span class="product-detail-deliver-tomorrow">
-									{{ "kerkow.deliverTomorrow"|trans|raw }}
+									{{ "kerkow.actualDeliverTomorrow"|trans|raw }}
 								</span>
 							</div>
 						{% else %}
 							<div class="product-detail-delivery-container">
+								<p>
+									{{ "kerkow.deliveryDateHeadline"|trans }}
+								</p>
 								<span class="product-detail-deliver-date">
-									{{ "kerkow.deliverTime"|trans({'%day%': day, '%date%': deliverInfo.date|date("d"), '%month%': month}) }}
+									{{ "kerkow.actualDeliverTime"|trans({'%day%': day, '%date%': deliverInfo.date|date("d"), '%month%': month}) }}
 								</span>
 							</div>
+							{% block page_product_detail_delivery_notice %}
+								<span class="product-detail-custom-delivery-time">
+									{{ "kerkow.customTime"|trans|raw }}
+								</span>
+							{% endblock %}
 						{% endif %}
 					{% endblock %}
 
@@ -171,10 +183,6 @@
 		{% block page_product_detail_ordernumber_container %}
 
 		{% endblock %}
-		{% block page_product_detail_delivery_notice %}
-			<span class="product-detail-custom-delivery-time">
-				{{ "kerkow.customTime"|trans|raw }}
-			</span>
-		{% endblock %}
+
 	</div>
 {% endblock %}
