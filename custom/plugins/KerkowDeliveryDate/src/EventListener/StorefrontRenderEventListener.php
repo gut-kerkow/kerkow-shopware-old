@@ -132,7 +132,7 @@ class StorefrontRenderEventListener implements EventSubscriberInterface
                     $this->getNextDeliverableDay($last, $deliverable_dates, $holidays, $latest_hour, true);
                 }
 
-                return ["date" => $last]; // found it, return quickly
+                return ["date" => $last, "server_time" => new DateTime()]; // found it, return quickly
             }
         }
     }

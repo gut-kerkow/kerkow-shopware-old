@@ -118,6 +118,23 @@
       padding: 2rem;
     }
   }
+  .product-detail-data {
+    margin-top: 2rem;
+    color: $kerkow-blue;
+    @include gt-medium;
+    h2 {
+      @include gt-black;
+      font-size: 1.2rem;
+      color: $kerkow-blue;
+      text-transform: none;
+    }
+    .allergens {
+      margin-top: 2rem;
+    }
+    dt {
+      font-weight: unset;
+    }
+  }
   .product-detail-cross-selling {
     .cross-selling-item {
       &:nth-of-type(even) {

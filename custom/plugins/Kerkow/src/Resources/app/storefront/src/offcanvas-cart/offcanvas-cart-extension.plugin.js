@@ -1,4 +1,5 @@
 import OffCanvasCartPlugin from "src/plugin/offcanvas-cart/offcanvas-cart.plugin";
+import NativeEventEmitter from "src/helper/emitter.helper";
 
 export default class OffCanvasCartPluginExtension extends OffCanvasCartPlugin {
   static options = {
@@ -12,9 +13,6 @@ export default class OffCanvasCartPluginExtension extends OffCanvasCartPlugin {
     shippingToggleSelector: ".js-toggle-shipping-selection",
     additionalOffcanvasClass: "cart-offcanvas",
     hiddenClass: "d-none",
-    // ToggleButton Elements
-    menuOpenButton: ".js-offcanvas-open-button",
-    menuCloseButton: ".js-offcanvas-close-button",
   };
 
   /**
@@ -37,26 +35,8 @@ export default class OffCanvasCartPluginExtension extends OffCanvasCartPlugin {
       header.offsetHeight +
       "px;}";
     header.appendChild(style);
-    this._toggleMenuIcon();
+    this.$emitter = new NativeEventEmitter();
+    this.$emitter.publish("openMenu");
     this.openOffCanvas(window.router["frontend.cart.offcanvas"], false);
-  }
-
-  /**
-   * Toggle Icons
-   *
-   * @private
-   */
-  _toggleMenuIcon() {
-    const menuButton = document.querySelector(this.options.menuOpenButton);
-    const closeButton = document.querySelector(this.options.menuCloseButton);
-    if (closeButton.classList.contains(this.options.hiddenClass)) {
-      menuButton.classList.add(this.options.hiddenClass);
-      closeButton.classList.remove(this.options.hiddenClass);
-    } else {
-      closeButton.classList.add(this.options.hiddenClass);
-      menuButton.classList.remove(this.options.hiddenClass);
-    }
-    // add click event listener to body
-    closeButton.addEventListener("click", this._toggleMenuIcon.bind(this));
   }
 }

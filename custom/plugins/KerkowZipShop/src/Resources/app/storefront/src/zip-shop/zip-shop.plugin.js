@@ -1,9 +1,7 @@
 import Plugin from "src/plugin-system/plugin.class";
 import DomAccess from "src/helper/dom-access.helper";
-import Debouncer from "src/helper/debouncer.helper";
 import HttpClient from "src/service/http-client.service";
 import ButtonLoadingIndicator from "src/utility/loading-indicator/button-loading-indicator.util";
-import DeviceDetection from "src/helper/device-detection.helper";
 import Iterator from "src/helper/iterator.helper";
 
 export default class ZipShopPlugin extends Plugin {

@@ -7,3 +7,8 @@
     margin-left: 0;
   }
 }
+.offcanvas.is-left {
+  .offcanvas-close {
+    display: none;
+  }
+}

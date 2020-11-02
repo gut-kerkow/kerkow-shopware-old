@@ -7,6 +7,7 @@ import ArrowNavigationHelper from "src/helper/arrow-navigation.helper";
 import HttpClient from "src/service/http-client.service";
 import DeviceDetection from "src/helper/device-detection.helper";
 import ViewportDetection from "src/helper/viewport-detection.helper";
+import NativeEventEmitter from "src/helper/emitter.helper";
 
 export default class OffcanvasMenuExtensionPlugin extends OffcanvasMenuPlugin {
   static options = {
@@ -59,12 +60,14 @@ export default class OffcanvasMenuExtensionPlugin extends OffcanvasMenuPlugin {
     headerZipRemoveLinkSelector: ".js-header-zip-widget-remove-link",
     zipShopZipRegex: /\d{5}/,
   };
+
   /**
    * register triggers
    *
    * @private
    */
   _registerEvents() {
+    this.$emitter = new NativeEventEmitter();
     this.el.removeEventListener(
       this.options.tiggerEvent,
       this._getLinkEventHandler.bind(this)
@@ -72,6 +75,16 @@ export default class OffcanvasMenuExtensionPlugin extends OffcanvasMenuPlugin {
     this.el.addEventListener(
       this.options.tiggerEvent,
       this._getLinkEventHandler.bind(this)
+    );
+
+    // Toggle Open/Close Button
+    document.addEventListener(
+      "openMenu",
+      this._toggleMenuIcon.bind(this, "open")
+    );
+    document.addEventListener(
+      "onCloseOffcanvas",
+      this._toggleMenuIcon.bind(this, "close")
     );
 
     if (OffCanvas.exists()) {
@@ -541,7 +554,7 @@ export default class OffcanvasMenuExtensionPlugin extends OffcanvasMenuPlugin {
       header.offsetHeight +
       "px;}";
     header.appendChild(style);
-    this._toggleMenuIcon();
+
     OffCanvas.open(
       this._content,
       this._registerEvents.bind(this),
@@ -596,17 +609,15 @@ export default class OffcanvasMenuExtensionPlugin extends OffcanvasMenuPlugin {
    *
    * @private
    */
-  _toggleMenuIcon() {
+  _toggleMenuIcon(action) {
     const menuButton = document.querySelector(this.options.menuOpenButton);
     const closeButton = document.querySelector(this.options.menuCloseButton);
-    if (closeButton.classList.contains(this.options.hiddenClass)) {
+    if (action == "open") {
       menuButton.classList.add(this.options.hiddenClass);
       closeButton.classList.remove(this.options.hiddenClass);
     } else {
       closeButton.classList.add(this.options.hiddenClass);
       menuButton.classList.remove(this.options.hiddenClass);
     }
-    // add click event listener to body
-    closeButton.addEventListener("click", this._toggleMenuIcon.bind(this));
   }
 }

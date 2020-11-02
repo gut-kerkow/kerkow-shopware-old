@@ -77,15 +77,103 @@
 					</div>
 				{% endblock %}
 
+				{% block page_product_detail_data %}
+					<div class="row product-detail-data">
+						{% if page.product.customFields["custom_product_data_show_contents"] %}
+							<div class="col-12 col-lg-6 page-product-detail-data-contents">
+								<h2>
+									{{ "kerkow.nutritionFacts"|trans }}
+								</h2>
+								<dl class="row">
+									{% if page.product.customFields["custom_product_data_calorific_value"] %}
+										<dt class="col-6">
+											{{ "kerkow.calorificValue"|trans }}
+										</dt>
+										<dd class="col-6">
+											{{ page.product.customFields["custom_product_data_calorific_value"] }}
+										</dd>
+									{% endif %}
+									{% if page.product.customFields["custom_product_data_fat"] %}
+										<dt class="col-6">
+											{{ "kerkow.fat"|trans }}
+										</dt>
+										<dd class="col-6">
+											{{ page.product.customFields["custom_product_data_fat"] }}
+										</dd>
+									{% endif %}
+									{% if page.product.customFields["custom_product_data_saturated_fat"] %}
+										<dt class="col-6">
+											{{ "kerkow.saturatedFat"|trans }}
+										</dt>
+										<dd class="col-6">
+											{{ page.product.customFields["custom_product_data_saturated_fat"] }}
+										</dd>
+									{% endif %}
+									{% if page.product.customFields["custom_product_data_carbs"] %}
+										<dt class="col-6">
+											{{ "kerkow.carbs"|trans }}
+										</dt>
+										<dd class="col-6">
+											{{ page.product.customFields["custom_product_data_carbs"] }}
+										</dd>
+									{% endif %}
+									{% if page.product.customFields["custom_product_data_sugar"] %}
+										<dt class="col-6">
+											{{ "kerkow.sugar"|trans }}
+										</dt>
+										<dd class="col-6">
+											{{ page.product.customFields["custom_product_data_sugar"] }}
+										</dd>
+									{% endif %}
+									{% if page.product.customFields["custom_product_data_protein"] %}
+										<dt class="col-6">
+											{{ "kerkow.protein"|trans }}
+										</dt>
+										<dd class="col-6">
+											{{ page.product.customFields["custom_product_data_protein"] }}
+										</dd>
+									{% endif %}
+									{% if page.product.customFields["custom_product_data_salt"] %}
+										<dt class="col-6">
+											{{ "kerkow.salt"|trans }}
+										</dt>
+										<dd class="col-6">
+											{{ page.product.customFields["custom_product_data_salt"] }}
+										</dd>
+									{% endif %}
+								</dl>
+							</div>
+						{% endif %}
+						{% if page.product.customFields["custom_product_data_ingredients"] or page.product.customFields["custom_product_data_show_allergens"] %}
+							<div class="col-12 col-lg-6 page-product-detail-data-ingredients-allergens">
+								<div class="ingredients">
+									<h2>
+										{{ "kerkow.ingredients"|trans }}
+									</h2>
+									{{ page.product.customFields["custom_product_data_ingredients"]|sw_sanitize }}
+								</div>
+								<div class="allergens">
+									<h2>
+										{{ "kerkow.allergens"|trans }}
+									</h2>
+									{{ page.product.customFields["custom_product_data_allergens"]|sw_sanitize }}
+								</div>
+							</div>
+						{% endif %}
+					</div>
+				{% endblock %}
+
 				{% block page_product_detail_tabs %}
 				{% endblock %}
 
 				{% block page_product_detail_cross_selling %}
-					<div class="row product-detail-cross-selling">
-						{% sw_include '@kerkow/storefront/page/product-detail/cross-selling/grid.html.twig' with {
+					{% if page.crossSellings|length > 0 %}
+						<div class="row product-detail-cross-selling">
+							{% sw_include '@kerkow/storefront/page/product-detail/cross-selling/grid.html.twig' with {
                             crossSellings: page.crossSellings
                         } only %}
-					</div>
+						</div>
+					{% endif %}
 				{% endblock %}
 			{% endblock %}
 			{% block page_product_detail_newsletter %}
