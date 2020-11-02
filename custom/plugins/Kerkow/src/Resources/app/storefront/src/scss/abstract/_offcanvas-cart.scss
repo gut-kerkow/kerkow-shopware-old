@@ -6,6 +6,13 @@
     text-align: left;
     margin-left: 0;
   }
+  .btn-secondary {
+    &:not(:hover) {
+      .icon {
+        color: $kerkow-blue;
+      }
+    }
+  }
 }
 .offcanvas.is-left {
   .offcanvas-close {
