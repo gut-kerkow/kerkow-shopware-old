@@ -72,9 +72,16 @@ li.footer-column-link {
   }
 }
 .footer-vat {
+  @include alright-light;
+  color: $kerkow-blue;
+  font-size: 0.8rem;
+  line-height: 1.1rem;
   p {
     margin-top: 1rem;
     margin-bottom: 0;
+  }
+  a {
+    text-decoration: underline;
   }
 }
 .footer-final {
