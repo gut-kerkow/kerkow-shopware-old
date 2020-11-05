@@ -136,3 +136,24 @@ a {
     margin: 10px auto;
   }
 }
+.legal-page {
+  font-family: "GT-Sectra-Book";
+  color: #314e92;
+  font-size: 16px;
+  h1 {
+    text-align: center;
+    font-family: "GT-Sectra-Black";
+    color: #314e92;
+    font-size: 22px;
+  }
+  h2 {
+    font-family: "GT-Sectra-Black";
+    color: #314e92;
+    font-size: 16px;
+    text-transform: unset;
+  }
+  a {
+    color: #314e92;
+    text-decoration: underline;
+  }
+}
