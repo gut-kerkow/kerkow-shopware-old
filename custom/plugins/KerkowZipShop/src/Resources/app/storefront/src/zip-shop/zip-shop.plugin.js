@@ -84,7 +84,9 @@ export default class ZipShopPlugin extends Plugin {
    */
   _showModal() {
     this._registerEvents();
+    console.log("openOnLoad", this._openOnLoad);
     if (!this._openOnLoad) {
+      console.log("It must return");
       return;
     }
     // Show the modal
