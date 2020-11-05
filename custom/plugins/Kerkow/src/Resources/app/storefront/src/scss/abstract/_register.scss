@@ -71,6 +71,11 @@
   .register-newsletter {
     margin: 2rem 0;
   }
+  .privacy-notice {
+    a {
+      text-decoration: underline;
+    }
+  }
 }
 @include media-breakpoint-up(lg) {
   .is-act-checkoutregisterpage,
