@@ -1,0 +1,70 @@
+/*
+Cookie permission
+==============================================
+Shows a cookie permission alert at the bottom of the page.
+*/
+
+.cookie-permission-container {
+  min-height: 350px;
+  background-color: $kerkow-blue;
+  .btn-primary:not([disabled]):hover {
+    background-color: $kerkow-blue;
+    color: white;
+    border: 2px solid white;
+  }
+  button {
+    font-size: 1rem;
+    border: 2px solid white;
+    &:hover {
+      background-color: $kerkow-blue;
+      color: white;
+    }
+  }
+  .btn-secondary:not(disabled):active,
+  .btn-secondary:not(disabled):hover {
+    border-color: white;
+  }
+  .btn-secondary:not(disabled) {
+    border-color: white;
+  }
+  .cookie-permission-button {
+    margin-left: 10px;
+    button {
+      text-transform: uppercase;
+      padding-left: 20px;
+      padding-right: 20px;
+      &:hover {
+        background-color: white;
+        color: $kerkow-blue;
+      }
+    }
+  }
+}
+
+.cookie-permission-content {
+  color: white;
+  @include alright-regular;
+  font-size: 0.9rem;
+
+  a {
+    display: inline-block;
+    color: white;
+    text-decoration: underline;
+  }
+}
+
+@include media-breakpoint-up(md) {
+  .cookie-permission-container {
+    .cookie-permission-content {
+      font-size: 1rem;
+      margin: 15px 0;
+      text-align: left;
+    }
+    .cookie-permission-button {
+      button {
+        padding-left: 150px;
+        padding-right: 150px;
+      }
+    }
+  }
+}

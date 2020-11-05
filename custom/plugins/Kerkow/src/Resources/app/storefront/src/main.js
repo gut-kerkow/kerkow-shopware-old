@@ -8,6 +8,7 @@ import toggleLoginRegisterPlugin from "./checkout-register/toggle-login-register
 import changePaymentPlugin from "./checkout-confirm/change-payment.plugin";
 import DatePickerExtensionPlugin from "./checkout-confirm/date-picker-extension.plugin";
 import changeDeliveryDatePlugin from "./checkout-confirm/change-delivery-date.plugin";
+import CookiePermissionPluginExtension from "./cookie/cookie-permission-extension.plugin";
 
 // Register them via the existing PluginManager
 const PluginManager = window.PluginManager;
@@ -52,4 +53,9 @@ PluginManager.register(
   "changeDeliveryDateP",
   changeDeliveryDatePlugin,
   "[data-change-delivery-date]"
+);
+PluginManager.override(
+  "CookiePermission",
+  CookiePermissionPluginExtension,
+  "[data-cookie-permission]"
 );
