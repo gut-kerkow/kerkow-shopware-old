@@ -84,9 +84,7 @@ export default class changeDeliveryDatePlugin extends Plugin {
    */
   _saveDates() {
     const deliverySlot = this._deliverySlot.value;
-    console.log(deliverySlot);
     const deliveryDate = new Date(this._deliveryDate.value);
-    console.log(deliveryDate);
     // Refresh delivery date display
     this._refreshDateDisplay(deliveryDate, deliverySlot);
     // Update form fields

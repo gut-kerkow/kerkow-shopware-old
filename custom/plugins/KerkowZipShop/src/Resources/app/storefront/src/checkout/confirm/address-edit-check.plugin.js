@@ -112,7 +112,6 @@ export default class AddressEditCheckPlugin extends Plugin {
       form,
       `.${this.options.zipInputSelector}`
     );
-    console.log(this);
     this._checkZip(zipField);
   }
 
@@ -128,7 +127,6 @@ export default class AddressEditCheckPlugin extends Plugin {
     if (this._changeMode) {
       this._addressMode = "shipping";
     }
-    console.log(mode, this._addressMode);
     if (value.match(this.options.zipShopZipRegex)) {
       if (this._addressMode == mode) {
         this._client.abort();
@@ -136,7 +134,6 @@ export default class AddressEditCheckPlugin extends Plugin {
           const result = JSON.parse(response);
           // remove indicator
           if (result.postalcode) {
-            console.log(response);
             // Unlock continue button
             el.classList.remove("is-invalid");
 
@@ -168,7 +165,6 @@ export default class AddressEditCheckPlugin extends Plugin {
     if (this._changeMode) {
       this._addressMode = "shipping";
     }
-    console.log(mode, this._addressMode);
     Iterator.iterate(this._existingAdresses, (form) => {
       // Get Button
       const button = DomAccess.querySelector(
@@ -187,7 +183,6 @@ export default class AddressEditCheckPlugin extends Plugin {
           const result = JSON.parse(response);
           // remove indicator
           if (result.postalcode) {
-            console.log(response);
             // Unlock button
             button.disabled = false;
             // Show Button

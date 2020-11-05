@@ -44,7 +44,6 @@ export default class CookiePermissionPluginExtension extends CookiePermissionPlu
     this._acceptButton = this.el.querySelector(
       this.options.acceptButtonSelector
     );
-    console.log("preference", this._acceptButton);
 
     if (!this._isPreferenceSet()) {
       this._setBodyPadding();
@@ -58,7 +57,6 @@ export default class CookiePermissionPluginExtension extends CookiePermissionPlu
    * @private
    */
   _registerEvents() {
-    console.log("registering");
     if (this._button) {
       const submitEvent = DeviceDetection.isTouchDevice()
         ? "touchstart"
@@ -131,7 +129,6 @@ export default class CookiePermissionPluginExtension extends CookiePermissionPlu
   _handleAccept() {
     const acceptedCookies = this._getCookies();
     const { cookieName } = this.options;
-    console.log("cookies", acceptedCookies);
 
     const activeCookieNames = [];
 
@@ -140,7 +137,6 @@ export default class CookiePermissionPluginExtension extends CookiePermissionPlu
      * ( see "_handleUpdateListener" method )
      */
     acceptedCookies.forEach(({ cookie, value, expiration }) => {
-      console.log(cookie);
       acceptedCookies.push(cookie);
 
       if (cookie && value) {

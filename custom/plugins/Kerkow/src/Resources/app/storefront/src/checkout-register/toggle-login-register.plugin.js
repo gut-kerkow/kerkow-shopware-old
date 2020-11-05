@@ -124,7 +124,6 @@ export default class toggleLoginRegisterPlugin extends Plugin {
     )
       ? true
       : false;
-    console.log(registerForm, registerFields);
     if (loginFormValidated || loginFieldsValidated) {
       const showButton = this._registerButton;
       const hideButton = this._loginButton;
