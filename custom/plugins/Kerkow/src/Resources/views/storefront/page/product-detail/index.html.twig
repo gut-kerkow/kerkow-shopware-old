@@ -146,18 +146,22 @@
 						{% endif %}
 						{% if page.product.customFields["custom_product_data_ingredients"] or page.product.customFields["custom_product_data_show_allergens"] %}
 							<div class="col-12 col-lg-6 page-product-detail-data-ingredients-allergens">
-								<div class="ingredients">
-									<h2>
-										{{ "kerkow.ingredients"|trans }}
-									</h2>
-									{{ page.product.customFields["custom_product_data_ingredients"]|sw_sanitize }}
-								</div>
-								<div class="allergens">
-									<h2>
-										{{ "kerkow.allergens"|trans }}
-									</h2>
-									{{ page.product.customFields["custom_product_data_allergens"]|sw_sanitize }}
-								</div>
+								{% if page.product.customFields["custom_product_data_ingredients"] %}
+									<div class="ingredients">
+										<h2>
+											{{ "kerkow.ingredients"|trans }}
+										</h2>
+										{{ page.product.customFields["custom_product_data_ingredients"]|sw_sanitize }}
+									</div>
+								{% endif %}
+								{% if page.product.customFields["custom_product_data_show_allergens"] %}
+									<div class="allergens">
+										<h2>
+											{{ "kerkow.allergens"|trans }}
+										</h2>
+										{{ page.product.customFields["custom_product_data_allergens"]|sw_sanitize }}
+									</div>
+								{% endif %}
 							</div>
 						{% endif %}
 					</div>
