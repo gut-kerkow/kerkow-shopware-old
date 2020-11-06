@@ -104,6 +104,31 @@
       }
     }
   }
+  .job-page {
+    @include gt-regular;
+    color: $kerkow-blue;
+    font-size: 22px;
+    h2 {
+      @include gt-black-italic;
+      color: $kerkow-blue;
+      text-transform: none;
+      font-size: 26px;
+    }
+    h3 {
+      @include gt-black;
+      color: $kerkow-blue;
+      text-transform: none;
+      font-size: 22px;
+    }
+    ul {
+      @include gt-book;
+      color: $kerkow-blue;
+      font-size: 22px;
+    }
+    a {
+      text-decoration: underline;
+    }
+  }
   &.cms-block-gallery-text {
     margin-top: 2rem;
     margin-left: calc(-50vw + 50%);
