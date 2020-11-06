@@ -99,6 +99,9 @@
         line-height: 1.5rem;
         margin-bottom: 2rem;
       }
+      .addendum {
+        @include gt-book;
+      }
     }
   }
   &.cms-block-gallery-text {
