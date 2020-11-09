@@ -133,9 +133,9 @@
     }
   }
   &.cms-block-gallery-text {
+    margin-left: -1.5rem;
+    margin-right: -1.5rem;
     margin-top: 2rem;
-    margin-left: calc(-50vw + 50%);
-    margin-right: calc(-50vw + 50%);
     padding: 1.5rem;
     background-color: $kerkow-light-grey;
     .cms-element-text {
