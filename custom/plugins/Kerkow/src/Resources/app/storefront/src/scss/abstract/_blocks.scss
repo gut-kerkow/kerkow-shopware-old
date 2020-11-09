@@ -19,6 +19,9 @@
       line-height: 1.6rem;
       font-style: normal;
     }
+    a {
+      @include alright-medium;
+    }
   }
 }
 .kerkow-full-stretch-text {

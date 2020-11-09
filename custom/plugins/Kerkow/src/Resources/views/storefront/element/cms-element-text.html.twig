@@ -20,11 +20,11 @@
 				{% endif %}
 				{% if isProductListContent %}
 					<div class="bottom-blur">
-						<span class="js-expand-text js-expand">
-							{% sw_icon 'arrow-medium-down' style { 'size': 'fluid', 'pack': 'solid'} %}
+						<span class="js-expand-text js-expand arrow-down">
+							{% sw_include '@kerkow/storefront/custom/icons/arrow-icon.html.twig' %}
 						</span>
-						<span class="js-expand-text js-close d-none">
-							{% sw_icon 'arrow-medium-up' style { 'size': 'fluid', 'pack': 'solid'} %}
+						<span class="js-expand-text js-close arrow-up d-none">
+							{% sw_include '@kerkow/storefront/custom/icons/arrow-icon.html.twig' %}
 						</span>
 					</div>
 				</div>

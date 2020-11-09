@@ -43,6 +43,21 @@
           margin-bottom: 0;
           padding: 0 1rem 1rem 1rem;
         }
+        .arrow-down {
+          svg {
+            margin-top: 1rem;
+            width: 2rem;
+            height: 2rem;
+            transform: rotate(90deg);
+          }
+        }
+        .arrow-up {
+          svg {
+            width: 2rem;
+            height: 2rem;
+            transform: rotate(-90deg);
+          }
+        }
       }
     }
   }
