@@ -45,7 +45,8 @@
       margin-bottom: 2rem;
       text-transform: none;
     }
-    p {
+    p,
+    a {
       @include gt-book;
       font-size: 1.5rem;
       color: white;
