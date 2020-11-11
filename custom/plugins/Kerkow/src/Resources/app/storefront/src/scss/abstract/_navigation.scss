@@ -151,6 +151,7 @@
 .navigation-flyout.navigation-flyout-search {
   border-top: solid 1px #d6d6d6;
   width: 80%;
+  max-width: 1200px;
   min-height: 400px;
 }
 .navigation-search {
@@ -207,6 +208,9 @@
   .nav-main {
     border-bottom: 0.0625rem solid rgb(212, 212, 212);
     .main-navigation {
+      .main-navigation-link {
+        padding-right: 16px;
+      }
       .main-navigation-link-text {
         font-size: 0.9rem;
       }
@@ -236,6 +240,9 @@
 @include media-breakpoint-up(lg) {
   .nav-main {
     .main-navigation {
+      .main-navigation-link {
+        padding-right: 32px;
+      }
       .main-navigation-link-text {
         font-size: 1rem;
       }
