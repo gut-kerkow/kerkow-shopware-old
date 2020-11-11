@@ -187,6 +187,12 @@
 					{% endblock %}
 
 					{% block page_checkout_aside_actions %}
+						{% set freeShippingDelta = 80 - page.cart.price.positionPrice %}
+						{% if freeShippingDelta > 0 %}
+							<div class="checkout-calculate-free-shipping alert alert-primary">
+								{{ "kerkow.getFreeShipping"|trans({'%delta%': freeShippingDelta})|replace({'.': ','}) }}
+							</div>
+						{% endif %}
 						<div class="checkout-aside-action">
 
 							<form id="confirmOrderForm" action="{{ path('frontend.checkout.finish.order') }}" data-form-csrf-handler="true" data-form-preserver="true" method="post">

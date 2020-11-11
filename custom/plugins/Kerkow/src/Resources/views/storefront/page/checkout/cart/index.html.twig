@@ -101,6 +101,12 @@
 												</div>
 											{% endblock %}
 										</div>
+										{% set freeShippingDelta = 80 - page.cart.price.positionPrice %}
+										{% if freeShippingDelta > 0 %}
+											<div class="checkout-calculate-free-shipping alert alert-primary">
+												{{ "kerkow.getFreeShipping"|trans({'%delta%': freeShippingDelta})|replace({'.': ','}) }}
+											</div>
+										{% endif %}
 									{% endblock %}
 
 									{% block page_checkout_aside_actions %}

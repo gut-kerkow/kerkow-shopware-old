@@ -157,3 +157,8 @@ a {
     text-decoration: underline;
   }
 }
+.alert-primary {
+  background-color: rgba(49, 78, 146, 0.5);
+  @include alright-light;
+  font-size: 0.9rem;
+}
