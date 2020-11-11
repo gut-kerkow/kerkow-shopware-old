@@ -55,7 +55,7 @@ export default class DatePickerExtensionPlugin extends DatePickerPlugin {
     this.options.defaultDate = this.el.dataset.mindate;
     const minDateObject = new Date(this.options.minDate);
     const maxDateObject = new Date(
-      minDateObject.setMonth(minDateObject.getMonth() + 1)
+      minDateObject.setMonth(minDateObject.getMonth() + 2)
     );
     this.options.maxDate =
       maxDateObject.getFullYear() +
