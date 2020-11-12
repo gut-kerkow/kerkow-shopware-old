@@ -52,8 +52,8 @@
 												{{ parent() }}
 											{% endblock %}
 											{% block page_checkout_item_info_description %}
-												<div class="cart-item-details-description">
-													{{ lineItem.payload.customFields.custom_product_description_short_text ? lineItem.payload.customFields.custom_product_description_short_text|u.truncate(45, "...")|striptags : "" }}
+												<div class="cart-item-details-description d-none d-md-block">
+													{{ lineItem.payload.customFields.custom_product_description_short_text|striptags }}
 												</div>
 											{% endblock %}
 											<div class="d-flex">
@@ -144,7 +144,7 @@
 				</div>
 			{% endblock %}
 			{% block page_checkout_item_quantity %}
-				<div class="cart-item-quantity ml-auto d-none d-md-block">
+				<div class="cart-item-quantity ml-auto">
 					{% block page_checkout_item_quantity_label %}
 					{% endblock %}
 

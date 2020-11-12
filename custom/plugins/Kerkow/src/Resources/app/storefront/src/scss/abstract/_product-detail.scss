@@ -118,6 +118,7 @@
     }
   }
   .page-product-detail-description {
+    margin-top: 3rem;
     color: $kerkow-blue;
     @include gt-medium;
     font-size: 1rem;
@@ -189,6 +190,12 @@
   }
   .product-detail-configurator-container {
     margin-top: 1rem;
+  }
+  .product-detail-configurator-group {
+    margin-bottom: 0;
+  }
+  .product-detail-form-container {
+    margin-top: 1.5rem;
   }
 }
 @include media-breakpoint-up(sm) {
