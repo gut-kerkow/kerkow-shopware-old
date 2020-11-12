@@ -19,17 +19,17 @@
 {% for animal in animals %}
 	{% if animal == "beef" %}
 		{% for id in beefPartIds %}
-			{% set partHeadline = 'animalParts.'~id~'.headline' %}
-			{% set partContent = 'animalParts.'~id~'.content' %}
-			{% set partLink = 'animalParts.'~id~'.link' %}
+			{% set partHeadline = 'animalParts.beef.'~id~'.headline' %}
+			{% set partContent = 'animalParts.beef.'~id~'.content' %}
+			{% set partLink = 'animalParts.beef.'~id~'.link' %}
 			{% set partsHash = partsHash|merge({(id): {"headline": (partHeadline|trans), "content": (partContent|trans), "link": (partLink|trans)} }) %}
 		{% endfor %}
 	{% endif %}
 	{% if animal == "pork" %}
 		{% for id in porkPartIds %}
-			{% set partHeadline = 'animalParts.'~id~'.headline' %}
-			{% set partContent = 'animalParts.'~id~'.content' %}
-			{% set partLink = 'animalParts.'~id~'.link' %}
+			{% set partHeadline = 'animalParts.pork.'~id~'.headline' %}
+			{% set partContent = 'animalParts.pork.'~id~'.content' %}
+			{% set partLink = 'animalParts.pork.'~id~'.link' %}
 			{% set partsHash = partsHash|merge({(id): {"headline": (partHeadline|trans), "content": (partContent|trans), "link": (partLink|trans)} }) %}
 		{% endfor %}
 	{% endif %}
