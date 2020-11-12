@@ -146,12 +146,22 @@
 						<div class="footer-column-seals">
 							<span class="seals-icon">
 								{% block layout_footer_navigation_contact_bio %}
-									{% sw_include '@kerkow/storefront/custom/icons/eu-bio.html.twig' %}
+									<img src="{{ asset('bundles/kerkow/img/eu-bio.png') }}">
 								{% endblock %}
 							</span>
 							<span class="seals-icon">
 								{% block layout_footer_navigation_contact_fair %}
-									{% sw_include '@kerkow/storefront/custom/icons/fair-regional.html.twig' %}
+									<img src="{{ asset('bundles/kerkow/img/fair-regional.png') }}">
+								{% endblock %}
+							</span>
+							<span class="seals-icon">
+								{% block layout_footer_navigation_contact_schorfheide %}
+									<img src="{{ asset('bundles/kerkow/img/schorfheide-chorin.png') }}">
+								{% endblock %}
+							</span>
+							<span class="seals-icon">
+								{% block layout_footer_navigation_contact_naturland %}
+									<img src="{{ asset('bundles/kerkow/img/naturland.png') }}">
 								{% endblock %}
 							</span>
 						</div>

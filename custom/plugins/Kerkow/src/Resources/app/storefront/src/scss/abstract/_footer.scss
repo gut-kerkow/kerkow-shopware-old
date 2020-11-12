@@ -60,17 +60,15 @@ li.footer-column-link {
 .footer-column-seals {
   margin-top: 2rem;
   .seals-icon {
-    width: 4rem;
-    height: 4rem;
+    width: auto;
+    height: 28px;
     display: inline-flex;
     align-self: center;
     overflow: visible;
     margin-right: 2rem;
-    svg {
-      width: 100%;
+    img {
+      width: auto;
       height: 100%;
-      top: 0.25em;
-      position: relative;
     }
   }
 }
@@ -128,6 +126,11 @@ li.footer-column-link {
 }
 
 @include media-breakpoint-up(md) {
+  .footer-column-seals {
+    .seals-icon {
+      height: 48px;
+    }
+  }
   .footer-bottom {
     padding-bottom: 0;
   }
@@ -140,5 +143,21 @@ li.footer-column-link {
   }
   .footer-checkout {
     height: 68px;
+  }
+}
+
+@include media-breakpoint-up(lg) {
+  .footer-column-seals {
+    .seals-icon {
+      height: 26px;
+    }
+  }
+}
+
+@include media-breakpoint-only(xl) {
+  .footer-column-seals {
+    .seals-icon {
+      height: 48px;
+    }
   }
 }

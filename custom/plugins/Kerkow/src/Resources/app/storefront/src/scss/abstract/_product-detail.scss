@@ -197,6 +197,13 @@
   .product-detail-form-container {
     margin-top: 1.5rem;
   }
+  .product-detail-seals {
+    img {
+      height: 48px;
+      width: auto;
+      margin-right: 1.5rem;
+    }
+  }
 }
 @include media-breakpoint-up(sm) {
   .product-detail {
