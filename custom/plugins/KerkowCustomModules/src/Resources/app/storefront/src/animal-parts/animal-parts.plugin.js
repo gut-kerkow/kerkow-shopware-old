@@ -147,7 +147,12 @@ export default class AnimalPartsPlugin extends Plugin {
    */
   _onBodyClick(e) {
     // remove infoOverlays if click outside of animal
-    if (e.target.nodeName != "path") {
+    if (
+      e.target.nodeName != "path" &&
+      !e.target.parentNode.classList.contains(
+        this.options.partsOverlayLinkClass
+      )
+    ) {
       this._removeInfoOverlays();
     }
 
