@@ -15,47 +15,64 @@
     .product-name {
       font-size: 1.75rem;
     }
-    [data-content-product-list] {
-      min-height: 10rem;
-      .cms-element-expandable-text-container {
-        overflow: hidden;
-        text-align: center;
-        max-height: 10rem;
-        position: absolute;
-        padding-right: 1rem;
-        &.is-open {
-          z-index: 1;
-          background-color: rgba(255, 255, 255, 0.9);
-          overflow: unset;
-          max-height: unset;
-          min-height: 10rem;
-        }
-        h2 {
-          color: $kerkow-blue;
-          @include gt-bold;
-          font-size: 1.5rem;
-          margin-top: 1.5rem;
-        }
-        p {
-          color: $kerkow-blue;
-          @include gt-medium;
-          font-size: 1.2rem;
-          margin-bottom: 0;
-          padding: 0 1rem 1rem 1rem;
-        }
-        .arrow-down {
-          svg {
-            margin-top: 1rem;
-            width: 2rem;
-            height: 2rem;
-            transform: rotate(90deg);
+    .content-product-listing-content-container {
+      [data-content-product-list] {
+        min-height: 10rem;
+        .cms-element-expandable-text-container {
+          overflow: hidden;
+          text-align: center;
+          max-height: 10rem;
+          position: absolute;
+          padding-right: 1rem;
+          &.is-open {
+            z-index: 1;
+            background-color: rgba(255, 255, 255, 0.9);
+            overflow: unset;
+            max-height: unset;
+            min-height: 10rem;
+          }
+          h2 {
+            color: $kerkow-blue;
+            @include gt-bold;
+            font-size: 1.5rem;
+            margin-top: 1.5rem;
+          }
+          p {
+            color: $kerkow-blue;
+            @include gt-medium;
+            font-size: 1.2rem;
+            margin-bottom: 0;
+            padding: 0 1rem 1rem 1rem;
+          }
+          .arrow-down {
+            svg {
+              margin-top: 1rem;
+              width: 2rem;
+              height: 2rem;
+              transform: rotate(90deg);
+            }
+          }
+          .arrow-up {
+            svg {
+              width: 2rem;
+              height: 2rem;
+              transform: rotate(-90deg);
+            }
           }
         }
-        .arrow-up {
-          svg {
-            width: 2rem;
-            height: 2rem;
-            transform: rotate(-90deg);
+      }
+      &.only-text {
+        [data-content-product-list] {
+          min-height: 22rem;
+          .cms-element-expandable-text-container {
+            max-height: 22rem;
+            &.is-open {
+              z-index: 1;
+              background-color: rgba(255, 255, 255, 0.9);
+              overflow: unset;
+              max-height: unset;
+              min-height: 22rem;
+            }
           }
         }
       }
