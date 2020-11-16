@@ -13,28 +13,28 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\StorefrontController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Shopware\Storefront\Framework\Cache\Annotation\HttpCache;
-use Symfony\Component\HttpFoundation\Session\Session;
+use Symfony\Component\HttpFoundation\Cookie;
 
 /**
  * @RouteScope(scopes={"storefront"})
  */
 class AddZipController extends StorefrontController
 {
-    /**
-     * @var Session
-     */
-    private $session;
+
+
     /**
      * @HttpCache()
      * @Route("/zip/add", name="frontend.custom.addZip", options={"seo"="false"}, methods={"GET"}, defaults={"XmlHttpRequest"=true})
      */
-    public function addZip(Request $request, Session $session, SalesChannelContext $context)
+    public function addZip(Request $request, SalesChannelContext $context)
     {
+        $response = new Response();
         $param = $request->get('zip');
         if ($param == "denied") {
-            $session->set('postalcode_denied', true);
+            $response->headers->setCookie(new Cookie('postalcode_denied', "true", strtotime('now + 1 days'), '/', null, false, false));
             $result = false;
         } else {
 
@@ -49,12 +49,15 @@ class AddZipController extends StorefrontController
             // Check if user entered a valid zip
             if ($postalcode) {
                 $result = $postalcode->getZip();
-                $session->set('postalcode', $result);
+                $response->headers->setCookie(new Cookie("postalcode", strval($result), strtotime('now + 14 days'), '/', null, false, false));
+                $response->headers->setCookie(new Cookie("postalcode_valid", "1", strtotime('now + 14 days'), '/', null, false, false));
             } else {
-                $session->set('postalcode', $param);
+                $response->headers->setCookie(new Cookie("postalcode", strval($param), strtotime('now + 14 days'), '/', null, false, false));
+                $response->headers->setCookie(new Cookie("postalcode_valid", "0", strtotime('now + 14 days'), '/', null, false, false));
                 $result = false;
             }
         }
+        $response->send();
         return new JsonResponse([
             "postalcode" => $result
         ]);
@@ -64,8 +67,9 @@ class AddZipController extends StorefrontController
      * @HttpCache()
      * @Route("/zip-header/add", name="frontend.custom.addZipHeader", options={"seo"="false"}, methods={"GET"}, defaults={"XmlHttpRequest"=true})
      */
-    public function addZipHeader(Request $request, Session $session, SalesChannelContext $context)
+    public function addZipHeader(Request $request, SalesChannelContext $context)
     {
+        $response = new Response();
         $param = $request->get('zip');
         // Call the service to query the zip
         /** @var EntityRepositoryInterface $postalcodeRepository */
@@ -78,13 +82,16 @@ class AddZipController extends StorefrontController
         // Check if user entered a valid zip
         if ($postalcode) {
             $result = $postalcode->getZip();
-            $session->set('postalcode', $result);
+            $response->headers->setCookie(new Cookie("postalcode", strval($result), strtotime('now + 14 days'), '/', null, false, false));
+            $response->headers->setCookie(new Cookie("postalcode_valid", "1", strtotime('now + 14 days'), '/', null, false, false));
             $postalcode_error = false;
         } else {
-            $session->set('postalcode', $param);
+            $response->headers->setCookie(new Cookie("postalcode", strval($param), strtotime('now + 14 days'), '/', null, false, false));
+            $response->headers->setCookie(new Cookie("postalcode_valid", "0", strtotime('now + 14 days'), '/', null, false, false));
             $postalcode_error = true;
             $result = $param;
         }
+        $response->send();
         return $this->renderStorefront('@KerkowZipShop/storefront/layout/header/header-zip-menu-form.html.twig', ['postalcode' => $result, 'postalcode_error' => $postalcode_error]);
     }
 
@@ -92,9 +99,14 @@ class AddZipController extends StorefrontController
      * @HttpCache()
      * @Route("/zip-header/remove", name="frontend.custom.removeZip", options={"seo"="false"}, methods={"GET"}, defaults={"XmlHttpRequest"=true})
      */
-    public function removeZip(Request $request, Session $session, SalesChannelContext $context)
+    public function removeZip(Request $request, SalesChannelContext $context)
     {
-        $session->remove('postalcode');
+        $response = new Response();
+        $response->headers->removeCookie("postalcode");
+        $response->headers->removeCookie("postalcode_valid");
+        $response->headers->clearCookie("postalcode");
+        $response->headers->clearCookie("postalcode_valid");
+        $response->send();
         $postalcode_error = false;
         $result = false;
 

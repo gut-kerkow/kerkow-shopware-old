@@ -6,20 +6,9 @@ namespace Kerkow\ZipShop\Storefront\Subscriber;
 
 use Shopware\Storefront\Pagelet\Footer\FooterPageletLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Symfony\Component\HttpFoundation\Session\Session;
 
 class FooterZipSubscriber implements EventSubscriberInterface
 {
-
-    /**
-     * @var Session
-     */
-    private $session;
-
-    public function __construct(Session $session)
-    {
-        $this->session = $session;
-    }
 
     public static function getSubscribedEvents(): array
     {
@@ -32,13 +21,14 @@ class FooterZipSubscriber implements EventSubscriberInterface
     {
         $pagelet = $event->getPagelet();
         $extensions = $event->getPagelet()->getExtensions();
-        if ($this->session->has('postalcode_denied')) {
+
+        if ($event->getRequest()->cookies->has('postalcode_denied')) {
             $extensions['hide_zip_modal'] = true;
             $pagelet->setExtensions($extensions);
             return;
         }
-        if ($this->session->has('postalcode')) {
-            $postalcode = $this->session->get('postalcode');
+        if ($event->getRequest()->cookies->has('postalcode')) {
+            $postalcode = $event->getRequest()->cookies->get('postalcode');
             $extensions['postalcode'] = $postalcode;
             $pagelet->setExtensions($extensions);
         }

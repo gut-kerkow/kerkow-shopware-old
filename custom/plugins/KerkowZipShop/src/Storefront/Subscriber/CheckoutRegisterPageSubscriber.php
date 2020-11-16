@@ -10,21 +10,14 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Storefront\Page\Checkout\Register\CheckoutRegisterPageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Symfony\Component\HttpFoundation\Session\Session;
 
 
 class CheckoutRegisterPageSubscriber implements EventSubscriberInterface
 {
 
-    /**
-     * @var Session
-     */
-    private $session;
 
-
-    public function __construct(Session $session, EntityRepositoryInterface $postalcodeRepository)
+    public function __construct(EntityRepositoryInterface $postalcodeRepository)
     {
-        $this->session = $session;
         $this->postalcodeRepository = $postalcodeRepository;
     }
 
@@ -38,8 +31,8 @@ class CheckoutRegisterPageSubscriber implements EventSubscriberInterface
     public function onCheckoutRegisterLoaded(CheckoutRegisterPageLoadedEvent $event): void
     {
         $extensions = $event->getPage()->getExtensions();
-        if ($this->session->has('postalcode')) {
-            $postalcode = $this->session->get('postalcode');
+        if ($event->getRequest()->cookies->has('postalcode')) {
+            $postalcode = $event->getRequest()->cookies->get('postalcode');
             // Check once again if posatlcode is valid
             // Call the service to query the zip
 

@@ -23,12 +23,15 @@
 
 			</div>
 		</form>
+		<pre>
+			{{ dump(page.header.extensions) }}
+		</pre>
 		{% if page.header.extensions.postalcode_error or postalcode_error %}
 			<div class="header-zip-form-error">
 				{{ 'kerkow.zipShop.notInDeliveryArea' | trans }}
 			</div>
 		{% endif %}
-		{% if page.header.extensions.postalcode or (postalcode and not postalcode_error) %}
+		{% if (page.header.extensions.postalcode and not page.header.extensions.postalcode_error) or (postalcode and not postalcode_error) %}
 			<div class="header-zip-form-success">
 				{{ 'kerkow.zipShop.successDeliveryArea' | trans }}
 			</div>

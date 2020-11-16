@@ -8,19 +8,16 @@
             <tag name="shopware.entity.definition" entity="kerkow_postalcodes" />
         </service>
 
-        <service id="Kerkow\ZipShop\Storefront\Controller\ClearCartController" public="true">
+        <service id="Kerkow\ZipShop\Storefront\Controller\AddZipController" public="true">
         </service>
         <service id="Kerkow\ZipShop\Storefront\Subscriber\FooterZipSubscriber">
-            <argument type="service" id="session"/>
             <tag name="kernel.event_subscriber"/>
         </service>
         <service id="Kerkow\ZipShop\Storefront\Subscriber\HeaderZipSubscriber">
-            <argument type="service" id="session"/>
             <tag name="kernel.event_subscriber"/>
         </service>
 
         <service id="Kerkow\ZipShop\Storefront\Subscriber\CheckoutRegisterPageSubscriber">
-            <argument type="service" id="session"/>
             <argument type="service" id="kerkow_postalcodes.repository"/>
             <tag name="kernel.event_subscriber"/>
         </service>
