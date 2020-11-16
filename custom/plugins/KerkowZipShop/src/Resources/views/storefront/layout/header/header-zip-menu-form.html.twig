@@ -23,9 +23,6 @@
 
 			</div>
 		</form>
-		<pre>
-			{{ dump(page.header.extensions) }}
-		</pre>
 		{% if page.header.extensions.postalcode_error or postalcode_error %}
 			<div class="header-zip-form-error">
 				{{ 'kerkow.zipShop.notInDeliveryArea' | trans }}
