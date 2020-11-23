@@ -1,4 +1,5 @@
-.is-act-confirmpage {
+.is-act-confirmpage,
+.is-act-editorder {
   .cart-item-details-description {
     display: none;
   }
@@ -238,7 +239,8 @@
   .cart-table-header {
     display: none;
   }
-  .is-act-confirmpage {
+  .is-act-confirmpage,
+  .is-act-editorder {
     .confirm-payment-shipping {
       padding-top: 0;
     }
@@ -254,7 +256,8 @@
 }
 
 @include media-breakpoint-up(lg) {
-  .is-act-confirmpage {
+  .is-act-confirmpage,
+  .is-act-editorder {
     .checkout {
       .checkout-main {
         @extend .col-lg-10;

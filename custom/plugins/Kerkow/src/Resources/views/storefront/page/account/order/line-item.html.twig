@@ -1,0 +1,23 @@
+{% sw_extends '@Storefront/storefront/page/account/order/line-item.html.twig' %}
+
+{% block page_checkout_item_info %}
+	<div class="cart-item-info align-self-stretch">
+		{{ block('page_checkout_item_info_inner') }}
+	</div>
+{% endblock %}
+
+{% block page_checkout_item_quantity %}
+{% endblock %}
+
+{% block page_checkout_item_unit_price %}
+
+{% endblock %}
+
+{% block page_checkout_item_total_price %}
+	<div class="cart-item-total-price">
+		{{ block('page_checkout_item_total_price_wrapper') }}
+	</div>
+{% endblock %}
+
+{% block page_checkout_item_remove %}
+{% endblock %}

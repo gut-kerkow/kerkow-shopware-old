@@ -22,7 +22,7 @@
 								<option value="18to20">
 									18:00 - 20:00 Uhr
 								</option>
-								<option value="19to21">
+								<option value="19to21" {% if page.extensions["customDeliverySlot"] == "19to21" %} selected="selected" {% endif %}>
 									19:00 - 21:00 Uhr
 								</option>
 							</select>
@@ -34,7 +34,12 @@
 								{{ "kerkow.selectDeliveryDay"|trans|raw }}
 							</div>
 							<div class="col-12 delivery-calender-container">
-								<input class="select-date-picker js-select-date-picker" data-date-picker="true" data-mindate="{{ page.extensions["delivery_date"]|date("Y-m-d") }}">
+								{% if page.extensions["customDeliveryDate"] %}
+									{% set defaultDate = page.extensions["customDeliveryDate"] %}
+								{% else %}
+									{% set defaultDate = page.extensions["delivery_date"] %}
+								{% endif %}
+								<input class="select-date-picker js-select-date-picker" data-date-picker="true" data-defaultdate="{{ defaultDate|date("Y-m-d") }}" data-mindate="{{ page.extensions["delivery_date"]|date("Y-m-d") }}">
 							</div>
 						</div>
 					{% endblock %}

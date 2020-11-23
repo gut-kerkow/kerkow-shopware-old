@@ -10,6 +10,9 @@ export default class changeDeliveryDatePlugin extends Plugin {
     deliveryDisplaySelector: ".product-detail-deliver-date",
     deliveryDateInputSelector: ".js-delivery-date-input-field",
     deliverySlotInputSelector: ".js-delivery-slot-input-field",
+    deliveryForm: "form",
+    deliveryFormDateInput: "#js_delivery_date_input",
+    deliveryFormSlotInput: "#js_delivery_slot_input",
     weekdays: [
       "Sonntag",
       "Montag",
@@ -61,6 +64,15 @@ export default class changeDeliveryDatePlugin extends Plugin {
         document,
         this.options.deliverySlotInputSelector
       );
+      this._form = DomAccess.querySelector(this.el, this.options.deliveryForm);
+      this._formDateInput = DomAccess.querySelector(
+        this.el,
+        this.options.deliveryFormDateInput
+      );
+      this._formSlotInput = DomAccess.querySelector(
+        this.el,
+        this.options.deliveryFormSlotInput
+      );
     } catch (e) {
       console.log(e);
       return;
@@ -85,30 +97,11 @@ export default class changeDeliveryDatePlugin extends Plugin {
   _saveDates() {
     const deliverySlot = this._deliverySlot.value;
     const deliveryDate = new Date(this._deliveryDate.value);
-    // Refresh delivery date display
-    this._refreshDateDisplay(deliveryDate, deliverySlot);
-    // Update form fields
-    this._deliveryDateInput.value = this._deliveryDate.value;
-    this._deliverySlotInput.value = deliverySlot;
-    // Close Modal
-    $("#confirmShippingDateModal").modal("hide");
-  }
-  /**
-   * Save the dates
-   * @private
-   */
-  _refreshDateDisplay(date, slot) {
-    const dayString = this.options.weekdays[date.getDay()];
-    const monthString = this.options.month[date.getMonth()];
-    const slotString = slot == "18to20" ? "18 und 20 Uhr." : "19 und 21 Uhr.";
-    const displayString =
-      dayString +
-      ", " +
-      date.getDate() +
-      ". " +
-      monthString +
-      " zwischen " +
-      slotString;
-    this._deliveryDisplay.innerHTML = displayString;
+
+    // Update the Form Fields
+    this._formDateInput.value = this._deliveryDate.value;
+    this._formSlotInput.value = deliverySlot;
+
+    this._form.submit();
   }
 }

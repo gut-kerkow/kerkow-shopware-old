@@ -6,17 +6,22 @@ namespace Kerkow\DeliveryDate\Storefront\Subscriber;
 
 use DateInterval;
 use DateTime;
+use Shopware\Core\System\SalesChannel\Context\SalesChannelContextPersister;
 use Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 
 class ConfirmDeliveryDateSubscriber implements EventSubscriberInterface
 {
+    /**
+     * @var SalesChannelContextPersister
+     */
+    private $contextPersister;
 
 
-
-    public function __construct()
+    public function __construct(SalesChannelContextPersister $contextPersister)
     {
+        $this->contextPersister = $contextPersister;
     }
 
     public static function getSubscribedEvents(): array
@@ -60,7 +65,18 @@ class ConfirmDeliveryDateSubscriber implements EventSubscriberInterface
 
         $next_delivery_date = $this->getNextDeliverableDay($date, $deliverable_dates, $holidays, $latest_hour, false);
         $extensions = $event->getPage()->getExtensions();
+
+
+        // Query for delivery day and slot
+        $context = $event->getSalesChannelContext();
+        $persistedData = $this->contextPersister->load($context->getToken());
+        if (isset($persistedData['deliveryDate'])) {
+            $extensions['customDeliveryDate'] = new DateTime($persistedData['deliveryDate']);
+            $extensions['customDeliverySlot'] = $persistedData['deliverySlot'];
+        }
         $extensions['delivery_date'] = $next_delivery_date;
+
+
         $event->getPage()->setExtensions($extensions);
     }
 

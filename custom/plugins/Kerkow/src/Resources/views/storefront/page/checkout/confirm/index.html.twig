@@ -33,13 +33,15 @@
 				{% block page_checkout_confirm_payment_shipping %}
 					<div class="confirm-payment-shipping">
 						{% block page_checkout_confirm_payment %}
-							{% sw_include '@Storefront/storefront/page/checkout/confirm/confirm-payment.html.twig' %}
-
+							{% sw_include '@Storefront/storefront/page/checkout/confirm/confirm-payment.html.twig' with {
+								redirect: 'frontend.checkout.confirm.page', action: 'frontend.checkout.configure' } %}
 						{% endblock %}
 
 						{% block page_checkout_confirm_shipping %}
 							<div class="confirm-shipping">
-								{% sw_include '@Storefront/storefront/page/checkout/confirm/confirm-shipping.html.twig' %}
+								{% sw_include '@Storefront/storefront/page/checkout/confirm/confirm-shipping.html.twig' with {
+									dataChangeDeliveryDate: true
+									} %}
 							</div>
 						{% endblock %}
 					</div>
@@ -202,11 +204,18 @@
 								{% endblock %}
 
 
+								{% if page.extensions["customDeliveryDate"] %}
+									{% set deliveryDate = page.extensions["customDeliveryDate"] %}
+									{% set deliverySlot = page.extensions["customDeliverySlot"] %}
+								{% else %}
+									{% set deliveryDate = page.extensions["delivery_date"] %}
+									{% set deliverySlot = "18to20" %}
+								{% endif %}
 								{% block page_delivery_date_input_field %}
-									<input type="hidden" name="deliveryDate" class="js-delivery-date-input-field" value="{{ page.extensions["delivery_date"]|date("Y-m-d") }}">
+									<input type="hidden" name="deliveryDate" class="js-delivery-date-input-field" value="{{ deliveryDate|date("Y-m-d") }}">
 								{% endblock %}
 								{% block page_delivery_slot_input_field %}
-									<input type="hidden" name="deliverySlot" class="js-delivery-slot-input-field" value="18to20">
+									<input type="hidden" name="deliverySlot" class="js-delivery-slot-input-field" value="{{ deliverySlot }}">
 								{% endblock %}
 								{% block page_checkout_confirm_form_submit %}
 									{{ parent() }}

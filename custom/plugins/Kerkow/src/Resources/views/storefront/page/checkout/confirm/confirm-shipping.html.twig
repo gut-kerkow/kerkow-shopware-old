@@ -1,6 +1,6 @@
 {% sw_extends '@Storefront/storefront/page/checkout/confirm/confirm-shipping.html.twig' %}
 {% block page_checkout_confirm_shipping_inner %}
-	<div class="card checkout-card" data-change-delivery-date="true">
+	<div class="card checkout-card" {% if dataChangeDeliveryDate %} data-change-delivery-date="true" {% endif %}>
 		<div class="card-body">
 			{% set shippingMethodInvalid = true %}
 
@@ -38,17 +38,25 @@
 					<div class="confirm-shipping-delivery-date">
 						{% block page_checkout_confirm_shipping_current_text %}
 							{% block page_product_delivery_date %}
-								{% set dayString =  'general.day.'~page.extensions["delivery_date"]|date("D") %}
+								{% if page.extensions["customDeliveryDate"] %}
+									{% set date = page.extensions["customDeliveryDate"] %}
+									{% set slotString = 'kerkow.deliverySlot.'~page.extensions["customDeliverySlot"] %}
+								{% else %}
+									{% set date = page.extensions["delivery_date"] %}
+									{% set slotString = 'kerkow.deliverySlot.18to20' %}
+								{% endif %}
+								{% set dayString =  'general.day.'~date|date("D") %}
 								{% set day =  dayString|trans %}
-								{% set monthString =  'general.month.'~page.extensions["delivery_date"]|date("M") %}
+								{% set monthString =  'general.month.'~date|date("M") %}
 								{% set month =  monthString|trans %}
-								{% if page.extensions["delivery_date"]|date("m/d/Y") == ("now"|date_modify("+1 day")|date("m/d/Y")) %}
+								{% if date|date("m/d/Y") == ("now"|date_modify("+1 day")|date("m/d/Y")) %}
 									<div class="product-detail-delivery-container">
 										<p class="delivery-headline">
 											{{ "kerkow.deliveryHeadline"|trans|raw }}
 										</p>
 										<span class="product-detail-deliver-tomorrow product-detail-deliver-date">
 											{{ "kerkow.actualDeliverTomorrow"|trans|raw }}
+											{{ slotString|trans|raw }}
 										</span>
 									</div>
 								{% else %}
@@ -57,8 +65,10 @@
 											{{ "kerkow.deliveryHeadline"|trans|raw }}
 										</p>
 										<span class="product-detail-deliver-date">
-											{{ "kerkow.actualDeliverTime"|trans({'%day%': day, '%date%': page.extensions["delivery_date"]|date("d"), '%month%': month}) }}
+											{{ "kerkow.actualDeliverTime"|trans({'%day%': day, '%date%': date|date("d"), '%month%': month}) }}
+											{{ slotString|trans|raw }}
 										</span>
+
 									</div>
 								{% endif %}
 							{% endblock %}
@@ -102,14 +112,19 @@
 							</div>
 							<div class="modal-body">
 								{% block page_checkout_confirm_shipping_form %}
-									<form id="confirmShippingForm" name="confirmShippingForm" action="{{ path('frontend.checkout.configure') }}" data-form-csrf-handler="true" method="post">
+									<form id="confirmShippingForm" name="confirmShippingForm" action="{{ path('frontend.custom.changeDeliveryDate') }}" data-form-csrf-handler="true" method="post">
 
 										{% block page_checkout_confirm_shipping_form_csrf %}
-											{{ sw_csrf('frontend.checkout.configure') }}
+											{{ sw_csrf('frontend.custom.changeDeliveryDate') }}
 										{% endblock %}
 
 										{% block page_checkout_confirm_shipping_form_redirect %}
 											<input type="hidden" name="redirectTo" value="frontend.checkout.confirm.page">
+										{% endblock %}
+
+										{% block page_checkout_confirm_shipping_data %}
+											<input type="hidden" name="deliveryDate" id="js_delivery_date_input">
+											<input type="hidden" name="deliverySlot" id="js_delivery_slot_input">
 										{% endblock %}
 
 										{% block page_checkout_confirm_shipping_form_fields %}

@@ -6,6 +6,7 @@
     <services>
 
         <service id="Kerkow\DeliveryDate\Storefront\Subscriber\ConfirmDeliveryDateSubscriber">
+            <argument type="service" id="Shopware\Core\System\SalesChannel\Context\SalesChannelContextPersister"/>
             <tag name="kernel.event_subscriber"/>
         </service>
         <service id="Kerkow\DeliveryDate\Storefront\Subscriber\OrderDeliveryDateSubscriber">
@@ -18,5 +19,9 @@
             <tag name="kernel.event_subscriber"/>
         </service>
 
+        <service id="Kerkow\DeliveryDate\Storefront\Controller\ChangeDeliveryDateController" public="true">
+            <argument type="service" id="Shopware\Core\System\SalesChannel\Context\SalesChannelContextPersister"/>
+            <argument type="service" id="Symfony\Component\EventDispatcher\EventDispatcherInterface" />
+        </service>
     </services>
 </container>
