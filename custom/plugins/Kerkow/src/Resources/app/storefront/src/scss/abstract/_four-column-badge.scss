@@ -85,6 +85,9 @@
         font-family: $kerkow-font-family-base;
         transform: rotate(15deg);
       }
+      img {
+        transform: rotate(15deg);
+      }
     }
   }
 
@@ -97,6 +100,11 @@
       content: "";
       display: block;
       padding-bottom: 100%;
+    }
+  }
+  &.badge-image {
+    .square {
+      background-color: unset;
     }
   }
 }
