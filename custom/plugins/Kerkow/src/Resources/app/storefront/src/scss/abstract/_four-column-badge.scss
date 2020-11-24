@@ -86,6 +86,7 @@
         transform: rotate(15deg);
       }
       img {
+        @extend .img-fluid;
         transform: rotate(15deg);
       }
     }
