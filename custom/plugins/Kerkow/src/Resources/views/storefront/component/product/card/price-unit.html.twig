@@ -5,7 +5,6 @@
 	{% set listingPrice = product.calculatedListingPrice %}
 	{% set fromPrice = listingPrice.from %}
 	{% set referncePrice = product.calculatedPrice.referencePrice %}
-	{% set cradlewarePrice = product.calculatedPrice.unitPrice %}
 
 	<div class="product-price-info">
 
@@ -20,7 +19,7 @@
 					{% elseif product.calculatedPrices|length == 1 %}
 						{{ product.calculatedPrices.first.unitPrice|currency }}
 					{% else %}
-						{{ "#{cradlewarePrice|currency}/#{referncePrice.unitName}" }}
+						{{ "#{referncePrice.price|currency}/#{referncePrice.unitName}" }}
 						{% if listPrice.percentage > 0 %}
 							<span class="list-price">
 								{{ listPrice.price|currency }}
