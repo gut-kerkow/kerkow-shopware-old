@@ -19,7 +19,11 @@
 					{% elseif product.calculatedPrices|length == 1 %}
 						{{ product.calculatedPrices.first.unitPrice|currency }}
 					{% else %}
-						{{ "#{referncePrice.price|currency}/#{referncePrice.unitName}" }}
+						{% if referncePrice.unitName == "g" %}
+							{{ "#{referncePrice.price|currency}/#{referncePrice.referenceUnit}#{referncePrice.unitName}" }}
+						{% else %}
+							{{ "#{referncePrice.price|currency}/#{referncePrice.unitName}" }}
+						{% endif %}
 						{% if listPrice.percentage > 0 %}
 							<span class="list-price">
 								{{ listPrice.price|currency }}
