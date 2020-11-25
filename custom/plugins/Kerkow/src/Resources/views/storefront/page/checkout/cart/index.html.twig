@@ -55,12 +55,14 @@
 							<div class="delivery-time">
 								<span class="product-detail-deliver-tomorrow">
 									{{ "kerkow.actualDeliverTomorrow"|trans|raw }}
+									{{ "kerkow.deliverySlot.18to20"|trans }}
 								</span>
 							</div>
 						{% else %}
 							<div class="delivery-time">
 								<span class="product-detail-deliver-date">
 									{{ "kerkow.actualDeliverTime"|trans({'%day%': day, '%date%': deliverInfo.date|date("d"), '%month%': month}) }}
+									{{ "kerkow.deliverySlot.18to20"|trans }}
 								</span>
 							</div>
 						{% endif %}
