@@ -3,7 +3,7 @@
 {% block layout_footer_inner_container %}
 	{{ parent() }}
 	{% block footer_zip_modal %}
-		{% if page.footer.extensions.postalcode is empty and not page.footer.extensions.hide_zip_modal %}
+		{% if not customerZip.doNotAskAgain %}
 			{% sw_include '@KerkowZipShop/storefront/custom/modal.html.twig' with {"openOnLoad": true } %}
 		{% endif %}
 	{% endblock %}

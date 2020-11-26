@@ -10,15 +10,8 @@
 
         <service id="Kerkow\ZipShop\Storefront\Controller\AddZipController" public="true">
         </service>
-        <service id="Kerkow\ZipShop\Storefront\Subscriber\FooterZipSubscriber">
-            <tag name="kernel.event_subscriber"/>
-        </service>
-        <service id="Kerkow\ZipShop\Storefront\Subscriber\HeaderZipSubscriber">
-            <tag name="kernel.event_subscriber"/>
-        </service>
 
-        <service id="Kerkow\ZipShop\Storefront\Subscriber\CheckoutRegisterPageSubscriber">
-            <argument type="service" id="kerkow_postalcodes.repository"/>
+        <service id="Kerkow\ZipShop\EventListener\StorefrontRenderEventListener">
             <tag name="kernel.event_subscriber"/>
         </service>
 

@@ -27,7 +27,7 @@
 				{% endblock %}
 
 				{% block component_address_form_zipcode_input %}
-					<input type="text" class="js-check-{{prefix}}-zip form-control{% if violationpath %} is-invalid{% endif %}" id="{{ prefix }}AddressZipcode" placeholder="{{ "address.zipcodePlaceholder"|trans|striptags }}" name="{{ prefix }}[zipcode]" value="{% if data.get('zipcode') %}{{ data.get('zipcode') }}{% elseif page.extensions.postalcode %}{{page.extensions.postalcode.zip}}{% endif %}" required="required">
+					<input type="text" class="js-check-{{prefix}}-zip form-control{% if violationpath %} is-invalid{% endif %}" id="{{ prefix }}AddressZipcode" placeholder="{{ "address.zipcodePlaceholder"|trans|striptags }}" name="{{ prefix }}[zipcode]" value="{% if data.get('zipcode') %}{{ data.get('zipcode') }}{% elseif customerZip.postalcode %}{{customerZip.postalcode}}{% endif %}" required="required">
 					<div class="invalid-feedback">
 						{{"kerkow.canNotDliver"|trans}}
 					</div>
@@ -52,7 +52,7 @@
 				{% endblock %}
 
 				{% block component_address_form_city_input %}
-					<input type="text" class="form-control{% if violationPath %} is-invalid{% endif %}" id="{{ prefix }}AddressCity" placeholder="{{ "address.cityPlaceholder"|trans|striptags }}" name="{{ prefix }}[city]" value="{% if data.get('city') %}{{ data.get('city') }}{% elseif page.extensions.postalcode %}{{page.extensions.postalcode.city}}{% endif %}" required="required">
+					<input type="text" class="form-control{% if violationPath %} is-invalid{% endif %}" id="{{ prefix }}AddressCity" placeholder="{{ "address.cityPlaceholder"|trans|striptags }}" name="{{ prefix }}[city]" value="{% if data.get('city') %}{{ data.get('city') }}{% endif %}" required="required">
 				{% endblock %}
 
 				{% block component_address_form_city_error %}

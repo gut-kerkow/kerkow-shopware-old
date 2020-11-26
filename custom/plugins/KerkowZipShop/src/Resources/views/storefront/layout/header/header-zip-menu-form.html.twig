@@ -1,12 +1,19 @@
 {% block header_zip_menu_form %}
+	{% if postalcode_error is not null %}
+		{% set postalcodeSuccess = not postalcode_error %}
+		{% set postalcodeAvailable = postalcode ? true : false %}
+	{% else %}
+		{% set postalcodeSuccess = customerZip.postalcodeValid %}
+		{% set postalcodeAvailable = customerZip.postalcode ? true : false %}
+	{% endif %}
 	<div class="header-zip-form-container">
 		<form action="{{ path('frontend.custom.addZipHeader') }}" method="get" data-url="{{ path('frontend.custom.addZipHeader') }}?zip=" class="js-add-zip-form-header add-zip-header">
 			<div class="form-row add-zip-container">
 				<div class="input-group mb-3">
-					{% if postalcode %}
-						<input type="text" name="zip" class="form-control js-zip-input" placeholder="Postleitzahl" aria-label="Postleitzahl" value="{{ postalcode }}" required>
+					{% if postalcodeAvailable %}
+						<input type="text" name="zip" class="form-control js-zip-input" placeholder="Postleitzahl" aria-label="Postleitzahl" value="{{ postalcode ? postalcode : customerZip.postalcode }}" required>
 					{% else %}
-						<input type="text" name="zip" class="form-control js-zip-input" placeholder="Postleitzahl" aria-label="Postleitzahl" value="{{ page.header.extensions.postalcode ? page.header.extensions.postalcode : "" }}" required>
+						<input type="text" name="zip" class="form-control js-zip-input" placeholder="Postleitzahl" aria-label="Postleitzahl" value="" required>
 					{% endif %}
 					<div class="input-group-append">
 						<button class="btn btn-outline-secondary zip-search-btn" type="submit">
@@ -23,24 +30,30 @@
 
 			</div>
 		</form>
-		{% if page.header.extensions.postalcode_error or postalcode_error %}
-			<div class="header-zip-form-error">
-				{{ 'kerkow.zipShop.notInDeliveryArea' | trans }}
-			</div>
-		{% endif %}
-		{% if (page.header.extensions.postalcode and not page.header.extensions.postalcode_error) or (postalcode and not postalcode_error) %}
-			<div class="header-zip-form-success">
-				{{ 'kerkow.zipShop.successDeliveryArea' | trans }}
-			</div>
-		{% endif %}
-		{% if not postalcode and not page.header.extensions.postalcode %}
+
+		{% if postalcodeAvailable %}
+			{% if postalcodeSuccess %}
+				<div class="header-zip-form-success">
+					{{ 'kerkow.zipShop.successDeliveryArea' | trans }}
+				</div>
+			{% else %}
+
+				<div class="header-zip-form-error">
+					{{ 'kerkow.zipShop.notInDeliveryArea' | trans }}
+				</div>
+			{% endif %}
+
+
+		{% else %}
 			<div class="header-zip-form-success">
 				{{ 'kerkow.zipShop.pleaseAddZip' | trans }}
 			</div>
+
 		{% endif %}
+
 	</div>
 	{% block layout_header_actions_zip_widget_remove_zip %}
-		<div class="zip-widget-remove-zip {{ postalcode or page.header.extensions.postalcode ? '' :'d-none' }}">
+		<div class="zip-widget-remove-zip {{ postalcode or customerZip.postalcode ? '' :'d-none' }}">
 			<a href="{{ path('frontend.custom.removeZip') }}" data-url="{{ path('frontend.custom.removeZip') }}" title="{{ "kerkow.zipShop.removeZip"|trans|striptags }}" class="js-header-zip-widget-remove-link">
 				{{ "kerkow.zipShop.removeZip"|trans|sw_sanitize }}
 			</a>
