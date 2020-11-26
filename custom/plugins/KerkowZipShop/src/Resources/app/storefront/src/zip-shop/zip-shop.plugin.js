@@ -3,6 +3,7 @@ import DomAccess from "src/helper/dom-access.helper";
 import HttpClient from "src/service/http-client.service";
 import ButtonLoadingIndicator from "src/utility/loading-indicator/button-loading-indicator.util";
 import Iterator from "src/helper/iterator.helper";
+import CookieStorage from "src/helper/storage/cookie-storage.helper";
 
 export default class ZipShopPlugin extends Plugin {
   static options = {
@@ -26,6 +27,10 @@ export default class ZipShopPlugin extends Plugin {
 
     zipShopOverlayDelay: 250,
     zipShopZipRegex: /\d{5}/,
+
+    // Cookie Selectors
+    postalcodeCookieName: "postalcode",
+    postalcodeDeniedCookieName: "postalcode_denied",
   };
 
   init() {
@@ -87,8 +92,17 @@ export default class ZipShopPlugin extends Plugin {
     if (!this._openOnLoad) {
       return;
     }
-    // Show the modal
-    $("#kerkowZipModal").modal("show");
+    // Check the cookies
+    const postalcodeCookie = CookieStorage.getItem(
+      this.options.postalcodeCookieName
+    );
+    const postalcodeDeniedCookie = CookieStorage.getItem(
+      this.options.postalcodeDeniedCookieName
+    );
+    if (!postalcodeDeniedCookie && !postalcodeCookie) {
+      // Show the modal
+      $("#kerkowZipModal").modal("show");
+    }
   }
 
   /**

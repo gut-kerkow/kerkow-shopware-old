@@ -3,10 +3,6 @@
 {% block layout_footer_inner_container %}
 	{{ parent() }}
 	{% block footer_zip_modal %}
-		{% set doNotAskAgain = app.request.cookies.get("postalcode_denied") %}
-		{% set postalcodeProvided = app.request.cookies.has("postalcode") %}
-		{% if not doNotAskAgain and not postalcodeProvided %}
-			{% sw_include '@KerkowZipShop/storefront/custom/modal.html.twig' with {"openOnLoad": true } %}
-		{% endif %}
+		{% sw_include '@KerkowZipShop/storefront/custom/modal.html.twig' with {"openOnLoad": true } %}
 	{% endblock %}
 {% endblock %}
