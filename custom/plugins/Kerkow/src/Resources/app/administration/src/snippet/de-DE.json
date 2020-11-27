@@ -1,0 +1,11 @@
+{
+  "sw-order": {
+    "detailBase": {
+      "columnWeight": "Gewicht",
+      "columnReferencePrice": "Grundpreis"
+    },
+    "list": {
+      "columnDeliveryDate": "Lieferdatum"
+    }
+  }
+}

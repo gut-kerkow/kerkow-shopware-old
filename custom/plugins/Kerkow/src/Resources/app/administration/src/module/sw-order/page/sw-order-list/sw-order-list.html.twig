@@ -1,0 +1,64 @@
+    {% block sw_order_list_grid_columns %}
+    {% block sw_order_list_grid_columns_customer_name %}
+        <template #column-orderCustomer.firstName="{ item }">
+            <router-link :to="{ name: 'sw.customer.detail', params: { id: item.orderCustomer.customerId } }">
+                {{ item.orderCustomer.firstName }} {{ item.orderCustomer.lastName }}
+            </router-link>
+        </template>
+    {% endblock %}
+
+    {% block sw_order_list_grid_columns_billing_address %}
+        <template #column-billingAddressId="{ item }">
+            {{ getBillingAddress(item).street }},
+            {{ getBillingAddress(item).zipcode }}
+            {{ getBillingAddress(item).city }}
+        </template>
+    {% endblock %}
+
+    {% block sw_order_list_grid_columns_amount %}
+        <template #column-amountTotal="{ item }">
+            {{ item.amountTotal | currency(item.currency.translated.shortName) }}
+        </template>
+    {% endblock %}
+
+    {% block sw_order_list_grid_columns_state %}
+        <template #column-stateMachineState.name="{ item }">
+            <sw-label :variant="getVariantFromOrderState(item)" appearance="pill">
+                {{ item.stateMachineState.translated.name }}
+            </sw-label>
+        </template>
+    {% endblock %}
+
+    {% block sw_order_list_grid_columns_transaction_state %}
+        <template #column-transactions.last().stateMachineState.name="{ item }">
+            <sw-label v-if="item.transactions && item.transactions[0]"
+                        :variant="getVariantFromPaymentState(item)"
+                        appearance="pill">
+                {{ item.transactions.last().stateMachineState.translated.name }}
+            </sw-label>
+        </template>
+    {% endblock %}
+
+    {% block sw_order_list_grid_columns_delivery_state %}
+        <template #column-deliveries[0].stateMachineState.name="{ item }">
+            <sw-label v-if="item.deliveries && item.deliveries[0]"
+                        :variant="getVariantFromDeliveryState(item)"
+                        appearance="pill">
+                {{ item.deliveries[0].stateMachineState.translated.name }}
+            </sw-label>
+        </template>
+    {% endblock %}
+
+    {% block sw_order_list_grid_columns_order_date %}
+        <template #column-orderDateTime="{ item }">
+            {{ item.orderDateTime | date({hour: '2-digit', minute: '2-digit'}) }}
+        </template>
+    {% endblock %}
+
+    {% block sw_order_list_grid_columns_delivery_date %}
+        <template #column-customFields="{ item }">
+           <strong>{{ item.customFields.delivery_date | date() }}<strong>
+        </template>
+    {% endblock %}
+{% endblock %}
+
