@@ -57,7 +57,9 @@
 
     {% block sw_order_list_grid_columns_delivery_date %}
         <template #column-customFields="{ item }">
-           <strong>{{ item.customFields.delivery_date | date() }}<strong>
+            <template v-if="item.customFields.delivery_date">
+                <strong>{{ item.customFields.delivery_date | date() }}<strong>
+            </template>
         </template>
     {% endblock %}
 {% endblock %}

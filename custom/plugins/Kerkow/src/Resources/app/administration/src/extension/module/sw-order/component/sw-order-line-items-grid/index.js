@@ -7,7 +7,7 @@ Shopware.Component.override("sw-order-line-items-grid", {
       const columns = this.$super("getLineItemColumns");
 
       columns.push({
-        property: "price.referencePrice",
+        property: "referenceWeight",
         dataIndex: "price.referencePrice",
         label: "sw-order.detailBase.columnWeight",
         allowResize: false,

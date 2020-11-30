@@ -187,21 +187,21 @@
                     {% endblock %}
 
                     {% block sw_order_line_items_grid_grid_columns_weight %}
-                        <template #column-price.referencePrice="{ item }">
-                            {% block sw_order_line_items_grid_grid_columns_weight_content %}
+                        <template #column-referenceWeight="{ item }">
+                            <template v-if="item.price.referencePrice">
                                 {{ item.price.referencePrice.purchaseUnit }}
                                 {{ item.price.referencePrice.unitName }}
-                            {% endblock %}
+                            </template>
                         </template>
                     {% endblock %}
 
                     {% block sw_order_line_items_grid_grid_columns_reference %}
                         <template #column-referenceBase="{ item }">
-                            {% block sw_order_line_items_grid_grid_columns_reference_content %}
+                            <template v-if="item.price.referencePrice">
                                 {{ item.price.referencePrice.price | currency(order.currency.shortName) }} / 
                                 {{ item.price.referencePrice.referenceUnit }}
                                 {{ item.price.referencePrice.unitName }}
-                            {% endblock %}
+                            </template>
                         </template>
                     {% endblock %}
 
