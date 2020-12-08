@@ -76,6 +76,11 @@
                           :isRecordEditable="(item) => !isPromotionItem(item)">
 
                 {% block sw_order_line_items_grid_grid_columns %}
+                    {% block sw_order_line_items_grid_grid_columns_article_number %}
+                        <template #column-articleNumber="{ item }">
+                            {{ item.payload.productNumber }}
+                        </template>
+                    {% endblock %}
                     {% block sw_order_line_items_grid_grid_columns_label %}
                         <template #column-label="{ item, isInlineEdit}">
 
@@ -100,6 +105,7 @@
                                     {% endblock %}
                                 </router-link>
                             {% endblock %}
+                            
 
                             {% block sw_order_line_items_grid_grid_columns_label_content %}
                                 <template v-else>

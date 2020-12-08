@@ -62,5 +62,23 @@
             </template>
         </template>
     {% endblock %}
+    {% block sw_order_list_grid_columns_payment_type %}
+        <template #column-paymentType="{ item }">
+            <template v-if="item.transactions && 
+            item.transactions[0] && 
+            item.transactions[0].customFields">
+                <template v-for="payload of item.transactions[0].customFields.payone_transaction_data" v-if="payload.transaction && payload.transaction.cardtype">
+                    <sw-label v-if="payload.transaction.cardtype == 'M'"                        
+                        appearance="pill">                        
+                        Mastercard
+                    </sw-label>
+                    <sw-label v-else-if="payload.transaction.cardtype == 'V'"                        
+                        appearance="pill">
+                        Visa
+                    </sw-label>
+                </template>                
+            </template>
+        </template>
+    {% endblock %}
 {% endblock %}
 

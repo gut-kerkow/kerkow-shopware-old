@@ -18,7 +18,9 @@ function createWrapper(privileges = []) {
             'sw-sales-channel-menu': true
         },
         provide: {
-            loginService: {},
+            loginService: {
+                notifyOnLoginListener: () => {}
+            },
             userService: {
                 getUser: () => Promise.resolve({})
             },
@@ -31,6 +33,9 @@ function createWrapper(privileges = []) {
 
                     return privileges.includes(privilegeKey);
                 }
+            },
+            feature: {
+                isActive: () => true
             }
         },
         mocks: {
@@ -39,34 +44,32 @@ function createWrapper(privileges = []) {
                 onResize: () => {},
                 getViewportWidth: () => 1920
             }
+        },
+        methods: {
+            refreshApps: () => {}
         }
     });
 }
 
 describe('module/sw-sales-channel/component/structure/sw-admin-menu-extension', () => {
     beforeAll(() => {
-        Shopware.FeatureConfig.isActive = () => true;
+        Shopware.Feature.isActive = () => true;
         Shopware.State.get('session').currentUser = {};
-        Shopware.Service().register('loginService', () => {
-            return {
-                notifyOnLoginListener: () => {}
-            };
-        });
     });
 
-    it('should be a Vue.js component', () => {
+    it('should be a Vue.js component', async () => {
         const wrapper = createWrapper();
-        expect(wrapper.isVueInstance()).toBeTruthy();
+        expect(wrapper.vm).toBeTruthy();
     });
 
-    it('should not show the sw-sales-channel-menu when privilege does not exists', () => {
+    it('should not show the sw-sales-channel-menu when privilege does not exists', async () => {
         const wrapper = createWrapper();
         const swSalesChannelMenu = wrapper.find('sw-sales-channel-menu-stub');
 
         expect(swSalesChannelMenu.exists()).toBeFalsy();
     });
 
-    it('should show the sw-sales-channel-menu when privilege exists', () => {
+    it('should show the sw-sales-channel-menu when privilege exists', async () => {
         const wrapper = createWrapper([
             'sales_channel.viewer'
         ]);

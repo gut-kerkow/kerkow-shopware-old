@@ -58,6 +58,10 @@ Component.register('sw-admin-menu-item', {
         },
 
         showMenuItem() {
+            // special case for settings module, children are stored in a global state store
+            if (this.entry.path === 'sw.settings.index') {
+                return this.acl.hasActiveSettingModules();
+            }
             if (this.children.length > 0) {
                 return true;
             }

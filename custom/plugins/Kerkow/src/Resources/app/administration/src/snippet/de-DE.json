@@ -2,10 +2,13 @@
   "sw-order": {
     "detailBase": {
       "columnWeight": "Gewicht",
-      "columnReferencePrice": "Grundpreis"
+      "columnReferencePrice": "Grundpreis",
+      "labelCreditCard": "Kartentyp"
     },
     "list": {
-      "columnDeliveryDate": "Lieferdatum"
+      "columnDeliveryDate": "Lieferdatum",
+      "columnPaymentType": "Kartentyp",
+      "articleNumber": "Artikelnummer"
     }
   }
 }

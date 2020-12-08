@@ -10,16 +10,18 @@ use Shopware\Core\Framework\Api\Util\AccessKeyHelper;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Core\Framework\Routing\ApiRequestContextResolver;
+use Shopware\Core\Framework\Test\IdsCollection;
+use Shopware\Core\Framework\Test\TestCaseBase\AdminApiTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseHelper\TestUser;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\PlatformRequest;
 use Symfony\Component\HttpFoundation\Request;
-use function Flag\skipTestNext3722;
 
 class ApiRequestContextResolverTest extends TestCase
 {
     use IntegrationTestBehaviour;
+    use AdminApiTestBehaviour;
 
     /**
      * @var Connection
@@ -33,7 +35,6 @@ class ApiRequestContextResolverTest extends TestCase
 
     protected function setUp(): void
     {
-        skipTestNext3722($this);
         $this->connection = $this->getContainer()->get(Connection::class);
         $this->resolver = $this->getContainer()->get(ApiRequestContextResolver::class);
     }
@@ -151,6 +152,66 @@ class ApiRequestContextResolverTest extends TestCase
         ];
     }
 
+    public function testAdminIntegration(): void
+    {
+        $ids = new IdsCollection();
+        $browser = $this->getBrowserAuthenticatedWithIntegration($ids->create('integration'));
+
+        $this->getContainer()
+            ->get(Connection::class)
+            ->executeUpdate('UPDATE `integration` SET `admin` = 1 WHERE id = :id', ['id' => Uuid::fromHexToBytes($ids->get('integration'))]);
+
+        $browser->request('POST', '/api/v' . PlatformRequest::API_VERSION . '/search/currency', [
+            'limit' => 2,
+        ]);
+        $response = json_decode($browser->getResponse()->getContent(), true);
+
+        static::assertEquals(200, $browser->getResponse()->getStatusCode());
+        static::assertArrayHasKey('data', $response);
+    }
+
+    public function testIntegrationWithoutPrivileges(): void
+    {
+        $ids = new IdsCollection();
+        $browser = $this->getBrowserAuthenticatedWithIntegration($ids->create('integration'));
+
+        $this->getContainer()
+            ->get(Connection::class)
+            ->executeUpdate('UPDATE `integration` SET `admin` = 0 WHERE id = :id', ['id' => Uuid::fromHexToBytes($ids->get('integration'))]);
+
+        $browser->request('POST', '/api/v' . PlatformRequest::API_VERSION . '/search/currency', [
+            'limit' => 2,
+        ]);
+
+        static::assertEquals(403, $browser->getResponse()->getStatusCode());
+
+        $response = json_decode($browser->getResponse()->getContent(), true);
+
+        static::assertArrayHasKey('errors', $response);
+        $errors = $response['errors'];
+        static::assertEquals('{"message":"Missing privilege","missingPrivileges":["currency:read"]}', $errors[0]['detail']);
+    }
+
+    public function testIntegrationWithPrivileges(): void
+    {
+        $ids = new IdsCollection();
+        $browser = $this->getBrowserAuthenticatedWithIntegration($ids->create('integration'));
+
+        $this->getContainer()
+            ->get(Connection::class)
+            ->executeUpdate('UPDATE `integration` SET `admin` = 0 WHERE id = :id', ['id' => Uuid::fromHexToBytes($ids->get('integration'))]);
+
+        $this->addRoleToIntegration($ids->get('integration'), ['currency:read']);
+
+        $browser->request('POST', '/api/v' . PlatformRequest::API_VERSION . '/search/currency', [
+            'limit' => 2,
+        ]);
+        $response = json_decode($browser->getResponse()->getContent(), true);
+
+        static::assertEquals(200, $browser->getResponse()->getStatusCode());
+        static::assertArrayHasKey('data', $response);
+    }
+
     /**
      * @throws \Doctrine\DBAL\DBALException
      */
@@ -197,5 +258,20 @@ class ApiRequestContextResolverTest extends TestCase
             ->create([$data], Context::createDefaultContext());
 
         return $key;
+    }
+
+    private function addRoleToIntegration(string $integrationId, array $privileges): void
+    {
+        $id = Uuid::randomHex();
+        $role = ['id' => $id, 'name' => 'test', 'privileges' => $privileges];
+
+        $this->getContainer()->get('acl_role.repository')
+            ->create([$role], Context::createDefaultContext());
+
+        $this->getContainer()->get(Connection::class)
+            ->insert('integration_role', [
+                'acl_role_id' => Uuid::fromHexToBytes($id),
+                'integration_id' => Uuid::fromHexToBytes($integrationId),
+            ]);
     }
 }

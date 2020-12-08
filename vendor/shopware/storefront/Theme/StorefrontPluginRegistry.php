@@ -2,10 +2,11 @@
 
 namespace Shopware\Storefront\Theme;
 
+use Shopware\Core\Framework\App\ActiveAppsLoader;
 use Shopware\Core\Framework\Bundle;
 use Shopware\Core\System\Annotation\Concept\ExtensionPattern\Decoratable;
+use Shopware\Storefront\Theme\StorefrontPluginConfiguration\AbstractStorefrontPluginConfigurationFactory;
 use Shopware\Storefront\Theme\StorefrontPluginConfiguration\StorefrontPluginConfigurationCollection;
-use Shopware\Storefront\Theme\StorefrontPluginConfiguration\StorefrontPluginConfigurationFactory;
 use Symfony\Component\HttpKernel\KernelInterface;
 
 /**
@@ -26,16 +27,23 @@ class StorefrontPluginRegistry implements StorefrontPluginRegistryInterface
     private $kernel;
 
     /**
-     * @var StorefrontPluginConfigurationFactory
+     * @var AbstractStorefrontPluginConfigurationFactory
      */
     private $pluginConfigurationFactory;
 
+    /**
+     * @var ActiveAppsLoader
+     */
+    private $activeAppsLoader;
+
     public function __construct(
         KernelInterface $kernel,
-        StorefrontPluginConfigurationFactory $pluginConfigurationFactory
+        AbstractStorefrontPluginConfigurationFactory $pluginConfigurationFactory,
+        ActiveAppsLoader $activeAppsLoader
     ) {
         $this->kernel = $kernel;
         $this->pluginConfigurationFactory = $pluginConfigurationFactory;
+        $this->activeAppsLoader = $activeAppsLoader;
     }
 
     public function getConfigurations(): StorefrontPluginConfigurationCollection
@@ -46,6 +54,14 @@ class StorefrontPluginRegistry implements StorefrontPluginRegistryInterface
 
         $this->pluginConfigurations = new StorefrontPluginConfigurationCollection();
 
+        $this->addPluginConfigs();
+        $this->addAppConfigs();
+
+        return $this->pluginConfigurations;
+    }
+
+    private function addPluginConfigs(): void
+    {
         foreach ($this->kernel->getBundles() as $bundle) {
             if (!$bundle instanceof Bundle) {
                 continue;
@@ -59,7 +75,18 @@ class StorefrontPluginRegistry implements StorefrontPluginRegistryInterface
 
             $this->pluginConfigurations->add($config);
         }
+    }
 
-        return $this->pluginConfigurations;
+    private function addAppConfigs(): void
+    {
+        foreach ($this->activeAppsLoader->getActiveApps() as $app) {
+            $config = $this->pluginConfigurationFactory->createFromApp($app['name'], $app['path']);
+
+            if (!$config->getIsTheme() && !$config->hasFilesToCompile()) {
+                continue;
+            }
+
+            $this->pluginConfigurations->add($config);
+        }
     }
 }

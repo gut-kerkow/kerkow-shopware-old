@@ -10,7 +10,7 @@ const { warn } = Shopware.Utils.debug;
 Component.register('sw-settings-shipping-detail', {
     template,
 
-    inject: ['ruleConditionDataProviderService', 'repositoryFactory'],
+    inject: ['ruleConditionDataProviderService', 'repositoryFactory', 'acl'],
 
     mixins: [
         Mixin.getByName('notification'),
@@ -59,6 +59,10 @@ Component.register('sw-settings-shipping-detail', {
 
         shippingMethodRepository() {
             return this.repositoryFactory.create('shipping_method');
+        },
+
+        shippingMethodPricesRepository() {
+            return this.repositoryFactory.create('shipping_method_price');
         },
 
         currencyRepository() {
@@ -157,6 +161,12 @@ Component.register('sw-settings-shipping-detail', {
                 Shopware.State.commit('context/resetLanguageToDefault');
 
                 const shippingMethod = this.shippingMethodRepository.create(Shopware.Context.api);
+                const shippingMethodPrice = this.shippingMethodPricesRepository.create(Shopware.Context.api);
+                shippingMethodPrice.calculation = 1;
+                shippingMethodPrice.quantityStart = 1;
+                shippingMethodPrice.shippingMethodId = shippingMethod.id;
+                shippingMethodPrice.ruleId = null;
+                shippingMethod.prices.add(shippingMethodPrice);
                 Shopware.State.commit('swShippingDetail/setShippingMethod', shippingMethod);
             } else {
                 this.loadEntityData();

@@ -1,5 +1,3 @@
-import { next3722 } from 'src/flag/feature_next3722';
-
 const utils = Shopware.Utils;
 
 export default class AclService {
@@ -14,7 +12,7 @@ export default class AclService {
      * @returns {boolean}
      */
     isAdmin() {
-        return !!this.state.get('session').currentUser.admin;
+        return !!this.state.get('session').currentUser && !!this.state.get('session').currentUser.admin;
     }
 
     /**
@@ -23,10 +21,6 @@ export default class AclService {
      * @returns {boolean}
      */
     can(privilegeKey) {
-        if (!next3722()) {
-            return true;
-        }
-
         if (this.isAdmin() || !privilegeKey) {
             return true;
         }
@@ -40,11 +34,15 @@ export default class AclService {
      * @returns {boolean}
      */
     hasAccessToRoute(path) {
+        const route = path.replace(/\./g, '/');
+        if (route === '/sw/settings/index') {
+            return this.hasActiveSettingModules();
+        }
+
         if (!utils.get(Shopware, 'Application.view.root.$router')) {
             return true;
         }
 
-        const route = path.replace(/\./g, '/');
         const router = Shopware.Application.view.root.$router;
         const match = router.match(route);
 
@@ -53,6 +51,25 @@ export default class AclService {
         }
 
         return this.can(match.meta.privilege);
+    }
+
+
+    hasActiveSettingModules() {
+        const groups = Object.values(this.state.get('settingsItems').settingsGroups);
+
+        let hasActive = false;
+
+        groups.forEach((modules) => {
+            modules.forEach((module) => {
+                if (!module.privilege) {
+                    hasActive = true;
+                } else if (this.can(module.privilege)) {
+                    hasActive = true;
+                }
+            });
+        });
+
+        return hasActive;
     }
 
     /**

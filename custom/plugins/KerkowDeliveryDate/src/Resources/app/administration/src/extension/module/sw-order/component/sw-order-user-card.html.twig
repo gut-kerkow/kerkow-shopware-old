@@ -1,20 +1,33 @@
 {% block sw_order_detail_base_secondary_info_delivery %}
-	<dt>
-		{{ $tc('sw-order.detailBase.labelShippingMethod') }}
-	</dt>
-	<dd>
-		{{ hasDeliveries ? delivery.shippingMethod.translated.name :$tc('sw-order.detailBase.labelNoDeliveriesYet')  }}
-	</dd>
-	<dt>
-		{{ $tc('sw-order.detailBase.labelDeliveryDate') }}
-	</dt>
-	<dd>
-		{{currentOrder.customFields.delivery_date | date("d.m.Y") }}
-	</dd>
-	<dt>
-		{{ $tc('sw-order.detailBase.labelDeliverySlot') }}
-	</dt>
-	<dd>
-		{{ $tc('sw-order.detailBase.' + currentOrder.customFields.delivery_slot) }}
-	</dd>
+	{% block sw_order_detail_base_secondary_info_delivery_method %}
+		<dt>
+			{{ $tc('sw-order.detailBase.labelShippingMethod') }}
+		</dt>
+		<dd>
+			{{ hasDeliveries ? delivery.shippingMethod.translated.name :$tc('sw-order.detailBase.labelNoDeliveriesYet')  }}
+		</dd>
+	{% endblock %}
+	{% block sw_order_detail_base_secondary_info_delivery_date %}
+		<dt>
+			{{ $tc('sw-order.detailBase.labelDeliveryDate') }}
+		</dt>
+		<dd v-if="isEditing">
+			<sw-datepicker v-model="currentOrder.customFields.delivery_date"
+				:displayValue="currentOrder.customFields.delivery_date? currentOrder.customFields.delivery_date : $tc('sw-order.detailBase.labelDeliveryDate')"
+				:value="currentOrder.customFields.delivery_date"			
+				@input="$emit('order-change')">
+			</sw-datepicker>
+		</dd>
+		<dd v-else>
+			{{currentOrder.customFields.delivery_date | date("d.m.Y") }}
+		</dd>
+	{% endblock %}
+	{% block sw_order_detail_base_secondary_info_delivery_slot %}
+		<dt>
+			{{ $tc('sw-order.detailBase.labelDeliverySlot') }}
+		</dt>
+		<dd>
+			{{ $tc('sw-order.detailBase.' + currentOrder.customFields.delivery_slot) }}
+		</dd>
+	{% endblock %}
 {% endblock %}

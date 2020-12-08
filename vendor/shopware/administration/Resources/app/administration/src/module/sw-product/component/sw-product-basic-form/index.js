@@ -11,6 +11,14 @@ Component.register('sw-product-basic-form', {
         Mixin.getByName('placeholder')
     ],
 
+    props: {
+        allowEdit: {
+            type: Boolean,
+            required: false,
+            default: true
+        }
+    },
+
     computed: {
         ...mapState('swProductDetail', [
             'product',
@@ -27,6 +35,7 @@ Component.register('sw-product-basic-form', {
             'markAsTopseller'
         ]),
 
+        // @deprecated tag:v6.4.0.0
         languageStore() {
             return StateDeprecated.getStore('language');
         },

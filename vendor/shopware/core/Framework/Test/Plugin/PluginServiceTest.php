@@ -21,6 +21,9 @@ use Shopware\Core\Framework\Uuid\Uuid;
 use SwagTest\SwagTest;
 use SwagTestNoDefaultLang\SwagTestNoDefaultLang;
 
+/**
+ * @group slow
+ */
 class PluginServiceTest extends TestCase
 {
     use IntegrationTestBehaviour;
@@ -47,8 +50,6 @@ class PluginServiceTest extends TestCase
 
     protected function setUp(): void
     {
-        static::markTestSkipped('NEXT-9627 - Improve plugin integration tests');
-
         require_once __DIR__ . '/_fixture/plugins/SwagTest/src/SwagTest.php';
         require_once __DIR__ . '/_fixture/plugins/SwagTestNoDefaultLang/src/SwagTestNoDefaultLang.php';
         $this->pluginRepo = $this->getContainer()->get('plugin.repository');
@@ -121,7 +122,8 @@ class PluginServiceTest extends TestCase
 
     public function testRefreshPluginsExistingWithPluginUpdate(): void
     {
-        $this->createPlugin($this->pluginRepo, $this->context, SwagTest::PLUGIN_OLD_VERSION);
+        $installedAt = (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT);
+        $this->createPlugin($this->pluginRepo, $this->context, SwagTest::PLUGIN_OLD_VERSION, $installedAt);
 
         $this->pluginService->refreshPlugins($this->context, new NullIO());
 
@@ -130,6 +132,19 @@ class PluginServiceTest extends TestCase
         static::assertSame(SwagTest::class, $plugin->getBaseClass());
         static::assertSame(SwagTest::PLUGIN_LABEL, $plugin->getLabel());
         static::assertSame(SwagTest::PLUGIN_VERSION, $plugin->getUpgradeVersion());
+    }
+
+    public function testRefreshPluginsExistingNotInstalledWithPluginUpdate(): void
+    {
+        $this->createPlugin($this->pluginRepo, $this->context, SwagTest::PLUGIN_OLD_VERSION);
+
+        $this->pluginService->refreshPlugins($this->context, new NullIO());
+
+        $plugin = $this->fetchSwagTestPluginEntity();
+
+        static::assertSame(SwagTest::class, $plugin->getBaseClass());
+        static::assertSame(SwagTest::PLUGIN_LABEL, $plugin->getLabel());
+        static::assertSame(SwagTest::PLUGIN_VERSION, $plugin->getVersion());
     }
 
     public function testRefreshPluginsExistingWithoutPluginUpdate(): void

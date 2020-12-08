@@ -1,4 +1,5 @@
 const { Mixin } = Shopware;
+// @deprecated tag:v6.4.0.0
 const { CriteriaFactory } = Shopware.DataDeprecated;
 const types = Shopware.Utils.types;
 const { debug } = Shopware.Utils;
@@ -75,6 +76,10 @@ Mixin.register('listing', {
 
             // Fetch new list
             this.getList();
+        },
+
+        selection() {
+            Shopware.State.commit('shopwareApps/setSelectedIds', Object.keys(this.selection));
         }
     },
 
@@ -130,6 +135,7 @@ Mixin.register('listing', {
             });
         },
 
+        // @deprecated tag:v6.4.0.0
         getListingParams() {
             if (this.disableRouteParams) {
                 return {

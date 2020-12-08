@@ -8,7 +8,7 @@ use Shopware\Core\Content\Category\CategoryCollection;
 use Shopware\Core\Content\Product\Aggregate\ProductConfiguratorSetting\ProductConfiguratorSettingCollection;
 use Shopware\Core\Content\Product\Aggregate\ProductCrossSelling\ProductCrossSellingCollection;
 use Shopware\Core\Content\Product\Aggregate\ProductCrossSellingAssignedProducts\ProductCrossSellingAssignedProductsCollection;
-use Shopware\Core\Content\Product\Aggregate\ProductFeatureSet\ProductFeatureSetCollection;
+use Shopware\Core\Content\Product\Aggregate\ProductFeatureSet\ProductFeatureSetEntity;
 use Shopware\Core\Content\Product\Aggregate\ProductManufacturer\ProductManufacturerEntity;
 use Shopware\Core\Content\Product\Aggregate\ProductMedia\ProductMediaCollection;
 use Shopware\Core\Content\Product\Aggregate\ProductMedia\ProductMediaEntity;
@@ -91,6 +91,11 @@ class ProductEntity extends Entity
     protected $ean;
 
     /**
+     * @var int
+     */
+    protected $sales;
+
+    /**
      * @var string
      */
     protected $productNumber;
@@ -161,9 +166,16 @@ class ProductEntity extends Entity
     protected $shippingFree;
 
     /**
+     * @deprecated tag:v6.4.0 use $purchasePrices instead
+     *
      * @var float|null
      */
     protected $purchasePrice;
+
+    /**
+     * @var PriceCollection|null
+     */
+    protected $purchasePrices;
 
     /**
      * @var bool|null
@@ -426,9 +438,24 @@ class ProductEntity extends Entity
     protected $crossSellingAssignedProducts;
 
     /**
-     * @var ProductFeatureSetCollection|null
+     * @var string|null
      */
-    protected $featureSets;
+    protected $featureSetId;
+
+    /**
+     * @var ProductFeatureSetEntity|null
+     */
+    protected $featureSet;
+
+    /**
+     * @var bool|null
+     */
+    protected $customFieldSetSelectionActive;
+
+    /**
+     * @var string[]|null
+     */
+    protected $customSearchKeywords;
 
     public function __construct()
     {
@@ -539,6 +566,16 @@ class ProductEntity extends Entity
         $this->ean = $ean;
     }
 
+    public function getSales(): int
+    {
+        return $this->sales;
+    }
+
+    public function setSales(int $sales): void
+    {
+        $this->sales = $sales;
+    }
+
     public function getStock(): int
     {
         return $this->stock;
@@ -619,14 +656,30 @@ class ProductEntity extends Entity
         $this->shippingFree = $shippingFree;
     }
 
+    /**
+     * @deprecated tag:v6.4.0 use getPurchasePrices() instead
+     */
     public function getPurchasePrice(): ?float
     {
         return $this->purchasePrice;
     }
 
+    /**
+     * @deprecated tag:v6.4.0 use setPurchasePrices() instead
+     */
     public function setPurchasePrice(?float $purchasePrice): void
     {
         $this->purchasePrice = $purchasePrice;
+    }
+
+    public function getPurchasePrices(): ?PriceCollection
+    {
+        return $this->purchasePrices;
+    }
+
+    public function setPurchasePrices(?PriceCollection $purchasePrices): void
+    {
+        $this->purchasePrices = $purchasePrices;
     }
 
     public function getMarkAsTopseller(): ?bool
@@ -1256,18 +1309,43 @@ class ProductEntity extends Entity
         $this->crossSellingAssignedProducts = $crossSellingAssignedProducts;
     }
 
-    public function getFeatureSets(): ?ProductFeatureSetCollection
+    public function getFeatureSetId(): ?string
     {
-        return $this->featureSets;
+        return $this->featureSetId;
     }
 
-    public function setFeatureSets(ProductFeatureSetCollection $featureSets): void
+    public function setFeatureSetId(?string $featureSetId): void
     {
-        $this->featureSets = $featureSets;
+        $this->featureSetId = $featureSetId;
     }
 
-    public function getApiAlias(): string
+    public function getFeatureSet(): ?ProductFeatureSetEntity
     {
-        return 'product';
+        return $this->featureSet;
+    }
+
+    public function setFeatureSet(ProductFeatureSetEntity $featureSet): void
+    {
+        $this->featureSet = $featureSet;
+    }
+
+    public function getCustomFieldSetSelectionActive(): ?bool
+    {
+        return $this->customFieldSetSelectionActive;
+    }
+
+    public function setCustomFieldSetSelectionActive(?bool $customFieldSetSelectionActive): void
+    {
+        $this->customFieldSetSelectionActive = $customFieldSetSelectionActive;
+    }
+
+    public function getCustomSearchKeywords(): ?array
+    {
+        return $this->customSearchKeywords;
+    }
+
+    public function setCustomSearchKeywords(?array $customSearchKeywords): void
+    {
+        $this->customSearchKeywords = $customSearchKeywords;
     }
 }

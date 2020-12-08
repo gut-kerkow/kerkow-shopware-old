@@ -3,20 +3,19 @@
 namespace Shopware\Core\Checkout\Test\Customer\SalesChannel;
 
 use PHPUnit\Framework\TestCase;
-use Shopware\Core\Checkout\Test\Payment\Handler\V630\SyncTestPaymentHandler;
-use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
-use Shopware\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour;
 use Shopware\Core\Framework\Test\TestDataCollection;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\PlatformRequest;
+use Shopware\Core\System\SalesChannel\Context\SalesChannelContextPersister;
 
 class ChangePasswordRouteTest extends TestCase
 {
     use IntegrationTestBehaviour;
-    use SalesChannelApiTestBehaviour;
+    use CustomerTestTrait;
 
     /**
      * @var \Symfony\Bundle\FrameworkBundle\KernelBrowser
@@ -38,6 +37,16 @@ class ChangePasswordRouteTest extends TestCase
      */
     private $email;
 
+    /**
+     * @var string
+     */
+    private $contextToken;
+
+    /**
+     * @var string
+     */
+    private $customerId;
+
     protected function setUp(): void
     {
         $this->ids = new TestDataCollection(Context::createDefaultContext());
@@ -49,7 +58,7 @@ class ChangePasswordRouteTest extends TestCase
         $this->customerRepository = $this->getContainer()->get('customer.repository');
 
         $this->email = Uuid::randomHex() . '@example.com';
-        $this->createCustomer('shopware', $this->email);
+        $this->customerId = $this->createCustomer('shopware', $this->email);
 
         $this->browser
             ->request(
@@ -62,6 +71,8 @@ class ChangePasswordRouteTest extends TestCase
             );
 
         $response = json_decode($this->browser->getResponse()->getContent(), true);
+
+        $this->contextToken = $response['contextToken'];
 
         $this->browser->setServerParameter('HTTP_SW_CONTEXT_TOKEN', $response['contextToken']);
     }
@@ -116,6 +127,9 @@ class ChangePasswordRouteTest extends TestCase
         $response = json_decode($this->browser->getResponse()->getContent(), true);
 
         static::assertArrayNotHasKey('errors', $response);
+
+        Feature::skipTestIfActive('FEATURE_NEXT_10058', $this);
+
         static::assertTrue($response['success']);
 
         $this->browser
@@ -134,61 +148,31 @@ class ChangePasswordRouteTest extends TestCase
         static::assertArrayHasKey('contextToken', $response);
     }
 
-    private function createCustomer(string $password, ?string $email = null): string
+    public function testContextTokenIsReplacedAfterChangingPassword(): void
     {
-        $customerId = Uuid::randomHex();
-        $addressId = Uuid::randomHex();
+        Feature::skipTestIfInActive('FEATURE_NEXT_10058', $this);
 
-        $this->customerRepository->create([
-            [
-                'id' => $customerId,
-                'salesChannelId' => Defaults::SALES_CHANNEL,
-                'defaultShippingAddress' => [
-                    'id' => $addressId,
-                    'firstName' => 'Max',
-                    'lastName' => 'Mustermann',
-                    'street' => 'Musterstraße 1',
-                    'city' => 'Schoöppingen',
-                    'zipcode' => '12345',
-                    'salutationId' => $this->getValidSalutationId(),
-                    'country' => ['name' => 'Germany'],
-                ],
-                'defaultBillingAddressId' => $addressId,
-                'defaultPaymentMethod' => [
-                    'name' => 'Invoice',
-                    'active' => true,
-                    'description' => 'Default payment method',
-                    'handlerIdentifier' => SyncTestPaymentHandler::class,
-                    'availabilityRule' => [
-                        'id' => Uuid::randomHex(),
-                        'name' => 'true',
-                        'priority' => 0,
-                        'conditions' => [
-                            [
-                                'type' => 'cartCartAmount',
-                                'value' => [
-                                    'operator' => '>=',
-                                    'amount' => 0,
-                                ],
-                            ],
-                        ],
-                    ],
-                    'salesChannels' => [
-                        [
-                            'id' => Defaults::SALES_CHANNEL,
-                        ],
-                    ],
-                ],
-                'groupId' => Defaults::FALLBACK_CUSTOMER_GROUP,
-                'email' => $email,
-                'password' => $password,
-                'firstName' => 'Fooo',
-                'lastName' => 'Barr',
-                'salutationId' => $this->getValidSalutationId(),
-                'customerNumber' => '12345',
-            ],
-        ], $this->ids->context);
+        $this->browser
+            ->request(
+                'POST',
+                '/store-api/v' . PlatformRequest::API_VERSION . '/account/change-password',
+                [
+                    'password' => 'shopware',
+                    'newPassword' => 'foooware',
+                    'newPasswordConfirm' => 'foooware',
+                ]
+            );
 
-        return $customerId;
+        $response = json_decode($this->browser->getResponse()->getContent(), true);
+
+        $oldContextExists = $this->getContainer()->get(SalesChannelContextPersister::class)->load($this->contextToken);
+
+        static::assertEmpty($oldContextExists);
+
+        // Token is replaced
+        static::assertNotEquals($this->contextToken, $response['contextToken']);
+        $newContextExists = $this->getContainer()->get(SalesChannelContextPersister::class)->load($response['contextToken'], $this->customerId);
+
+        static::assertNotEmpty($newContextExists);
     }
 }

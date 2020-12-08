@@ -3,6 +3,7 @@ import template from './sw-order-create-base.html.twig';
 const { Component, State, Utils, Data, Service, Mixin } = Shopware;
 const { Criteria } = Data;
 const { get, format, array } = Utils;
+const { mapGetters } = Component.getComponentHelper();
 
 Component.register('sw-order-create-base', {
     template,
@@ -35,10 +36,47 @@ Component.register('sw-order-create-base', {
 
         promotionCodeTags: {
             handler: 'handlePromotionCodeTags'
+        },
+
+        cartErrors: {
+            handler(newValue) {
+                if (!newValue || newValue.length === 0) {
+                    return;
+                }
+
+                Object.values(newValue).forEach((value) => {
+                    switch (value.level) {
+                        case 0: {
+                            this.createNotificationSuccess({
+                                message: value.message
+                            });
+                            break;
+                        }
+
+                        case 10: {
+                            this.createNotificationWarning({
+                                message: value.message
+                            });
+                            break;
+                        }
+
+                        default: {
+                            this.createNotificationError({
+                                message: value.message
+                            });
+                            break;
+                        }
+                    }
+                });
+            }
         }
     },
 
     computed: {
+        ...mapGetters('swOrder', [
+            'cartErrors'
+        ]),
+
         customerRepository() {
             return Service('repositoryFactory').create('customer');
         },
@@ -88,6 +126,10 @@ Component.register('sw-order-create-base', {
 
         customer() {
             return State.get('swOrder').customer;
+        },
+
+        salesChannelId() {
+            return Utils.get(this.customer, 'salesChannelId', '');
         },
 
         isCustomerActive() {
@@ -171,6 +213,10 @@ Component.register('sw-order-create-base', {
             set(visibility) {
                 this.switchAutomaticPromotions(visibility);
             }
+        },
+
+        taxStatus() {
+            return get(this.cart, 'price.taxStatus', '');
         }
     },
 
@@ -205,7 +251,6 @@ Component.register('sw-order-create-base', {
                 await this.updateCustomerContext();
             } catch {
                 this.createNotificationError({
-                    title: this.$tc('global.default.error'),
                     message: this.$tc('sw-order.create.messageSwitchCustomerError')
                 });
             } finally {

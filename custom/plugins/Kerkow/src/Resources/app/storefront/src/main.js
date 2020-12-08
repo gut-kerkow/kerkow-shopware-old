@@ -9,6 +9,7 @@ import changePaymentPlugin from "./checkout-confirm/change-payment.plugin";
 import DatePickerExtensionPlugin from "./checkout-confirm/date-picker-extension.plugin";
 import changeDeliveryDatePlugin from "./checkout-confirm/change-delivery-date.plugin";
 import CookiePermissionPluginExtension from "./cookie/cookie-permission-extension.plugin";
+import SuperAddressPlugin from "./super-address/super-address.plugin";
 
 // Register them via the existing PluginManager
 const PluginManager = window.PluginManager;
@@ -58,4 +59,9 @@ PluginManager.override(
   "CookiePermission",
   CookiePermissionPluginExtension,
   "[data-cookie-permission]"
+);
+PluginManager.register(
+  "SuperAddress",
+  SuperAddressPlugin,
+  "[data-super-address]"
 );

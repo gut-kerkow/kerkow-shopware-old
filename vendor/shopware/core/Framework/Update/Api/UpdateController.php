@@ -4,11 +4,13 @@ namespace Shopware\Core\Framework\Update\Api;
 
 use Shopware\Core\Framework\Api\Context\AdminApiSource;
 use Shopware\Core\Framework\Api\Context\Exception\InvalidContextSourceException;
+use Shopware\Core\Framework\Api\Context\Exception\InvalidContextSourceUserException;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Plugin\KernelPluginLoader\StaticKernelPluginLoader;
 use Shopware\Core\Framework\Plugin\PluginLifecycleService;
+use Shopware\Core\Framework\Routing\Annotation\Acl;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Core\Framework\Update\Event\UpdatePostFinishEvent;
 use Shopware\Core\Framework\Update\Event\UpdatePostPrepareEvent;
@@ -123,6 +125,7 @@ class UpdateController extends AbstractController
 
     /**
      * @Route("/api/v{version}/_action/update/check", name="api.custom.updateapi.check", methods={"GET"})
+     * @Acl({"system:core:update"})
      */
     public function updateApiCheck(): JsonResponse
     {
@@ -150,6 +153,7 @@ class UpdateController extends AbstractController
 
     /**
      * @Route("/api/v{version}/_action/update/check-requirements", name="api.custom.update.check_requirements", methods={"GET"})
+     * @Acl({"system:core:update"})
      */
     public function checkRequirements(): JsonResponse
     {
@@ -160,6 +164,7 @@ class UpdateController extends AbstractController
 
     /**
      * @Route("/api/v{version}/_action/update/plugin-compatibility", name="api.custom.updateapi.plugin_compatibility", methods={"GET"})
+     * @Acl({"system:core:update", "system_config:read"})
      */
     public function pluginCompatibility(Context $context): JsonResponse
     {
@@ -170,6 +175,7 @@ class UpdateController extends AbstractController
 
     /**
      * @Route("/api/v{version}/_action/update/download-latest-update", name="api.custom.updateapi.download_latest_update", methods={"GET"})
+     * @Acl({"system:core:update", "system_config:read"})
      */
     public function downloadLatestUpdate(Request $request): JsonResponse
     {
@@ -194,6 +200,7 @@ class UpdateController extends AbstractController
 
     /**
      * @Route("/api/v{version}/_action/update/unpack", name="api.custom.updateapi.unpack", methods={"GET"})
+     * @Acl({"system:core:update", "system_config:read"})
      */
     public function unpack(Request $request, Context $context): JsonResponse
     {
@@ -221,7 +228,7 @@ class UpdateController extends AbstractController
             $this->systemConfig->set(self::UPDATE_TOKEN_KEY, $updateToken);
 
             return new JsonResponse([
-                'redirectTo' => $request->getBaseUrl() . '/api/v' . PlatformRequest::API_VERSION . ' /_action/update/finish/' . $this->systemConfig->get(self::UPDATE_TOKEN_KEY),
+                'redirectTo' => $request->getBaseUrl() . '/api/v' . PlatformRequest::API_VERSION . ' /_action/update/finish/' . $updateToken,
             ]);
         }
 
@@ -253,6 +260,7 @@ class UpdateController extends AbstractController
 
     /**
      * @Route("/api/v{version}/_action/update/deactivate-plugins", name="api.custom.updateapi.deactivate-plugins", methods={"GET"})
+     * @Acl({"system:core:update", "system_config:read"})
      */
     public function deactivatePlugins(Request $request, Context $context): JsonResponse
     {
@@ -298,11 +306,12 @@ class UpdateController extends AbstractController
 
     /**
      * @Route("/api/v{version}/_action/update/finish/{token}", defaults={"auth_required"=false}, name="api.custom.updateapi.finish", methods={"GET"})
+     * @Acl({"system:core:update", "system_config:read"})
      */
     public function finish(string $token, Request $request, Context $context): Response
     {
         $offset = $request->query->getInt('offset');
-        $oldVersion = (string) $this->systemConfig->get(self::UPDATE_PREVIOUS_VERSION_KEY);
+        $oldVersion = $this->systemConfig->getString(self::UPDATE_PREVIOUS_VERSION_KEY);
         if ($offset === 0) {
             if (!$token) {
                 return $this->redirectToRoute('administration.index');
@@ -328,11 +337,15 @@ class UpdateController extends AbstractController
 
     private function getUpdateLocale(Context $context): string
     {
-        if (!$context->getSource() instanceof AdminApiSource) {
-            throw new InvalidContextSourceException(AdminApiSource::class, \get_class($context->getSource()));
+        $contextSource = $context->getSource();
+        if (!($contextSource instanceof AdminApiSource)) {
+            throw new InvalidContextSourceException(AdminApiSource::class, \get_class($contextSource));
         }
 
-        $userId = $context->getSource()->getUserId();
+        $userId = $contextSource->getUserId();
+        if ($userId === null) {
+            throw new InvalidContextSourceUserException(\get_class($contextSource));
+        }
 
         $criteria = new Criteria([$userId]);
         $criteria->getAssociation('locale');

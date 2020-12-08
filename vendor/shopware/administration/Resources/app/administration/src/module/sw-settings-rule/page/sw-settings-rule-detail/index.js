@@ -8,7 +8,7 @@ const { Criteria } = Shopware.Data;
 Component.register('sw-settings-rule-detail', {
     template,
 
-    inject: ['ruleConditionDataProviderService', 'repositoryFactory'],
+    inject: ['ruleConditionDataProviderService', 'repositoryFactory', 'acl'],
 
     mixins: [
         Mixin.getByName('notification'),
@@ -86,6 +86,14 @@ Component.register('sw-settings-rule-detail', {
         },
 
         tooltipSave() {
+            if (!this.acl.can('rule.editor')) {
+                return {
+                    message: this.$tc('sw-privileges.tooltip.warning'),
+                    disabled: this.acl.can('rule.editor'),
+                    showOnDisabledElements: true
+                };
+            }
+
             const systemKey = this.$device.getSystemKey();
 
             return {
@@ -223,7 +231,6 @@ Component.register('sw-settings-rule-detail', {
 
         showErrorNotification() {
             this.createNotificationError({
-                title: this.$tc('global.default.error'),
                 message: this.$tc('sw-settings-rule.detail.messageSaveError', 0, { name: this.rule.name })
             });
             this.isLoading = false;

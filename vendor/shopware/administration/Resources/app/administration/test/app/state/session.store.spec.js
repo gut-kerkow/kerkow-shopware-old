@@ -12,7 +12,7 @@ describe('src/app/service/acl.service.js', () => {
         sessionStore.commit('removeCurrentUser');
     });
 
-    it('returns all user privileges', () => {
+    it('returns all user privileges', async () => {
         sessionStore.commit('setCurrentUser', {
             aclRoles: [
                 {
@@ -42,5 +42,9 @@ describe('src/app/service/acl.service.js', () => {
         expect(sessionStore.getters.userPrivileges).toContain('system:plugin:maintain');
         expect(sessionStore.getters.userPrivileges).toContain('orders.create_discounts');
         expect(sessionStore.getters.userPrivileges).toContain('order:create:discount');
+    });
+
+    it('returns an empty array if no user is set', async () => {
+        expect(sessionStore.getters.userPrivileges).toEqual([]);
     });
 });

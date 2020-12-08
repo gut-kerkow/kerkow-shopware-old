@@ -1,4 +1,4 @@
-// / <reference types="Cypress" />
+/// <reference types="Cypress" />
 
 describe('User: Test crud operations', () => {
     beforeEach(() => {
@@ -15,15 +15,15 @@ describe('User: Test crud operations', () => {
         // Requests we want to wait for later
         cy.server();
         cy.route({
-            url: 'api/v*/search/user',
+            url: `${Cypress.env('apiPath')}/search/user`,
             method: 'post'
         }).as('searchCall');
         cy.route({
-            url: 'api/v*/user',
+            url: `${Cypress.env('apiPath')}/user`,
             method: 'post'
         }).as('createCall');
         cy.route({
-            url: 'api/v*/user/**',
+            url: `${Cypress.env('apiPath')}/user/**`,
             method: 'delete'
         }).as('deleteCall');
         cy.route({
@@ -87,16 +87,6 @@ describe('User: Test crud operations', () => {
 
         // should be able to delete the user
         cy.get('a.smart-bar__back-btn').click();
-
-        cy.wait('@searchCall').then((xhr) => {
-            expect(xhr).to.have.property('status', 200);
-        });
-
-        cy.get('.sw-simple-search-field input').type('abraham');
-
-        cy.wait('@searchCall').then((xhr) => {
-            expect(xhr).to.have.property('status', 200);
-        });
 
         cy.clickContextMenuItem(
             '.sw-settings-user-list__user-delete-action',

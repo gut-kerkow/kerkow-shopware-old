@@ -14,7 +14,7 @@ Component.register('sw-customer-detail-addresses', {
 
     inject: [
         'repositoryFactory',
-        'customerAddressService'
+        'customerAddressService' // @deprecated tag:v6.4.0.0
     ],
 
     props: {
@@ -190,7 +190,6 @@ Component.register('sw-customer-detail-addresses', {
 
             if (!this.isValidAddress(this.currentAddress)) {
                 this.createNotificationError({
-                    title: this.$tc('global.default.error'),
                     message: this.$tc('sw-customer.notification.requiredFields')
                 });
                 return;

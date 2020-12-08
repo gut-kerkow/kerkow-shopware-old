@@ -71,8 +71,14 @@ class ConfirmDeliveryDateSubscriber implements EventSubscriberInterface
         $context = $event->getSalesChannelContext();
         $persistedData = $this->contextPersister->load($context->getToken());
         if (isset($persistedData['deliveryDate'])) {
-            $extensions['customDeliveryDate'] = new DateTime($persistedData['deliveryDate']);
-            $extensions['customDeliverySlot'] = $persistedData['deliverySlot'];
+            $now = new DateTime();
+            $createdAt = new DateTime($persistedData['customDeliveryTimestamp']);
+
+            if ($createdAt->diff($now)->i <= 10) {
+                $extensions['customDeliveryDate'] = new DateTime($persistedData['deliveryDate']);
+                $extensions['customDeliverySlot'] = $persistedData['deliverySlot'];
+                $extensions['createdAt'] = $createdAt->diff($now);
+            }
         }
         $extensions['delivery_date'] = $next_delivery_date;
 

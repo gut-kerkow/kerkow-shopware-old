@@ -1,12 +1,20 @@
 import template from './sw-order-line-items-grid-sales-channel.html.twig';
 import './sw-order-line-items-grid-sales-channel.scss';
 
-const { Component, Utils: { get }, State, Service } = Shopware;
+const { Component, Utils, State, Service } = Shopware;
+const { get, format } = Utils;
 
 Component.register('sw-order-line-items-grid-sales-channel', {
     template,
 
     props: {
+        salesChannelId: {
+            type: String,
+            // @deprecated tag:v6.4.0 - salesChannelId will become required: true
+            required: false,
+            default: ''
+        },
+
         cart: {
             type: Object,
             required: true
@@ -41,7 +49,19 @@ Component.register('sw-order-line-items-grid-sales-channel', {
         },
 
         cartLineItems() {
-            return this.cart.lineItems.filter(item => (item.label || '').toLowerCase().includes(this.searchTerm));
+            if (!this.searchTerm) {
+                return this.cart.lineItems;
+            }
+
+            // Filter based on the product label is not blank and contains the search term or not
+            const keyWords = this.searchTerm.split(/[\W_]+/ig);
+            return this.cart.lineItems.filter(item => {
+                if (!item.label) {
+                    return false;
+                }
+
+                return keyWords.every(key => item.label.toLowerCase().includes(key.toLowerCase()));
+            });
         },
 
         lineItemTypes() {
@@ -56,6 +76,22 @@ Component.register('sw-order-line-items-grid-sales-channel', {
             return !this.isCustomerActive || !this.isCartTokenAvailable || this.isLoading;
         },
 
+        taxStatus() {
+            return get(this.cart, 'price.taxStatus', '');
+        },
+
+        unitPriceLabel() {
+            if (this.taxStatus === 'net') {
+                return this.$tc('sw-order.createBase.columnPriceNet');
+            }
+
+            if (this.taxStatus === 'tax-free') {
+                return this.$tc('sw-order.createBase.columnPriceTaxFree');
+            }
+
+            return this.$tc('sw-order.createBase.columnPriceGross');
+        },
+
         getLineItemColumns() {
             const columnDefinitions = [{
                 property: 'label',
@@ -68,9 +104,7 @@ Component.register('sw-order-line-items-grid-sales-channel', {
             }, {
                 property: 'unitPrice',
                 dataIndex: 'unitPrice',
-                label: get(this.cart, 'price.taxStatus') === 'net' ?
-                    this.$tc('sw-order.createBase.columnPriceNet') :
-                    this.$tc('sw-order.createBase.columnPriceGross'),
+                label: this.unitPriceLabel,
                 allowResize: false,
                 align: 'right',
                 inlineEdit: true,
@@ -86,20 +120,24 @@ Component.register('sw-order-line-items-grid-sales-channel', {
             }, {
                 property: 'totalPrice',
                 dataIndex: 'totalPrice',
-                label: get(this.cart, 'price.taxStatus') === 'net' ?
+                label: this.taxStatus === 'net' ?
                     this.$tc('sw-order.createBase.columnTotalPriceNet') :
                     this.$tc('sw-order.createBase.columnTotalPriceGross'),
                 allowResize: false,
                 align: 'right',
                 width: '80px'
-            }, {
-                property: 'tax',
-                label: this.$tc('sw-order.createBase.columnTax'),
-                allowResize: false,
-                align: 'right',
-                inlineEdit: true,
-                width: '100px'
             }];
+
+            if (this.taxStatus !== 'tax-free') {
+                return [...columnDefinitions, {
+                    property: 'tax',
+                    label: this.$tc('sw-order.createBase.columnTax'),
+                    allowResize: false,
+                    align: 'right',
+                    inlineEdit: true,
+                    width: '100px'
+                }];
+            }
 
             return columnDefinitions;
         }
@@ -110,7 +148,7 @@ Component.register('sw-order-line-items-grid-sales-channel', {
             if (item.label === '') {
                 return;
             }
-
+            item.priceDefinition.isCalculated = true;
             this.$emit('on-save-item', item);
         },
 
@@ -140,9 +178,9 @@ Component.register('sw-order-line-items-grid-sales-channel', {
             };
             item.price = {
                 taxRules: [{ taxRate: 0 }],
-                unitPrice: 0,
+                unitPrice: '...',
                 quantity: 1,
-                totalPrice: 0
+                totalPrice: '...'
             };
             item.quantity = 1;
             item.unitPrice = 0;
@@ -238,6 +276,28 @@ Component.register('sw-order-line-items-grid-sales-channel', {
             }
 
             item.priceDefinition.price = price;
+        },
+
+        tooltipTaxDetail(item) {
+            const sortTaxes = [...item.price.calculatedTaxes].sort((prev, current) => {
+                return prev.taxRate - current.taxRate;
+            });
+
+            const decorateTaxes = sortTaxes.map((taxItem) => {
+                return this.$tc('sw-order.createBase.taxDetail', 0, {
+                    taxRate: taxItem.taxRate,
+                    tax: format.currency(taxItem.tax, this.currency.shortName)
+                });
+            });
+
+            return {
+                showDelay: 300,
+                message: `${this.$tc('sw-order.createBase.tax')}<br>${decorateTaxes.join('<br>')}`
+            };
+        },
+
+        hasMultipleTaxes(item) {
+            return get(item, 'price.calculatedTaxes') && item.price.calculatedTaxes.length > 1;
         }
     }
 });

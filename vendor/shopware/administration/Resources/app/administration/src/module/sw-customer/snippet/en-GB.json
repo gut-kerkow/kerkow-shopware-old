@@ -12,6 +12,19 @@
       "newCustomer": "New Customer",
       "tooltipLanguageSwitch": "Language selection deactivated, since there are no translatable fields."
     },
+    "customerGroupRegistration": {
+      "alert": "Access to customer group \"{name}\" requested.",
+      "accept": "Accept",
+      "acceptMessage": "Customer group has been changed",
+      "decline": "Decline",
+      "declineMessage": "Request has been declined",
+      "errorMessage": "Cannot process request",
+      "notification": {
+        "title": "Merchant status request",
+        "message": "Customer \"{name}\" requests access to customer group \"{groupName}\".",
+        "openCustomer": "Open customer"
+      }
+    },
     "card": {
       "placeholderTitle": "Title",
       "placeholderFirstName": "First name",
@@ -35,17 +48,21 @@
       "buttonAddCustomer": "Add customer",
       "columnCustomerNumber": "Customer number",
       "columnName": "Name",
+      "columnGroup": "Customer group",
+      "columnGroupRequested": "Request",
       "columnNameGuestLabel": "Guest account",
       "columnFirstName": "First name",
       "columnLastName": "Last name",
       "columnStreet": "Street",
       "columnZip": "Postal code",
       "columnCity": "City",
-      "columnEmail": "Email",
+      "columnEmail": "Email address",
       "columnLastLogin": "Last login",
       "columnActions": "Action(s)",
       "columnAffiliateCode": "Affiliate code",
       "columnCampaignCode": "Campaign code",
+      "columnBoundSalesChannel": "Bound to Sales Channel",
+      "emptyBoundSalesChannel": "No",
       "contextMenuView": "View",
       "contextMenuDelete": "Delete",
       "contextMenuDuplicate": "Duplicate",
@@ -57,7 +74,8 @@
       "titleSidebarItemRefresh": "Refresh",
       "titleSidebarItemFilter": "Filter",
       "titleSidebarItemFilterAffiliateCode": "Affiliate code",
-      "titleSidebarItemFilterCampaignCode": "Campaign code"
+      "titleSidebarItemFilterCampaignCode": "Campaign code",
+      "titleSidebarItemFilterRequestedGroup": "Show only customer group requests"
     },
     "baseForm": {
       "labelSalutation": "Salutation",
@@ -102,7 +120,9 @@
       "labelCampaignCode": "Campaign code",
       "contentActive": "Active | Inactive",
       "emptyTextLogin": "No login yet",
-      "emptyTextBirthday": "No information"
+      "emptyTextBirthday": "No information",
+      "labelBoundSalesChannel": "Bound to Sales Channel",
+      "emptyBoundSalesChannel": "No"
     },
     "detailBase": {
       "labelAccountCard": "Account",
@@ -199,6 +219,13 @@
       "messageSaveSuccess": "Customer \"{name}\" has been saved.",
       "notificationPasswordErrorMessage": "The submitted passwords do not match.",
       "notificationPasswordLengthErrorMessage": "The submitted password does not meet the minimum length requirement of 8."
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "customer": {
+        "label": "Customers"
+      }
     }
   }
 }

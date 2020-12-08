@@ -15,6 +15,14 @@ Component.register('sw-order-product-select', {
                 return [];
             }
         },
+
+        salesChannelId: {
+            type: String,
+            // @deprecated tag:v6.4.0 - salesChannelId will become required: true
+            required: false,
+            default: ''
+        },
+
         /** @deprecated tag:v6.4.0 */
         displayProductSelection: {
             type: Boolean,
@@ -22,8 +30,14 @@ Component.register('sw-order-product-select', {
             default() {
                 return true;
             }
-        }
+        },
 
+        taxStatus: {
+            type: String,
+            // @deprecated tag:v6.4.0 - taxStatus will become required: true
+            required: false,
+            default: ''
+        }
     },
 
     data() {
@@ -59,7 +73,25 @@ Component.register('sw-order-product-select', {
 
         productCriteria() {
             const criteria = new Criteria();
+
             criteria.addAssociation('options.group');
+
+            criteria.addFilter(
+                Criteria.multi(
+                    'OR',
+                    [
+                        Criteria.equals('product.childCount', 0),
+                        Criteria.equals('product.childCount', null)
+                    ]
+                )
+            );
+
+            // @deprecated tag:v6.4.0 - If-clause will be removed and filter will always be added
+            if (this.salesChannelId) {
+                criteria.addFilter(
+                    Criteria.equals('product.visibilities.salesChannelId', this.salesChannelId)
+                );
+            }
 
             return criteria;
         }
@@ -70,14 +102,17 @@ Component.register('sw-order-product-select', {
             this.productRepository.get(newProductId, this.contextWithInheritance).then((newProduct) => {
                 this.item.identifier = newProduct.id;
                 this.item.label = newProduct.name;
-                this.item.priceDefinition.price = newProduct.price[0].gross;
+                this.item.priceDefinition.price = this.taxStatus === 'gross'
+                    ? newProduct.price[0].gross
+                    : newProduct.price[0].net;
                 this.item.priceDefinition.type = this.lineItemPriceTypes.QUANTITY;
-                this.item.price.unitPrice = newProduct.price[0].gross;
-                this.item.price.totalPrice = 0;
+                this.item.price.unitPrice = '...';
+                this.item.price.totalPrice = '...';
                 this.item.price.quantity = 1;
-                this.item.totalPrice = 0;
+                this.item.unitPrice = '...';
+                this.item.totalPrice = '...';
                 this.item.precision = 2;
-                this.item.priceDefinition.taxRules.taxRate = newProduct.tax.taxRate;
+                this.item.priceDefinition.taxRules[0].taxRate = newProduct.tax.taxRate;
             });
         }
     }

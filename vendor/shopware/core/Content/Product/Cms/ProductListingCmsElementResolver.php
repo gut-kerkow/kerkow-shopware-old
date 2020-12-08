@@ -43,10 +43,18 @@ class ProductListingCmsElementResolver extends AbstractCmsElementResolver
         $request = $resolverContext->getRequest();
         $context = $resolverContext->getSalesChannelContext();
 
+        if ($this->isCustomSorting($slot)) {
+            $this->restrictSortings($request, $slot);
+            $this->addDefaultSorting($request, $slot);
+        }
+
         $navigationId = $this->getNavigationId($request, $context);
 
+        $criteria = new Criteria();
+        $criteria->setTitle('cms::product-listing');
+
         $listing = $this->listingRoute
-            ->load($navigationId, $request, $context, new Criteria())
+            ->load($navigationId, $request, $context, $criteria)
             ->getResult();
 
         $data->setListing($listing);
@@ -65,5 +73,50 @@ class ProductListingCmsElementResolver extends AbstractCmsElementResolver
         }
 
         return $salesChannelContext->getSalesChannel()->getNavigationCategoryId();
+    }
+
+    private function isCustomSorting(CmsSlotEntity $slot): bool
+    {
+        $config = $slot->getTranslation('config');
+
+        if ($config && isset($config['useCustomSorting']) && isset($config['useCustomSorting']['value'])) {
+            return $config['useCustomSorting']['value'];
+        }
+
+        return false;
+    }
+
+    private function addDefaultSorting(Request $request, CmsSlotEntity $slot): void
+    {
+        if ($request->get('order')) {
+            return;
+        }
+
+        $config = $slot->getTranslation('config');
+
+        if ($config && isset($config['defaultSorting']) && isset($config['defaultSorting']['value']) && $config['defaultSorting']['value']) {
+            $request->request->set('order', $config['defaultSorting']['value']);
+
+            return;
+        }
+
+        // if we have no specific order given at this point, set the order to be the highest's priority available sorting
+        if ($request->get('availableSortings')) {
+            $availableSortings = $request->get('availableSortings');
+            arsort($availableSortings, SORT_DESC | SORT_NUMERIC);
+
+            $request->request->set('order', \array_key_first($availableSortings));
+        }
+    }
+
+    private function restrictSortings(Request $request, CmsSlotEntity $slot): void
+    {
+        $config = $slot->getTranslation('config');
+
+        if (!$config || !isset($config['availableSortings']) || !isset($config['availableSortings']['value'])) {
+            return;
+        }
+
+        $request->request->set('availableSortings', $config['availableSortings']['value']);
     }
 }

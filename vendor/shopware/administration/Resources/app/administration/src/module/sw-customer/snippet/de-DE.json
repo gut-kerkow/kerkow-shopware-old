@@ -12,6 +12,19 @@
       "newCustomer": "Neuer Kunde",
       "tooltipLanguageSwitch": "Die Sprachauswahl ist deaktiviert, da keine übersetzbaren Felder existieren."
     },
+    "customerGroupRegistration": {
+      "alert": "Zugang zur Kundengruppe \"{name}\" angefragt.",
+      "accept": "Akzeptieren",
+      "acceptMessage": "Kundengruppe wurde geändert",
+      "decline": "Ablehnen",
+      "declineMessage": "Antrag wurde abgelehnt",
+      "errorMessage": "Anfrage kann nicht verarbeitet werden",
+      "notification": {
+        "title": "Händlerstatus-Anfrage",
+        "message": "Kunde \"{name}\" möchte in Kundengruppe \"{groupName}\" aufgenommen werden.",
+        "openCustomer": "Kunden öffnen"
+      }
+    },
     "card": {
       "placeholderTitle": "Titel",
       "placeholderFirstName": "Vorname",
@@ -35,6 +48,8 @@
       "buttonAddCustomer": "Kunden anlegen",
       "columnCustomerNumber": "Kundennummer",
       "columnName": "Name",
+      "columnGroup": "Kundengruppe",
+      "columnGroupRequested": "Angefragt:",
       "columnNameGuestLabel": "Gastbesteller",
       "columnFirstName": "Vorname",
       "columnLastName": "Nachname",
@@ -46,6 +61,8 @@
       "columnActions": "Aktion(en)",
       "columnAffiliateCode": "Affiliate-Code",
       "columnCampaignCode": "Kampagnen-Code",
+      "columnBoundSalesChannel": "Gebunden an Sales Channel",
+      "emptyBoundSalesChannel": "Nein",
       "contextMenuView": "Anzeigen",
       "contextMenuDuplicate": "Duplizieren",
       "contextMenuDelete": "Löschen",
@@ -57,7 +74,8 @@
       "titleSidebarItemRefresh": "Aktualisieren",
       "titleSidebarItemFilter": "Filter",
       "titleSidebarItemFilterAffiliateCode": "Affiliate-Code",
-      "titleSidebarItemFilterCampaignCode": "Kampagnen-Code"
+      "titleSidebarItemFilterCampaignCode": "Kampagnen-Code",
+      "titleSidebarItemFilterRequestedGroup": "Nur Kunden anzeigen mit Kundengruppen Anfrage"
     },
     "baseForm": {
       "labelSalutation": "Anrede",
@@ -102,7 +120,9 @@
       "labelCampaignCode": "Kampagnen-Code",
       "contentActive": "Aktiv | Inaktiv",
       "emptyTextLogin": "Noch keine Anmeldung",
-      "emptyTextBirthday": "keine Angabe"
+      "emptyTextBirthday": "keine Angabe",
+      "labelBoundSalesChannel": "Gebunden an Sales Channel",
+      "emptyBoundSalesChannel": "Nein"
     },
     "detailBase": {
       "labelAccountCard": "Konto",
@@ -198,8 +218,14 @@
       "messageSaveError": "Der Kunde konnte nicht gespeichert werden.",
       "messageSaveSuccess": "Der Kunde \"{name}\" wurde erfolgreich gespeichert.",
       "notificationPasswordErrorMessage": "Die eingegebenen Passwörter stimmen nicht überein.",
-      "notificationPasswordLengthErrorMessage": "Das Losungswort erfüllt nicht die Mindestlänge von 8."
-
+      "notificationPasswordLengthErrorMessage": "Das Passwort erfüllt nicht die Mindestlänge von 8 Zeichen."
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "customer": {
+        "label": "Kunden"
+      }
     }
   }
 }

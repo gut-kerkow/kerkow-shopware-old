@@ -1,4 +1,5 @@
 import { shallowMount } from '@vue/test-utils';
+import AclService from 'src/app/service/acl.service';
 import 'src/app/component/structure/sw-admin-menu-item';
 import catalogues from './_sw-admin-menu-item/catalogues';
 
@@ -35,6 +36,8 @@ function createWrapper({ propsData = {}, privileges = [] } = {}) {
         return privileges.includes(privilege);
     };
 
+    const aclService = new AclService(Shopware.State);
+
     return shallowMount(Shopware.Component.build('sw-admin-menu-item'), {
         sync: false,
         propsData: propsData,
@@ -65,28 +68,51 @@ function createWrapper({ propsData = {}, privileges = [] } = {}) {
                     }
 
                     return can(match.meta.privilege);
-                }
+                },
+                hasActiveSettingModules: aclService.hasActiveSettingModules,
+                state: aclService.state
             }
         }
     });
 }
 
+
 describe('src/app/component/structure/sw-admin-menu-item', () => {
     beforeAll(() => {
-        Shopware.FeatureConfig.isActive = () => true;
+        Shopware.Feature.isActive = () => true;
+        Shopware.Service().register('feature', () => {
+            return {
+                isActive: () => true
+            };
+        });
+
+        Shopware.State.registerModule('settingsItems', {
+            namespaced: true,
+            state: {
+                settingsGroups: {
+                    shop: [],
+                    system: []
+                }
+            }
+        });
     });
 
-    it('should be a Vue.js component', () => {
+    beforeEach(() => {
+        Shopware.State.get('settingsItems').settingsGroups.shop = [];
+        Shopware.State.get('settingsItems').settingsGroups.system = [];
+    });
+
+    it('should be a Vue.js component', async () => {
         const wrapper = createWrapper({
             propsData: {
                 entry: catalogues
             }
         });
 
-        expect(wrapper.isVueInstance()).toBeTruthy();
+        expect(wrapper.vm).toBeTruthy();
     });
 
-    it('should contain all menu entries', () => {
+    it('should contain all menu entries', async () => {
         const wrapper = createWrapper({
             propsData: {
                 entry: catalogues
@@ -104,10 +130,10 @@ describe('src/app/component/structure/sw-admin-menu-item', () => {
         expect(children.at(4).classes()).toContain('sw-property');
         expect(children.at(5).classes()).toContain('sw-manufacturer');
 
-        expect(wrapper.isVueInstance()).toBeTruthy();
+        expect(wrapper.vm).toBeTruthy();
     });
 
-    it('should show only one entry without children', () => {
+    it('should show only one entry without children', async () => {
         const wrapper = createWrapper({
             propsData: {
                 entry: {
@@ -129,7 +155,7 @@ describe('src/app/component/structure/sw-admin-menu-item', () => {
         expect(wrapper.classes()).toContain('sw-product');
     });
 
-    it('should show a link when a path is provided', () => {
+    it('should show a link when a path is provided', async () => {
         const wrapper = createWrapper({
             propsData: {
                 entry: {
@@ -152,7 +178,7 @@ describe('src/app/component/structure/sw-admin-menu-item', () => {
         });
     });
 
-    it('should not show a link when no path is provided', () => {
+    it('should not show a link when no path is provided', async () => {
         const wrapper = createWrapper({
             propsData: {
                 entry: catalogues
@@ -160,10 +186,10 @@ describe('src/app/component/structure/sw-admin-menu-item', () => {
         });
 
         const navigationLink = wrapper.find('.sw-admin-menu__navigation-link');
-        expect(navigationLink.is('span')).toBeTruthy();
+        expect(navigationLink.element.tagName).toBe('SPAN');
     });
 
-    it('should not show the menu entry when user has no privilege', () => {
+    it('should not show the menu entry when user has no privilege', async () => {
         const wrapper = createWrapper({
             propsData: {
                 entry: {
@@ -180,10 +206,10 @@ describe('src/app/component/structure/sw-admin-menu-item', () => {
             }
         });
 
-        expect(wrapper.html()).toBeUndefined();
+        expect(wrapper.html()).toBe('');
     });
 
-    it('should show the menu entry when user has the privilege', () => {
+    it('should show the menu entry when user has the privilege', async () => {
         const wrapper = createWrapper({
             privileges: ['product.viewer'],
             propsData: {
@@ -201,10 +227,10 @@ describe('src/app/component/structure/sw-admin-menu-item', () => {
             }
         });
 
-        expect(wrapper.html()).toBeDefined();
+        expect(wrapper.html().length).toBeGreaterThan(1);
     });
 
-    it('should not show a link when the path goes to a route which needs a privilege which is not set', () => {
+    it('should not show a link when the path goes to a route which needs a privilege which is not set', async () => {
         const wrapper = createWrapper({
             privileges: [],
             propsData: {
@@ -241,10 +267,10 @@ describe('src/app/component/structure/sw-admin-menu-item', () => {
         });
 
         const navigationLink = wrapper.find('.sw-admin-menu__navigation-link');
-        expect(navigationLink.is('span')).toBeTruthy();
+        expect(navigationLink.element.tagName).toBe('SPAN');
     });
 
-    it('should show a link when the path goes to a route which needs a privilege which is set', () => {
+    it('should show a link when the path goes to a route which needs a privilege which is set', async () => {
         const wrapper = createWrapper({
             privileges: ['product.viewer'],
             propsData: {
@@ -283,8 +309,8 @@ describe('src/app/component/structure/sw-admin-menu-item', () => {
         });
 
         const navigationLink = wrapper.find('.sw-admin-menu__navigation-link');
-        expect(navigationLink.is('span')).toBeFalsy();
-        expect(navigationLink.is('a')).toBeTruthy();
+        expect(navigationLink.element.tagName).not.toBe('SPAN');
+        expect(navigationLink.element.tagName).toBe('A');
 
         expect(navigationLink.props().to).toMatchObject({
             name: 'sw.product.index'
@@ -292,7 +318,7 @@ describe('src/app/component/structure/sw-admin-menu-item', () => {
     });
 
     // eslint-disable-next-line max-len
-    it('should not show the menu entry when all children have privileges the user do not have and the main path is also restricted', () => {
+    it('should not show the menu entry when all children have privileges the user do not have and the main path is also restricted', async () => {
         const wrapper = createWrapper({
             privileges: [],
             propsData: {
@@ -329,10 +355,10 @@ describe('src/app/component/structure/sw-admin-menu-item', () => {
             }
         });
 
-        expect(wrapper.html()).toBeUndefined();
+        expect(wrapper.html()).toBe('');
     });
 
-    it('should not show the menu entry when all children have privileges the user do not have', () => {
+    it('should not show the menu entry when all children have privileges the user do not have', async () => {
         const wrapper = createWrapper({
             privileges: [],
             propsData: {
@@ -368,7 +394,7 @@ describe('src/app/component/structure/sw-admin-menu-item', () => {
             }
         });
 
-        expect(wrapper.html()).toBeUndefined();
+        expect(wrapper.html()).toBe('');
     });
 
     // eslint-disable-next-line max-len
@@ -410,9 +436,80 @@ describe('src/app/component/structure/sw-admin-menu-item', () => {
         });
 
         const navigationLink = wrapper.find('.sw-admin-menu__navigation-link');
-        expect(navigationLink.is('a')).toBeTruthy();
+        expect(navigationLink.element.tagName).toBe('A');
         expect(navigationLink.props().to).toMatchObject({
             name: 'sw.cms.index'
         });
+    });
+
+    test('should hide settings menu if no item is visible', () => {
+        Shopware.State.get('settingsItems').settingsGroups.shop = [
+            { privilege: 'no-set', path: 'test' }
+        ];
+
+        const wrapper = createWrapper({
+            privileges: [],
+            propsData: {
+                entry: {
+                    id: 'sw-settings.index',
+                    label: 'sw-product.general.mainMenuItemGeneral',
+                    color: '#57D9A3',
+                    path: 'sw.settings.index',
+                    icon: 'default-symbol-products',
+                    position: 10
+                }
+            }
+        });
+
+        expect(wrapper.html()).toBe('');
+    });
+
+
+    test('settings should be shown if all item is visible', () => {
+        Shopware.State.get('settingsItems').settingsGroups.shop = [
+            { privilege: 'priv-1' },
+            { privilege: 'priv-2' }
+        ];
+
+        const wrapper = createWrapper({
+            privileges: ['priv-1', 'priv2'],
+            propsData: {
+                entry: {
+                    id: 'sw-settings.index',
+                    label: 'sw-product.general.mainMenuItemGeneral',
+                    color: '#57D9A3',
+                    path: 'sw.settings.index',
+                    icon: 'default-symbol-products',
+                    position: 10,
+                    children: []
+                }
+            }
+        });
+
+        expect(wrapper.html()).not.toBe('');
+    });
+
+    test('settings should be shown if one item is visible', () => {
+        Shopware.State.get('settingsItems').settingsGroups.shop = [
+            { privilege: 'priv-1' },
+            { privilege: 'priv-2' }
+        ];
+
+        const wrapper = createWrapper({
+            privileges: ['priv-1'],
+            propsData: {
+                entry: {
+                    id: 'sw-settings.index',
+                    label: 'sw-product.general.mainMenuItemGeneral',
+                    color: '#57D9A3',
+                    path: 'sw.settings.index',
+                    icon: 'default-symbol-products',
+                    position: 10,
+                    children: []
+                }
+            }
+        });
+
+        expect(wrapper.html()).not.toBe('');
     });
 });

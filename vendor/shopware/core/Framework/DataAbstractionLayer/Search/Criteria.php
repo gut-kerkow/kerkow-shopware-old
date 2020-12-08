@@ -79,7 +79,7 @@ class Criteria extends Struct
     protected $associations = [];
 
     /**
-     * @var string[]
+     * @var string[]|array<int, string[]>
      */
     protected $ids;
 
@@ -104,6 +104,13 @@ class Criteria extends Struct
     protected $includes;
 
     /**
+     * @var string|null
+     */
+    protected $title;
+
+    /**
+     * @param string[]|array<int, string[]> $ids
+     *
      * @throws InconsistentCriteriaIdsException
      */
     public function __construct(array $ids = [])
@@ -115,6 +122,9 @@ class Criteria extends Struct
         $this->ids = $ids;
     }
 
+    /**
+     * @return string[]|array<int, string[]>
+     */
     public function getIds(): array
     {
         return $this->ids;
@@ -188,6 +198,9 @@ class Criteria extends Struct
         return $this->queries;
     }
 
+    /**
+     * @return Criteria[]
+     */
     public function getAssociations(): array
     {
         return $this->associations;
@@ -273,8 +286,6 @@ class Criteria extends Struct
      * $criteria->addAssociation('categories.media.thumbnails')
      *
      * @throws InconsistentCriteriaIdsException
-     *
-     * @return Criteria
      */
     public function addAssociation(string $path): self
     {
@@ -304,8 +315,6 @@ class Criteria extends Struct
      * ]);
      *
      * @throws InconsistentCriteriaIdsException
-     *
-     * @return Criteria
      */
     public function addAssociations(array $paths): self
     {
@@ -423,6 +432,9 @@ class Criteria extends Struct
         ]);
     }
 
+    /**
+     * @param string[]|array<int, string[]> $ids
+     */
     public function setIds(array $ids): self
     {
         $this->ids = $ids;
@@ -454,9 +466,13 @@ class Criteria extends Struct
         return $this;
     }
 
+    /**
+     * @param string[]|array<int, string[]> $ids
+     */
     public function cloneForRead(array $ids = []): Criteria
     {
         $self = new self($ids);
+        $self->setTitle($this->getTitle());
 
         $associations = [];
 
@@ -533,6 +549,16 @@ class Criteria extends Struct
     public function removeAssociation(string $association): void
     {
         unset($this->associations[$association]);
+    }
+
+    public function getTitle(): ?string
+    {
+        return $this->title;
+    }
+
+    public function setTitle(?string $title): void
+    {
+        $this->title = $title;
     }
 
     private function collectFields(array $parts): array

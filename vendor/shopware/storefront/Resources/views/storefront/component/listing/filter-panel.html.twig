@@ -19,8 +19,10 @@
                         {# @var manufacturers \Shopware\Core\Framework\DataAbstractionLayer\Search\AggregationResult\Metric\EntityResult #}
                         {% set manufacturers = listing.aggregations.get('manufacturer') %}
                         {% if not manufacturers.entities is empty %}
+                            {% set manufacturersSorted = manufacturers.entities|sort((a, b) => a.translated.name|lower > b.translated.name|lower) %}
+
                             {% sw_include '@Storefront/storefront/component/listing/filter/filter-multi-select.html.twig' with {
-                                elements: manufacturers.entities,
+                                elements: manufacturersSorted,
                                 sidebar: sidebar,
                                 name: 'manufacturer',
                                 displayName: 'listing.filterManufacturerDisplayName'|trans|sw_sanitize
@@ -40,7 +42,8 @@
                                     name: 'properties',
                                     displayName: property.translated.name,
                                     displayType: property.displayType,
-                                    pluginSelector: 'filter-property-select'
+                                    pluginSelector: 'filter-property-select',
+                                    propertyName: property.translated.name
                                 } %}
                             {% endfor %}
                         {% endif %}
@@ -64,7 +67,7 @@
                     {% block component_filter_panel_item_rating %}
                         {% set rating = listing.aggregations.get('rating') %}
 
-                        {% if not rating is empty %}
+                        {% if rating.max > 0 %}
                             {% sw_include '@Storefront/storefront/component/listing/filter/filter-rating.html.twig' with {
                                 name: 'rating',
                                 displayName: 'listing.filterRatingDisplayName'|trans|sw_sanitize

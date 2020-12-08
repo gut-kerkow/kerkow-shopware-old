@@ -21,6 +21,7 @@ function createWrapper() {
     const localVue = createLocalVue();
     localVue.use(Vuex);
     localVue.filter('asset', () => {});
+    localVue.directive('tooltip', {});
 
     return shallowMount(Shopware.Component.build('sw-product-detail-cross-selling'), {
         localVue,
@@ -39,7 +40,8 @@ function createWrapper() {
         provide: {
             repositoryFactory: {
                 create: () => ({ search: () => Promise.resolve('bar') })
-            }
+            },
+            acl: { can: () => true }
         }
     });
 }
@@ -66,8 +68,8 @@ describe('src/module/sw-product/view/sw-product-detail-cross-selling', () => {
         wrapper.destroy();
     });
 
-    it('should be a Vue.JS component', () => {
-        expect(wrapper.isVueInstance()).toBe(true);
+    it('should be a Vue.JS component', async () => {
+        expect(wrapper.vm).toBeTruthy();
     });
 
     it('should load assigned products', async () => {

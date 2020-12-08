@@ -5,6 +5,9 @@ const { Component, Locale, Mixin, Data: { Criteria } } = Shopware;
 
 Component.register('sw-settings-custom-field-set-list', {
     template,
+
+    inject: ['acl', 'feature'],
+
     mixins: [
         Mixin.getByName('sw-inline-snippet'),
         Mixin.getByName('sw-settings-list')
@@ -56,6 +59,8 @@ Component.register('sw-settings-custom-field-set-list', {
                 ]
             ));
 
+            criteria.addFilter(Criteria.equals('appId', null));
+
             return criteria;
         }
     },
@@ -66,26 +71,26 @@ Component.register('sw-settings-custom-field-set-list', {
                 return [];
             }
 
-            const criterias = [];
+            const criteria = [];
             const locales = Locale.getLocaleRegistry();
 
             locales.forEach((value, key) => {
-                criterias.push(Criteria.contains(
+                criteria.push(Criteria.contains(
                     `config.label.\"${key}\"`, term
                 ));
             });
 
-            return criterias;
+            return criteria;
         },
 
         getTermCriteria(term) {
-            const criterias = [];
+            const criteria = [];
 
             if (term) {
-                criterias.push(Criteria.contains('name', term));
+                criteria.push(Criteria.contains('name', term));
             }
 
-            return criterias;
+            return criteria;
         }
     }
 });

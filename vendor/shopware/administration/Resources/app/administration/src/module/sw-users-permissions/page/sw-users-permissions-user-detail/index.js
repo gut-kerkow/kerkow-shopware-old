@@ -2,11 +2,10 @@ import { email } from 'src/core/service/validation.service';
 import template from './sw-users-permissions-user-detail.html.twig';
 import './sw-users-permissions-user-detail.scss';
 
-const { Component, Mixin, State } = Shopware;
+const { Component, Mixin } = Shopware;
 const { Criteria } = Shopware.Data;
 const { mapPropertyErrors } = Component.getComponentHelper();
 const { warn } = Shopware.Utils.debug;
-const types = Shopware.Utils.types;
 
 Component.register('sw-users-permissions-user-detail', {
     template,
@@ -16,7 +15,8 @@ Component.register('sw-users-permissions-user-detail', {
         'loginService',
         'userValidationService',
         'integrationService',
-        'repositoryFactory'
+        'repositoryFactory',
+        'acl'
     ],
 
     mixins: [
@@ -52,8 +52,7 @@ Component.register('sw-users-permissions-user-detail', {
             showSecretAccessKey: false,
             showDeleteModal: null,
             skeletonItemAmount: 3,
-            confirmPasswordModal: false,
-            confirmPassword: ''
+            confirmPasswordModal: false
         };
     },
 
@@ -90,6 +89,15 @@ Component.register('sw-users-permissions-user-detail', {
             criteria.addAssociation('accessKeys');
             criteria.addAssociation('locale');
             criteria.addAssociation('aclRoles');
+
+            return criteria;
+        },
+
+        aclRoleCriteria() {
+            const criteria = new Criteria();
+
+            // Roles created by apps should not be assignable in the admin
+            criteria.addFilter(Criteria.equals('app.id', null));
 
             return criteria;
         },
@@ -145,9 +153,6 @@ Component.register('sw-users-permissions-user-detail', {
             return [{
                 property: 'accessKey',
                 label: this.$tc('sw-users-permissions.users.user-detail.labelAccessKey')
-            }, {
-                property: 'writeAccess',
-                label: this.$tc('sw-users-permissions.users.user-detail.labelPermissions')
             }];
         },
 
@@ -319,21 +324,13 @@ Component.register('sw-users-permissions-user-detail', {
             this.confirmPasswordModal = true;
         },
 
-        saveUser(authToken) {
+        saveUser(context) {
             this.isSaveSuccessful = false;
             this.isLoading = true;
             let promises = [];
 
             if (this.currentUser.id === this.user.id) {
                 promises = [Shopware.Service('localeHelper').setLocaleWithId(this.user.localeId)];
-            }
-
-            if (!this.user.title || this.user.title.length <= 0) {
-                const firstRole = this.user.aclRoles.first();
-
-                if (firstRole) {
-                    this.user.title = firstRole.name;
-                }
             }
 
             return Promise.all(promises).then(this.checkEmail().then(() => {
@@ -344,14 +341,12 @@ Component.register('sw-users-permissions-user-detail', {
                         'sw-users-permissions.users.user-detail.notification.saveError.message', 0, { name: this.fullName }
                     );
 
-                    const context = { ...Shopware.Context.api };
-                    context.authToken.access = authToken;
-
                     return this.userRepository.save(this.user, context).then(() => {
                         return this.updateCurrentUser();
                     }).then(() => {
                         this.createdComponent();
 
+                        this.confirmPasswordModal = false;
                         this.isSaveSuccessful = true;
                     }).catch((exception) => {
                         this.createNotificationError({
@@ -368,7 +363,6 @@ Component.register('sw-users-permissions-user-detail', {
                 }
 
                 this.createNotificationError({
-                    title: this.$tc('global.default.error'),
                     message: this.$tc('sw-users-permissions.users.user-detail.notification.duplicateEmailErrorMessage')
                 });
 
@@ -459,43 +453,8 @@ Component.register('sw-users-permissions-user-detail', {
             this.user.accessKeys.remove(id);
         },
 
-        async onSubmitConfirmPassword() {
-            const verifiedToken = await this.verifyUserToken();
-
-            if (!verifiedToken) {
-                return;
-            }
-
-            await this.saveUser(verifiedToken);
-
-            this.confirmPasswordModal = false;
-        },
-
         onCloseConfirmPasswordModal() {
-            this.confirmPassword = '';
             this.confirmPasswordModal = false;
-        },
-
-        verifyUserToken() {
-            const { username } = State.get('session').currentUser;
-
-            return this.loginService.verifyUserByUsername(username, this.confirmPassword).then(({ access }) => {
-                this.confirmPassword = '';
-
-                if (types.isString(access)) {
-                    return access;
-                }
-
-                return false;
-            }).catch(() => {
-                this.confirmPassword = '';
-                this.createNotificationError({
-                    title: this.$tc('sw-settings-user.user-detail.passwordConfirmation.notificationPasswordErrorTitle'),
-                    message: this.$tc('sw-settings-user.user-detail.passwordConfirmation.notificationPasswordErrorMessage')
-                });
-
-                return false;
-            });
         }
     }
 });

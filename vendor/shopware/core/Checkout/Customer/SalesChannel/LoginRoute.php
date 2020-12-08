@@ -14,11 +14,14 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
+use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopware\Core\Framework\Routing\Annotation\ContextTokenRequired;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextPersister;
+use Shopware\Core\System\SalesChannel\Context\SalesChannelContextRestorer;
 use Shopware\Core\System\SalesChannel\ContextTokenResponse;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
@@ -51,16 +54,23 @@ class LoginRoute extends AbstractLoginRoute
      */
     private $legacyPasswordVerifier;
 
+    /**
+     * @var SalesChannelContextRestorer|null
+     */
+    private $contextRestorer;
+
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         SalesChannelContextPersister $contextPersister,
         EntityRepositoryInterface $customerRepository,
-        LegacyPasswordVerifier $legacyPasswordVerifier
+        LegacyPasswordVerifier $legacyPasswordVerifier,
+        ?SalesChannelContextRestorer $contextRestorer
     ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->contextPersister = $contextPersister;
         $this->customerRepository = $customerRepository;
         $this->legacyPasswordVerifier = $legacyPasswordVerifier;
+        $this->contextRestorer = $contextRestorer;
     }
 
     public function getDecorated(): AbstractLoginRoute
@@ -121,15 +131,21 @@ class LoginRoute extends AbstractLoginRoute
             throw new InactiveCustomerException($customer->getId());
         }
 
-        $newToken = $this->contextPersister->replace($context->getToken());
-        $this->contextPersister->save(
-            $newToken,
-            [
-                'customerId' => $customer->getId(),
-                'billingAddressId' => null,
-                'shippingAddressId' => null,
-            ]
-        );
+        if (Feature::isActive('FEATURE_NEXT_10058') && $this->contextRestorer) {
+            $context = $this->contextRestorer->restore($customer->getId(), $context);
+            $newToken = $context->getToken();
+        } else {
+            $newToken = $this->contextPersister->replace($context->getToken(), $context);
+
+            $this->contextPersister->save(
+                $newToken,
+                [
+                    'customerId' => $customer->getId(),
+                    'billingAddressId' => null,
+                    'shippingAddressId' => null,
+                ]
+            );
+        }
 
         $this->customerRepository->update([
             [
@@ -170,6 +186,13 @@ class LoginRoute extends AbstractLoginRoute
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('customer.email', $email));
         $criteria->addFilter(new EqualsFilter('customer.guest', 0));
+
+        if (Feature::isActive('FEATURE_NEXT_10555')) {
+            $criteria->addFilter(new MultiFilter(MultiFilter::CONNECTION_OR, [
+                new EqualsFilter('customer.boundSalesChannelId', null),
+                new EqualsFilter('customer.boundSalesChannelId', $context->getSalesChannel()->getId()),
+            ]));
+        }
 
         $result = $this->customerRepository->search($criteria, $context->getContext());
 

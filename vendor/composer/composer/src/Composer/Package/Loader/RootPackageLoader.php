@@ -81,8 +81,10 @@ class RootPackageLoader extends ArrayLoader
         if (!isset($config['version'])) {
             $commit = null;
 
-            // override with env var if available
-            if (getenv('COMPOSER_ROOT_VERSION')) {
+            if (isset($config['extra']['branch-version'])) {
+                $config['version'] = preg_replace('{(\.x)?(-dev)?$}', '', $config['extra']['branch-version']).'.x-dev';
+            } elseif (getenv('COMPOSER_ROOT_VERSION')) {
+                // override with env var if available
                 $config['version'] = getenv('COMPOSER_ROOT_VERSION');
             } else {
                 $versionData = $this->versionGuesser->guessVersion($config, $cwd ?: getcwd());
@@ -139,6 +141,11 @@ class RootPackageLoader extends ArrayLoader
                 $aliases = $this->extractAliases($links, $aliases);
                 $stabilityFlags = $this->extractStabilityFlags($links, $stabilityFlags, $realPackage->getMinimumStability());
                 $references = $this->extractReferences($links, $references);
+
+                if (isset($links[$config['name']])) {
+                    throw new \RuntimeException(sprintf('Root package \'%s\' cannot require itself in its composer.json' . PHP_EOL .
+                                'Did you accidentally name your root package after an external package?', $config['name']));
+                }
             }
         }
 
@@ -152,11 +159,6 @@ class RootPackageLoader extends ArrayLoader
                     }
                 }
             }
-        }
-
-        if (isset($links[$config['name']])) {
-            throw new \InvalidArgumentException(sprintf('Root package \'%s\' cannot require itself in its composer.json' . PHP_EOL .
-                        'Did you accidentally name your root package after an external package?', $config['name']));
         }
 
         $realPackage->setAliases($aliases);
@@ -190,6 +192,8 @@ class RootPackageLoader extends ArrayLoader
                     'alias' => $match[2],
                     'alias_normalized' => $this->versionParser->normalize($match[2], $reqVersion),
                 );
+            } elseif (strpos($reqVersion, ' as ') !== false) {
+                throw new \UnexpectedValueException('Invalid alias definition in "'.$reqName.'": "'.$reqVersion.'". Aliases should be in the form "exact-version as other-exact-version".');
             }
         }
 

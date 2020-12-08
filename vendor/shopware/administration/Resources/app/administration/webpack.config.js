@@ -65,7 +65,7 @@ const pluginEntries = (() => {
     const pluginDefinition = JSON.parse(fs.readFileSync(pluginFile, 'utf8'));
 
     return Object.entries(pluginDefinition)
-        .filter(([name, definition]) => !!definition.administration.entryFilePath)
+        .filter(([name, definition]) => !!definition.administration && !!definition.administration.entryFilePath)
         .map(([name, definition]) => {
             console.log(chalk.green(`# Plugin "${name}": Injected successfully`));
 
@@ -85,7 +85,7 @@ console.log();
 
 const webpackConfig = {
     mode: isDev ? 'development' : 'production',
-
+    bail: isDev ? false : true,
     stats: {
         all: false,
         colors: true,
@@ -492,49 +492,17 @@ const webpackConfig = {
                         template: 'index.html.tpl',
                         templateParameters: {
                             featureFlags: (() => {
-                                const envResult = dotenv.config({ path: process.env.ENV_FILE });
+                                const getFeatureFlagNames = (sourceFolder) => {
+                                    const flagsPath = path.join(sourceFolder, '/config_js_features.json');
 
-                                if (envResult.hasOwnProperty('error')) {
-                                    console.error('utils-load-feature-flags', 'Unable to load .env file, no features registered.', envResult.error);
-                                    return {};
+                                    if (!fs.existsSync(flagsPath)) {
+                                        return '{}';
+                                    }
+
+                                    return fs.readFileSync(flagsPath);
                                 }
 
-                                const allNames = fs.readdirSync(path.join(__dirname, './src/flag'))
-                                    .filter((file) => {
-                                        return file.indexOf('feature_') === 0;
-                                    })
-                                    .map(file => {
-                                        return path.basename(
-                                            file.substring(8),
-                                            '.js'
-                                        );
-                                    });
-
-                                const allActive = Object.keys(envResult.parsed)
-                                    .filter((key) => {
-                                        return key.indexOf('FEATURE_') === 0;
-                                    }).reduce((obj, key) => {
-                                        const clearedKey = key
-                                            .substring(8)
-                                            .split('_')
-                                            .map((part) => {
-                                                return part[0].toUpperCase() + part.substr(1).toLowerCase();
-                                            })
-                                            .join('')
-                                            .replace(/^./, (part) => { return part.toLowerCase(); });
-
-                                        if (envResult.parsed[key] === '1') {
-                                            obj[clearedKey] = true;
-                                        }
-                                        return obj;
-                                    }, {});
-
-                                const flagConfig = {};
-                                allNames.forEach((flagName) => {
-                                    flagConfig[flagName] = allActive.hasOwnProperty(flagName);
-                                });
-
-                                return JSON.stringify(flagConfig);
+                                return getFeatureFlagNames(path.join(__dirname, '../../../../../../var'));
                             })(),
                             // TODO: NEXT-7581 - Implement a version dump in the backend and read here the version file
                             apiVersion: 3

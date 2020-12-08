@@ -159,7 +159,6 @@
             "rulesPlaceholder": "Warenkorbregel zuweisen ...",
             "setgroups": {
               "switchGroupsEnabled": "Aktion auf Produkt-Sets anwenden",
-              "switchGroupsExperimental": "Experimentelle Features aktivieren",
               "buttonAddGroup": "Set-Gruppe hinzufügen",
               "titleName": "Set-Gruppe",
               "labelMode": "Modus",
@@ -209,6 +208,13 @@
             "labelPrice": "Wert"
           }
         }
+      }
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "promotion": {
+        "label": "Rabatte & Aktionen"
       }
     }
   }

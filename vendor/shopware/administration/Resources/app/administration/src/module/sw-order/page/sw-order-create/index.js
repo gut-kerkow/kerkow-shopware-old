@@ -55,7 +55,6 @@ Component.register('sw-order-create', {
             State.unregisterModule('swOrder');
         },
 
-
         redirectToOrderList() {
             this.$router.push({ name: 'sw.order.index' });
         },
@@ -79,7 +78,7 @@ Component.register('sw-order-create', {
                         this.isSaveSuccessful = true;
                         this.orderId = get(response, 'data.id');
                     })
-                    .catch(() => this.showError())
+                    .catch((error) => this.showError(error))
                     .finally(() => {
                         this.isLoading = false;
                     });
@@ -104,10 +103,11 @@ Component.register('sw-order-create', {
                 .then(() => this.redirectToOrderList());
         },
 
-        showError() {
+        showError(error) {
+            const errorMessage = get(error, 'response.data.errors[0].detail') || null;
+
             this.createNotificationError({
-                title: this.$tc('global.default.error'),
-                message: this.$tc('sw-order.create.messageSaveError')
+                message: errorMessage || this.$tc('sw-order.create.messageSaveError')
             });
         },
 

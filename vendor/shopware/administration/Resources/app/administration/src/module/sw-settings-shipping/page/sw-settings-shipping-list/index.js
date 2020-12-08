@@ -6,7 +6,7 @@ const { Component, Mixin, Data: { Criteria } } = Shopware;
 Component.register('sw-settings-shipping-list', {
     template,
 
-    inject: ['repositoryFactory'],
+    inject: ['repositoryFactory', 'acl', 'feature'],
 
     mixins: [
         Mixin.getByName('listing'),
@@ -36,7 +36,7 @@ Component.register('sw-settings-shipping-list', {
         },
 
         columns() {
-            return [{
+            let columns = [{
                 property: 'name',
                 label: 'sw-settings-shipping.list.columnName',
                 inlineEdit: 'string',
@@ -55,6 +55,17 @@ Component.register('sw-settings-shipping-list', {
                 allowResize: true,
                 align: 'center'
             }];
+
+            if (this.feature.isActive('FEATURE_NEXT_6995')) {
+                columns = [...columns, {
+                    property: 'taxType',
+                    label: 'sw-settings-shipping.list.columnTaxType',
+                    inlineEdit: 'string',
+                    allowResize: true
+                }];
+            }
+
+            return columns;
         },
 
         listingCriteria() {
@@ -69,6 +80,19 @@ Component.register('sw-settings-shipping-list', {
             );
 
             return criteria;
+        },
+
+        shippingCostTaxOptions() {
+            return [{
+                label: this.$tc('sw-settings-shipping.shippingCostOptions.auto'),
+                value: 'auto'
+            }, {
+                label: this.$tc('sw-settings-shipping.shippingCostOptions.highest'),
+                value: 'highest'
+            }, {
+                label: this.$tc('sw-settings-shipping.shippingCostOptions.fixed'),
+                value: 'fixed'
+            }];
         }
     },
 
@@ -92,12 +116,10 @@ Component.register('sw-settings-shipping-list', {
             return this.entityRepository.save(item, Shopware.Context.api)
                 .then(() => {
                     this.createNotificationSuccess({
-                        title: this.$tc('global.default.success'),
                         message: this.$tc('sw-settings-shipping.list.messageSaveSuccess', 0, { name })
                     });
                 }).catch(() => {
                     this.createNotificationError({
-                        title: this.$tc('global.default.error'),
                         message: this.$tc('sw-settings-shipping.list.messageSaveError', 0, { name })
                     });
                 }).finally(() => {
@@ -116,12 +138,10 @@ Component.register('sw-settings-shipping-list', {
             this.shippingRepository.delete(id, Shopware.Context.api)
                 .then(() => {
                     this.createNotificationSuccess({
-                        title: this.$tc('global.default.success'),
                         message: this.$tc('sw-settings-shipping.list.messageDeleteSuccess', 0, { name })
                     });
                 }).catch(() => {
                     this.createNotificationError({
-                        title: this.$tc('global.default.error'),
                         message: this.$tc('sw-settings-shipping.list.messageDeleteError', 0, { name })
                     });
                 }).finally(() => {
@@ -137,6 +157,16 @@ Component.register('sw-settings-shipping-list', {
         onChangeLanguage(languageId) {
             Shopware.State.commit('context/setApiLanguageId', languageId);
             this.getList();
+        },
+
+        shippingTaxTypeLabel(taxName) {
+            if (!taxName) {
+                return '';
+            }
+
+            const tax = this.shippingCostTaxOptions.find((i) => taxName === i.value) || '';
+
+            return tax && tax.label;
         }
     }
 });

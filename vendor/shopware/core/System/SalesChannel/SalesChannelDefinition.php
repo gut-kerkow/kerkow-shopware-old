@@ -3,6 +3,7 @@
 namespace Shopware\Core\System\SalesChannel;
 
 use Shopware\Core\Checkout\Customer\Aggregate\CustomerGroup\CustomerGroupDefinition;
+use Shopware\Core\Checkout\Customer\Aggregate\CustomerGroupRegistrationSalesChannel\CustomerGroupRegistrationSalesChannelDefinition;
 use Shopware\Core\Checkout\Customer\CustomerDefinition;
 use Shopware\Core\Checkout\Document\Aggregate\DocumentBaseConfigSalesChannel\DocumentBaseConfigSalesChannelDefinition;
 use Shopware\Core\Checkout\Order\OrderDefinition;
@@ -41,6 +42,9 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\TranslatedField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\TranslationsAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\FieldCollection;
+use Shopware\Core\Framework\Event\EventAction\Aggregate\EventActionSalesChannel\EventActionSalesChannelDefinition;
+use Shopware\Core\Framework\Event\EventAction\EventActionDefinition;
+use Shopware\Core\Framework\Feature;
 use Shopware\Core\System\Country\CountryDefinition;
 use Shopware\Core\System\Currency\CurrencyDefinition;
 use Shopware\Core\System\Language\LanguageDefinition;
@@ -86,7 +90,7 @@ class SalesChannelDefinition extends EntityDefinition
 
     protected function defineFields(): FieldCollection
     {
-        return new FieldCollection([
+        $fields = new FieldCollection([
             (new IdField('id', 'id'))->addFlags(new PrimaryKey(), new Required()),
             (new FkField('type_id', 'typeId', SalesChannelTypeDefinition::class))->addFlags(new Required()),
             (new FkField('language_id', 'languageId', LanguageDefinition::class))->addFlags(new Required()),
@@ -165,6 +169,18 @@ class SalesChannelDefinition extends EntityDefinition
             (new OneToManyAssociationField('mainCategories', MainCategoryDefinition::class, 'sales_channel_id'))->addFlags(new CascadeDelete()),
             (new OneToManyAssociationField('productExports', ProductExportDefinition::class, 'sales_channel_id', 'id'))->addFlags(new ReadProtected(SalesChannelApiSource::class)),
             (new OneToOneAssociationField('analytics', 'analytics_id', 'id', SalesChannelAnalyticsDefinition::class, true))->addFlags(new CascadeDelete()),
+            new ManyToManyAssociationField('customerGroupsRegistrations', CustomerGroupDefinition::class, CustomerGroupRegistrationSalesChannelDefinition::class, 'sales_channel_id', 'customer_group_id', 'id', 'id'),
+            (new ManyToManyAssociationField('eventActions', EventActionDefinition::class, EventActionSalesChannelDefinition::class, 'sales_channel_id', 'event_action_id'))
+                ->addFlags(new CascadeDelete(), new ReadProtected(SalesChannelApiSource::class)),
         ]);
+
+        if (Feature::isActive('FEATURE_NEXT_10555')) {
+            $fields->add(
+                (new OneToManyAssociationField('boundCustomers', CustomerDefinition::class, 'bound_sales_channel_id', 'id'))
+                    ->addFlags(new ReadProtected(SalesChannelApiSource::class))
+            );
+        }
+
+        return $fields;
     }
 }

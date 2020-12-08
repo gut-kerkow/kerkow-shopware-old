@@ -16,7 +16,6 @@ use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\PlatformRequest;
 use Shopware\Core\SalesChannelRequest;
 use Symfony\Component\HttpFoundation\Request;
-use function Flag\next3722;
 
 class ApiRequestContextResolver implements RequestContextResolverInterface
 {
@@ -230,20 +229,28 @@ class ApiRequestContextResolver implements RequestContextResolverInterface
     private function getAdminApiSource(?string $userId, ?string $integrationId = null): AdminApiSource
     {
         $source = new AdminApiSource($userId, $integrationId);
-        if (!next3722()) {
-            $source->setIsAdmin(true);
+
+        // Use the permissions associated to that app, if the request is made by an integration associated to an app
+        $appPermissions = $this->fetchPermissionsIntegrationByApp($integrationId);
+        if ($appPermissions !== null) {
+            $source->setIsAdmin(false);
+            $source->setPermissions($appPermissions);
 
             return $source;
         }
 
         if ($userId !== null) {
-            $source->setPermissions(
-                $this->fetchPermissions($userId)
-            );
+            $source->setPermissions($this->fetchPermissions($userId));
+            $source->setIsAdmin($this->isAdmin($userId));
 
-            $source->setIsAdmin(
-                $this->isAdmin($userId)
-            );
+            return $source;
+        }
+
+        if ($integrationId !== null) {
+            $source->setIsAdmin($this->isAdminIntegration($integrationId));
+            $source->setPermissions($this->fetchIntegrationPermissions($integrationId));
+
+            return $source;
         }
 
         return $source;
@@ -257,6 +264,14 @@ class ApiRequestContextResolver implements RequestContextResolverInterface
         );
     }
 
+    private function isAdminIntegration(string $integrationId): bool
+    {
+        return (bool) $this->connection->fetchColumn(
+            'SELECT admin FROM `integration` WHERE id = :id',
+            ['id' => Uuid::fromHexToBytes($integrationId)]
+        );
+    }
+
     private function fetchPermissions(string $userId): array
     {
         $permissions = $this->connection->createQueryBuilder()
@@ -265,6 +280,46 @@ class ApiRequestContextResolver implements RequestContextResolverInterface
             ->innerJoin('mapping', 'acl_role', 'role', 'mapping.acl_role_id = role.id')
             ->where('mapping.user_id = :userId')
             ->setParameter('userId', Uuid::fromHexToBytes($userId))
+            ->execute()
+            ->fetchAll(FetchMode::COLUMN);
+
+        $list = [];
+        foreach ($permissions as $privileges) {
+            $privileges = json_decode((string) $privileges, true);
+            $list = array_merge($list, $privileges);
+        }
+
+        return array_unique(array_filter($list));
+    }
+
+    private function fetchPermissionsIntegrationByApp(?string $integrationId): ?array
+    {
+        if (!$integrationId) {
+            return null;
+        }
+
+        $privileges = $this->connection->fetchColumn('
+            SELECT `acl_role`.`privileges`
+            FROM `acl_role`
+            INNER JOIN `app` ON `app`.`acl_role_id` = `acl_role`.`id`
+            WHERE `app`.`integration_id` = :integrationId
+        ', ['integrationId' => Uuid::fromHexToBytes($integrationId)]);
+
+        if ($privileges === false) {
+            return null;
+        }
+
+        return json_decode($privileges, true);
+    }
+
+    private function fetchIntegrationPermissions(string $integrationId): array
+    {
+        $permissions = $this->connection->createQueryBuilder()
+            ->select(['role.privileges'])
+            ->from('integration_role', 'mapping')
+            ->innerJoin('mapping', 'acl_role', 'role', 'mapping.acl_role_id = role.id')
+            ->where('mapping.integration_id = :integrationId')
+            ->setParameter('integrationId', Uuid::fromHexToBytes($integrationId))
             ->execute()
             ->fetchAll(FetchMode::COLUMN);
 

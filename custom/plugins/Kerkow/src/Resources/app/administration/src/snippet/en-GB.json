@@ -2,10 +2,13 @@
   "sw-order": {
     "detailBase": {
       "columnWeight": "Weight",
-      "columnReferencePrice": "Reference Price"
+      "columnReferencePrice": "Reference Price",
+      "labelCreditCard": "Cardtype"
     },
     "list": {
-      "columnDeliveryDate": "Date of delivery"
+      "columnDeliveryDate": "Date of delivery",
+      "columnPaymentType": "Cardtype",
+      "articleNumber": "Article number"
     }
   }
 }

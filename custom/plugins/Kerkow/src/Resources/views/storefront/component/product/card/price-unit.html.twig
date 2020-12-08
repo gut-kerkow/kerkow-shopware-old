@@ -13,9 +13,11 @@
 				{% set listPrice = product.priceRange or product.calculatedPrices.count > 0 ? null : referncePrice.price %}
 				<p class="product-price{% if referncePrice.price.percentage > 0 %} with-list-price{% endif %}">
 					{% if product.priceRange %}
-						{{ fromPrice.referencePrice.price|currency }}
-						-
-						{{ toPrice.referencePrice.price|currency }}
+						{% if referncePrice.unitName == "g" %}
+							{{ "#{referncePrice.price|currency}/#{referncePrice.referenceUnit}#{referncePrice.unitName}" }}
+						{% else %}
+							{{ "#{referncePrice.price|currency}/#{referncePrice.unitName}" }}
+						{% endif %}
 					{% elseif product.calculatedPrices|length == 1 %}
 						{{ product.calculatedPrices.first.unitPrice|currency }}
 					{% else %}

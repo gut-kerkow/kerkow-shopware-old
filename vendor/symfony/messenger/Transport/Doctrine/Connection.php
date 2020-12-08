@@ -13,13 +13,16 @@ namespace Symfony\Component\Messenger\Transport\Doctrine;
 
 use Doctrine\DBAL\Connection as DBALConnection;
 use Doctrine\DBAL\DBALException;
-use Doctrine\DBAL\Driver\ResultStatement;
+use Doctrine\DBAL\Driver\Result as DriverResult;
+use Doctrine\DBAL\Exception;
 use Doctrine\DBAL\Exception\TableNotFoundException;
 use Doctrine\DBAL\Query\QueryBuilder;
+use Doctrine\DBAL\Result;
+use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\Synchronizer\SchemaSynchronizer;
-use Doctrine\DBAL\Schema\Synchronizer\SingleDatabaseSynchronizer;
 use Doctrine\DBAL\Types\Type;
+use Doctrine\DBAL\Types\Types;
 use Symfony\Component\Messenger\Exception\InvalidArgumentException;
 use Symfony\Component\Messenger\Exception\TransportException;
 
@@ -53,12 +56,18 @@ class Connection
     private $schemaSynchronizer;
     private $autoSetup;
 
+    private static $useDeprecatedConstants;
+
     public function __construct(array $configuration, DBALConnection $driverConnection, SchemaSynchronizer $schemaSynchronizer = null)
     {
         $this->configuration = array_replace_recursive(self::DEFAULT_OPTIONS, $configuration);
         $this->driverConnection = $driverConnection;
-        $this->schemaSynchronizer = $schemaSynchronizer ?? new SingleDatabaseSynchronizer($this->driverConnection);
+        $this->schemaSynchronizer = $schemaSynchronizer;
         $this->autoSetup = $this->configuration['auto_setup'];
+
+        if (null === self::$useDeprecatedConstants) {
+            self::$useDeprecatedConstants = !class_exists(Types::class);
+        }
     }
 
     public function getConfiguration(): array
@@ -78,20 +87,20 @@ class Connection
         }
 
         $configuration = ['connection' => $components['host']];
-        $configuration += $options + $query + self::DEFAULT_OPTIONS;
+        $configuration += $query + $options + self::DEFAULT_OPTIONS;
 
-        $configuration['auto_setup'] = filter_var($configuration['auto_setup'], FILTER_VALIDATE_BOOLEAN);
+        $configuration['auto_setup'] = filter_var($configuration['auto_setup'], \FILTER_VALIDATE_BOOLEAN);
 
         // check for extra keys in options
         $optionsExtraKeys = array_diff(array_keys($options), array_keys(self::DEFAULT_OPTIONS));
         if (0 < \count($optionsExtraKeys)) {
-            throw new InvalidArgumentException(sprintf('Unknown option found : [%s]. Allowed options are [%s]', implode(', ', $optionsExtraKeys), implode(', ', array_keys(self::DEFAULT_OPTIONS))));
+            throw new InvalidArgumentException(sprintf('Unknown option found : [%s]. Allowed options are [%s].', implode(', ', $optionsExtraKeys), implode(', ', array_keys(self::DEFAULT_OPTIONS))));
         }
 
         // check for extra keys in options
         $queryExtraKeys = array_diff(array_keys($query), array_keys(self::DEFAULT_OPTIONS));
         if (0 < \count($queryExtraKeys)) {
-            throw new InvalidArgumentException(sprintf('Unknown option found in DSN: [%s]. Allowed options are [%s]', implode(', ', $queryExtraKeys), implode(', ', array_keys(self::DEFAULT_OPTIONS))));
+            throw new InvalidArgumentException(sprintf('Unknown option found in DSN: [%s]. Allowed options are [%s].', implode(', ', $queryExtraKeys), implode(', ', array_keys(self::DEFAULT_OPTIONS))));
         }
 
         return $configuration;
@@ -103,6 +112,7 @@ class Connection
      * @return string The inserted id
      *
      * @throws \Doctrine\DBAL\DBALException
+     * @throws \Doctrine\DBAL\Exception
      */
     public function send(string $body, array $headers, int $delay = 0): string
     {
@@ -119,18 +129,24 @@ class Connection
                 'available_at' => '?',
             ]);
 
-        $this->executeQuery($queryBuilder->getSQL(), [
+        $this->executeStatement($queryBuilder->getSQL(), [
             $body,
             json_encode($headers),
             $this->configuration['queue_name'],
             $now,
             $availableAt,
-        ], [
+        ], self::$useDeprecatedConstants ? [
             null,
             null,
             null,
             Type::DATETIME,
             Type::DATETIME,
+        ] : [
+            null,
+            null,
+            null,
+            Types::DATETIME_MUTABLE,
+            Types::DATETIME_MUTABLE,
         ]);
 
         return $this->driverConnection->lastInsertId();
@@ -146,11 +162,12 @@ class Connection
                 ->setMaxResults(1);
 
             // use SELECT ... FOR UPDATE to lock table
-            $doctrineEnvelope = $this->executeQuery(
+            $stmt = $this->executeQuery(
                 $query->getSQL().' '.$this->driverConnection->getDatabasePlatform()->getWriteLockSQL(),
                 $query->getParameters(),
                 $query->getParameterTypes()
-            )->fetch();
+            );
+            $doctrineEnvelope = $stmt instanceof Result || $stmt instanceof DriverResult ? $stmt->fetchAssociative() : $stmt->fetch();
 
             if (false === $doctrineEnvelope) {
                 $this->driverConnection->commit();
@@ -165,11 +182,11 @@ class Connection
                 ->set('delivered_at', '?')
                 ->where('id = ?');
             $now = new \DateTime();
-            $this->executeQuery($queryBuilder->getSQL(), [
+            $this->executeStatement($queryBuilder->getSQL(), [
                 $now,
                 $doctrineEnvelope['id'],
             ], [
-                Type::DATETIME,
+                self::$useDeprecatedConstants ? Type::DATETIME : Types::DATETIME_MUTABLE,
             ]);
 
             $this->driverConnection->commit();
@@ -191,7 +208,7 @@ class Connection
     {
         try {
             return $this->driverConnection->delete($this->configuration['table_name'], ['id' => $id]) > 0;
-        } catch (DBALException $exception) {
+        } catch (DBALException | Exception $exception) {
             throw new TransportException($exception->getMessage(), 0, $exception);
         }
     }
@@ -200,7 +217,7 @@ class Connection
     {
         try {
             return $this->driverConnection->delete($this->configuration['table_name'], ['id' => $id]) > 0;
-        } catch (DBALException $exception) {
+        } catch (DBALException | Exception $exception) {
             throw new TransportException($exception->getMessage(), 0, $exception);
         }
     }
@@ -219,7 +236,7 @@ class Connection
             $this->driverConnection->getConfiguration()->setFilterSchemaAssetsExpression(null);
         }
 
-        $this->schemaSynchronizer->updateSchema($this->getSchema(), true);
+        $this->updateSchema();
 
         if ($hasFilterCallback) {
             $this->driverConnection->getConfiguration()->setSchemaAssetsFilter($assetFilter);
@@ -236,7 +253,9 @@ class Connection
             ->select('COUNT(m.id) as message_count')
             ->setMaxResults(1);
 
-        return $this->executeQuery($queryBuilder->getSQL(), $queryBuilder->getParameters(), $queryBuilder->getParameterTypes())->fetchColumn();
+        $stmt = $this->executeQuery($queryBuilder->getSQL(), $queryBuilder->getParameters(), $queryBuilder->getParameterTypes());
+
+        return $stmt instanceof Result || $stmt instanceof DriverResult ? $stmt->fetchOne() : $stmt->fetchColumn();
     }
 
     public function findAll(int $limit = null): array
@@ -246,7 +265,8 @@ class Connection
             $queryBuilder->setMaxResults($limit);
         }
 
-        $data = $this->executeQuery($queryBuilder->getSQL(), $queryBuilder->getParameters(), $queryBuilder->getParameterTypes())->fetchAll();
+        $stmt = $this->executeQuery($queryBuilder->getSQL(), $queryBuilder->getParameters(), $queryBuilder->getParameterTypes());
+        $data = $stmt instanceof Result || $stmt instanceof DriverResult ? $stmt->fetchAllAssociative() : $stmt->fetchAll();
 
         return array_map(function ($doctrineEnvelope) {
             return $this->decodeEnvelopeHeaders($doctrineEnvelope);
@@ -258,9 +278,8 @@ class Connection
         $queryBuilder = $this->createQueryBuilder()
             ->where('m.id = ?');
 
-        $data = $this->executeQuery($queryBuilder->getSQL(), [
-            $id,
-        ])->fetch();
+        $stmt = $this->executeQuery($queryBuilder->getSQL(), [$id]);
+        $data = $stmt instanceof Result || $stmt instanceof DriverResult ? $stmt->fetchAssociative() : $stmt->fetch();
 
         return false === $data ? null : $this->decodeEnvelopeHeaders($data);
     }
@@ -278,9 +297,12 @@ class Connection
                 $redeliverLimit,
                 $now,
                 $this->configuration['queue_name'],
-            ], [
+            ], self::$useDeprecatedConstants ? [
                 Type::DATETIME,
                 Type::DATETIME,
+            ] : [
+                Types::DATETIME_MUTABLE,
+                Types::DATETIME_MUTABLE,
             ]);
     }
 
@@ -291,7 +313,7 @@ class Connection
             ->from($this->configuration['table_name'], 'm');
     }
 
-    private function executeQuery(string $sql, array $parameters = [], array $types = []): ResultStatement
+    private function executeQuery(string $sql, array $parameters = [], array $types = [])
     {
         try {
             $stmt = $this->driverConnection->executeQuery($sql, $parameters, $types);
@@ -310,24 +332,52 @@ class Connection
         return $stmt;
     }
 
+    private function executeStatement(string $sql, array $parameters = [], array $types = [])
+    {
+        try {
+            if (method_exists($this->driverConnection, 'executeStatement')) {
+                $stmt = $this->driverConnection->executeStatement($sql, $parameters, $types);
+            } else {
+                $stmt = $this->driverConnection->executeUpdate($sql, $parameters, $types);
+            }
+        } catch (TableNotFoundException $e) {
+            if ($this->driverConnection->isTransactionActive()) {
+                throw $e;
+            }
+
+            // create table
+            if ($this->autoSetup) {
+                $this->setup();
+            }
+            if (method_exists($this->driverConnection, 'executeStatement')) {
+                $stmt = $this->driverConnection->executeStatement($sql, $parameters, $types);
+            } else {
+                $stmt = $this->driverConnection->executeUpdate($sql, $parameters, $types);
+            }
+        }
+
+        return $stmt;
+    }
+
     private function getSchema(): Schema
     {
         $schema = new Schema([], [], $this->driverConnection->getSchemaManager()->createSchemaConfig());
         $table = $schema->createTable($this->configuration['table_name']);
-        $table->addColumn('id', Type::BIGINT)
+        $table->addColumn('id', self::$useDeprecatedConstants ? Type::BIGINT : Types::BIGINT)
             ->setAutoincrement(true)
             ->setNotnull(true);
-        $table->addColumn('body', Type::TEXT)
+        $table->addColumn('body', self::$useDeprecatedConstants ? Type::TEXT : Types::TEXT)
             ->setNotnull(true);
-        $table->addColumn('headers', Type::TEXT)
+        $table->addColumn('headers', self::$useDeprecatedConstants ? Type::TEXT : Types::TEXT)
             ->setNotnull(true);
-        $table->addColumn('queue_name', Type::STRING)
+        $table->addColumn('queue_name', self::$useDeprecatedConstants ? Type::STRING : Types::STRING)
+            ->setLength(190) // MySQL 5.6 only supports 191 characters on an indexed column in utf8mb4 mode
             ->setNotnull(true);
-        $table->addColumn('created_at', Type::DATETIME)
+        $table->addColumn('created_at', self::$useDeprecatedConstants ? Type::DATETIME : Types::DATETIME_MUTABLE)
             ->setNotnull(true);
-        $table->addColumn('available_at', Type::DATETIME)
+        $table->addColumn('available_at', self::$useDeprecatedConstants ? Type::DATETIME : Types::DATETIME_MUTABLE)
             ->setNotnull(true);
-        $table->addColumn('delivered_at', Type::DATETIME)
+        $table->addColumn('delivered_at', self::$useDeprecatedConstants ? Type::DATETIME : Types::DATETIME_MUTABLE)
             ->setNotnull(false);
         $table->setPrimaryKey(['id']);
         $table->addIndex(['queue_name']);
@@ -342,5 +392,25 @@ class Connection
         $doctrineEnvelope['headers'] = json_decode($doctrineEnvelope['headers'], true);
 
         return $doctrineEnvelope;
+    }
+
+    private function updateSchema(): void
+    {
+        if (null !== $this->schemaSynchronizer) {
+            $this->schemaSynchronizer->updateSchema($this->getSchema(), true);
+
+            return;
+        }
+
+        $comparator = new Comparator();
+        $schemaDiff = $comparator->compare($this->driverConnection->getSchemaManager()->createSchema(), $this->getSchema());
+
+        foreach ($schemaDiff->toSaveSql($this->driverConnection->getDatabasePlatform()) as $sql) {
+            if (method_exists($this->driverConnection, 'executeStatement')) {
+                $this->driverConnection->executeStatement($sql);
+            } else {
+                $this->driverConnection->exec($sql);
+            }
+        }
     }
 }

@@ -1,6 +1,7 @@
 {# Set variable to "true" to enable HMR (hot page reloading) mode #} {% set
-isHMRMode = app.request.headers.get('hot-reload-mode') %} {% if app.environment
-== "dev" %} {% set isHMRMode = true %} {% endif %} {% block base_doctype %}
+isHMRMode = app.request.headers.get('hot-reload-mode') and app.environment ==
+'dev' %} {% if app.environment == 'dev' %}{% set isHMRMode = true %}{% endif %}
+{% block base_doctype %}
 <!DOCTYPE html>
 {% endblock %} {% block base_html %}
 <html
@@ -96,7 +97,9 @@ isHMRMode = app.request.headers.get('hot-reload-mode') %} {% if app.environment
           'frontend.account.addressbook': '{{ path('frontend.account.addressbook') }}',
           'frontend.csrf.generateToken': '{{ path('frontend.csrf.generateToken') }}',
           'frontend.country.country-data': '{{ path('frontend.country.country.data') }}',
+          'frontend.store-api.proxy': '{{ path('frontend.store-api.proxy') }}',
       };
+      window.storeApiProxyToken = '{{ sw_csrf("frontend.store-api.proxy", {"mode": "token"}) }}';
     </script>
     {% endblock %} {% block base_script_breakpoints %} {# Register the available
     viewport breakpoints the window.breakpoints object #}
@@ -110,26 +113,39 @@ isHMRMode = app.request.headers.get('hot-reload-mode') %} {% if app.environment
         mode: "{{ shopware.csrfMode }}",
       };
     </script>
-    {% endblock %} {% block base_script_hmr_mode %} {% if isHMRMode %} {% set
-    baseUrl = app.request.getScheme() ~ '://' ~ app.request.getHost() %}
+    {% endblock %} {% if feature('FEATURE_NEXT_10549') and
+    shopware.config.core.cart.wishlistEnabled %} {% block
+    base_script_wishlist_state %}
+    <script>
+      window.customerLoggedInState = {{ context.customer is not null and not context.customer.guest ? 1 : 0 }};
+
+      window.wishlistEnabled = {{ shopware.config.core.cart.wishlistEnabled }};
+    </script>
+    {% endblock %} {% endif %} {% block base_script_hmr_mode %} {% if isHMRMode
+    %} {% set baseUrl = app.request.getScheme() ~ '://' ~ app.request.getHost()
+    %} {% set port = app.request.headers.get('hot-reload-port') %} {% if
+    app.environment == 'dev' %}{% set port = 9999 %}{% endif %}
     <script
       type="text/javascript"
-      src="{{ baseUrl }}:9999/js/vendor-node.js"
+      src="{{ baseUrl }}:{{ port }}/js/vendor-node.js"
     ></script>
     <script
       type="text/javascript"
-      src="{{ baseUrl }}:9999/js/vendor-shared.js"
+      src="{{ baseUrl }}:{{ port }}/js/vendor-shared.js"
     ></script>
     <script
       type="text/javascript"
-      src="{{ baseUrl }}:9999/js/runtime.js"
+      src="{{ baseUrl }}:{{ port }}/js/runtime.js"
     ></script>
-    <script type="text/javascript" src="{{ baseUrl }}:9999/js/app.js"></script>
+    <script
+      type="text/javascript"
+      src="{{ baseUrl }}:{{ port }}/js/app.js"
+    ></script>
     {# The storefront entry is a combined entry point which contains all plugins
     & themes #}
     <script
       type="text/javascript"
-      src="{{ baseUrl }}:9999/js/storefront.js"
+      src="{{ baseUrl }}:{{ port }}/js/storefront.js"
     ></script>
     {% else %} {% for file in shopware.theme.assets.js %}
     <script

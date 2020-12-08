@@ -37,28 +37,18 @@
     <slot name="detail-action" v-bind="{ item }">
         <sw-context-menu-item class="sw-entity-listing__context-menu-edit-action"
                               v-if="detailRoute"
-                              :disabled="!allowEdit"
-                              v-tooltip="{
-                                    message: $tc('sw-privileges.tooltip.warning'),
-                                    disabled: allowEdit,
-                                    showOnDisabledElements: true
-                               }"
+                              :disabled="!allowEdit && !allowView"
                               :routerLink="{ name: detailRoute, params: { id: item.id } }">
-            {{ $tc('global.default.edit') }}
+            {{ detailPageLinkText }}
         </sw-context-menu-item>
     </slot>
 
     <slot name="more-actions" v-bind="{ item }"></slot>
 
-    <slot name="delete-action" v-bind="{ item, showDelete }">
+    <slot name="delete-action" v-bind="{ item, showDelete, allowDelete }">
         <sw-context-menu-item @click="showDelete(item.id)"
                               :disabled="!allowDelete"
                               class="sw-entity-listing__context-menu-edit-delete"
-                              v-tooltip="{
-                                    message: $tc('sw-privileges.tooltip.warning'),
-                                    disabled: allowDelete,
-                                    showOnDisabledElements: true
-                               }"
                               variant="danger">
             {{ $tc('global.default.delete') }}
         </sw-context-menu-item>

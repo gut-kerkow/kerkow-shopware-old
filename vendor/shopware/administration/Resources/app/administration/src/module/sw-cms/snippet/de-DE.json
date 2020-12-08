@@ -119,13 +119,12 @@
         "claimEmptyState": "Stelle neue Layouts mithilfe von Sektionen zusammen. Wähle eine Sektion und füge einfach per Drag & Drop-Blöcke zu jeder Sektion hinzu und befülle die Blöcke dann mit deinem individuellen Inhalt."
       },
       "notification": {
-        "titleMissingFields": "Fehlende Konfiguration",
-        "messageMissingFields": "Bitte fülle alle erforderlichen Konfigurationsfelder aus.",
+        "messageMissingFields": "Konfiguration erforderlich. Bitte fülle alle erforderlichen Felder aus.",
         "messageMissingBlockFields": "Konfiguration erforderlich. Bitte fülle alle Elemente mit Daten.",
-        "messageMissingProductListing": "Speichern nicht möglich. Bitte füge einen Produktlisting-Block hinzu oder ändere den Layout-Typ.",
+        "messageMissingProductListing": "Speichern nicht möglich. Bitte füge mindestens einen Produktlisting-Block hinzu oder ändere den Typ dieses Layouts.",
         "messageMissingSections": "Du kannst leere Seiten nicht speichern. Bitte füge zuerst eine Sektion hinzu.",
-        "messageMissingBlocks": "Du kannst keine leere Seite speichern. Bitte füge Blöcke hinzu.",
-        "messageMissingElements": "Bitte konfiguriere alle Elemente Deines Layouts."
+        "messageMissingBlocks": "Du kannst keine leere Seite speichern. Bitte füge zuerst einige Blöcke hinzu.",
+        "messageMissingElements": "Konfiguration erforderlich. Bitte konfiguriere alle Elemente Deines Layouts."
       },
       "placeholder": {
         "demoEntity": "Wähle einen Datensatz zur Vorschau ..."
@@ -223,11 +222,7 @@
             "badgeTopseller": "Topseller",
             "badgeNew": "Neu",
             "priceUnitContent": "Inhalt:"
-          },
-          "actionBuy": "In den Warenkorb",
-          "badgeTopseller": "Topseller",
-          "priceUnitContent": "Inhalt:",
-          "badgeNew": "Neu"
+          }
         },
         "config": {
           "label": {
@@ -243,7 +238,30 @@
         }
       },
       "productListing": {
-        "label": "Produkt-Listing"
+        "label": "Produkt-Listing",
+        "config": {
+          "tab": {
+            "sorting": "Sortierungen"
+          },
+          "sorting": {
+            "labelShowSorting": "Produkt-Sortierung anzeigen",
+            "labelUseCustomSortings": "Eigene Sortierungen verwenden",
+            "labelDefaultSorting": "Standard-Sortierung",
+            "labelProductSortings": "Produkt-Sortierungen",
+            "placeHolderProductSortings": "Produkt-Sortierungen hinzufügen oder entfernen",
+            "helpTextUseCustomSortings": "Sortier-Optionen kannst Du für dieses Produkt-Listing definieren. Aktiviere diese Option um die Sortier-Option für dieses Listing individuell anzupassen.",
+            "helpTextDefaultSorting": "Die Standard Sortierung für das Listing, wenn keine andere Sortierung angegeben ist.",
+            "gridHeaderName": "Name",
+            "gridHeaderFields": "Kriterien",
+            "gridHeaderPriority": "Priorität",
+            "deleteModal": {
+              "heading": "\"{productSortingName}\" entfernen.",
+              "body": "Willst du wirklich die Sortier-Option \"{productSortingName}\" entfernen?"
+            },
+            "defaultSortingInUse": "Diese Produkt-Sortierung ist bereits als Standardsortierung ausgewählt.",
+            "defaultSortingCantBeDisabled": "Diese Product-Sortierung ist die Standardsortierung. Sie muss aktiviert bleiben, um keine Probleme mit Deinen Produkt-Listings zu verursachen."
+          }
+        }
       },
       "productSlider": {
         "label": "Produkt-Slider",
@@ -254,13 +272,34 @@
             "navigation": "Navigation",
             "rotate": "Automatischer Wechsel",
             "border": "Rahmen",
-            "minWidth": "Minimale Weite"
+            "minWidth": "Minimale Weite",
+            "productAssignmentType": "Produkt-Zuweisung",
+            "productStreamSorting": "Sortierung",
+            "productStreamLimit": "Maximale Produktanzahl",
+            "productStreamChoice": "Dynamische Produktgruppe"
           },
           "placeholder": {
             "title": "Slider-Titel",
             "selection": "Produkte auswählen",
-            "minWidth": "Minimale Breite"
-          }
+            "minWidth": "Minimale Breite",
+            "productStreamChoice": "Wähle eine dynamische Produktgruppe...",
+            "productStreamSorting": "Wähle eine Sortierung..."
+          },
+          "productAssignmentTypeOptions": {
+            "manual": "Manuelle Zuweisung",
+            "productStream": "Dynamische Produktgruppe"
+          },
+          "productStreamSortingOptions": {
+            "nameAsc": "Name aufsteigend",
+            "nameDesc": "Name absteigend",
+            "priceAsc": "Price aufsteigend",
+            "priceDesc": "Price absteigend",
+            "creationDateAsc": "Erstellungsdatum aufsteigend",
+            "creationDateDesc": "Erstellungsdatum absteigend",
+            "random": "Zufällig"
+          },
+          "textProductStreamPreviewLink": "Vorschau dynamische Produktgruppe",
+          "textProductStreamPerformanceHint": "Bitte beachten: Dynamische Produktgruppen können einen spürbaren Einfluss auf die Performance haben, abhängig von der Komplexität der Produktgruppen-Filter und der Anzahl der Slider-Elemente auf der Seite."
         }
       },
       "sidebarCategoryNavigation": {
@@ -307,7 +346,9 @@
             "showTitle": "Titel des Videos anzeigen",
             "advancedPrivacy": "Erweiterter Datenschutzmodus",
             "start": "Video starten ab",
-            "end": "Video abspielen bis"
+            "end": "Video abspielen bis",
+            "needsConfirmation": "Video erst nach Bestätigung durch den User laden",
+            "previewImage": "Vorschau-Bild"
           },
           "placeholder": {
             "videoId": "Video-Link eingeben ..."
@@ -510,6 +551,13 @@
           "buttonCancel": "Abbrechen",
           "buttonDelete": "Löschen"
         }
+      }
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "cms": {
+        "label": "Erlebniswelten"
       }
     }
   }

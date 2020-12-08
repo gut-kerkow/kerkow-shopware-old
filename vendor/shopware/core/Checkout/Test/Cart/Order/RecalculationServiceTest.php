@@ -2,14 +2,15 @@
 
 namespace Shopware\Core\Checkout\Test\Cart\Order;
 
+use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Cart\CartBehavior;
 use Shopware\Core\Checkout\Cart\Delivery\DeliveryCalculator;
 use Shopware\Core\Checkout\Cart\Delivery\Struct\Delivery;
 use Shopware\Core\Checkout\Cart\Delivery\Struct\ShippingLocation;
-use Shopware\Core\Checkout\Cart\LineItem\CartDataCollection;
 use Shopware\Core\Checkout\Cart\LineItem\LineItem;
+use Shopware\Core\Checkout\Cart\LineItem\LineItemCollection;
 use Shopware\Core\Checkout\Cart\Order\OrderConverter;
 use Shopware\Core\Checkout\Cart\Order\OrderPersister;
 use Shopware\Core\Checkout\Cart\Order\RecalculationService;
@@ -36,9 +37,9 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Rule\Collector\RuleConditionRegistry;
 use Shopware\Core\Framework\Test\TestCaseBase\AdminApiTestBehaviour;
+use Shopware\Core\Framework\Test\TestCaseBase\CountryAddToSalesChannelTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\TaxAddToSalesChannelTestBehaviour;
-use Shopware\Core\Framework\Test\TestCaseHelper\ExtensionHelper;
 use Shopware\Core\Framework\Test\TestCaseHelper\ReflectionHelper;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\PlatformRequest;
@@ -48,11 +49,15 @@ use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * @group slow
+ */
 class RecalculationServiceTest extends TestCase
 {
     use IntegrationTestBehaviour;
     use AdminApiTestBehaviour;
     use TaxAddToSalesChannelTestBehaviour;
+    use CountryAddToSalesChannelTestBehaviour;
 
     /**
      * @var SalesChannelContext
@@ -79,6 +84,7 @@ class RecalculationServiceTest extends TestCase
         $this->customerId = $this->createCustomer();
         $shippingMethodId = $this->createShippingMethod($priceRuleId);
         $paymentMethodId = $this->createPaymentMethod($priceRuleId);
+        $this->addCountriesToSalesChannel([$this->getValidCountryIdWithTaxes()]);
         $this->salesChannelContext = $this->getContainer()->get(SalesChannelContextFactory::class)->create(
             Uuid::randomHex(),
             Defaults::SALES_CHANNEL,
@@ -170,10 +176,8 @@ class RecalculationServiceTest extends TestCase
         // transactions are currently not supported so they are excluded for comparison
         $cart->setTransactions(new TransactionCollection());
 
-        // remove all extensions for comparision
-        $extensionHelper = new ExtensionHelper();
-        $extensionHelper->removeExtensions($convertedCart);
-        $extensionHelper->removeExtensions($cart);
+        $this->removeExtensions($cart);
+        $this->removeExtensions($convertedCart);
 
         // remove delivery information from line items
 
@@ -199,8 +203,6 @@ class RecalculationServiceTest extends TestCase
             $lineItem->setDeliveryInformation(null);
             $lineItem->setQuantityInformation(null);
         }
-
-        $cart->setData(new CartDataCollection());
 
         static::assertEquals($cart, $convertedCart);
     }
@@ -367,6 +369,34 @@ class RecalculationServiceTest extends TestCase
         $this->addProductToVersionedOrder($productName, $productPrice, $productTaxRate, $orderId, $versionId, $oldTotal);
     }
 
+    public function testAddProductToOrderTriggersStockUpdate(): void
+    {
+        // create order
+        $cart = $this->generateDemoCart();
+        $order = $this->persistCart($cart);
+        $orderId = $order['orderId'];
+        $oldTotal = $order['total'];
+
+        // create version of order
+        $versionId = $this->createVersionedOrder($orderId);
+
+        $productName = 'Test';
+        $productPrice = 10.0;
+        $productTaxRate = 19.0;
+        $productId = $this->addProductToVersionedOrder($productName, $productPrice, $productTaxRate, $orderId, $versionId, $oldTotal);
+
+        $this->getContainer()->get('order.repository')
+            ->merge($versionId, Context::createDefaultContext());
+
+        $stocks = $this->getContainer()->get(Connection::class)
+            ->fetchAll('SELECT stock, available_stock FROM product WHERE id = :id', ['id' => Uuid::fromHexToBytes($productId)]);
+
+        $stocks = array_shift($stocks);
+
+        static::assertEquals(5, $stocks['stock']);
+        static::assertEquals(4, $stocks['available_stock']);
+    }
+
     public function testAddCustomLineItemToOrder(): void
     {
         // create order
@@ -498,13 +528,8 @@ class RecalculationServiceTest extends TestCase
         static::assertSame(1, $newShippingCosts->getQuantity());
         static::assertSame(5.0, $newShippingCosts->getUnitPrice());
         static::assertSame(5.0, $newShippingCosts->getTotalPrice());
-        static::assertSame(2, $newShippingCosts->getCalculatedTaxes()->count());
-        static::assertEquals($shippingCosts->getTaxRules(), $newShippingCosts->getTaxRules());
-        static::assertEquals(
-            5,
-            $newShippingCosts->getCalculatedTaxes()->get('5')->getPrice()
-            + $newShippingCosts->getCalculatedTaxes()->get('19')->getPrice()
-        );
+
+        static::assertSame(0, $newShippingCosts->getCalculatedTaxes()->count());
     }
 
     public function testForeachLoopInCalculateDeliveryFunction(): void
@@ -737,13 +762,14 @@ class RecalculationServiceTest extends TestCase
         /** @var EntityRepositoryInterface $repository */
         $repository = $this->getContainer()->get('country.repository');
 
-        $countryId = Uuid::randomHex();
+        $countryId = $this->getValidCountryId();
 
         $data = [
             'id' => $countryId,
             'iso' => 'XX',
             'iso3' => 'XXX',
             'active' => true,
+            'shippingAvailable' => true,
             'taxFree' => false,
             'position' => 10,
             'displayStateInRegistration' => false,
@@ -762,6 +788,33 @@ class RecalculationServiceTest extends TestCase
         );
 
         return $countryId;
+    }
+
+    private function removeExtensions(Cart $cart): void
+    {
+        $this->removeLineItemsExtension($cart->getLineItems());
+
+        foreach ($cart->getDeliveries() as $delivery) {
+            $delivery->setExtensions([]);
+
+            $delivery->getShippingMethod()->setExtensions([]);
+
+            foreach ($delivery->getPositions() as $position) {
+                $position->setExtensions([]);
+                $this->removeLineItemsExtension(new LineItemCollection([$position->getLineItem()]));
+            }
+        }
+
+        $cart->setExtensions([]);
+        $cart->setData(null);
+    }
+
+    private function removeLineItemsExtension(LineItemCollection $lineItems): void
+    {
+        foreach ($lineItems as $lineItem) {
+            $lineItem->setExtensions([]);
+            $this->removeLineItemsExtension($lineItem->getChildren());
+        }
     }
 
     private function addAddressToCustomer(
@@ -804,7 +857,7 @@ class RecalculationServiceTest extends TestCase
         $data = [
             'id' => $productId,
             'productNumber' => $productNumber,
-            'stock' => 1,
+            'stock' => 5,
             'name' => $name,
             'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => $price + ($price * $taxRate / 100), 'net' => $price, 'linked' => false]],
             'manufacturer' => ['name' => 'create'],
@@ -1185,8 +1238,8 @@ class RecalculationServiceTest extends TestCase
                     'currencyPrice' => [
                         [
                             'currencyId' => Defaults::CURRENCY,
-                            'net' => '10.00',
-                            'gross' => '10.00',
+                            'net' => 10.00,
+                            'gross' => 10.00,
                             'linked' => false,
                         ],
                     ],
@@ -1198,8 +1251,8 @@ class RecalculationServiceTest extends TestCase
                     'currencyPrice' => [
                         [
                             'currencyId' => Defaults::CURRENCY,
-                            'net' => '8.00',
-                            'gross' => '8.00',
+                            'net' => 8.00,
+                            'gross' => 8.00,
                             'linked' => false,
                         ],
                     ],
@@ -1247,8 +1300,8 @@ class RecalculationServiceTest extends TestCase
                     'currencyPrice' => [
                         [
                             'currencyId' => Defaults::CURRENCY,
-                            'net' => '15.00',
-                            'gross' => '15.00',
+                            'net' => 15.00,
+                            'gross' => 15.00,
                             'linked' => false,
                         ],
                     ],
@@ -1270,8 +1323,8 @@ class RecalculationServiceTest extends TestCase
                     'currencyPrice' => [
                         [
                             'currencyId' => Defaults::CURRENCY,
-                            'net' => '20.00',
-                            'gross' => '20.00',
+                            'net' => 20.00,
+                            'gross' => 20.00,
                             'linked' => false,
                         ],
                     ],
@@ -1326,8 +1379,8 @@ class RecalculationServiceTest extends TestCase
                     'currencyPrice' => [
                         [
                             'currencyId' => Defaults::CURRENCY,
-                            'net' => '15.00',
-                            'gross' => '15.00',
+                            'net' => 15.00,
+                            'gross' => 15.00,
                             'linked' => false,
                         ],
                     ],
@@ -1350,8 +1403,8 @@ class RecalculationServiceTest extends TestCase
                     'currencyPrice' => [
                         [
                             'currencyId' => Defaults::CURRENCY,
-                            'net' => '10.00',
-                            'gross' => '10.00',
+                            'net' => 10.00,
+                            'gross' => 10.00,
                             'linked' => false,
                         ],
                     ],
@@ -1408,8 +1461,8 @@ class RecalculationServiceTest extends TestCase
                     'currencyPrice' => [
                         [
                             'currencyId' => Defaults::CURRENCY,
-                            'net' => '15.00',
-                            'gross' => '15.00',
+                            'net' => 15.00,
+                            'gross' => 15.00,
                             'linked' => false,
                         ],
                     ],
@@ -1432,8 +1485,8 @@ class RecalculationServiceTest extends TestCase
                     'currencyPrice' => [
                         [
                             'currencyId' => Defaults::CURRENCY,
-                            'net' => '9.99',
-                            'gross' => '9.99',
+                            'net' => 9.99,
+                            'gross' => 9.99,
                             'linked' => false,
                         ],
                     ],

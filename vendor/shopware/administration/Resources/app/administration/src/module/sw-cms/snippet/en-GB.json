@@ -119,13 +119,12 @@
         "claimEmptyState": "Create new layouts by choosing a section. Start by choosing a section type, drag & drop blocks into any section and fill in your content."
       },
       "notification": {
-        "titleMissingFields": "Error",
         "messageMissingFields": "Configuration required. Please fill in all required fields.",
-        "messageMissingBlockFields": "Configuration required. Please fill in all required elements.",
-        "messageMissingProductListing": "Unable to save. Please add a product listing block or change the layout type.",
+        "messageMissingBlockFields": "Configuration required. Please fill in data in all elements.",
+        "messageMissingProductListing": "Unable to save. Please add at least one product listing block or change this layout's type.",
         "messageMissingSections": "You can not save an empty page. Please add a section first.",
         "messageMissingBlocks": "You can not save an empty page. Please add some blocks first.",
-        "messageMissingElements": "Configuration required. Please fill in all required configuration elements."
+        "messageMissingElements": "Configuration required. Please configure all elements of your layout."
       },
       "placeholder": {
         "demoEntity": "Select an entity to preview..."
@@ -218,10 +217,12 @@
       "productBox": {
         "label": "Product box",
         "component": {
-          "actionBuy": "Add to cart",
-          "badgeTopseller": "Topseller",
-          "badgeNew": "New",
-          "priceUnitContent": "Content:"
+          "label": {
+            "actionBuy": "Add to cart",
+            "badgeTopseller": "Topseller",
+            "badgeNew": "New",
+            "priceUnitContent": "Content:"
+          }
         },
         "config": {
           "label": {
@@ -237,7 +238,30 @@
         }
       },
       "productListing": {
-        "label": "Product listing"
+        "label": "Product listing",
+        "config": {
+          "tab": {
+            "sorting": "Sorting"
+          },
+          "sorting": {
+            "labelShowSorting": "Show product sorting",
+            "labelUseCustomSortings": "Use custom sortings",
+            "labelDefaultSorting": "Default sorting",
+            "labelProductSortings": "Product sortings",
+            "placeHolderProductSortings": "Add or remove product sortings",
+            "helpTextUseCustomSortings": "You're able to define custom product sortings for the product listing. To create an individual sorting for this listing enable this switch.",
+            "helpTextDefaultSorting": "Default sorting for the listing, if no other sorting is provided.",
+            "gridHeaderName": "Name",
+            "gridHeaderFields": "Criteria",
+            "gridHeaderPriority": "Priority",
+            "deleteModal": {
+              "heading": "Deleting \"{productSortingName}\".",
+              "body": "Are you sure you want to delete \"{productSortingName}\"?"
+            },
+            "defaultSortingInUse": "This product sorting is already selected as default sorting.",
+            "defaultSortingCantBeDisabled": "This sorting is the default sorting. It has to be active to cause no problems with your product listing."
+          }
+        }
       },
       "productSlider": {
         "label": "Product slider",
@@ -248,13 +272,34 @@
             "navigation": "Navigation",
             "rotate": "Automatic sliding",
             "border": "Border",
-            "minWidth": "Minimal width"
+            "minWidth": "Minimal width",
+            "productAssignmentType": "Product assignment",
+            "productStreamSorting": "Sorting",
+            "productStreamLimit": "Maximum number of products",
+            "productStreamChoice": "Dynamic product group"
           },
           "placeholder": {
             "title": "Slider title",
             "selection": "Select products",
-            "minWidth": "Minimal width"
-          }
+            "minWidth": "Minimal width",
+            "productStreamChoice": "Select a dynamic product group",
+            "productStreamSorting": "Select a sorting..."
+          },
+          "productAssignmentTypeOptions": {
+            "manual": "Manual assignment",
+            "productStream": "Dynamic product group"
+          },
+          "productStreamSortingOptions": {
+            "nameAsc": "Name ascending",
+            "nameDesc": "Name descending",
+            "priceAsc": "Price ascending",
+            "priceDesc": "Price descending",
+            "creationDateAsc": "Creation date ascending",
+            "creationDateDesc": "Creation date descending",
+            "random": "Random"
+          },
+          "textProductStreamPreviewLink": "Preview dynamic product group",
+          "textProductStreamPerformanceHint": "Please keep in mind: Dynamic product groups might have a noticeable performance impact, depending on the complexity of the product group's filters and the amount of sliders shown on one page."
         }
       },
       "sidebarCategoryNavigation": {
@@ -301,7 +346,9 @@
             "showTitle": "Show video title",
             "advancedPrivacy": "Advanced privacy mode",
             "start": "Start video at",
-            "end": "End video at"
+            "end": "End video at",
+            "needsConfirmation": "Load video only after confirmation by the user",
+            "previewImage": "Preview image"
           },
           "placeholder": {
             "videoId": "Enter a video link..."
@@ -504,6 +551,13 @@
           "buttonCancel": "Cancel",
           "buttonDelete": "Delete"
         }
+      }
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "cms": {
+        "label": "Shopping Experiences"
       }
     }
   }

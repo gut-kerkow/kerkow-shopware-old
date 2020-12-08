@@ -101,7 +101,7 @@ class StructEncoder
                 continue;
             }
 
-            if (!$this->isAllowed($alias, $property, $apiVersion, $fields)) {
+            if (!$this->isAllowed($alias, $property, $apiVersion, $fields) && !$fields->hasNested($alias, $property)) {
                 unset($data[$property]);
 
                 continue;
@@ -211,7 +211,12 @@ class StructEncoder
                 continue;
             }
 
-            $value[$name] = $this->encode($struct->getExtension($name), $apiVersion, $fields);
+            $extension = $struct->getExtension($name);
+            if ($extension === null) {
+                continue;
+            }
+
+            $value[$name] = $this->encode($extension, $apiVersion, $fields);
         }
 
         return $value;

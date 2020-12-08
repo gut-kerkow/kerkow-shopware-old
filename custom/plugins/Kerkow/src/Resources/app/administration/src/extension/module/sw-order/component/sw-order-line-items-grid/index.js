@@ -24,6 +24,13 @@ Shopware.Component.override("sw-order-line-items-grid", {
         inlineEdit: true,
         width: "80px",
       });
+      columns.unshift({
+        property: "articleNumber",
+        label: "sw-order.list.articleNumber",
+        allowResize: false,
+        align: "right",
+        width: "80px",
+      });
       return columns;
     },
   },

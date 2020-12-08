@@ -39,7 +39,7 @@ class CheckoutConfirmPageLoader
     /**
      * @var GenericPageLoaderInterface
      */
-    private $genericLoader;
+    private $genericPageLoader;
 
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
@@ -52,7 +52,7 @@ class CheckoutConfirmPageLoader
         $this->cartService = $cartService;
         $this->shippingMethodRoute = $shippingMethodRoute;
         $this->paymentMethodRoute = $paymentMethodRoute;
-        $this->genericLoader = $genericPageLoader;
+        $this->genericPageLoader = $genericPageLoader;
     }
 
     /**
@@ -60,13 +60,11 @@ class CheckoutConfirmPageLoader
      */
     public function load(Request $request, SalesChannelContext $salesChannelContext): CheckoutConfirmPage
     {
-        $page = $this->genericLoader->load($request, $salesChannelContext);
-
+        $page = $this->genericPageLoader->load($request, $salesChannelContext);
         $page = CheckoutConfirmPage::createFrom($page);
 
         $page->setPaymentMethods($this->getPaymentMethods($salesChannelContext));
         $page->setShippingMethods($this->getShippingMethods($salesChannelContext));
-
         $page->setCart($this->cartService->getCart($salesChannelContext->getToken(), $salesChannelContext));
 
         $this->eventDispatcher->dispatch(

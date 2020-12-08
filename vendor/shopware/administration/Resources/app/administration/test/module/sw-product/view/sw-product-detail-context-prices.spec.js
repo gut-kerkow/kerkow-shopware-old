@@ -11,6 +11,7 @@ import 'src/app/component/form/sw-switch-field';
 import 'src/app/component/form/sw-checkbox-field';
 import Vuex from 'vuex';
 
+
 describe('src/module/sw-product/view/sw-product-detail-context-prices', () => {
     Shopware.State.registerModule('swProductDetail', productStore);
 
@@ -57,14 +58,15 @@ describe('src/module/sw-product/view/sw-product-detail-context-prices', () => {
 
                         return {};
                     }
-                }
+                },
+                acl: { can: () => true }
             }
         });
     };
 
-    it('should be able to instantiate', () => {
+    it('should be able to instantiate', async () => {
         const wrapper = createWrapper();
-        expect(wrapper.isVueInstance()).toBeTruthy();
+        expect(wrapper.vm).toBeTruthy();
     });
 
     it('should show inherited state when product is a variant', async () => {

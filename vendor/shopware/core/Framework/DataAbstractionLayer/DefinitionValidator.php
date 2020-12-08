@@ -553,6 +553,14 @@ class DefinitionValidator
             );
         }
 
+        if ($association->getAutoload() && $reverseSide->getAutoload()) {
+            $associationViolations[$definition->getClass()][] = sprintf(
+                'Remove autoload flag in definition %s association: %s. One to One association should only have one side defined as autoload, otherwise it leads to endless loops inside the DAL.',
+                $definition->getClass(),
+                $association->getPropertyName()
+            );
+        }
+
         return $associationViolations;
     }
 
@@ -689,7 +697,6 @@ class DefinitionValidator
             );
         }
 
-        /** @var EntityDefinition $definition */
         if ($definition->isVersionAware() && $reference->isVersionAware()) {
             $versionField = $mapping->getFields()->filter(function (Field $field) use ($definition) {
                 return $field instanceof ReferenceVersionField && $field->getVersionReferenceDefinition() === $definition;
@@ -822,13 +829,14 @@ class DefinitionValidator
             return [];
         }
 
-        return [$definition->getClass() => [
-            sprintf(
-                'Association %s.%s does not end with a \'s\'.',
-                $definition->getEntityName(),
-                $association->getPropertyName()
-            ),
-        ],
+        return [
+            $definition->getClass() => [
+                sprintf(
+                    'Association %s.%s does not end with a \'s\'.',
+                    $definition->getEntityName(),
+                    $association->getPropertyName()
+                ),
+            ],
         ];
     }
 
@@ -876,17 +884,18 @@ class DefinitionValidator
             mb_stripos($prop, $ref) === false && mb_stripos($prop, $refPlural) === false
             && mb_stripos($prop, $refSalesChannelPart) === false && mb_stripos($prop, $refSalesChannelPartPlural) === false
         ) {
-            $ret = [$definition->getClass() => [
-                sprintf(
-                    'Association %s.%s does not contain reference class name `%s` or `%s` or `%s` or `%s`',
-                    $definition->getEntityName(),
-                    $association->getPropertyName(),
-                    $ref,
-                    $refPlural,
-                    $refSalesChannelPart,
-                    $refSalesChannelPartPlural
-                ),
-            ],
+            $ret = [
+                $definition->getClass() => [
+                    sprintf(
+                        'Association %s.%s does not contain reference class name `%s` or `%s` or `%s` or `%s`',
+                        $definition->getEntityName(),
+                        $association->getPropertyName(),
+                        $ref,
+                        $refPlural,
+                        $refSalesChannelPart,
+                        $refSalesChannelPartPlural
+                    ),
+                ],
             ];
 
             return $ret;

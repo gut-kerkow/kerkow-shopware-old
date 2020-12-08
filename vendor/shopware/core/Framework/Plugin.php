@@ -2,6 +2,10 @@
 
 namespace Shopware\Core\Framework;
 
+use Shopware\Core\Framework\Api\Acl\Role\AclRoleEntity;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\ContainsFilter;
 use Shopware\Core\Framework\Parameter\AdditionalBundleParameters;
 use Shopware\Core\Framework\Plugin\Context\ActivateContext;
 use Shopware\Core\Framework\Plugin\Context\DeactivateContext;
@@ -85,6 +89,17 @@ abstract class Plugin extends Bundle
         return [];
     }
 
+    /**
+     * By default the container is rebuild during plugin activation and deactivation to allow the plugin to access
+     * its own services. If you are absolutely sure you do not require this feature for you plugin you might want
+     * to overwrite this method and return false to improve the activation/deactivation of your plugin. This change will
+     * only have an affect in the system context (CLI)
+     */
+    public function rebuildContainer(): bool
+    {
+        return true;
+    }
+
     final public function removeMigrations(): void
     {
         // namespace should not start with `shopware`
@@ -99,6 +114,55 @@ abstract class Plugin extends Bundle
     public function getBasePath(): string
     {
         return $this->basePath;
+    }
+
+    final protected function addPrivileges(string $role, array $privileges): void
+    {
+        /** @var EntityRepositoryInterface $aclRepository */
+        $aclRepository = $this->container->get('acl_role.repository');
+
+        $criteria = new Criteria();
+        $criteria->addFilter(new ContainsFilter('privileges', $role));
+        $roles = $aclRepository->search($criteria, Context::createDefaultContext());
+
+        foreach ($roles as $role) {
+            $role->setPrivileges(array_merge($role->getPrivileges(), $privileges));
+            $aclRepository->update(
+                [
+                    [
+                        'id' => $role->getId(),
+                        'privileges' => $role->getPrivileges(),
+                    ],
+                ],
+                Context::createDefaultContext()
+            );
+        }
+    }
+
+    final protected function removePrivileges(array $privileges): void
+    {
+        /** @var EntityRepositoryInterface $aclRepository */
+        $aclRepository = $this->container->get('acl_role.repository');
+
+        foreach ($privileges as $privilege) {
+            $criteria = new Criteria();
+            $criteria->addFilter(new ContainsFilter('privileges', $privilege));
+            $roles = $aclRepository->search($criteria, Context::createDefaultContext());
+
+            /** @var AclRoleEntity $role */
+            foreach ($roles as $role) {
+                $role->setPrivileges(array_diff($role->getPrivileges(), [$privilege]));
+                $aclRepository->update(
+                    [
+                        [
+                            'id' => $role->getId(),
+                            'privileges' => $role->getPrivileges(),
+                        ],
+                    ],
+                    Context::createDefaultContext()
+                );
+            }
+        }
     }
 
     private function computePluginClassPath(): string

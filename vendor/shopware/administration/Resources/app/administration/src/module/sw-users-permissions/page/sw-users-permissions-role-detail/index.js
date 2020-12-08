@@ -2,16 +2,22 @@ import template from './sw-users-permissions-role-detail.html.twig';
 import './sw-users-permissions-role-detail.scss';
 
 const { Component, Mixin } = Shopware;
-const { mapPropertyErrors } = Component.getComponentHelper();
 
 Component.register('sw-users-permissions-role-detail', {
     template,
 
-    inject: ['repositoryFactory', 'privileges', 'userService'],
+    inject: [
+        'repositoryFactory',
+        'privileges',
+        'userService',
+        'loginService',
+        'acl'
+    ],
 
     mixins: [
         Mixin.getByName('notification')
     ],
+
 
     shortcuts: {
         'SYSTEMKEY+S': 'onSave',
@@ -22,7 +28,9 @@ Component.register('sw-users-permissions-role-detail', {
         return {
             isLoading: true,
             isSaveSuccessful: false,
-            role: null
+            role: null,
+            confirmPasswordModal: false,
+            detailedPrivileges: []
         };
     },
 
@@ -33,11 +41,6 @@ Component.register('sw-users-permissions-role-detail', {
     },
 
     computed: {
-        ...mapPropertyErrors('role', [
-            'name',
-            'description'
-        ]),
-
         tooltipSave() {
             const systemKey = this.$device.getSystemKey();
 
@@ -64,10 +67,6 @@ Component.register('sw-users-permissions-role-detail', {
 
         roleId() {
             return this.$route.params.id;
-        },
-
-        requiredPrivileges() {
-            return this.privileges.getRequiredPrivileges();
         }
     },
 
@@ -109,7 +108,14 @@ Component.register('sw-users-permissions-role-detail', {
             this.roleRepository.get(this.roleId, Shopware.Context.api)
                 .then((role) => {
                     this.role = role;
-                    this.role.privileges = this.privileges.filterPrivilegesRoles(this.role.privileges);
+
+                    const filteredPrivileges = this.privileges.filterPrivilegesRoles(this.role.privileges);
+                    const allGeneralPrivileges = this.privileges.getPrivilegesForAdminPrivilegeKeys(filteredPrivileges);
+
+                    this.detailedPrivileges = this.role.privileges.filter(privilege => {
+                        return !allGeneralPrivileges.includes(privilege);
+                    });
+                    this.role.privileges = filteredPrivileges;
                 })
                 .finally(() => {
                     this.isLoading = false;
@@ -117,15 +123,21 @@ Component.register('sw-users-permissions-role-detail', {
         },
 
         onSave() {
+            this.confirmPasswordModal = true;
+        },
+
+        saveRole(context) {
             this.isSaveSuccessful = false;
             this.isLoading = true;
 
             this.role.privileges = [
-                ...this.getPrivilegesForSelections(),
-                ...this.requiredPrivileges
-            ];
+                ...this.privileges.getPrivilegesForAdminPrivilegeKeys(this.role.privileges),
+                ...this.detailedPrivileges
+            ].sort();
 
-            return this.roleRepository.save(this.role, Shopware.Context.api)
+            this.confirmPasswordModal = false;
+
+            return this.roleRepository.save(this.role, context)
                 .then(() => {
                     return this.updateCurrentUser();
                 }).then(() => {
@@ -138,7 +150,6 @@ Component.register('sw-users-permissions-role-detail', {
                 })
                 .catch(() => {
                     this.createNotificationError({
-                        title: this.$tc('global.default.error'),
                         message: this.$tc(
                             'global.notification.notificationSaveErrorMessage',
                             0,
@@ -162,16 +173,8 @@ Component.register('sw-users-permissions-role-detail', {
             });
         },
 
-        getPrivilegesForSelections() {
-            const privileges = [];
-
-            this.role.privileges.forEach(privilegeKey => {
-                const privilegeRole = this.privileges.getPrivilegeRole(privilegeKey);
-
-                privileges.push(privilegeKey, ...privilegeRole.privileges);
-            });
-
-            return privileges;
+        onCloseConfirmPasswordModal() {
+            this.confirmPasswordModal = false;
         },
 
         saveFinish() {

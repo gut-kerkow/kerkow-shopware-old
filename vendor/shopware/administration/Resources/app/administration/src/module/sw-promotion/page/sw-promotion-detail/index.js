@@ -11,7 +11,7 @@ const { mapPageErrors } = Shopware.Component.getComponentHelper();
 Component.register('sw-promotion-detail', {
     template,
 
-    inject: ['repositoryFactory'],
+    inject: ['repositoryFactory', 'acl'],
 
     mixins: [
         Mixin.getByName('notification'),
@@ -20,7 +20,12 @@ Component.register('sw-promotion-detail', {
     ],
 
     shortcuts: {
-        'SYSTEMKEY+S': 'onSave',
+        'SYSTEMKEY+S': {
+            active() {
+                return this.acl.can('promotion.editor');
+            },
+            method: 'onSave'
+        },
         ESCAPE: 'onCancel'
     },
 
@@ -63,6 +68,14 @@ Component.register('sw-promotion-detail', {
         },
 
         tooltipSave() {
+            if (!this.acl.can('promotion.editor')) {
+                return {
+                    message: this.$tc('sw-privileges.tooltip.warning'),
+                    disabled: this.acl.can('category.editor'),
+                    showOnDisabledElements: true
+                };
+            }
+
             const systemKey = this.$device.getSystemKey();
 
             return {
@@ -138,12 +151,16 @@ Component.register('sw-promotion-detail', {
             this.isLoading = true;
             if (!this.promotionId) {
                 Shopware.State.commit('context/resetLanguageToDefault');
+                Shopware.State.commit('shopwareApps/setSelectedIds', []);
+
                 this.promotion = this.promotionRepository.create(Shopware.Context.api);
                 // hydrate and extend promotion with additional data
                 entityHydrator.hydrate(this.promotion);
                 this.isLoading = false;
                 return;
             }
+
+            Shopware.State.commit('shopwareApps/setSelectedIds', [this.promotionId]);
             this.loadEntityData();
 
             this.$root.$on('promotion-save-start', this.onShouldSave);
@@ -244,7 +261,6 @@ Component.register('sw-promotion-detail', {
             } catch (error) {
                 this.isLoading = false;
                 this.createNotificationError({
-                    title: this.$tc('global.default.error'),
                     message: this.$tc(
                         'global.notification.notificationSaveErrorMessageRequiredFieldsInvalid'
                     )
@@ -281,7 +297,6 @@ Component.register('sw-promotion-detail', {
                         .catch((error) => {
                             this.isLoading = false;
                             this.createNotificationError({
-                                title: this.$tc('global.default.error'),
                                 message: this.$tc(
                                     'global.notification.unspecifiedSaveErrorMessage',
                                     0,

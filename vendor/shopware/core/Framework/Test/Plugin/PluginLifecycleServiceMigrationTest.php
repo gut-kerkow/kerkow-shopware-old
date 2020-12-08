@@ -26,6 +26,9 @@ use Shopware\Core\Kernel;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
+/**
+ * @group slow
+ */
 class PluginLifecycleServiceMigrationTest extends TestCase
 {
     use KernelTestBehaviour;
@@ -74,8 +77,6 @@ class PluginLifecycleServiceMigrationTest extends TestCase
 
     protected function setUp(): void
     {
-        static::markTestSkipped('NEXT-9627 - Improve plugin integration tests');
-
         // force kernel boot
         KernelLifecycleManager::bootKernel();
 
@@ -152,10 +153,10 @@ class PluginLifecycleServiceMigrationTest extends TestCase
     /**
      * @depends testDeactivate
      */
-    public function testUninstall(MigrationCollection $migrationCollection): void
+    public function testUninstallKeepUserData(MigrationCollection $migrationCollection): void
     {
         $migrationPlugin = $this->getMigrationTestPlugin();
-        $this->pluginLifecycleService->uninstallPlugin($migrationPlugin, $this->context);
+        $this->pluginLifecycleService->uninstallPlugin($migrationPlugin, $this->context, true);
         $this->assertMigrationCount($migrationCollection, 4);
     }
 

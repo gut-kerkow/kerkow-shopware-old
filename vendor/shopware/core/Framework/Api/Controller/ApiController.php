@@ -13,7 +13,6 @@ use Shopware\Core\Framework\Api\Exception\LiveVersionDeleteException;
 use Shopware\Core\Framework\Api\Exception\MissingPrivilegeException;
 use Shopware\Core\Framework\Api\Exception\NoEntityClonedException;
 use Shopware\Core\Framework\Api\Exception\ResourceNotFoundException;
-use Shopware\Core\Framework\Api\OAuth\Scope\WriteScope;
 use Shopware\Core\Framework\Api\Response\ResponseFactoryInterface;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
@@ -50,7 +49,6 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -219,7 +217,7 @@ class ApiController extends AbstractController
         $definition = $this->definitionRegistry->getByEntityName($entity);
         $missing = $this->validateAclPermissions($context, $definition, AclRoleDefinition::PRIVILEGE_CREATE);
         if ($missing) {
-            throw new MissingPrivilegeException($missing);
+            throw new MissingPrivilegeException([$missing]);
         }
 
         $eventContainer = $context->scope(Context::CRUD_API_SCOPE, function (Context $context) use ($definition, $id, $behavior): EntityWrittenContainerEvent {
@@ -388,7 +386,7 @@ class ApiController extends AbstractController
         $permissions = array_unique(array_filter(array_merge($permissions, $missing)));
 
         if (!empty($permissions)) {
-            throw new MissingPrivilegeException(implode(', ', $permissions));
+            throw new MissingPrivilegeException($permissions);
         }
 
         $entity = $context->scope(Context::CRUD_API_SCOPE, function (Context $context) use ($repository, $criteria, $id): ?Entity {
@@ -444,28 +442,16 @@ class ApiController extends AbstractController
 
     public function create(Request $request, Context $context, ResponseFactoryInterface $responseFactory, string $entityName, string $path): Response
     {
-        if (!$this->hasScope($request, WriteScope::IDENTIFIER)) {
-            throw new AccessDeniedHttpException(sprintf('This access token does not have the scope "%s" to process this Request', WriteScope::IDENTIFIER));
-        }
-
         return $this->write($request, $context, $responseFactory, $entityName, $path, self::WRITE_CREATE);
     }
 
     public function update(Request $request, Context $context, ResponseFactoryInterface $responseFactory, string $entityName, string $path): Response
     {
-        if (!$this->hasScope($request, WriteScope::IDENTIFIER)) {
-            throw new AccessDeniedHttpException(sprintf('This access token does not have the scope "%s" to process this Request', WriteScope::IDENTIFIER));
-        }
-
         return $this->write($request, $context, $responseFactory, $entityName, $path, self::WRITE_UPDATE);
     }
 
     public function delete(Request $request, Context $context, ResponseFactoryInterface $responseFactory, string $entityName, string $path): Response
     {
-        if (!$this->hasScope($request, WriteScope::IDENTIFIER)) {
-            throw new AccessDeniedHttpException(sprintf('This access token does not have the scope "%s" to process this Request', WriteScope::IDENTIFIER));
-        }
-
         $pathSegments = $this->buildEntityPath($entityName, $path, $request->attributes->getInt('version'), $context, [WriteProtection::class]);
 
         $last = $pathSegments[\count($pathSegments) - 1];
@@ -586,7 +572,7 @@ class ApiController extends AbstractController
             $permissions = array_unique(array_filter(array_merge($permissions, $nested)));
 
             if (!empty($permissions)) {
-                throw new MissingPrivilegeException(implode(', ', $permissions));
+                throw new MissingPrivilegeException($permissions);
             }
 
             return [$criteria, $repository];
@@ -711,7 +697,7 @@ class ApiController extends AbstractController
         $permissions = array_unique(array_filter(array_merge($permissions, $nested)));
 
         if (!empty($permissions)) {
-            throw new MissingPrivilegeException(implode(', ', $permissions));
+            throw new MissingPrivilegeException($permissions);
         }
 
         return [$criteria, $repository];

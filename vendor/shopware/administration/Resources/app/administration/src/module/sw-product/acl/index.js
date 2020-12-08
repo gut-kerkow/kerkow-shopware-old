@@ -1,7 +1,7 @@
 Shopware.Service('privileges')
     .addPrivilegeMappingEntry({
         category: 'permissions',
-        parent: null,
+        parent: 'catalogues',
         key: 'product',
         roles: {
             viewer: {
@@ -28,9 +28,7 @@ Shopware.Service('privileges')
                     'custom_field_set:read',
                     'custom_field:read',
                     'custom_field_set_relation:read',
-                    'media_folder:read',
-                    'media:read',
-                    'media_default_folder:read',
+                    Shopware.Service('privileges').getPrivileges('media.viewer'),
                     'sales_channel_type:read',
                     'rule:read',
                     'property_group:read',
@@ -44,7 +42,8 @@ Shopware.Service('privileges')
                     'product_stream_filter:read',
                     'payment_method:read',
                     'shipping_method:read',
-                    'product_tag:read'
+                    'product_tag:read',
+                    'product_feature_set:read'
                 ],
                 dependencies: []
             },
@@ -74,13 +73,19 @@ Shopware.Service('privileges')
                     'product_property:delete',
                     'product_category:create',
                     'product_category:delete',
-                    'media:create',
+                    Shopware.Service('privileges').getPrivileges('media.creator'),
                     'product_media:create',
                     'product_media:delete',
                     'product_tag:create',
                     'product_tag:delete',
                     'tag:create',
-                    'main_category:create'
+                    'main_category:create',
+                    'product_option:create',
+                    'review:read',
+                    'review:delete',
+                    'product_feature_set:create',
+                    'product_feature_set:update',
+                    'product_feature_set:delete'
                 ],
                 dependencies: [
                     'product.viewer'
@@ -88,13 +93,7 @@ Shopware.Service('privileges')
             },
             creator: {
                 privileges: [
-                    'delivery_time:read',
-                    'product:create',
-                    'product_option:create',
-                    'product_configurator_setting:create',
-                    'media:create',
-                    'product_media:create',
-                    'product_visibility:create'
+                    'product:create'
                 ],
                 dependencies: [
                     'product.viewer',

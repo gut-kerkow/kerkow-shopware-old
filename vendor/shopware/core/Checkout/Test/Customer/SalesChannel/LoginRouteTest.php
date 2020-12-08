@@ -2,16 +2,27 @@
 
 namespace Shopware\Core\Checkout\Test\Customer\SalesChannel;
 
+use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\Checkout\Cart\Cart;
+use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
+use Shopware\Core\Checkout\Customer\SalesChannel\LoginRoute;
 use Shopware\Core\Checkout\Test\Payment\Handler\V630\SyncTestPaymentHandler;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour;
 use Shopware\Core\Framework\Test\TestDataCollection;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\PlatformRequest;
+use Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory;
+use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
+use Shopware\Core\System\SalesChannel\ContextTokenResponse;
+use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 
 class LoginRouteTest extends TestCase
 {
@@ -99,60 +110,168 @@ class LoginRouteTest extends TestCase
         static::assertArrayHasKey('contextToken', $response);
     }
 
-    private function createCustomer(string $password, ?string $email = null): string
+    public function testLoginWithInvalidBoundSalesChannelId(): void
+    {
+        Feature::skipTestIfInActive('FEATURE_NEXT_10555', $this);
+
+        static::expectException(UnauthorizedHttpException::class);
+
+        $email = Uuid::randomHex() . '@example.com';
+        $password = 'shopware';
+        $salesChannel = $this->createSalesChannel([
+            'id' => Uuid::randomHex(),
+        ]);
+
+        $salesChannelContext = $this->createSalesChannelContext(Uuid::randomHex(), [
+            'id' => Uuid::randomHex(),
+        ], null);
+
+        $this->createCustomer($password, $email, $salesChannel['id']);
+
+        /** @var LoginRoute $loginRoute */
+        $loginRoute = $this->getContainer()->get(LoginRoute::class);
+
+        $requestDataBag = new RequestDataBag(['email' => $email, 'password' => $password]);
+
+        $success = $loginRoute->login($requestDataBag, $salesChannelContext);
+        static::assertInstanceOf(ContextTokenResponse::class, $success);
+
+        $loginRoute->login($requestDataBag, $salesChannelContext);
+    }
+
+    public function testLoginSuccessRestoreCustomerContext(): void
+    {
+        Feature::skipTestIfInActive('FEATURE_NEXT_10058', $this);
+
+        $email = Uuid::randomHex() . '@example.com';
+        $password = 'shopware';
+        $customerId = $this->createCustomer($password, $email);
+        $contextToken = Uuid::randomHex();
+
+        $this->createCart($contextToken);
+
+        $salesChannelContext = $this->createSalesChannelContext($contextToken, [], $customerId);
+
+        /** @var LoginRoute $loginRoute */
+        $loginRoute = $this->getContainer()->get(LoginRoute::class);
+
+        $request = new RequestDataBag(['email' => $email, 'password' => $password]);
+
+        $response = $loginRoute->login($request, $salesChannelContext);
+
+        // Token is replace as there're no customer token in the database
+        static::assertNotEquals($contextToken, $oldToken = $response->getToken());
+
+        $salesChannelContext = $this->createSalesChannelContext('123456789', [], $customerId);
+
+        $response = $loginRoute->login($request, $salesChannelContext);
+
+        // Previous token is restored
+        static::assertEquals($oldToken, $response->getToken());
+
+        // Previous Cart is restored
+        $salesChannelContext = $this->createSalesChannelContext($oldToken, [], $customerId);
+        $oldCartExists = $this->getContainer()->get(CartService::class)->getCart($oldToken, $salesChannelContext);
+
+        static::assertInstanceOf(Cart::class, $oldCartExists);
+        static::assertEquals($oldToken, $oldCartExists->getToken());
+    }
+
+    private function createCart(string $contextToken): void
+    {
+        $connection = $this->getContainer()->get(Connection::class);
+
+        $countryStatement = $connection->executeQuery('SELECT id FROM country WHERE active = 1 ORDER BY `position`');
+        $defaultCountry = $countryStatement->fetchColumn();
+        $defaultPaymentMethod = $connection->executeQuery('SELECT id FROM payment_method WHERE active = 1 ORDER BY `position`')->fetchColumn();
+        $defaultShippingMethod = $connection->executeQuery('SELECT id FROM shipping_method WHERE active = 1')->fetchColumn();
+
+        $connection->insert('cart', [
+            'token' => $contextToken,
+            'name' => 'test',
+            'cart' => serialize(new Cart('test', $contextToken)),
+            'line_item_count' => 1,
+            'currency_id' => Uuid::fromHexToBytes(Defaults::CURRENCY),
+            'country_id' => $defaultCountry,
+            'price' => 1,
+            'payment_method_id' => $defaultPaymentMethod,
+            'shipping_method_id' => $defaultShippingMethod,
+            'sales_channel_id' => Uuid::fromHexToBytes(Defaults::SALES_CHANNEL),
+            'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+        ]);
+    }
+
+    private function createSalesChannelContext(string $contextToken, array $salesChannelData, ?string $customerId): SalesChannelContext
+    {
+        if ($customerId) {
+            $salesChannelData[SalesChannelContextService::CUSTOMER_ID] = $customerId;
+        }
+
+        return $this->getContainer()->get(SalesChannelContextFactory::class)->create(
+            $contextToken,
+            Defaults::SALES_CHANNEL,
+            $salesChannelData
+        );
+    }
+
+    private function createCustomer(string $password, ?string $email = null, ?string $boundSalesChannelId = null): string
     {
         $customerId = Uuid::randomHex();
         $addressId = Uuid::randomHex();
 
-        $this->customerRepository->create([
-            [
-                'id' => $customerId,
-                'salesChannelId' => Defaults::SALES_CHANNEL,
-                'defaultShippingAddress' => [
-                    'id' => $addressId,
-                    'firstName' => 'Max',
-                    'lastName' => 'Mustermann',
-                    'street' => 'Musterstraße 1',
-                    'city' => 'Schoöppingen',
-                    'zipcode' => '12345',
-                    'salutationId' => $this->getValidSalutationId(),
-                    'country' => ['name' => 'Germany'],
-                ],
-                'defaultBillingAddressId' => $addressId,
-                'defaultPaymentMethod' => [
-                    'name' => 'Invoice',
-                    'active' => true,
-                    'description' => 'Default payment method',
-                    'handlerIdentifier' => SyncTestPaymentHandler::class,
-                    'availabilityRule' => [
-                        'id' => Uuid::randomHex(),
-                        'name' => 'true',
-                        'priority' => 0,
-                        'conditions' => [
-                            [
-                                'type' => 'cartCartAmount',
-                                'value' => [
-                                    'operator' => '>=',
-                                    'amount' => 0,
-                                ],
+        $customer = [
+            'id' => $customerId,
+            'salesChannelId' => Defaults::SALES_CHANNEL,
+            'defaultShippingAddress' => [
+                'id' => $addressId,
+                'firstName' => 'Max',
+                'lastName' => 'Mustermann',
+                'street' => 'Musterstraße 1',
+                'city' => 'Schoöppingen',
+                'zipcode' => '12345',
+                'salutationId' => $this->getValidSalutationId(),
+                'country' => ['name' => 'Germany'],
+            ],
+            'defaultBillingAddressId' => $addressId,
+            'defaultPaymentMethod' => [
+                'name' => 'Invoice',
+                'active' => true,
+                'description' => 'Default payment method',
+                'handlerIdentifier' => SyncTestPaymentHandler::class,
+                'availabilityRule' => [
+                    'id' => Uuid::randomHex(),
+                    'name' => 'true',
+                    'priority' => 0,
+                    'conditions' => [
+                        [
+                            'type' => 'cartCartAmount',
+                            'value' => [
+                                'operator' => '>=',
+                                'amount' => 0,
                             ],
                         ],
                     ],
-                    'salesChannels' => [
-                        [
-                            'id' => Defaults::SALES_CHANNEL,
-                        ],
+                ],
+                'salesChannels' => [
+                    [
+                        'id' => Defaults::SALES_CHANNEL,
                     ],
                 ],
-                'groupId' => Defaults::FALLBACK_CUSTOMER_GROUP,
-                'email' => $email,
-                'password' => $password,
-                'firstName' => 'Max',
-                'lastName' => 'Mustermann',
-                'salutationId' => $this->getValidSalutationId(),
-                'customerNumber' => '12345',
             ],
-        ], $this->ids->context);
+            'groupId' => Defaults::FALLBACK_CUSTOMER_GROUP,
+            'email' => $email,
+            'password' => $password,
+            'firstName' => 'Max',
+            'lastName' => 'Mustermann',
+            'salutationId' => $this->getValidSalutationId(),
+            'customerNumber' => '12345',
+        ];
+
+        if (Feature::isActive('FEATURE_NEXT_10555')) {
+            $customer['boundSalesChannelId'] = $boundSalesChannelId;
+        }
+
+        $this->customerRepository->create([$customer], $this->ids->context);
 
         return $customerId;
     }

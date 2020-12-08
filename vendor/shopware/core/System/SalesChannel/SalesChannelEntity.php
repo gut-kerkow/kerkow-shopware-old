@@ -2,6 +2,7 @@
 
 namespace Shopware\Core\System\SalesChannel;
 
+use Shopware\Core\Checkout\Customer\Aggregate\CustomerGroup\CustomerGroupCollection;
 use Shopware\Core\Checkout\Customer\Aggregate\CustomerGroup\CustomerGroupEntity;
 use Shopware\Core\Checkout\Customer\CustomerCollection;
 use Shopware\Core\Checkout\Document\Aggregate\DocumentBaseConfig\DocumentBaseConfigDefinition;
@@ -23,6 +24,7 @@ use Shopware\Core\Content\Seo\SeoUrl\SeoUrlCollection;
 use Shopware\Core\Content\Seo\SeoUrlTemplate\SeoUrlTemplateCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
+use Shopware\Core\Framework\Event\EventAction\EventActionCollection;
 use Shopware\Core\System\Country\CountryCollection;
 use Shopware\Core\System\Country\CountryEntity;
 use Shopware\Core\System\Currency\CurrencyCollection;
@@ -335,6 +337,23 @@ class SalesChannelEntity extends Entity
      * @var SalesChannelAnalyticsEntity
      */
     protected $analytics;
+
+    /**
+     * @var CustomerGroupCollection|null
+     */
+    protected $customerGroupsRegistrations;
+
+    /**
+     * @var EventActionCollection|null
+     */
+    protected $eventActions;
+
+    /**
+     * @internal (flag:FEATURE_NEXT_10555)
+     *
+     * @var CustomerCollection|null
+     */
+    protected $boundCustomers;
 
     public function getMailHeaderFooter(): ?MailHeaderFooterEntity
     {
@@ -922,11 +941,6 @@ class SalesChannelEntity extends Entity
         $this->analytics = $analytics;
     }
 
-    public function getApiAlias(): string
-    {
-        return 'sales_channel';
-    }
-
     public function getTaxCalculationType(): string
     {
         return $this->taxCalculationType;
@@ -935,5 +949,35 @@ class SalesChannelEntity extends Entity
     public function setTaxCalculationType(string $taxCalculationType): void
     {
         $this->taxCalculationType = $taxCalculationType;
+    }
+
+    public function getCustomerGroupsRegistrations(): ?CustomerGroupCollection
+    {
+        return $this->customerGroupsRegistrations;
+    }
+
+    public function setCustomerGroupsRegistrations(CustomerGroupCollection $customerGroupsRegistrations): void
+    {
+        $this->customerGroupsRegistrations = $customerGroupsRegistrations;
+    }
+
+    public function getEventActions(): ?EventActionCollection
+    {
+        return $this->eventActions;
+    }
+
+    public function setEventActions(EventActionCollection $eventActions): void
+    {
+        $this->eventActions = $eventActions;
+    }
+
+    public function getBoundCustomers(): ?CustomerCollection
+    {
+        return $this->boundCustomers;
+    }
+
+    public function setBoundCustomers(CustomerCollection $boundCustomers): void
+    {
+        $this->boundCustomers = $boundCustomers;
     }
 }

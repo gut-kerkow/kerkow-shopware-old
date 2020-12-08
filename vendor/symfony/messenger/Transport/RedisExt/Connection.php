@@ -55,12 +55,23 @@ class Connection
         $this->connection->connect($connectionCredentials['host'] ?? '127.0.0.1', $connectionCredentials['port'] ?? 6379);
         $this->connection->setOption(\Redis::OPT_SERIALIZER, $redisOptions['serializer'] ?? \Redis::SERIALIZER_PHP);
 
-        if (isset($connectionCredentials['auth']) && !$this->connection->auth($connectionCredentials['auth'])) {
-            throw new InvalidArgumentException(sprintf('Redis connection failed: %s', $redis->getLastError()));
+        $auth = $connectionCredentials['auth'] ?? null;
+        if ('' === $auth) {
+            $auth = null;
+        }
+
+        if (null !== $auth && !$this->connection->auth($auth)) {
+            throw new InvalidArgumentException('Redis connection failed: '.$this->connection->getLastError());
         }
 
         if (($dbIndex = $configuration['dbindex'] ?? self::DEFAULT_OPTIONS['dbindex']) && !$this->connection->select($dbIndex)) {
-            throw new InvalidArgumentException(sprintf('Redis connection failed: %s', $redis->getLastError()));
+            throw new InvalidArgumentException('Redis connection failed: '.$this->connection->getLastError());
+        }
+
+        foreach (['stream', 'group', 'consumer'] as $key) {
+            if (isset($configuration[$key]) && '' === $configuration[$key]) {
+                throw new InvalidArgumentException(sprintf('"%s" should be configured, got an empty string.', $key));
+            }
         }
 
         $this->stream = $configuration['stream'] ?? self::DEFAULT_OPTIONS['stream'];
@@ -77,7 +88,7 @@ class Connection
             throw new InvalidArgumentException(sprintf('The given Redis DSN "%s" is invalid.', $dsn));
         }
 
-        $pathParts = explode('/', $parsedUrl['path'] ?? '');
+        $pathParts = explode('/', rtrim($parsedUrl['path'] ?? '', '/'));
 
         $stream = $pathParts[1] ?? $redisOptions['stream'] ?? null;
         $group = $pathParts[2] ?? $redisOptions['group'] ?? null;
@@ -95,19 +106,19 @@ class Connection
 
         $autoSetup = null;
         if (\array_key_exists('auto_setup', $redisOptions)) {
-            $autoSetup = filter_var($redisOptions['auto_setup'], FILTER_VALIDATE_BOOLEAN);
+            $autoSetup = filter_var($redisOptions['auto_setup'], \FILTER_VALIDATE_BOOLEAN);
             unset($redisOptions['auto_setup']);
         }
 
         $maxEntries = null;
         if (\array_key_exists('stream_max_entries', $redisOptions)) {
-            $maxEntries = filter_var($redisOptions['stream_max_entries'], FILTER_VALIDATE_INT);
+            $maxEntries = filter_var($redisOptions['stream_max_entries'], \FILTER_VALIDATE_INT);
             unset($redisOptions['stream_max_entries']);
         }
 
         $dbIndex = null;
         if (\array_key_exists('dbindex', $redisOptions)) {
-            $dbIndex = filter_var($redisOptions['dbindex'], FILTER_VALIDATE_INT);
+            $dbIndex = filter_var($redisOptions['dbindex'], \FILTER_VALIDATE_INT);
             unset($redisOptions['dbindex']);
         }
 

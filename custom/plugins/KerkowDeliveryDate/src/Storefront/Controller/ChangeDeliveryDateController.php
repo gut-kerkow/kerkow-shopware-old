@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Kerkow\DeliveryDate\Storefront\Controller;
 
+use DateTime;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\StorefrontController;
@@ -49,6 +50,8 @@ class ChangeDeliveryDateController extends StorefrontController
     {
         $parameters["deliveryDate"] = $data->get("deliveryDate");
         $parameters["deliverySlot"] = $data->get("deliverySlot");
+        $now = new DateTime();
+        $parameters["customDeliveryTimestamp"] = $now->format('Y-m-d H:i:s');
 
         $this->contextPersister->save($context->getToken(), $parameters);
 

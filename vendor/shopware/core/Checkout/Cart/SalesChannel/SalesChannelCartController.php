@@ -39,6 +39,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\Serializer;
 
 /**
+ * @deprecated tag:v6.4.0 - Use Store-API Cart Routes
  * @RouteScope(scopes={"sales-channel-api"})
  * @ContextTokenRequired()
  */
@@ -385,7 +386,7 @@ class SalesChannelCartController extends AbstractController
         }
     }
 
-    private function initPriceDefinition(Context $context, $priceDefinition, $lineItemType)
+    private function initPriceDefinition(Context $context, array $priceDefinition, string $lineItemType)
     {
         if (!isset($priceDefinition['type'])) {
             throw new InvalidPriceFieldTypeException('none');

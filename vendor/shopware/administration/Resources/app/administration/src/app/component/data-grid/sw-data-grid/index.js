@@ -122,6 +122,12 @@ Component.register('sw-data-grid', {
             default: true
         },
 
+        plainAppearance: {
+            type: Boolean,
+            required: false,
+            default: false
+        },
+
         showPreviews: {
             type: Boolean,
             required: false,
@@ -142,6 +148,12 @@ Component.register('sw-data-grid', {
             default() {
                 return true;
             }
+        },
+
+        itemIdentifierProperty: {
+            type: String,
+            required: false,
+            default: 'id'
         }
     },
 
@@ -181,12 +193,13 @@ Component.register('sw-data-grid', {
             return {
                 'is--compact': this.compact,
                 'sw-data-grid--full-page': this.fullPage,
-                'sw-data-grid--actions': this.showActions
+                'sw-data-grid--actions': this.showActions,
+                'sw-data-grid--plain-appearance': this.plainAppearance
             };
         },
 
         localStorageItemKey() {
-            return `${this.identifier}-grid-columns`;
+            return `${this.identifier}-grid`;
         },
 
         selectionCount() {
@@ -258,6 +271,7 @@ Component.register('sw-data-grid', {
     methods: {
         createdComponent() {
             this.initGridColumns();
+            this.initCompactModeAndShowPreviews();
         },
 
         mountedComponent() {
@@ -277,13 +291,28 @@ Component.register('sw-data-grid', {
                 const storageItem = window.localStorage.getItem(this.localStorageItemKey);
 
                 if (storageItem !== null) {
-                    columns = JSON.parse(storageItem);
+                    const parsedStorageItem = JSON.parse(storageItem);
+
+                    columns = parsedStorageItem.columns || parsedStorageItem;
                 }
             }
 
             this.currentColumns = columns;
 
             this.findResizeColumns();
+        },
+
+        initCompactModeAndShowPreviews() {
+            if (!this.identifier) {
+                return;
+            }
+
+            const storageItem = window.localStorage.getItem(this.localStorageItemKey);
+
+            if (storageItem !== null) {
+                this.compact = JSON.parse(storageItem).compact;
+                this.previews = JSON.parse(storageItem).previews;
+            }
         },
 
         findResizeColumns() {
@@ -321,6 +350,7 @@ Component.register('sw-data-grid', {
             });
         },
 
+        // @deprecated tag:v6.4.0
         saveGridColumns() {
             if (!this.identifier) {
                 return;
@@ -328,12 +358,23 @@ Component.register('sw-data-grid', {
             window.localStorage.setItem(this.localStorageItemKey, JSON.stringify(this.currentColumns));
         },
 
+        saveUserSettings() {
+            if (!this.identifier) {
+                return;
+            }
+
+            const userSettings = { columns: this.currentColumns, compact: this.compact, previews: this.previews };
+            window.localStorage.setItem(this.localStorageItemKey, JSON.stringify(userSettings));
+        },
+
         getHeaderCellClasses(column, index) {
-            return [{
-                'sw-data-grid__cell--sortable': column.dataIndex,
-                'sw-data-grid__cell--icon-label': column.iconLabel
-            },
-            `sw-data-grid__cell--${index}`
+            return [
+                {
+                    'sw-data-grid__cell--sortable': column.sortable,
+                    'sw-data-grid__cell--icon-label': column.iconLabel
+                },
+                `sw-data-grid__cell--${index}`,
+                `sw-data-grid__cell--align-${column.align}`
             ];
         },
 
@@ -359,20 +400,30 @@ Component.register('sw-data-grid', {
 
         onChangeCompactMode(value) {
             this.compact = value;
+            this.saveUserSettings();
         },
 
         onChangePreviews(value) {
             this.previews = value;
+            this.saveUserSettings();
         },
 
         onChangeColumnVisibility(value, index) {
             this.currentColumns[index].visible = value;
+
+            // @deprecated tag:v6.4.0 - use saveUserSettings instead
             this.saveGridColumns();
+
+            this.saveUserSettings();
         },
 
         onChangeColumnOrder(currentColumnIndex, newColumnIndex) {
             this.currentColumns = this.orderColumns(this.currentColumns, currentColumnIndex, newColumnIndex);
+
+            // @deprecated tag:v6.4.0 - use saveUserSettings instead
             this.saveGridColumns();
+
+            this.saveUserSettings();
         },
 
         orderColumns(columns, oldColumnIndex, newColumnIndex) {
@@ -393,7 +444,7 @@ Component.register('sw-data-grid', {
         },
 
         isInlineEdit(item) {
-            return this.isInlineEditActive && this.currentInlineEditId === item.id;
+            return this.isInlineEditActive && this.currentInlineEditId === item[this.itemIdentifierProperty];
         },
 
         disableInlineEdit() {
@@ -403,7 +454,11 @@ Component.register('sw-data-grid', {
 
         hideColumn(columnIndex) {
             this.currentColumns[columnIndex].visible = false;
+
+            // @deprecated tag:v6.4.0 - use saveUserSettings instead
             this.saveGridColumns();
+
+            this.saveUserSettings();
         },
 
         renderColumn(item, column) {
@@ -426,8 +481,8 @@ Component.register('sw-data-grid', {
         selectAll(selected) {
             this.$delete(this.selection);
 
-            this.records.forEach((item) => {
-                if (this.isSelected(item.id) !== selected) {
+            this.records.forEach(item => {
+                if (this.isSelected(item[this.itemIdentifierProperty]) !== selected) {
                     this.selectItem(selected, item);
                 }
             });
@@ -442,10 +497,10 @@ Component.register('sw-data-grid', {
 
             const selection = this.selection;
 
-            if (selected === true) {
-                this.$set(this.selection, item.id, item);
-            } else if (!selected && selection[item.id]) {
-                this.$delete(this.selection, item.id);
+            if (selected) {
+                this.$set(this.selection, item[this.itemIdentifierProperty], item);
+            } else if (!selected && selection[item[this.itemIdentifierProperty]]) {
+                this.$delete(this.selection, item[this.itemIdentifierProperty]);
             }
 
             this.$emit('select-item', this.selection, item, selected);
@@ -467,6 +522,7 @@ Component.register('sw-data-grid', {
         },
 
         onClickCancelInlineEdit(item) {
+            this.$emit('inline-edit-cancel', item);
             this.revert(item);
 
             this.disableInlineEdit();
@@ -478,7 +534,7 @@ Component.register('sw-data-grid', {
             }
 
             this.enableInlineEdit();
-            this.currentInlineEditId = record.id;
+            this.currentInlineEditId = record[this.itemIdentifierProperty];
         },
 
         onClickHeaderCell(event, column) {

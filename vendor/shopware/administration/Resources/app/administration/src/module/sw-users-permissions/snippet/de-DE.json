@@ -6,7 +6,8 @@
     "permissions": {},
     "roles": {
       "general": {
-        "labelCreateNewRole": "Neue Regel"
+        "labelCreateNewRole": "Neue Rolle",
+        "cardLabel": "Rollen"
       },
       "role-grid": {
         "labelName": "Name",
@@ -35,10 +36,23 @@
         "permissions": "Berechtigungen"
       },
       "grid": {
-        "title": "Berechtigungen"
+        "title": "Berechtigungen",
+        "disabledCheckboxMessage": "Um diese Option deaktivieren zu können, musst Du zuerst andere aktive Optionen deaktivieren."
       },
       "additional-permissions": {
         "title": "Zusätzliche Berechtigungen"
+      },
+      "detailed-additional-permissions": {
+        "title": "Zusätzliche Berechtigungen"
+      },
+      "view": {
+        "detailed": {
+          "alertText": "In dieser Ansicht können Privilegien detailliert konfiguriert werden. Diese Konfiguration ist nur in Ausnahmesituationen notwendig. Sollten im System z. B. Erweiterungen eingesetzt werden die neue Datensätze hinzufügen jedoch keine Rechte hierfür vergeben haben, können diese hier konfiguriert werden. Alle deaktivierten Checkboxen sind Berechtigungen, die bereits im Tab “Allgemein” vergeben wurden."
+        }
+      },
+      "tabs": {
+        "general": "Allgemein",
+        "detailed": "Detaillierte Privilegien"
       }
     },
     "users": {
@@ -46,7 +60,8 @@
         "mainMenuItemGeneral": "Benutzer & Rechte",
         "placeholderSearchBar": "Finde Benutzer ...",
         "labelUserList": "Benutzer & Rechte",
-        "labelCreateNewUser": "Neuer Benutzer"
+        "labelCreateNewUser": "Neuer Benutzer",
+        "cardLabel": "Benutzer"
       },
       "user-grid": {
         "labelUsername": "Benutzername",
@@ -105,6 +120,7 @@
         "addAccessKey": "Neuer Zugangsschlüssel",
         "labelAccessKey": "Zugangsschlüssel",
         "labelPermissions": "Berechtigungen",
+        "disabledRoleSelectWarning": "Rollen sind nur für Benutzer verfügbar, die kein \"Administrator\" sind.",
         "modal": {
           "detailModalTitle": "Integration anlegen",
           "detailModalTitleEdit": "Bearbeiten",
@@ -147,15 +163,56 @@
       "creator": "Erstellen",
       "deleter": "Löschen"
     },
+    "permissionType": {
+      "read": "Lesen",
+      "update": "Schreiben",
+      "create": "Erstellen",
+      "delete": "Löschen"
+    },
+    "permissions": {
+      "parents": {
+        "catalogues": "Kataloge",
+        "content": "Inhalte",
+        "customers": "Kunden",
+        "marketing": "Marketing",
+        "other": "Andere",
+        "orders": "Bestellungen",
+        "settings": "Einstellungen"
+      },
+      "users_and_permissions": {
+        "label": "Benutzer & Rechte"
+      },
+      "routes": {
+        "label": "Routes"
+      }
+    },
     "additional_permissions": {
       "system": {
-        "label": "System"
+        "label": "Einstellungen"
+      },
+      "user": {
+        "label": "Benutzer"
       },
       "marketing": {
         "label": "Marketing"
       },
       "orders": {
         "label": "Bestellungen"
+      },
+      "routes": {
+        "label": "Routen",
+        "api_action_access-key_integration": "API-Zugangsdaten neu generieren",
+        "api_acl_privileges_get": "Alle ACL-Berechtigungen lesen",
+        "api_acl_privileges_route_get": "ACL-Endpunkt-Berechtigungen lesen",
+        "api_action_cache_info": "Cache-Info lesen",
+        "api_action_cache_index": "Indexer triggern",
+        "api_action_cache_delete_and_warmup": "Cache löschen und aufwärmen",
+        "api_action_cache_delete": "Cache löschen",
+        "api_action_cache_cleanup": "Cache aufräumen",
+        "api_action_container-cache_delete": "Container-Cache löschen",
+        "api_info_me": "Eigene API-Userinfo lesen",
+        "api_info_ping": "API-Token erneuern",
+        "system:clear:cache": "Cache leeren"
       }
     }
   }

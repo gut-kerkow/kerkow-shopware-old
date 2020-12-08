@@ -187,6 +187,11 @@ class OrderEntity extends Entity
      */
     protected $customerComment;
 
+    /**
+     * @var string[]|null
+     */
+    protected $ruleIds = [];
+
     public function getCurrencyId(): string
     {
         return $this->currencyId;
@@ -467,7 +472,7 @@ class OrderEntity extends Entity
         $this->documents = $documents;
     }
 
-    public function getOrderNumber(): string
+    public function getOrderNumber(): ?string
     {
         return $this->orderNumber;
     }
@@ -533,9 +538,14 @@ class OrderEntity extends Entity
         $this->customerComment = $customerComment;
     }
 
-    public function getApiAlias(): string
+    public function getRuleIds(): ?array
     {
-        return 'order';
+        return $this->ruleIds;
+    }
+
+    public function setRuleIds(?array $ruleIds): void
+    {
+        $this->ruleIds = $ruleIds;
     }
 
     private function addChildren(OrderLineItemCollection $lineItems, OrderLineItemCollection $parents): void

@@ -20,6 +20,9 @@ use Shopware\Development\Kernel;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
+/**
+ * @group slow
+ */
 class PluginManagementServiceTest extends TestCase
 {
     use KernelTestBehaviour;
@@ -57,6 +60,8 @@ class PluginManagementServiceTest extends TestCase
     {
         $this->filesystem->remove(self::PLUGIN_FASHION_THEME_PATH);
         $this->filesystem->remove($this->cacheDir);
+
+        \Shopware\Core\Kernel::getConnection()->executeUpdate('DELETE FROM plugin');
     }
 
     public function testUploadPlugin(): void

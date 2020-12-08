@@ -6,6 +6,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\FetchMode;
 use Shopware\Core\Framework\Bundle;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\Dbal\Common\RepositoryIterator;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -17,6 +18,7 @@ use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SystemConfig\Exception\BundleConfigNotFoundException;
 use Shopware\Core\System\SystemConfig\Exception\InvalidDomainException;
 use Shopware\Core\System\SystemConfig\Exception\InvalidKeyException;
+use Shopware\Core\System\SystemConfig\Exception\InvalidSettingValueException;
 use Shopware\Core\System\SystemConfig\Util\ConfigReader;
 use Symfony\Component\Config\Util\XmlUtils;
 
@@ -52,6 +54,9 @@ class SystemConfigService
         $this->configReader = $configReader;
     }
 
+    /**
+     * @return array|bool|float|int|string|null
+     */
     public function get(string $key, ?string $salesChannelId = null)
     {
         $config = $this->load($salesChannelId);
@@ -75,6 +80,41 @@ class SystemConfigService
         }
 
         return $pointer;
+    }
+
+    public function getString(string $key, ?string $salesChannelId = null): string
+    {
+        $value = $this->get($key, $salesChannelId);
+        if (!\is_array($value)) {
+            return (string) $value;
+        }
+
+        throw new InvalidSettingValueException($key, 'string', \gettype($value));
+    }
+
+    public function getInt(string $key, ?string $salesChannelId = null): int
+    {
+        $value = $this->get($key, $salesChannelId);
+        if (!\is_array($value)) {
+            return (int) $value;
+        }
+
+        throw new InvalidSettingValueException($key, 'int', \gettype($value));
+    }
+
+    public function getFloat(string $key, ?string $salesChannelId = null): float
+    {
+        $value = $this->get($key, $salesChannelId);
+        if (!\is_array($value)) {
+            return (float) $value;
+        }
+
+        throw new InvalidSettingValueException($key, 'float', \gettype($value));
+    }
+
+    public function getBool(string $key, ?string $salesChannelId = null): bool
+    {
+        return (bool) $this->get($key, $salesChannelId);
     }
 
     /**
@@ -143,6 +183,9 @@ class SystemConfigService
         return $merged;
     }
 
+    /**
+     * @param array|bool|float|int|string|null $value
+     */
     public function set(string $key, $value, ?string $salesChannelId = null): void
     {
         // reset internal cache
@@ -211,6 +254,7 @@ class SystemConfigService
         }
 
         $criteria = new Criteria();
+        $criteria->setTitle('system-config::load');
 
         if ($salesChannelId === null) {
             $criteria->addFilter(new EqualsFilter('salesChannelId', null));
@@ -226,10 +270,18 @@ class SystemConfigService
             );
         }
 
-        $criteria->addSorting(new FieldSorting('salesChannelId', FieldSorting::ASCENDING));
+        $criteria->addSorting(
+            new FieldSorting('salesChannelId', FieldSorting::ASCENDING),
+            new FieldSorting('id', FieldSorting::ASCENDING)
+        );
+        $criteria->setLimit(500);
 
-        /** @var SystemConfigCollection $systemConfigs */
-        $systemConfigs = $this->systemConfigRepository->search($criteria, Context::createDefaultContext())->getEntities();
+        $systemConfigs = new SystemConfigCollection();
+        $iterator = new RepositoryIterator($this->systemConfigRepository, Context::createDefaultContext(), $criteria);
+
+        while ($chunk = $iterator->fetch()) {
+            $systemConfigs->merge($chunk->getEntities());
+        }
 
         $this->configs[$key] = $this->buildSystemConfigArray($systemConfigs);
 

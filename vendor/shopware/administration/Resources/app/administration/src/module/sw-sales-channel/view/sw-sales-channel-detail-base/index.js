@@ -20,7 +20,9 @@ Component.register('sw-sales-channel-detail-base', {
     inject: [
         'salesChannelService',
         'productExportService',
-        'repositoryFactory'
+        'repositoryFactory',
+        'knownIpsService',
+        'acl'
     ],
 
     props: {
@@ -56,7 +58,7 @@ Component.register('sw-sales-channel-detail-base', {
 
         templateOptions: {
             type: Array,
-            default: []
+            default: () => []
         },
 
         showTemplateModal: {
@@ -86,8 +88,15 @@ Component.register('sw-sales-channel-detail-base', {
             selectedStorefrontSalesChannel: null,
             invalidFileName: false,
             isFileNameChecking: false,
-            disableGenerateByCronjob: false
+            disableGenerateByCronjob: false,
+            knownIps: []
         };
+    },
+
+    created() {
+        this.knownIpsService.getKnownIps().then(ips => {
+            this.knownIps = ips;
+        });
     },
 
     computed: {
@@ -289,8 +298,19 @@ Component.register('sw-sales-channel-detail-base', {
 
         ...mapPropertyErrors('salesChannel',
             [
+                'name',
                 'customerGroupId',
                 'navigationCategoryId'
+            ]),
+
+        ...mapPropertyErrors('productExport',
+            [
+                'productStreamId',
+                'encoding',
+                'fileName',
+                'fileFormat',
+                'salesChannelDomainId',
+                'currencyId'
             ])
     },
 
@@ -300,7 +320,6 @@ Component.register('sw-sales-channel-detail-base', {
                 this.salesChannel.accessKey = response.accessKey;
             }).catch(() => {
                 this.createNotificationError({
-                    title: this.$tc('global.default.error'),
                     message: this.$tc('sw-sales-channel.detail.messageAPIError')
                 });
             });
@@ -313,13 +332,11 @@ Component.register('sw-sales-channel-detail-base', {
 
                 if (displaySaveNotification) {
                     this.createNotificationInfo({
-                        title: this.$tc('global.default.info'),
                         message: this.$tc('sw-sales-channel.detail.productComparison.messageAccessKeyChanged')
                     });
                 }
             }).catch(() => {
                 this.createNotificationError({
-                    title: this.$tc('global.default.error'),
                     message: this.$tc('sw-sales-channel.detail.messageAPIError')
                 });
             });
@@ -342,7 +359,6 @@ Component.register('sw-sales-channel-detail-base', {
 
                     this.salesChannel.active = false;
                     this.createNotificationError({
-                        title: this.$tc('global.default.error'),
                         message: this.$tc('sw-sales-channel.detail.messageActivateWithoutThemeError', 0, {
                             name: this.salesChannel.name || this.placeholder(this.salesChannel, 'name')
                         })

@@ -12,14 +12,81 @@ Component.register('sw-users-permissions-permissions-grid', {
         role: {
             type: Object,
             required: true
+        },
+        disabled: {
+            type: Boolean,
+            required: false,
+            default: false
         }
     },
 
     computed: {
+        permissionsWithParents() {
+            const permissionsWithParents = [];
+
+            this.parents.forEach(parent => {
+                permissionsWithParents.push({
+                    type: 'parent',
+                    value: parent
+                });
+
+                const children = this.getPermissionsForParent(parent);
+
+                children.forEach(child => {
+                    permissionsWithParents.push(child);
+                });
+            });
+
+            return permissionsWithParents;
+        },
+
+
         permissions() {
             const privileges = this.privileges.getPrivilegesMappings();
 
-            return privileges.filter(privilege => privilege.category === 'permissions');
+            return privileges
+                .filter(privilege => privilege.category === 'permissions')
+                .sort((a, b) => {
+                    const labelA = this.$tc(`sw-privileges.permissions.${a.key}.label`);
+                    const labelB = this.$tc(`sw-privileges.permissions.${b.key}.label`);
+
+                    return labelA.localeCompare(labelB);
+                });
+        },
+
+        parents() {
+            return this.permissions
+                .reduce((parents, privilege) => {
+                    if (parents.includes(privilege.parent)) {
+                        return parents;
+                    }
+
+                    return [...parents, privilege.parent];
+                }, [])
+                .sort((a, b) => {
+                    const labelA = this.$tc(`sw-privileges.permissions.parents.${a || 'other'}`);
+                    const labelB = this.$tc(`sw-privileges.permissions.parents.${b || 'other'}`);
+
+                    return labelA.localeCompare(labelB);
+                });
+        },
+
+        usedDependencies() {
+            const dependencies = new Set();
+
+            this.role.privileges.forEach(privilegeKey => {
+                const privilegeRole = this.privileges.getPrivilegeRole(privilegeKey);
+
+                if (!privilegeRole) {
+                    return;
+                }
+
+                privilegeRole.dependencies.forEach(dependency => {
+                    dependencies.add(dependency);
+                });
+            });
+
+            return [...dependencies];
         },
 
         roles() {
@@ -56,6 +123,10 @@ Component.register('sw-users-permissions-permissions-grid', {
         addDependenciesForRole(identifier) {
             const privilegeRole = this.privileges.getPrivilegeRole(identifier);
 
+            if (!privilegeRole) {
+                return;
+            }
+
             privilegeRole.dependencies.forEach((dependencyIdentifier) => {
                 this.addPermission(dependencyIdentifier);
             });
@@ -71,6 +142,10 @@ Component.register('sw-users-permissions-permissions-grid', {
             return this.role.privileges.some(privilege => {
                 return privilege === `${permissionKey}.${permissionRole}`;
             });
+        },
+
+        isPermissionDisabled(permissionKey, permissionRole) {
+            return this.usedDependencies.includes(`${permissionKey}.${permissionRole}`);
         },
 
         changeAllPermissionsForKey(permissionKey) {
@@ -93,6 +168,94 @@ Component.register('sw-users-permissions-permissions-grid', {
             });
 
             return !containsUnselected;
+        },
+
+        getPermissionsForParent(parentKey) {
+            return this.permissions.filter(permission => {
+                return permission.parent === parentKey;
+            });
+        },
+
+        areAllChildrenRolesSelected(parentKey, roleKey) {
+            const permissionsForParent = this.getPermissionsForParent(parentKey);
+
+            const hasUnselected = permissionsForParent.some(permission => {
+                if (permission.roles[roleKey] === undefined) {
+                    return false;
+                }
+
+                return !this.isPermissionSelected(permission.key, roleKey);
+            });
+
+            return !hasUnselected;
+        },
+
+        areAllChildrenWithAllRolesSelected(parentKey) {
+            return this.roles.every(roleKey => {
+                return this.areAllChildrenRolesSelected(parentKey, roleKey);
+            });
+        },
+
+        areSomeChildrenRolesSelected(parentKey, roleKey) {
+            const permissionsForParent = this.getPermissionsForParent(parentKey);
+
+            return permissionsForParent.some(permission => {
+                return this.isPermissionSelected(permission.key, roleKey);
+            });
+        },
+
+        areSomeChildrenWithAllRolesSelected(parentKey) {
+            return this.roles.every(roleKey => {
+                return this.areSomeChildrenRolesSelected(parentKey, roleKey);
+            });
+        },
+
+        isParentRoleDisabled(parentKey, roleKey) {
+            const permissionsForParent = this.getPermissionsForParent(parentKey);
+
+            return permissionsForParent.every(permission => {
+                return this.isPermissionDisabled(permission.key, roleKey);
+            });
+        },
+
+        toggleAllChildrenWithRole(parentKey, roleKey) {
+            const permissionsForParent = this.getPermissionsForParent(parentKey);
+            const allChildrenRolesSelected = this.areAllChildrenRolesSelected(parentKey, roleKey);
+
+            permissionsForParent.forEach(permission => {
+                if (!permission.roles[roleKey]) {
+                    return;
+                }
+
+                const identifier = `${permission.key}.${roleKey}`;
+
+                if (this.isPermissionDisabled(permission.key, roleKey)) {
+                    return;
+                }
+
+                if (allChildrenRolesSelected) {
+                    this.removePermission(identifier);
+                } else {
+                    this.addPermission(identifier);
+                }
+            });
+        },
+
+        toggleAllChildrenWithAllRoles(parentKey) {
+            const permissionsForParent = this.getPermissionsForParent(parentKey);
+            const allChildrenWithAllRolesSelected = this.areAllChildrenWithAllRolesSelected(parentKey);
+
+            return this.roles.forEach(roleKey => {
+                permissionsForParent.forEach(permission => {
+                    const identifier = `${permission.key}.${roleKey}`;
+
+                    if (allChildrenWithAllRolesSelected) {
+                        this.removePermission(identifier);
+                    } else {
+                        this.addPermission(identifier);
+                    }
+                });
+            });
         }
     }
 });

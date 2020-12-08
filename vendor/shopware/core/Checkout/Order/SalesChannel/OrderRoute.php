@@ -96,10 +96,11 @@ class OrderRoute extends AbstractOrderRoute
         if (!$criteria) {
             $criteria = $this->requestCriteriaBuilder->handleRequest($request, new Criteria(), $this->orderDefinition, $context->getContext());
         }
+        $criteria->addFilter(new EqualsFilter('order.salesChannelId', $context->getSalesChannel()->getId()));
 
         if ($context->getCustomer()) {
             $criteria->addFilter(new EqualsFilter('order.orderCustomer.customerId', $context->getCustomer()->getId()));
-        } elseif (!$criteria->hasEqualsFilter('order.deepLinkCode')) {
+        } elseif (!$criteria->hasEqualsFilter('deepLinkCode')) {
             throw new CustomerNotLoggedInException();
         } else {
             // Search with deepLinkCode needs updatedAt Filter
@@ -159,7 +160,7 @@ class OrderRoute extends AbstractOrderRoute
         return $promotions;
     }
 
-    private function checkRuleType($rule): bool
+    private function checkRuleType(Container $rule): bool
     {
         foreach ($rule->getRules() as $nestedRule) {
             if ($nestedRule instanceof Container && $this->checkRuleType($nestedRule) === false) {

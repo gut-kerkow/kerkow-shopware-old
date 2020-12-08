@@ -1,5 +1,6 @@
+import './sw-customer-detail.scss';
 import template from './sw-customer-detail.html.twig';
-import errorConfig from './error-config.json';
+import errorConfig from '../../error-config.json';
 
 const { Component, Mixin } = Shopware;
 const { Criteria } = Shopware.Data;
@@ -8,7 +9,12 @@ const { mapPageErrors } = Shopware.Component.getComponentHelper();
 Component.register('sw-customer-detail', {
     template,
 
-    inject: ['systemConfigApiService', 'repositoryFactory'],
+    inject: [
+        'systemConfigApiService',
+        'repositoryFactory',
+        'customerGroupRegistrationService',
+        'acl'
+    ],
 
     mixins: [
         Mixin.getByName('notification'),
@@ -81,7 +87,8 @@ Component.register('sw-customer-detail', {
                 .addAssociation('defaultShippingAddress.country')
                 .addAssociation('defaultShippingAddress.countryState')
                 .addAssociation('defaultShippingAddress.salutation')
-                .addAssociation('tags');
+                .addAssociation('tags')
+                .addAssociation('requestedGroup');
 
             return criteria;
         },
@@ -157,7 +164,9 @@ Component.register('sw-customer-detail', {
             if (!await this.validPassword(this.customer)) {
                 this.isLoading = false;
                 return false;
-            } if (this.customer.passwordNew) {
+            }
+
+            if (this.customer.passwordNew) {
                 this.customer.password = this.customer.passwordNew;
             }
 
@@ -166,14 +175,12 @@ Component.register('sw-customer-detail', {
                 this.isSaveSuccessful = true;
                 this.createdComponent();
                 this.createNotificationSuccess({
-                    title: this.$tc('global.default.success'),
                     message: this.$tc('sw-customer.detail.messageSaveSuccess', 0, {
                         name: `${this.customer.firstName} ${this.customer.lastName}`
                     })
                 });
             }).catch((exception) => {
                 this.createNotificationError({
-                    title: this.$tc('global.default.error'),
                     message: this.$tc('sw-customer.detail.messageSaveError')
                 });
                 this.isLoading = false;
@@ -201,14 +208,14 @@ Component.register('sw-customer-detail', {
             if (passwordSet) {
                 if (passwordNotEquals) {
                     this.createNotificationError({
-                        title: this.$tc('global.default.error'),
                         message: this.$tc('sw-customer.detail.notificationPasswordErrorMessage')
                     });
 
                     return false;
-                } if (invalidLength) {
+                }
+
+                if (invalidLength) {
                     this.createNotificationError({
-                        title: this.$tc('global.default.error'),
                         message: this.$tc('sw-customer.detail.notificationPasswordLengthErrorMessage')
                     });
 
@@ -217,6 +224,34 @@ Component.register('sw-customer-detail', {
             }
 
             return true;
+        },
+
+        acceptCustomerGroupRegistration() {
+            this.customerGroupRegistrationService.accept(this.customer.id).then(() => {
+                this.createNotificationSuccess({
+                    message: this.$tc('sw-customer.customerGroupRegistration.acceptMessage')
+                });
+            }).catch(() => {
+                this.createNotificationError({
+                    message: this.$tc('sw-customer.customerGroupRegistration.errorMessage')
+                });
+            }).finally(() => {
+                this.createdComponent();
+            });
+        },
+
+        declineCustomerGroupRegistration() {
+            this.customerGroupRegistrationService.decline(this.customer.id).then(() => {
+                this.createNotificationSuccess({
+                    message: this.$tc('sw-customer.customerGroupRegistration.declineMessage')
+                });
+            }).catch(() => {
+                this.createNotificationError({
+                    message: this.$tc('sw-customer.customerGroupRegistration.errorMessage')
+                });
+            }).finally(() => {
+                this.createdComponent();
+            });
         }
     }
 });

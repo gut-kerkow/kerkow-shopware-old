@@ -47,11 +47,11 @@
 						<div class="cart-headline">
 							{{ "kerkow.deliveryDateHeadline"|trans }}
 						</div>
-						{% set dayString =  'general.day.'~deliveryInfo.date|date("D") %}
+						{% set dayString =  'general.day.'~deliveryInfos.date|date("D") %}
 						{% set day =  dayString|trans %}
-						{% set monthString =  'general.month.'~deliveryInfo.date|date("M") %}
+						{% set monthString =  'general.month.'~deliveryInfos.date|date("M") %}
 						{% set month =  monthString|trans %}
-						{% if deliveryInfo.date|date("m/d/Y") == ("now"|date_modify("+1 day")|date("m/d/Y")) %}
+						{% if deliveryInfos.date|date("m/d/Y") == ("now"|date_modify("+1 day")|date("m/d/Y")) %}
 							<div class="delivery-time">
 								<span class="product-detail-deliver-tomorrow">
 									{{ "kerkow.actualDeliverTomorrow"|trans|raw }}
@@ -61,7 +61,7 @@
 						{% else %}
 							<div class="delivery-time">
 								<span class="product-detail-deliver-date">
-									{{ "kerkow.actualDeliverTime"|trans({'%day%': day, '%date%': deliverInfo.date|date("d"), '%month%': month}) }}
+									{{ "kerkow.actualDeliverTime"|trans({'%day%': day, '%date%': deliveryInfos.date|date("d"), '%month%': month}) }}
 									{{ "kerkow.deliverySlot.18to20"|trans }}
 								</span>
 							</div>

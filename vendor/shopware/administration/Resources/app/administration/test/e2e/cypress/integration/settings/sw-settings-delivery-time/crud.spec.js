@@ -1,4 +1,4 @@
-// / <reference types="Cypress" />
+/// <reference types="Cypress" />
 
 import SettingsPageObject from '../../../support/pages/module/sw-settings.page-object';
 
@@ -96,7 +96,7 @@ describe('Delivery times group: Test crud operations', () => {
         // Check if all empty required fields have error messages
         cy.get('.sw-card__content .sw-field .sw-field__error')
             .should('be.visible')
-            .should('contain', 'This value should not be blank');
+            .should('contain', 'This field must not be empty.');
     });
 
     it('@settings: Update and read delivery time', () => {

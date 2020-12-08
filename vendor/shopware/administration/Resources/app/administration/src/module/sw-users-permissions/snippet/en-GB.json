@@ -6,7 +6,8 @@
     "permissions": {},
     "roles": {
       "general": {
-        "labelCreateNewRole": "Create new role"
+        "labelCreateNewRole": "Create new role",
+        "cardLabel": "Roles"
       },
       "role-grid": {
         "labelName": "Name",
@@ -35,10 +36,23 @@
         "permissions": "Permissions"
       },
       "grid": {
-        "title": "Permissions"
+        "title": "Permissions",
+        "disabledCheckboxMessage": "To disable this option, you must first disable other active options."
       },
       "additional-permissions": {
         "title": "Additional permissions"
+      },
+      "detailed-additional-permissions": {
+        "title": "Additional permissions"
+      },
+      "view": {
+        "detailed": {
+          "alertText": "In this view privileges can be configured in detail. This configuration is only necessary in exceptional situations. If e.g. extensions are used in the system that add new datasets but do not have privileges, they can be configured here. All deactivated checkboxes are permissions that have already been assigned in the \"General\" tab."
+        }
+      },
+      "tabs": {
+        "general": "General",
+        "detailed": "Detailed privileges"
       }
     },
     "users": {
@@ -46,7 +60,8 @@
         "mainMenuItemGeneral": "Users & permissions",
         "placeholderSearchBar": "Find users...",
         "labelUserList": "Users & permissions",
-        "labelCreateNewUser": "Create new user"
+        "labelCreateNewUser": "Create new user",
+        "cardLabel": "Users"
       },
       "user-grid": {
         "labelUsername": "Username",
@@ -101,10 +116,11 @@
         "readAccess": "Read",
         "contextMenuEdit": "Edit",
         "contextMenuDelete": "Delete",
-        "textChangePassword": "Pressing the change button will immediately save the new password!",
+        "textChangePassword": "Pressing the \"change\" button will immediately save the new password!",
         "addAccessKey": "New access key",
         "labelAccessKey": "Access key",
         "labelPermissions": "Permissions",
+        "disabledRoleSelectWarning": "Roles are only available for users who are not \"administrator\".",
         "modal": {
           "detailModalTitle": "Create integration",
           "detailModalTitleEdit": "Edit",
@@ -147,15 +163,56 @@
       "creator": "Create",
       "deleter": "Delete"
     },
+    "permissionType": {
+      "read": "Read",
+      "update": "Update",
+      "create": "Create",
+      "delete": "Delete"
+    },
+    "permissions": {
+      "parents": {
+        "catalogues": "Catalogues",
+        "content": "Content",
+        "customers": "Customers",
+        "marketing": "Marketing",
+        "other": "Other",
+        "orders": "Orders",
+        "settings": "Settings"
+      },
+      "users_and_permissions": {
+        "label": "Users & permissions"
+      },
+      "routes": {
+        "label": "Routes"
+      }
+    },
     "additional_permissions": {
       "system": {
-        "label": "System"
+        "label": "Settings"
+      },
+      "user": {
+        "label": "User"
       },
       "marketing": {
         "label": "Marketing"
       },
       "orders": {
         "label": "Orders"
+      },
+      "routes": {
+        "label": "Routes",
+        "api_action_access-key_integration": "Create new API key",
+        "api_acl_privileges_get": "Read all ACL privileges",
+        "api_acl_privileges_route_get": "Read ACL route privileges",
+        "api_action_cache_info": "Read cache info",
+        "api_action_cache_index": "Trigger indexer",
+        "api_action_cache_delete_and_warmup": "Delete and warm up cache",
+        "api_action_cache_delete": "Delete cache",
+        "api_action_cache_cleanup": "Clean up cache",
+        "api_action_container-cache_delete": "Delete container cache",
+        "api_info_me": "Read own api user info",
+        "api_info_ping": "Refresh auth token",
+        "system:clear:cache": "Clear cache"
       }
     }
   }

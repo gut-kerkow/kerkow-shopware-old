@@ -88,7 +88,7 @@ li.footer-column-link {
 .footer-final {
   color: white;
   background-color: $kerkow-blue;
-  max-height: 4rem;
+  max-height: 6rem;
   padding: 0;
   @include gt-medium;
   line-height: 2rem;
@@ -124,7 +124,11 @@ li.footer-column-link {
     margin-bottom: 10px;
   }
 }
-
+@include media-breakpoint-up(sm) {
+  .footer-final {
+    max-height: 4rem;
+  }
+}
 @include media-breakpoint-up(md) {
   .footer-column-seals {
     .seals-icon {
