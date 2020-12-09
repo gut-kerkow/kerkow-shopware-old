@@ -28,6 +28,11 @@ class AppTranslationDefinition extends EntityTranslationDefinition
         return AppTranslationCollection::class;
     }
 
+    public function since(): ?string
+    {
+        return '6.3.1.0';
+    }
+
     protected function getParentDefinitionClass(): string
     {
         return AppDefinition::class;
@@ -38,6 +43,7 @@ class AppTranslationDefinition extends EntityTranslationDefinition
         return new FieldCollection([
             (new StringField('label', 'label'))->addFlags(new Required()),
             new LongTextField('description', 'description'),
+            new LongTextField('privacy_policy_extensions', 'privacyPolicyExtensions'),
         ]);
     }
 }

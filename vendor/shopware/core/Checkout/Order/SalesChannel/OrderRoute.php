@@ -19,6 +19,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\RequestCriteriaBuilder;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopware\Core\Framework\Routing\Annotation\Entity;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
+use Shopware\Core\Framework\Routing\Annotation\Since;
 use Shopware\Core\Framework\Rule\Container\Container;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
@@ -67,24 +68,23 @@ class OrderRoute extends AbstractOrderRoute
     }
 
     /**
+     * @Since("6.2.0.0")
      * @Entity("order")
      * @OA\Post(
      *      path="/order",
-     *      description="Listing orders",
+     *      summary="Listing orders",
      *      operationId="readOrder",
      *      tags={"Store API", "Order"},
      *      @OA\Parameter(name="Api-Basic-Parameters"),
-     *      @OA\Parameter(
-     *          name="checkPromotion",
-     *          in="get",
-     *          required=false,
-     *          description="wether to check the Promotions of orders",
-     *          @OA\Schema(
-     *              type="boolean"
+     *      @OA\RequestBody(
+     *          required=true,
+     *          @OA\JsonContent(
+     *              @OA\Property(property="checkPromotion", description="Wether to check the Promotions of orders", type="string"),
      *          )
      *      ),
      *      @OA\Response(
      *          response="200",
+     *          description="",
      *          @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/order_flat"))
      *     )
      * )
@@ -96,7 +96,12 @@ class OrderRoute extends AbstractOrderRoute
         if (!$criteria) {
             $criteria = $this->requestCriteriaBuilder->handleRequest($request, new Criteria(), $this->orderDefinition, $context->getContext());
         }
+
         $criteria->addFilter(new EqualsFilter('order.salesChannelId', $context->getSalesChannel()->getId()));
+
+        $criteria->getAssociation('documents')
+            ->addFilter(new EqualsFilter('config.displayInCustomerAccount', 'true'))
+            ->addFilter(new EqualsFilter('sent', true));
 
         if ($context->getCustomer()) {
             $criteria->addFilter(new EqualsFilter('order.orderCustomer.customerId', $context->getCustomer()->getId()));

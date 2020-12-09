@@ -173,11 +173,19 @@ class SystemConfigService
 
         $collection->sortByIdArray($ids);
         $merged = [];
+
         foreach ($collection as $cur) {
-            // use the last one with the same key. entities with sales_channel_id === null are sorted before the others
-            if (!array_key_exists($cur->getConfigurationKey(), $merged) || !empty($cur->getConfigurationValue())) {
-                $merged[$cur->getConfigurationKey()] = $cur->getConfigurationValue();
+            $key = $cur->getConfigurationKey();
+            $value = $cur->getConfigurationValue();
+
+            $inheritedValuePresent = array_key_exists($key, $merged);
+            $valueConsideredEmpty = !is_bool($value) && empty($value);
+
+            if ($inheritedValuePresent && $valueConsideredEmpty) {
+                continue;
             }
+
+            $merged[$key] = $value;
         }
 
         return $merged;
@@ -230,6 +238,11 @@ class SystemConfigService
 
         $prefix = $bundle->getName() . '.config.';
 
+        $this->saveConfig($config, $prefix, $override);
+    }
+
+    public function saveConfig(array $config, string $prefix, bool $override): void
+    {
         foreach ($config as $card) {
             foreach ($card['elements'] as $element) {
                 $key = $prefix . $element['name'];

@@ -19,10 +19,10 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\NotFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Validation\EntityExists;
 use Shopware\Core\Framework\Event\DataMappingEvent;
-use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopware\Core\Framework\Routing\Annotation\ContextTokenRequired;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
+use Shopware\Core\Framework\Routing\Annotation\Since;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\Framework\Validation\BuildValidationEvent;
 use Shopware\Core\Framework\Validation\DataBag\DataBag;
@@ -116,9 +116,10 @@ class RegisterRoute extends AbstractRegisterRoute
     }
 
     /**
+     * @Since("6.2.0.0")
      * @OA\Post(
      *      path="/account/register",
-     *      description="Register",
+     *      summary="Register",
      *      operationId="register",
      *      tags={"Store API", "Account"},
      *      @OA\Parameter(name="guest", description="Create guest user", in="query", @OA\Schema(type="boolean")),
@@ -178,9 +179,7 @@ class RegisterRoute extends AbstractRegisterRoute
 
         $customer = $this->setDoubleOptInData($customer, $context);
 
-        if (Feature::isActive('FEATURE_NEXT_10555')) {
-            $customer['boundSalesChannelId'] = $this->getBoundSalesChannelId($customer['email'], $context);
-        }
+        $customer['boundSalesChannelId'] = $this->getBoundSalesChannelId($customer['email'], $context);
 
         $this->customerRepository->create([$customer], $context->getContext());
 
@@ -210,7 +209,8 @@ class RegisterRoute extends AbstractRegisterRoute
                     'billingAddressId' => null,
                     'shippingAddressId' => null,
                 ],
-                Feature::isActive('FEATURE_NEXT_10058') ? $customerEntity->getId() : null
+                $context->getSalesChannel()->getId(),
+                $customerEntity->getId()
             );
 
             $event = new CustomerLoginEvent($context, $customerEntity, $newToken);
@@ -412,10 +412,7 @@ class RegisterRoute extends AbstractRegisterRoute
         if (!$isGuest) {
             $minLength = $this->systemConfigService->get('core.loginRegistration.passwordMinLength', $context->getSalesChannel()->getId());
             $validation->add('password', new NotBlank(), new Length(['min' => $minLength]));
-            $options = Feature::isActive('FEATURE_NEXT_10555')
-                ? ['context' => $context->getContext(), 'salesChannelContext' => $context]
-                : ['context' => $context->getContext()];
-
+            $options = ['context' => $context->getContext(), 'salesChannelContext' => $context];
             $validation->add('email', new CustomerEmailUnique($options));
         }
 

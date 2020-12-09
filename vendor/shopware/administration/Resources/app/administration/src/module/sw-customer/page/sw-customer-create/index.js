@@ -5,7 +5,7 @@ const { Component, Mixin } = Shopware;
 Component.register('sw-customer-create', {
     template,
 
-    inject: ['repositoryFactory', 'numberRangeService'],
+    inject: ['repositoryFactory', 'numberRangeService', 'systemConfigApiService'],
 
     mixins: [
         Mixin.getByName('notification')
@@ -30,6 +30,17 @@ Component.register('sw-customer-create', {
 
     created() {
         this.createdComponent();
+    },
+
+    watch: {
+        'customer.salesChannelId'(salesChannelId) {
+            this.systemConfigApiService
+                .getValues('core.systemWideLoginRegistration').then(response => {
+                    if (response['core.systemWideLoginRegistration.isCustomerBoundToSalesChannel']) {
+                        this.customer.boundSalesChannelId = salesChannelId;
+                    }
+                });
+        }
     },
 
     methods: {

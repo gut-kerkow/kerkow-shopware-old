@@ -13,8 +13,8 @@ use Shopware\Core\Checkout\Payment\Exception\InvalidOrderException;
 use Shopware\Core\Checkout\Payment\Exception\PaymentProcessException;
 use Shopware\Core\Checkout\Payment\Exception\UnknownPaymentMethodException;
 use Shopware\Core\Checkout\Payment\PaymentService;
-use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
+use Shopware\Core\Framework\Routing\Annotation\Since;
 use Shopware\Core\Framework\Routing\Exception\MissingRequestParameterException;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\Framework\Validation\Exception\ConstraintViolationException;
@@ -89,6 +89,7 @@ class CheckoutController extends StorefrontController
     }
 
     /**
+     * @Since("6.0.0.0")
      * @Route("/checkout/cart", name="frontend.checkout.cart.page", options={"seo"="false"}, methods={"GET"})
      */
     public function cartPage(Request $request, SalesChannelContext $context): Response
@@ -99,6 +100,7 @@ class CheckoutController extends StorefrontController
     }
 
     /**
+     * @Since("6.0.0.0")
      * @Route("/checkout/confirm", name="frontend.checkout.confirm.page", options={"seo"="false"}, methods={"GET"}, defaults={"XmlHttpRequest"=true})
      */
     public function confirmPage(Request $request, SalesChannelContext $context): Response
@@ -117,6 +119,7 @@ class CheckoutController extends StorefrontController
     }
 
     /**
+     * @Since("6.0.0.0")
      * @Route("/checkout/finish", name="frontend.checkout.finish.page", options={"seo"="false"}, methods={"GET"})
      *
      * @throws CustomerNotLoggedInException
@@ -148,6 +151,7 @@ class CheckoutController extends StorefrontController
     }
 
     /**
+     * @Since("6.0.0.0")
      * @Route("/checkout/order", name="frontend.checkout.finish.order", options={"seo"="false"}, methods={"POST"})
      */
     public function order(RequestDataBag $data, SalesChannelContext $context, Request $request): Response
@@ -180,6 +184,7 @@ class CheckoutController extends StorefrontController
     }
 
     /**
+     * @Since("6.0.0.0")
      * @Route("/widgets/checkout/info", name="frontend.checkout.info", methods={"GET"}, defaults={"XmlHttpRequest"=true})
      *
      * @throws CartTokenNotFoundException
@@ -192,6 +197,7 @@ class CheckoutController extends StorefrontController
     }
 
     /**
+     * @Since("6.0.0.0")
      * @Route("/checkout/offcanvas", name="frontend.cart.offcanvas", options={"seo"="false"}, methods={"GET"}, defaults={"XmlHttpRequest"=true})
      *
      * @throws CartTokenNotFoundException
@@ -199,12 +205,10 @@ class CheckoutController extends StorefrontController
     public function offcanvas(Request $request, SalesChannelContext $context): Response
     {
         $page = $this->offcanvasCartPageLoader->load($request, $context);
-        if (Feature::isActive('FEATURE_NEXT_10058')) {
-            if ($request->cookies->get('sf_redirect') === null) {
-                $cart = $page->getCart();
-                $this->addCartErrors($cart);
-                $cart->getErrors()->clear();
-            }
+        if ($request->cookies->get('sf_redirect') === null) {
+            $cart = $page->getCart();
+            $this->addCartErrors($cart);
+            $cart->getErrors()->clear();
         }
 
         return $this->renderStorefront('@Storefront/storefront/component/checkout/offcanvas-cart.html.twig', ['page' => $page]);

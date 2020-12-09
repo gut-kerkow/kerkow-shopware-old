@@ -18,8 +18,8 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
-use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
+use Shopware\Core\Framework\Routing\Annotation\Since;
 use Shopware\Core\Framework\Routing\Exception\MissingRequestParameterException;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\Framework\Validation\Exception\ConstraintViolationException;
@@ -98,6 +98,7 @@ class AuthController extends StorefrontController
     }
 
     /**
+     * @Since("6.0.0.0")
      * @Route("/account/login", name="frontend.account.login.page", methods={"GET"})
      */
     public function loginPage(Request $request, RequestDataBag $data, SalesChannelContext $context): Response
@@ -105,7 +106,9 @@ class AuthController extends StorefrontController
         /** @var string $redirect */
         $redirect = $request->get('redirectTo', 'frontend.account.home.page');
 
-        if ($context->getCustomer()) {
+        $customer = $context->getCustomer();
+
+        if ($customer !== null && $customer->getGuest() === false) {
             $request->request->set('redirectTo', $redirect);
 
             return $this->createActionResponse($request);
@@ -124,6 +127,7 @@ class AuthController extends StorefrontController
     }
 
     /**
+     * @Since("6.0.0.0")
      * @Route("/account/logout", name="frontend.account.logout.page", methods={"GET"})
      */
     public function logout(Request $request, SalesChannelContext $context): Response
@@ -150,6 +154,7 @@ class AuthController extends StorefrontController
     }
 
     /**
+     * @Since("6.0.0.0")
      * @Route("/account/login", name="frontend.account.login", methods={"POST"}, defaults={"XmlHttpRequest"=true})
      */
     public function login(Request $request, RequestDataBag $data, SalesChannelContext $context): Response
@@ -161,9 +166,7 @@ class AuthController extends StorefrontController
         try {
             $token = $this->loginRoute->login($data, $context)->getToken();
             if (!empty($token)) {
-                if (Feature::isActive('FEATURE_NEXT_10058')) {
-                    $this->addCartErrors($this->cartService->getCart($token, $context));
-                }
+                $this->addCartErrors($this->cartService->getCart($token, $context));
 
                 return $this->createActionResponse($request);
             }
@@ -185,6 +188,7 @@ class AuthController extends StorefrontController
     }
 
     /**
+     * @Since("6.1.0.0")
      * @Route("/account/recover", name="frontend.account.recover.page", methods={"GET"})
      *
      * @throws CategoryNotFoundException
@@ -201,6 +205,7 @@ class AuthController extends StorefrontController
     }
 
     /**
+     * @Since("6.1.0.0")
      * @Route("/account/recover", name="frontend.account.recover.request", methods={"POST"})
      */
     public function generateAccountRecovery(Request $request, RequestDataBag $data, SalesChannelContext $context): Response
@@ -226,6 +231,7 @@ class AuthController extends StorefrontController
     }
 
     /**
+     * @Since("6.1.0.0")
      * @Route("/account/recover/password", name="frontend.account.recover.password.page", methods={"GET"})
      *
      * @throws CategoryNotFoundException
@@ -270,6 +276,7 @@ class AuthController extends StorefrontController
     }
 
     /**
+     * @Since("6.1.0.0")
      * @Route("/account/recover/password", name="frontend.account.recover.password.reset", methods={"POST"})
      *
      * @throws InconsistentCriteriaIdsException

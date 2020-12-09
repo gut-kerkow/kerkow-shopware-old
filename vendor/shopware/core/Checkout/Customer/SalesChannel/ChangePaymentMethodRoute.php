@@ -3,7 +3,6 @@
 namespace Shopware\Core\Checkout\Customer\SalesChannel;
 
 use OpenApi\Annotations as OA;
-use Shopware\Core\Checkout\Cart\Exception\CustomerNotLoggedInException;
 use Shopware\Core\Checkout\Customer\Event\CustomerChangedPaymentMethodEvent;
 use Shopware\Core\Checkout\Payment\Exception\UnknownPaymentMethodException;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
@@ -12,7 +11,9 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopware\Core\Framework\Routing\Annotation\ContextTokenRequired;
+use Shopware\Core\Framework\Routing\Annotation\LoginRequired;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
+use Shopware\Core\Framework\Routing\Annotation\Since;
 use Shopware\Core\Framework\Uuid\Exception\InvalidUuidException;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
@@ -55,25 +56,30 @@ class ChangePaymentMethodRoute extends AbstractChangePaymentMethodRoute
     }
 
     /**
+     * @Since("6.2.0.0")
      * @OA\Post(
      *      path="/account/change-payment-method/{paymentMethodId}",
-     *      description="Change payment method",
+     *      summary="Change payment method",
      *      operationId="changePaymentMethod",
      *      tags={"Store API", "Account"},
+     *      @OA\Parameter(
+     *        name="paymentMethodId",
+     *        in="path",
+     *        description="Payment Method Id",
+     *        @OA\Schema(type="string"),
+     *        required=true
+     *      ),
      *      @OA\Response(
      *          response="200",
      *          description="",
-     *          @OA\JsonContent(ref="#/definitions/SuccessResponse")
+     *          @OA\JsonContent(ref="#/components/schemas/SuccessResponse")
      *     )
      * )
+     * @LoginRequired()
      * @Route(path="/store-api/v{version}/account/change-payment-method/{paymentMethodId}", name="store-api.account.set.payment-method", methods={"POST"})
      */
     public function change(string $paymentMethodId, RequestDataBag $requestDataBag, SalesChannelContext $context): SuccessResponse
     {
-        if (!$context->getCustomer()) {
-            throw new CustomerNotLoggedInException();
-        }
-
         $this->validatePaymentMethodId($paymentMethodId, $context->getContext());
 
         $this->customerRepository->update([

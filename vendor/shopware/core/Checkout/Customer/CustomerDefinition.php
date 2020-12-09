@@ -6,6 +6,7 @@ use Shopware\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressDef
 use Shopware\Core\Checkout\Customer\Aggregate\CustomerGroup\CustomerGroupDefinition;
 use Shopware\Core\Checkout\Customer\Aggregate\CustomerRecovery\CustomerRecoveryDefinition;
 use Shopware\Core\Checkout\Customer\Aggregate\CustomerTag\CustomerTagDefinition;
+use Shopware\Core\Checkout\Customer\Aggregate\CustomerWishlist\CustomerWishlistDefinition;
 use Shopware\Core\Checkout\Order\Aggregate\OrderCustomer\OrderCustomerDefinition;
 use Shopware\Core\Checkout\Payment\PaymentMethodDefinition;
 use Shopware\Core\Checkout\Promotion\Aggregate\PromotionPersonaCustomer\PromotionPersonaCustomerDefinition;
@@ -68,6 +69,11 @@ class CustomerDefinition extends EntityDefinition
     public function hasManyToManyIdFields(): bool
     {
         return true;
+    }
+
+    public function since(): ?string
+    {
+        return '6.0.0.0';
     }
 
     protected function defineFields(): FieldCollection
@@ -134,15 +140,13 @@ class CustomerDefinition extends EntityDefinition
             new ManyToManyIdField('tag_ids', 'tagIds', 'tags'),
             new FkField('requested_customer_group_id', 'requestedGroupId', CustomerGroupDefinition::class),
             new ManyToOneAssociationField('requestedGroup', 'requested_customer_group_id', CustomerGroupDefinition::class, 'id', false),
+            new FkField('bound_sales_channel_id', 'boundSalesChannelId', SalesChannelDefinition::class),
+            new ManyToOneAssociationField('boundSalesChannel', 'bound_sales_channel_id', SalesChannelDefinition::class, 'id', false),
         ]);
 
-        if (Feature::isActive('FEATURE_NEXT_10555')) {
+        if (Feature::isActive('FEATURE_NEXT_10549')) {
             $fields->add(
-                new FkField('bound_sales_channel_id', 'boundSalesChannelId', SalesChannelDefinition::class)
-            );
-
-            $fields->add(
-                new ManyToOneAssociationField('boundSalesChannel', 'bound_sales_channel_id', SalesChannelDefinition::class, 'id', false)
+                (new OneToManyAssociationField('wishlists', CustomerWishlistDefinition::class, 'customer_id'))->addFlags(new CascadeDelete())
             );
         }
 

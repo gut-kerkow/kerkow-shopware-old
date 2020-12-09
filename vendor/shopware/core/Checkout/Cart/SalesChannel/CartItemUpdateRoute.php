@@ -9,6 +9,7 @@ use Shopware\Core\Checkout\Cart\CartPersisterInterface;
 use Shopware\Core\Checkout\Cart\LineItemFactoryRegistry;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
+use Shopware\Core\Framework\Routing\Annotation\Since;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
@@ -46,16 +47,17 @@ class CartItemUpdateRoute extends AbstractCartItemUpdateRoute
     }
 
     /**
+     * @Since("6.3.0.0")
      * @OA\Patch(
      *      path="/checkout/cart/line-item",
-     *      description="Update line item entries",
+     *      summary="Update line item entries",
      *      operationId="updateLineItem",
      *      tags={"Store API", "Cart"},
-     *      @OA\RequestBody(@OA\JsonContent(ref="#/definitions/CartItems")),
+     *      @OA\RequestBody(@OA\JsonContent(ref="#/components/schemas/CartItems")),
      *      @OA\Response(
      *          response="200",
      *          description="Cart",
-     *          @OA\JsonContent(ref="#/definitions/Cart")
+     *          @OA\JsonContent(ref="#/components/schemas/Cart")
      *     )
      * )
      * @Route("/store-api/v{version}/checkout/cart/line-item", name="store-api.checkout.cart.update-lineitem", methods={"PATCH"})

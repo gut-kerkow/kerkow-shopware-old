@@ -9,7 +9,7 @@ use Shopware\Core\Framework\Routing\RequestTransformerInterface;
 use Shopware\Production\HttpKernel;
 use Shopware\Production\Kernel;
 use Shopware\Storefront\Framework\Cache\CacheStore;
-use Symfony\Component\Debug\Debug;
+use Symfony\Component\ErrorHandler\Debug;
 use Symfony\Component\Dotenv\Dotenv;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\HttpCache\HttpCache;
@@ -23,7 +23,7 @@ if (PHP_VERSION_ID < 70200) {
     exit();
 }
 
-$classLoader = require __DIR__.'/../vendor/autoload.php';
+$classLoader = require __DIR__ . '/../vendor/autoload.php';
 
 if (!file_exists(dirname(__DIR__) . '/install.lock')) {
     $basePath = 'recovery/install';
@@ -54,7 +54,7 @@ if (!isset($_SERVER['APP_ENV']) && !isset($_ENV['APP_ENV'])) {
     if (!class_exists(Dotenv::class)) {
         throw new \RuntimeException('APP_ENV environment variable is not defined. You need to define environment variables for configuration or add "symfony/dotenv" as a Composer dependency to load variables from a .env file.');
     }
-    $envFile = __DIR__.'/../.env';
+    $envFile = __DIR__ . '/../.env';
     if (file_exists($envFile)) {
         (new Dotenv(true))->load($envFile);
     }

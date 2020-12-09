@@ -6,7 +6,7 @@
         "stornoNumber": "Cancellation number %stornoNumber%",
         "deliveryNoteNumber": "Delivery note %deliveryNoteNumber%",
         "deliveryNoteHeadline": "Delivery note %deliveryNoteNumber% for order %orderNumber%",
-        "creditNoteNumber": "Credit note %deliveryNoteNumber%",
+        "creditNoteNumber": "Credit note %creditNoteNumber%",
         "creditNoteHeadline": "Credit note %creditNoteNumber% for invoice no. %invoiceNumber%",
         "customerNumber": "Customer %customerNumber%",
         "date": "Date: %date%",
@@ -21,6 +21,7 @@
         "bankIban": "IBAN: %bankIban%",
         "bankBic": "BIC: %bankBic%",
         "placeOfJurisdiction": "Place of jurisdiction: %placeOfJurisdiction%",
+        "serviceDateNotice": "Service date matches invoice date",
         "placeOfFulfillment": "Place of fulfillment: %placeOfFulfillment%",
         "ceo": "CEO",
         "lineItems": {

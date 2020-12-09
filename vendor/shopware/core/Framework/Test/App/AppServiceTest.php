@@ -16,6 +16,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Shopware\Core\System\SystemConfig\Util\ConfigReader;
 
 class AppServiceTest extends TestCase
 {
@@ -50,7 +51,11 @@ class AppServiceTest extends TestCase
         $this->appService = new AppService(
             new AppLifecycleIterator(
                 $this->appRepository,
-                new AppLoader(__DIR__ . '/Manifest/_fixtures/test')
+                new AppLoader(
+                    __DIR__ . '/Manifest/_fixtures/test',
+                    $this->getContainer()->getParameter('kernel.project_dir'),
+                    $this->getContainer()->get(ConfigReader::class)
+                )
             ),
             $this->getContainer()->get(AppLifecycle::class)
         );
@@ -60,7 +65,7 @@ class AppServiceTest extends TestCase
 
     public function testRefreshInstallsNewApp(): void
     {
-        $this->appService->refreshApps(true, $this->context);
+        $this->appService->doRefreshApps(true, $this->context);
 
         /** @var AppCollection $apps */
         $apps = $this->appRepository->search(new Criteria(), $this->context)->getEntities();
@@ -100,7 +105,7 @@ class AppServiceTest extends TestCase
             ],
         ]], $this->context);
 
-        $this->appService->refreshApps(true, $this->context);
+        $this->appService->doRefreshApps(true, $this->context);
 
         /** @var AppCollection $apps */
         $apps = $this->appRepository->search(new Criteria(), $this->context)->getEntities();
@@ -132,7 +137,7 @@ class AppServiceTest extends TestCase
             ],
         ]], $this->context);
 
-        $this->appService->refreshApps(true, $this->context);
+        $this->appService->doRefreshApps(true, $this->context);
 
         /** @var AppCollection $apps */
         $apps = $this->appRepository->search(new Criteria(), $this->context)->getEntities();
@@ -173,7 +178,7 @@ class AppServiceTest extends TestCase
             ],
         ]], $this->context);
 
-        $this->appService->refreshApps(true, $this->context);
+        $this->appService->doRefreshApps(true, $this->context);
 
         $apps = $this->appRepository->searchIds(new Criteria([$appId]), $this->context)->getIds();
         static::assertCount(0, $apps);
@@ -242,13 +247,17 @@ class AppServiceTest extends TestCase
         $appService = new AppService(
             new AppLifecycleIterator(
                 $this->appRepository,
-                new AppLoader(__DIR__ . '/Manifest/_fixtures')
+                new AppLoader(
+                    __DIR__ . '/Manifest/_fixtures',
+                    $this->getContainer()->getParameter('kernel.project_dir'),
+                    $this->getContainer()->get(ConfigReader::class)
+                )
             ),
             $this->getContainer()->get(AppLifecycle::class)
         );
         $refreshableApps = $appService->getRefreshableAppInfo($this->context);
 
-        static::assertCount(2, $refreshableApps->getToBeInstalled());
+        static::assertCount(3, $refreshableApps->getToBeInstalled());
         static::assertCount(1, $refreshableApps->getToBeUpdated());
         static::assertCount(1, $refreshableApps->getToBeDeleted());
 
@@ -262,15 +271,19 @@ class AppServiceTest extends TestCase
         $appService = new AppService(
             new AppLifecycleIterator(
                 $this->appRepository,
-                new AppLoader(__DIR__ . '/Manifest/_fixtures/')
+                new AppLoader(
+                    __DIR__ . '/Manifest/_fixtures',
+                    $this->getContainer()->getParameter('kernel.project_dir'),
+                    $this->getContainer()->get(ConfigReader::class)
+                )
             ),
             $this->getContainer()->get(AppLifecycle::class)
         );
-        $fails = $appService->refreshApps(true, $this->context);
+        $fails = $appService->doRefreshApps(true, $this->context);
 
         $apps = $this->appRepository->search(new Criteria(), $this->context)->getEntities();
 
-        static::assertCount(2, $apps);
+        static::assertCount(3, $apps);
 
         static::assertCount(1, $fails);
     }

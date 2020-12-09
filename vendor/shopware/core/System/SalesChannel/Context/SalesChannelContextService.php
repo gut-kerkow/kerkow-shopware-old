@@ -69,7 +69,7 @@ class SalesChannelContextService implements SalesChannelContextServiceInterface
      */
     public function get(string $salesChannelId, string $token, ?string $languageId = null/*, ?string $currencyId */): SalesChannelContext
     {
-        $parameters = $this->contextPersister->load($token);
+        $parameters = $this->contextPersister->load($token, $salesChannelId);
 
         if ($languageId) {
             $parameters[self::LANGUAGE_ID] = $languageId;

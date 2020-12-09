@@ -4,14 +4,14 @@ namespace Shopware\Core\Checkout\Customer\SalesChannel;
 
 use Composer\Semver\Constraint\ConstraintInterface;
 use OpenApi\Annotations as OA;
-use Shopware\Core\Checkout\Cart\Exception\CustomerNotLoggedInException;
 use Shopware\Core\Checkout\Customer\Validation\Constraint\CustomerPasswordMatches;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
-use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopware\Core\Framework\Routing\Annotation\ContextTokenRequired;
+use Shopware\Core\Framework\Routing\Annotation\LoginRequired;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
+use Shopware\Core\Framework\Routing\Annotation\Since;
 use Shopware\Core\Framework\Validation\BuildValidationEvent;
 use Shopware\Core\Framework\Validation\DataBag\DataBag;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
@@ -74,42 +74,31 @@ class ChangePasswordRoute extends AbstractChangePasswordRoute
     }
 
     /**
+     * @Since("6.2.0.0")
      * @OA\Post(
      *      path="/account/change-password",
-     *      description="Change password",
+     *      summary="Change password",
      *      operationId="changePassword",
      *      tags={"Store API", "Account"},
-     *      @OA\Parameter(
-     *        name="password",
-     *        in="body",
-     *        description="Current password",
-     *        @OA\Schema(type="string"),
-     *      ),
-     *      @OA\Parameter(
-     *        name="newPassword",
-     *        in="body",
-     *        description="New password",
-     *        @OA\Schema(type="string"),
-     *      ),
-     *      @OA\Parameter(
-     *        name="newPasswordConfirm",
-     *        in="body",
-     *        description="New password",
-     *        @OA\Schema(type="string"),
+     *      @OA\RequestBody(
+     *          required=true,
+     *          @OA\JsonContent(
+     *              @OA\Property(property="password", description="Password", type="string"),
+     *              @OA\Property(property="newPassword", description="New Password", type="string"),
+     *              @OA\Property(property="newPasswordConfirm", description="New Password Confirm", type="string")
+     *          )
      *      ),
      *      @OA\Response(
      *          response="200",
-     *          @OA\JsonContent(ref="#/definitions/SuccessResponse")
+     *          description="Successfully changed the password",
+     *          @OA\JsonContent(ref="#/components/schemas/SuccessResponse")
      *     )
      * )
+     * @LoginRequired()
      * @Route(path="/store-api/v{version}/account/change-password", name="store-api.account.change-password", methods={"POST"})
      */
     public function change(RequestDataBag $requestDataBag, SalesChannelContext $context)
     {
-        if (!$context->getCustomer()) {
-            throw new CustomerNotLoggedInException();
-        }
-
         $this->validatePasswordFields($requestDataBag, $context);
 
         $customerData = [
@@ -119,7 +108,7 @@ class ChangePasswordRoute extends AbstractChangePasswordRoute
 
         $this->customerRepository->update([$customerData], $context->getContext());
 
-        return Feature::isActive('FEATURE_NEXT_10058') ? new ContextTokenResponse($context->getToken()) : new SuccessResponse();
+        return new ContextTokenResponse($context->getToken());
     }
 
     private function dispatchValidationEvent(DataValidationDefinition $definition, Context $context): void

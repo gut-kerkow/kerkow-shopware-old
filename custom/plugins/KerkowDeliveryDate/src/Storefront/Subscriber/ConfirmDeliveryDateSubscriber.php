@@ -79,6 +79,8 @@ class ConfirmDeliveryDateSubscriber implements EventSubscriberInterface
                 $extensions['customDeliverySlot'] = $persistedData['deliverySlot'];
                 $extensions['createdAt'] = $createdAt->diff($now);
             }
+        } else {
+            return;
         }
         $extensions['delivery_date'] = $next_delivery_date;
 

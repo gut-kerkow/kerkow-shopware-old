@@ -53,7 +53,7 @@ class ChangeDeliveryDateController extends StorefrontController
         $now = new DateTime();
         $parameters["customDeliveryTimestamp"] = $now->format('Y-m-d H:i:s');
 
-        $this->contextPersister->save($context->getToken(), $parameters);
+        $this->contextPersister->save($context->getToken(), $parameters, $context->getSalesChannel()->getId());
 
         $event = new SalesChannelContextSwitchEvent($context, $data);
         $this->eventDispatcher->dispatch($event);

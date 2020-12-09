@@ -7,8 +7,7 @@ import ContenProductListPlugin from "./conten-product-list/content-product-list.
 import toggleLoginRegisterPlugin from "./checkout-register/toggle-login-register.plugin";
 import changePaymentPlugin from "./checkout-confirm/change-payment.plugin";
 import DatePickerExtensionPlugin from "./checkout-confirm/date-picker-extension.plugin";
-import changeDeliveryDatePlugin from "./checkout-confirm/change-delivery-date.plugin";
-import CookiePermissionPluginExtension from "./cookie/cookie-permission-extension.plugin";
+import ChangeDeliveryDatePlugin from "./checkout-confirm/change-delivery-date.plugin";
 import SuperAddressPlugin from "./super-address/super-address.plugin";
 
 // Register them via the existing PluginManager
@@ -51,14 +50,9 @@ PluginManager.override(
   "[data-date-picker]"
 );
 PluginManager.register(
-  "changeDeliveryDateP",
-  changeDeliveryDatePlugin,
+  "ChangeDeliveryDate",
+  ChangeDeliveryDatePlugin,
   "[data-change-delivery-date]"
-);
-PluginManager.override(
-  "CookiePermission",
-  CookiePermissionPluginExtension,
-  "[data-cookie-permission]"
 );
 PluginManager.register(
   "SuperAddress",

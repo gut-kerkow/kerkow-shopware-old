@@ -3,12 +3,13 @@
 namespace Shopware\Core\Checkout\Customer\SalesChannel;
 
 use OpenApi\Annotations as OA;
-use Shopware\Core\Checkout\Cart\Exception\CustomerNotLoggedInException;
+use Shopware\Core\Checkout\Customer\CustomerEntity;
 use Shopware\Core\Checkout\Customer\Event\CustomerDeletedEvent;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
-use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
+use Shopware\Core\Framework\Routing\Annotation\LoginRequired;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
+use Shopware\Core\Framework\Routing\Annotation\Since;
 use Shopware\Core\System\SalesChannel\NoContentResponse;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -43,31 +44,25 @@ class DeleteCustomerRoute extends AbstractDeleteCustomerRoute
     }
 
     /**
+     * @Since("6.3.2.0")
      * @OA\Delete(
      *      path="/account/customer",
-     *      description="Delete customer profile",
+     *      summary="Delete customer profile",
      *      operationId="deleteCustomer",
      *      tags={"Store API", "Account"},
-     *      @OA\Parameter(name="Api-Basic-Parameters"),
      *      @OA\Response(
-     *          response="200",
-     *          description="Loggedin customer",
-     *          @OA\JsonContent(ref="#/components/schemas/customer_flat")
+     *          response="204",
+     *          description="Successfully deleted the customer",
+     *          @OA\JsonContent(ref="#/components/schemas/SuccessResponse")
      *     )
      * )
+     * @LoginRequired()
      * @Route("/store-api/v{version}/account/customer", name="store-api.account.customer.delete", methods={"DELETE"})
      */
     public function delete(SalesChannelContext $context): NoContentResponse
     {
-        if (!Feature::isActive('FEATURE_NEXT_10077')) {
-            return new NoContentResponse();
-        }
-
+        /** @var CustomerEntity $customer */
         $customer = $context->getCustomer();
-        if ($customer === null) {
-            throw new CustomerNotLoggedInException();
-        }
-
         $this->customerRepository->delete([['id' => $customer->getId()]], $context->getContext());
 
         $event = new CustomerDeletedEvent($context, $customer);

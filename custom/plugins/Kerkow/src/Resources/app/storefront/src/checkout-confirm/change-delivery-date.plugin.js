@@ -2,7 +2,7 @@ import Plugin from "src/plugin-system/plugin.class";
 import DomAccess from "src/helper/dom-access.helper";
 import DeviceDetection from "src/helper/device-detection.helper";
 
-export default class changeDeliveryDatePlugin extends Plugin {
+export default class ChangeDeliveryDatePlugin extends Plugin {
   static options = {
     saveButtonSelector: ".js-save-delivery-time-slot",
     deliverySlotSelector: ".js-delivery-date-select",
@@ -77,7 +77,6 @@ export default class changeDeliveryDatePlugin extends Plugin {
       console.log(e);
       return;
     }
-
     this._registerEvents();
   }
 
@@ -94,14 +93,14 @@ export default class changeDeliveryDatePlugin extends Plugin {
    * Save the dates
    * @private
    */
-  _saveDates() {
+  _saveDates(event) {
+    event.preventDefault();
     const deliverySlot = this._deliverySlot.value;
     const deliveryDate = new Date(this._deliveryDate.value);
 
     // Update the Form Fields
     this._formDateInput.value = this._deliveryDate.value;
     this._formSlotInput.value = deliverySlot;
-
     this._form.submit();
   }
 }

@@ -17,7 +17,8 @@ Component.register('sw-cms-detail', {
         'cmsPageService',
         'cmsService',
         'cmsDataResolverService',
-        'acl'
+        'acl',
+        'feature'
     ],
 
     mixins: [
@@ -44,7 +45,36 @@ Component.register('sw-cms-detail', {
             selectedBlockSectionId: null,
             currentMappingEntity: null,
             currentMappingEntityRepo: null,
-            demoEntityId: null
+            demoEntityId: null,
+            productDetailBlocks: [
+                {
+                    type: 'product-description-reviews',
+                    elements: [
+                        {
+                            slot: 'content',
+                            type: 'product-description-reviews',
+                            config: {}
+                        }
+                    ]
+                },
+                {
+                    type: 'product-heading',
+                    elements: [
+                        {
+                            slot: 'left',
+                            type: 'product-name',
+                            config: {}
+                        },
+                        {
+                            slot: 'right',
+                            type: 'manufacturer-logo',
+                            config: {}
+                        }
+                    ]
+                }
+            ],
+            showLayoutAssignmentModal: false,
+            previousRoute: ''
         };
     },
 
@@ -52,6 +82,12 @@ Component.register('sw-cms-detail', {
         return {
             title: this.$createTitle(this.identifier)
         };
+    },
+
+    beforeRouteEnter(to, from, next) {
+        next((vm) => {
+            vm.previousRoute = from.name;
+        });
     },
 
     computed: {
@@ -110,9 +146,8 @@ Component.register('sw-cms-detail', {
             return {
                 page: this.$tc('sw-cms.detail.label.pageTypeShopPage'),
                 landingpage: this.$tc('sw-cms.detail.label.pageTypeLandingpage'),
-                product_list: this.$tc('sw-cms.detail.label.pageTypeCategory')
-                // Will be implemented in the future
-                // product_detail: this.$tc('sw-cms.detail.label.pageTypeProduct')
+                product_list: this.$tc('sw-cms.detail.label.pageTypeCategory'),
+                product_detail: this.$tc('sw-cms.detail.label.pageTypeProduct')
             };
         },
 
@@ -171,7 +206,9 @@ Component.register('sw-cms-detail', {
             const criteria = new Criteria(1, 1);
             const sortCriteria = Criteria.sort('position', 'ASC', true);
 
-            criteria.getAssociation('sections')
+            criteria
+                .addAssociation('categories')
+                .getAssociation('sections')
                 .addSorting(sortCriteria)
                 .addAssociation('backgroundMedia')
                 .getAssociation('blocks')
@@ -436,87 +473,7 @@ Component.register('sw-cms-detail', {
             this.isSaveSuccessful = false;
         },
 
-        onSave() {
-            this.isSaveSuccessful = false;
-
-            if ((this.isSystemDefaultLanguage && !this.page.name) || !this.page.type) {
-                this.pageConfigOpen();
-
-                const warningMessage = this.$tc('sw-cms.detail.notification.messageMissingFields');
-                this.createNotificationError({
-                    message: warningMessage
-                });
-
-                return Promise.reject();
-            }
-
-            if (this.page.type === 'product_list') {
-                let foundListingBlock = false;
-
-                this.page.sections.forEach((section) => {
-                    section.blocks.forEach((block) => {
-                        if (block.type === 'product-listing') {
-                            foundListingBlock = true;
-                        }
-                    });
-                });
-
-                if (!foundListingBlock) {
-                    this.createNotificationError({
-                        message: this.$tc('sw-cms.detail.notification.messageMissingProductListing')
-                    });
-
-                    this.cmsBlocks['product-listing'].hidden = false;
-
-                    this.pageConfigOpen('blocks');
-                    return Promise.reject();
-                }
-                this.cmsBlocks['product-listing'].hidden = true;
-            }
-
-            const sections = this.page.sections;
-
-            if (sections.length < 1) {
-                this.createNotificationError({
-                    message: this.$tc('sw-cms.detail.notification.messageMissingSections')
-                });
-
-                return Promise.reject();
-            }
-
-            if (sections.length === 1 && sections[0].blocks.length === 0) {
-                this.createNotificationError({
-                    message: this.$tc('sw-cms.detail.notification.messageMissingBlocks')
-                });
-
-                this.pageConfigOpen('blocks');
-                return Promise.reject();
-            }
-
-            let foundEmptyRequiredField = [];
-
-            sections.forEach((section) => {
-                section.blocks.forEach((block) => {
-                    block.backgroundMedia = null;
-
-                    block.slots.forEach((slot) => {
-                        foundEmptyRequiredField.push(...this.checkRequiredSlotConfigField(slot));
-                    });
-                });
-            });
-
-            if (foundEmptyRequiredField.length > 0) {
-                const warningMessage = this.$tc('sw-cms.detail.notification.messageMissingBlockFields');
-                this.createNotificationError({
-                    message: warningMessage
-                });
-
-                foundEmptyRequiredField = [];
-                return Promise.reject();
-            }
-
-            this.deleteEntityAndRequiredConfigKey(this.page.sections);
-
+        onSaveEntity() {
             this.isLoading = true;
 
             return this.pageRepository.save(this.page, Shopware.Context.api, false).then(() => {
@@ -527,9 +484,7 @@ Component.register('sw-cms-detail', {
             }).catch((exception) => {
                 this.isLoading = false;
 
-                const errorNotificationTitle = this.$tc('global.default.error');
                 this.createNotificationError({
-                    title: errorNotificationTitle,
                     message: exception.message
                 });
 
@@ -555,6 +510,153 @@ Component.register('sw-cms-detail', {
 
                 return Promise.reject(exception);
             });
+        },
+
+        getSlotValidations(sections) {
+            const foundEmptyRequiredField = [];
+            const foundProductPageElements = {
+                buyBox: 0,
+                productDescriptionReviews: 0,
+                crossSelling: 0
+            };
+
+            sections.forEach((section) => {
+                section.blocks.forEach((block) => {
+                    block.backgroundMedia = null;
+
+                    block.slots.forEach((slot) => {
+                        if (this.page.type === 'product_detail' && this.isProductPageElement(slot)) {
+                            if (slot.type === 'buy-box') {
+                                foundProductPageElements.buyBox += 1;
+                            } else if (slot.type === 'product-description-reviews') {
+                                foundProductPageElements.productDescriptionReviews += 1;
+                            } else if (slot.type === 'cross-selling') {
+                                foundProductPageElements.crossSelling += 1;
+                            }
+
+                            return;
+                        }
+
+                        foundEmptyRequiredField.push(...this.checkRequiredSlotConfigField(slot));
+                    });
+                });
+            });
+
+            return {
+                foundEmptyRequiredField,
+                foundProductPageElements
+            };
+        },
+
+        getRedundantElementsWarning(foundProductPageElements) {
+            const warningMessages = [];
+
+            Object.entries(foundProductPageElements).forEach(([key, value]) => {
+                if (value > 1) {
+                    warningMessages.push(
+                        this.$tc('sw-cms.detail.notification.messageRedundantElements', 0, { name: this.$tc(`sw-cms.elements.${key}.label`) })
+                    );
+                }
+            });
+
+            return warningMessages;
+        },
+
+        onSave() {
+            this.isSaveSuccessful = false;
+
+            if ((this.isSystemDefaultLanguage && !this.page.name) || !this.page.type) {
+                this.pageConfigOpen();
+
+                const warningMessage = this.$tc('sw-cms.detail.notification.messageMissingFields');
+                this.createNotificationError({
+                    message: warningMessage
+                });
+
+                return Promise.reject();
+            }
+            const sections = this.page.sections;
+
+            if (this.feature.isActive('FEATURE_NEXT_11389') &&
+                !this.page.categories.length &&
+                this.previousRoute === 'sw.cms.create') {
+                this.openLayoutAssignmentModal();
+
+                return Promise.reject();
+            }
+
+            if (this.page.type === 'product_list') {
+                let foundListingBlock = false;
+
+                sections.forEach((section) => {
+                    section.blocks.forEach((block) => {
+                        if (block.type === 'product-listing') {
+                            foundListingBlock = true;
+                        }
+                    });
+                });
+
+                if (!foundListingBlock) {
+                    this.createNotificationError({
+                        message: this.$tc('sw-cms.detail.notification.messageMissingProductListing')
+                    });
+
+                    this.cmsBlocks['product-listing'].hidden = false;
+
+                    this.pageConfigOpen('blocks');
+                    return Promise.reject();
+                }
+                this.cmsBlocks['product-listing'].hidden = true;
+            }
+
+
+            if (sections.length < 1) {
+                this.createNotificationError({
+                    message: this.$tc('sw-cms.detail.notification.messageMissingSections')
+                });
+
+                return Promise.reject();
+            }
+
+            if (sections.length === 1 && sections[0].blocks.length === 0) {
+                this.createNotificationError({
+                    message: this.$tc('sw-cms.detail.notification.messageMissingBlocks')
+                });
+
+                this.pageConfigOpen('blocks');
+                return Promise.reject();
+            }
+
+            const { foundEmptyRequiredField, foundProductPageElements } = this.getSlotValidations(sections);
+
+            if (this.page.type === 'product_detail') {
+                const warningMessages = this.getRedundantElementsWarning(foundProductPageElements);
+
+                if (warningMessages.length > 0) {
+                    warningMessages.forEach((message) => {
+                        this.createNotificationError({
+                            message
+                        });
+                    });
+
+                    return Promise.reject();
+                }
+            }
+
+            if (foundEmptyRequiredField.length > 0) {
+                const warningMessage = this.$tc('sw-cms.detail.notification.messageMissingBlockFields');
+                this.createNotificationError({
+                    message: warningMessage
+                });
+
+                return Promise.reject();
+            }
+
+            this.deleteEntityAndRequiredConfigKey(this.page.sections);
+
+            // TODO: NEXT-11886 Show missing element modal if there is no product page element in product page layout
+
+            return this.onSaveEntity();
         },
 
         deleteEntityAndRequiredConfigKey(sections) {
@@ -655,30 +757,7 @@ Component.register('sw-cms-detail', {
 
         onPageTypeChange() {
             if (this.page.type === 'product_list') {
-                const listingBlock = this.blockRepository.create();
-                const blockConfig = this.cmsBlocks['product-listing'];
-
-                listingBlock.type = 'product-listing';
-                listingBlock.position = 0;
-
-                listingBlock.sectionId = this.page.sections[0].id;
-                listingBlock.setionPosition = 'main';
-
-                Object.assign(
-                    listingBlock,
-                    cloneDeep(this.blockConfigDefaults),
-                    cloneDeep(blockConfig.defaultConfig || {})
-                );
-
-                const listingEl = this.slotRepository.create();
-                listingEl.blockId = listingBlock.id;
-                listingEl.slot = 'content';
-                listingEl.type = 'product-listing';
-                listingEl.config = {};
-
-                listingBlock.slots.push(listingEl);
-
-                this.page.sections[0].blocks.splice(0, 0, listingBlock);
+                this.processProductListingType();
             } else {
                 this.page.sections.forEach((section) => {
                     section.blocks.forEach((block) => {
@@ -689,8 +768,69 @@ Component.register('sw-cms-detail', {
                 });
             }
 
+            if (this.page.type === 'product_detail') {
+                this.processProductDetailType();
+            }
+
             this.checkSlotMappings();
             this.onPageUpdate();
+        },
+
+        processProductListingType() {
+            const listingBlock = this.blockRepository.create();
+            const listingElements = [
+                {
+                    blockId: listingBlock.id,
+                    slot: 'content',
+                    type: 'product-listing',
+                    config: {}
+                }
+            ];
+
+            this.processBlock(listingBlock, 'product-listing');
+            this.processElements(listingBlock, listingElements);
+        },
+
+        processProductDetailType() {
+            this.productDetailBlocks.forEach(block => {
+                const newBlock = this.blockRepository.create();
+
+                block.elements.forEach(el => { el.blockId = newBlock.id; });
+
+                this.processBlock(newBlock, block.type);
+                this.processElements(newBlock, block.elements);
+            });
+        },
+
+        processBlock(block, blockType) {
+            const cmsBlock = this.cmsBlocks[blockType];
+
+            block.type = blockType;
+            block.position = 0;
+
+            block.sectionId = this.page.sections[0].id;
+            block.sectionPosition = 'main';
+
+            Object.assign(
+                block,
+                cloneDeep(this.blockConfigDefaults),
+                cloneDeep(cmsBlock.defaultConfig || {})
+            );
+        },
+
+        processElements(block, elements) {
+            elements.forEach((element) => {
+                const slot = this.slotRepository.create();
+
+                slot.blockId = element.blockId;
+                slot.slot = element.slot;
+                slot.type = element.type;
+                slot.config = element.config;
+
+                block.slots.push(slot);
+            });
+
+            this.page.sections[0].blocks.splice(0, 0, block);
         },
 
         checkSlotMappings() {
@@ -710,6 +850,26 @@ Component.register('sw-cms-detail', {
                     });
                 });
             });
+        },
+
+        isProductPageElement(slot) {
+            return ['buy-box', 'product-description-reviews', 'cross-selling'].includes(slot.type);
+        },
+
+        onOpenLayoutAssignment() {
+            this.openLayoutAssignmentModal();
+        },
+
+        openLayoutAssignmentModal() {
+            this.showLayoutAssignmentModal = true;
+        },
+
+        closeLayoutAssignmentModal() {
+            this.showLayoutAssignmentModal = false;
+        },
+
+        onConfirmLayoutAssignment() {
+            this.previousRoute = '';
         }
     }
 });

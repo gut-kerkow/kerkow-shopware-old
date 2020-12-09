@@ -8,15 +8,17 @@
 {% endblock %}
 {% block sw_order_detail_base_secondary_info_payment %}
 	{% parent %}
-    <template v-if="currentOrder.transactions.length > 0">
+	<template v-if="currentOrder.transactions.length > 0 && currentOrder.transactions[0].customFields">
 		<template v-for="payload of currentOrder.transactions[0].customFields.payone_transaction_data" v-if="payload.transaction && payload.transaction.cardtype">
-			<dt>{{ $tc('sw-order.detailBase.labelCreditCard') }}</dt>			
+			<dt>
+				{{ $tc('sw-order.detailBase.labelCreditCard') }}
+			</dt>
 			<dd v-if="payload.transaction.cardtype == 'M'">
 				Mastercard
 			</dd>
 			<dd v-else-if="payload.transaction.cardtype == 'V'">
 				Visa
 			</dd>
-    	</template>
-    </template>
+		</template>
+	</template>
 {% endblock %}
