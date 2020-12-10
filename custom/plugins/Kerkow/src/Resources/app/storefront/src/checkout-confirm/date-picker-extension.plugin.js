@@ -60,7 +60,7 @@ export default class DatePickerExtensionPlugin extends DatePickerPlugin {
     this.options.maxDate =
       maxDateObject.getFullYear() +
       "-" +
-      (maxDateObject.getMonth() + 1) +
+      ("0" + (maxDateObject.getMonth() + 1)).slice(-2) +
       "-" +
       maxDateObject.getDate();
     this.options.enable = this._getDeliverableDays();

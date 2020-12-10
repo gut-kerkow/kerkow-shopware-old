@@ -37,7 +37,7 @@
 								{% if page.extensions["customDeliveryDate"] %}
 									{% set defaultDate = page.extensions["customDeliveryDate"] %}
 								{% else %}
-									{% set defaultDate = page.extensions["delivery_date"] %}
+									{% set defaultDate = deliveryInfos.date %}
 								{% endif %}
 								<input class="select-date-picker js-select-date-picker" data-date-picker="true" data-defaultdate="{{ defaultDate|date("Y-m-d") }}" data-mindate="{{ page.extensions["delivery_date"]|date("Y-m-d") }}">
 							</div>

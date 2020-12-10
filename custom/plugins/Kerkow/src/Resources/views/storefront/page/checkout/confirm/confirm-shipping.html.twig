@@ -42,7 +42,7 @@
 									{% set date = page.extensions["customDeliveryDate"] %}
 									{% set slotString = 'kerkow.deliverySlot.'~page.extensions["customDeliverySlot"] %}
 								{% else %}
-									{% set date = page.extensions["delivery_date"] %}
+									{% set date = deliveryInfos.date %}
 									{% set slotString = 'kerkow.deliverySlot.18to20' %}
 								{% endif %}
 								{% set dayString =  'general.day.'~date|date("D") %}
