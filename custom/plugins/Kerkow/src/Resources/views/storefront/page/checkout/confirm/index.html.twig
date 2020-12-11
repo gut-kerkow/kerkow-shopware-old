@@ -208,7 +208,7 @@
 									{% set deliveryDate = page.extensions["customDeliveryDate"] %}
 									{% set deliverySlot = page.extensions["customDeliverySlot"] %}
 								{% else %}
-									{% set deliveryDate = page.extensions["delivery_date"] %}
+									{% set deliveryDate = deliveryInfos.date %}
 									{% set deliverySlot = "18to20" %}
 								{% endif %}
 								{% block page_delivery_date_input_field %}
