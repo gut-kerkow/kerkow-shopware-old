@@ -78,7 +78,11 @@ export default class DatePickerExtensionPlugin extends DatePickerPlugin {
    */
   _getDeliverableDays() {
     const minDate = new Date(this.options.minDate);
+    console.log("this.options.minDate", this.options.minDate);
+    console.log("mindate", minDate);
     const maxDate = new Date(this.options.maxDate);
+    console.log("maxdate", maxDate);
+    console.log("this.options.maxDate", this.options.maxDate);
     var deliverableDates = [];
     for (
       var date = minDate;
