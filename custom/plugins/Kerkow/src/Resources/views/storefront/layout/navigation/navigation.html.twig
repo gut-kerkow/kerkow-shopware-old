@@ -111,5 +111,10 @@
 				</div>
 			{% endblock %}
 		{% endblock %}
+		{% if context.salesChannel.customFields["custom_global_notice_active"] %}
+			<div class="global-notice d-md-none">
+				{{ "kerkow.globalNotice"|trans }}
+			</div>
+		{% endif %}
 	</div>
 {% endblock %}

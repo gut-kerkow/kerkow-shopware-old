@@ -262,5 +262,23 @@
             "webpack": null,
             "styleFiles": []
         }
+    },
+    "SendcloudShipping": {
+        "basePath": "custom\/plugins\/SendcloudShipping\/src\/",
+        "views": [
+            "Resources\/views"
+        ],
+        "technicalName": "sendcloud-shipping",
+        "administration": {
+            "path": "Resources\/app\/administration\/src",
+            "entryFilePath": "Resources\/app\/administration\/src\/main.js",
+            "webpack": null
+        },
+        "storefront": {
+            "path": "Resources\/app\/storefront\/src",
+            "entryFilePath": null,
+            "webpack": null,
+            "styleFiles": []
+        }
     }
 }

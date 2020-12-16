@@ -3,6 +3,8 @@
 {% if app.environment == 'dev' %}
     {% set isHMRMode = true %}
 {% endif %}
+
+
 {% block base_doctype %}
 <!DOCTYPE html>
 {% endblock %}
@@ -168,9 +170,7 @@
             {% if isHMRMode %}
                 {% set baseUrl = app.request.getScheme() ~ '://' ~ app.request.getHost() %}
                 {% set port = app.request.headers.get('hot-reload-port') %}
-                {% if app.environment == 'dev' %}
-                    {% set port = 9999 %}
-                {% endif %}
+                {% set port = 9999 %}                
                 <script type="text/javascript" src="{{ baseUrl }}:{{ port }}/js/vendor-node.js"></script>
                 <script type="text/javascript" src="{{ baseUrl }}:{{ port }}/js/vendor-shared.js"></script>
                 <script type="text/javascript" src="{{ baseUrl }}:{{ port }}/js/runtime.js"></script>

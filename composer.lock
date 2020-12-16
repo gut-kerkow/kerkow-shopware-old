@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "2e2d48328dc652e1db9388e30d7fadd4",
+    "content-hash": "4e300f6b299a82b89bf8b7a3b1185b80",
     "packages": [
         {
             "name": "aws/aws-sdk-php",
@@ -414,16 +414,16 @@
         },
         {
             "name": "composer/spdx-licenses",
-            "version": "1.5.4",
+            "version": "1.5.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/spdx-licenses.git",
-                "reference": "6946f785871e2314c60b4524851f3702ea4f2223"
+                "reference": "de30328a7af8680efdc03e396aad24befd513200"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/spdx-licenses/zipball/6946f785871e2314c60b4524851f3702ea4f2223",
-                "reference": "6946f785871e2314c60b4524851f3702ea4f2223",
+                "url": "https://api.github.com/repos/composer/spdx-licenses/zipball/de30328a7af8680efdc03e396aad24befd513200",
+                "reference": "de30328a7af8680efdc03e396aad24befd513200",
                 "shasum": ""
             },
             "require": {
@@ -435,7 +435,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.x-dev"
+                    "dev-main": "1.x-dev"
                 }
             },
             "autoload": {
@@ -470,7 +470,7 @@
                 "spdx",
                 "validator"
             ],
-            "time": "2020-07-15T15:35:07+00:00"
+            "time": "2020-12-03T16:04:16+00:00"
         },
         {
             "name": "composer/xdebug-handler",
@@ -4059,11 +4059,17 @@
         },
         {
             "name": "shopware/administration",
-            "version": "6.3.4.0",
+            "version": "6.3.4.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/shopware/administration.git",
+                "reference": "94bbc86001dac1f2d80be0c6d515f1be7bc6aa42"
+            },
             "dist": {
-                "type": "path",
-                "url": "repos/administration",
-                "reference": "35a1e149fba0917cef85faf4fd1cff6405d52627"
+                "type": "zip",
+                "url": "https://api.github.com/repos/shopware/administration/zipball/94bbc86001dac1f2d80be0c6d515f1be7bc6aa42",
+                "reference": "94bbc86001dac1f2d80be0c6d515f1be7bc6aa42",
+                "shasum": ""
             },
             "require": {
                 "shopware/core": "*",
@@ -4083,21 +4089,26 @@
                     "Shopware\\Administration\\": ""
                 }
             },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
             "description": "Administration frontend for the Shopware Core",
-            "transport-options": {
-                "symlink": false
-            }
+            "time": "2020-12-14T03:25:07+00:00"
         },
         {
             "name": "shopware/core",
-            "version": "6.3.4.0",
+            "version": "6.3.4.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/shopware/core.git",
+                "reference": "d2d06c052bf517580c472af8485210bd2675c65c"
+            },
             "dist": {
-                "type": "path",
-                "url": "repos/core",
-                "reference": "cbd29201e5a18da8ecc599bfc256aeccd7928fcf"
+                "type": "zip",
+                "url": "https://api.github.com/repos/shopware/core/zipball/d2d06c052bf517580c472af8485210bd2675c65c",
+                "reference": "d2d06c052bf517580c472af8485210bd2675c65c",
+                "shasum": ""
             },
             "require": {
                 "aws/aws-sdk-php": "3.133.6",
@@ -4226,6 +4237,7 @@
                     "Shopware\\Core\\": ""
                 }
             },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -4235,17 +4247,21 @@
                 "shop",
                 "shopware"
             ],
-            "transport-options": {
-                "symlink": false
-            }
+            "time": "2020-12-14T03:25:07+00:00"
         },
         {
             "name": "shopware/elasticsearch",
-            "version": "6.3.4.0",
+            "version": "6.3.4.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/shopware/elasticsearch.git",
+                "reference": "77629e5e8863385cae99f7a1531abee39c88f5c9"
+            },
             "dist": {
-                "type": "path",
-                "url": "repos/elasticsearch",
-                "reference": "0ba64045ce0c347d8e9b5b62f83d47a678a130d7"
+                "type": "zip",
+                "url": "https://api.github.com/repos/shopware/elasticsearch/zipball/77629e5e8863385cae99f7a1531abee39c88f5c9",
+                "reference": "77629e5e8863385cae99f7a1531abee39c88f5c9",
+                "shasum": ""
             },
             "require": {
                 "doctrine/dbal": "2.10.1",
@@ -4274,21 +4290,26 @@
                     "/Test/"
                 ]
             },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
             "description": "Elasticsearch for Shopware",
-            "transport-options": {
-                "symlink": false
-            }
+            "time": "2020-12-14T03:25:07+00:00"
         },
         {
             "name": "shopware/recovery",
-            "version": "6.3.4.0",
+            "version": "6.3.4.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/shopware/recovery.git",
+                "reference": "425e23c2a99a446c4a8749b0d018fb0e1dfd8b2e"
+            },
             "dist": {
-                "type": "path",
-                "url": "repos/recovery",
-                "reference": "b6aac0cad9491ce893132c721e8dbbc663298743"
+                "type": "zip",
+                "url": "https://api.github.com/repos/shopware/recovery/zipball/425e23c2a99a446c4a8749b0d018fb0e1dfd8b2e",
+                "reference": "425e23c2a99a446c4a8749b0d018fb0e1dfd8b2e",
+                "shasum": ""
             },
             "require": {
                 "php": "^7.2"
@@ -4302,31 +4323,26 @@
                     "dev-master": "6.3.x-dev"
                 }
             },
-            "autoload-dev": {
-                "psr-4": {
-                    "Shopware\\Recovery\\Test\\": "Test"
-                }
-            },
-            "scripts": {
-                "pre-install-cmd": [
-                    "composer install -d Common --no-interaction --optimize-autoloader --no-suggest"
-                ]
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
             "description": "Recovery for Shopware",
-            "transport-options": {
-                "symlink": false
-            }
+            "time": "2020-12-14T03:25:07+00:00"
         },
         {
             "name": "shopware/storefront",
-            "version": "6.3.4.0",
+            "version": "6.3.4.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/shopware/storefront.git",
+                "reference": "335d6050ef650b9590df564c8573727725bc1af0"
+            },
             "dist": {
-                "type": "path",
-                "url": "repos/storefront",
-                "reference": "6ba2771c7788d1db9427f128d5f0790566b203a9"
+                "type": "zip",
+                "url": "https://api.github.com/repos/shopware/storefront/zipball/335d6050ef650b9590df564c8573727725bc1af0",
+                "reference": "335d6050ef650b9590df564c8573727725bc1af0",
+                "shasum": ""
             },
             "require": {
                 "cocur/slugify": "4.0.0",
@@ -4373,13 +4389,12 @@
                     "*/Test/"
                 ]
             },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
             "description": "Storefront for Shopware",
-            "transport-options": {
-                "symlink": false
-            }
+            "time": "2020-12-14T03:25:08+00:00"
         },
         {
             "name": "sroze/messenger-enqueue-transport",
@@ -8572,16 +8587,16 @@
         },
         {
             "name": "fzaninotto/faker",
-            "version": "v1.9.1",
+            "version": "v1.9.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/fzaninotto/Faker.git",
-                "reference": "fc10d778e4b84d5bd315dad194661e091d307c6f"
+                "reference": "848d8125239d7dbf8ab25cb7f054f1a630e68c2e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/fzaninotto/Faker/zipball/fc10d778e4b84d5bd315dad194661e091d307c6f",
-                "reference": "fc10d778e4b84d5bd315dad194661e091d307c6f",
+                "url": "https://api.github.com/repos/fzaninotto/Faker/zipball/848d8125239d7dbf8ab25cb7f054f1a630e68c2e",
+                "reference": "848d8125239d7dbf8ab25cb7f054f1a630e68c2e",
                 "shasum": ""
             },
             "require": {
@@ -8619,7 +8634,7 @@
                 "fixtures"
             ],
             "abandoned": true,
-            "time": "2019-12-12T13:22:17+00:00"
+            "time": "2020-12-11T09:56:16+00:00"
         },
         {
             "name": "johnkary/phpunit-speedtrap",
@@ -8992,16 +9007,16 @@
         },
         {
             "name": "phar-io/version",
-            "version": "3.0.3",
+            "version": "3.0.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phar-io/version.git",
-                "reference": "726c026815142e4f8677b7cb7f2249c9ffb7ecae"
+                "reference": "e4782611070e50613683d2b9a57730e9a3ba5451"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phar-io/version/zipball/726c026815142e4f8677b7cb7f2249c9ffb7ecae",
-                "reference": "726c026815142e4f8677b7cb7f2249c9ffb7ecae",
+                "url": "https://api.github.com/repos/phar-io/version/zipball/e4782611070e50613683d2b9a57730e9a3ba5451",
+                "reference": "e4782611070e50613683d2b9a57730e9a3ba5451",
                 "shasum": ""
             },
             "require": {
@@ -9035,7 +9050,7 @@
                 }
             ],
             "description": "Library for handling version information and constraints",
-            "time": "2020-11-30T09:21:21+00:00"
+            "time": "2020-12-13T23:18:30+00:00"
         },
         {
             "name": "phpdocumentor/reflection-common",
@@ -10681,7 +10696,7 @@
         }
     ],
     "aliases": [],
-    "minimum-stability": "alpha",
+    "minimum-stability": "stable",
     "stability-flags": [],
     "prefer-stable": true,
     "prefer-lowest": false,

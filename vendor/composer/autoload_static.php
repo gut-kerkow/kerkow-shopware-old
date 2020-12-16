@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInite45af5bc6e39fbf41c3f0ae828c88ed1
+class ComposerStaticInitd084a630c2d63974a2dcc798be9e6af3
 {
     public static $files = array (
         '320cde22f66dd4f5d3fd621d3e88b98f' => __DIR__ . '/..' . '/symfony/polyfill-ctype/bootstrap.php',
@@ -15,16 +15,16 @@ class ComposerStaticInite45af5bc6e39fbf41c3f0ae828c88ed1
         'e69f7f6ee287b969198c3c9d6777bd38' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/bootstrap.php',
         'f598d06aa772fa33d905e87be6398fb1' => __DIR__ . '/..' . '/symfony/polyfill-intl-idn/bootstrap.php',
         '92c8763cd6170fce6fcfe7e26b4e8c10' => __DIR__ . '/..' . '/symfony/phpunit-bridge/bootstrap.php',
-        '667aeda72477189d0494fecd327c3641' => __DIR__ . '/..' . '/symfony/var-dumper/Resources/functions/dump.php',
         '7b11c4dc42b3b3023073cb14e519683c' => __DIR__ . '/..' . '/ralouphie/getallheaders/src/getallheaders.php',
-        'c964ee0ededf28c96ebd9db5099ef910' => __DIR__ . '/..' . '/guzzlehttp/promises/src/functions_include.php',
         'a0edc8309cc5e1d60e3047b5df6b7052' => __DIR__ . '/..' . '/guzzlehttp/psr7/src/functions_include.php',
+        'c964ee0ededf28c96ebd9db5099ef910' => __DIR__ . '/..' . '/guzzlehttp/promises/src/functions_include.php',
         '6a47392539ca2329373e0d33e1dba053' => __DIR__ . '/..' . '/symfony/polyfill-intl-icu/bootstrap.php',
         '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
         'b067bc7112e384b61c701452d53a14a8' => __DIR__ . '/..' . '/mtdowling/jmespath.php/src/JmesPath.php',
         'def43f6c87e4f8dfd0c9e1b1bab14fe8' => __DIR__ . '/..' . '/symfony/polyfill-iconv/bootstrap.php',
         '8a9dc1de0ca7e01f3e08231539562f61' => __DIR__ . '/..' . '/aws/aws-sdk-php/src/functions.php',
         '2c102faa651ef8ea5874edb585946bce' => __DIR__ . '/..' . '/swiftmailer/swiftmailer/lib/swift_required.php',
+        '667aeda72477189d0494fecd327c3641' => __DIR__ . '/..' . '/symfony/var-dumper/Resources/functions/dump.php',
         'e39a8b23c42d4e1452234d762b03835a' => __DIR__ . '/..' . '/ramsey/uuid/src/functions.php',
         '8825ede83f2f289127722d4e842cf7e8' => __DIR__ . '/..' . '/symfony/polyfill-intl-grapheme/bootstrap.php',
         'b6b991a57620e2fb6b2f66f03fe9ddc2' => __DIR__ . '/..' . '/symfony/string/Resources/functions.php',
@@ -255,8 +255,8 @@ class ComposerStaticInite45af5bc6e39fbf41c3f0ae828c88ed1
         'phpDocumentor\\Reflection\\' => 
         array (
             0 => __DIR__ . '/..' . '/phpdocumentor/reflection-common/src',
-            1 => __DIR__ . '/..' . '/phpdocumentor/reflection-docblock/src',
-            2 => __DIR__ . '/..' . '/phpdocumentor/type-resolver/src',
+            1 => __DIR__ . '/..' . '/phpdocumentor/type-resolver/src',
+            2 => __DIR__ . '/..' . '/phpdocumentor/reflection-docblock/src',
         ),
         'bheller\\ImagesGenerator\\' => 
         array (
@@ -584,8 +584,8 @@ class ComposerStaticInite45af5bc6e39fbf41c3f0ae828c88ed1
         ),
         'Psr\\Http\\Message\\' => 
         array (
-            0 => __DIR__ . '/..' . '/psr/http-factory/src',
-            1 => __DIR__ . '/..' . '/psr/http-message/src',
+            0 => __DIR__ . '/..' . '/psr/http-message/src',
+            1 => __DIR__ . '/..' . '/psr/http-factory/src',
         ),
         'Psr\\EventDispatcher\\' => 
         array (
@@ -3691,6 +3691,8 @@ class ComposerStaticInite45af5bc6e39fbf41c3f0ae828c88ed1
         'HTMLPurifier_Injector_RemoveEmpty' => __DIR__ . '/..' . '/ezyang/htmlpurifier/library/HTMLPurifier/Injector/RemoveEmpty.php',
         'HTMLPurifier_Injector_RemoveSpansWithoutAttributes' => __DIR__ . '/..' . '/ezyang/htmlpurifier/library/HTMLPurifier/Injector/RemoveSpansWithoutAttributes.php',
         'HTMLPurifier_Injector_SafeObject' => __DIR__ . '/..' . '/ezyang/htmlpurifier/library/HTMLPurifier/Injector/SafeObject.php',
+        'HTMLPurifier_Language' => __DIR__ . '/..' . '/ezyang/htmlpurifier/library/HTMLPurifier/Language.php',
+        'HTMLPurifier_LanguageFactory' => __DIR__ . '/..' . '/ezyang/htmlpurifier/library/HTMLPurifier/LanguageFactory.php',
         'HTMLPurifier_Length' => __DIR__ . '/..' . '/ezyang/htmlpurifier/library/HTMLPurifier/Length.php',
         'HTMLPurifier_Lexer' => __DIR__ . '/..' . '/ezyang/htmlpurifier/library/HTMLPurifier/Lexer.php',
         'HTMLPurifier_Lexer_DOMLex' => __DIR__ . '/..' . '/ezyang/htmlpurifier/library/HTMLPurifier/Lexer/DOMLex.php',
@@ -6027,8 +6029,10 @@ class ComposerStaticInite45af5bc6e39fbf41c3f0ae828c88ed1
         'Shopware\\Core\\Checkout\\Order\\Event\\OrderStateMachineStateChangeEvent' => __DIR__ . '/..' . '/shopware/core/Checkout/Order/Event/OrderStateMachineStateChangeEvent.php',
         'Shopware\\Core\\Checkout\\Order\\Exception\\DeliveryWithoutAddressException' => __DIR__ . '/..' . '/shopware/core/Checkout/Order/Exception/DeliveryWithoutAddressException.php',
         'Shopware\\Core\\Checkout\\Order\\Exception\\EmptyCartException' => __DIR__ . '/..' . '/shopware/core/Checkout/Order/Exception/EmptyCartException.php',
+        'Shopware\\Core\\Checkout\\Order\\Exception\\GuestNotAuthenticatedException' => __DIR__ . '/..' . '/shopware/core/Checkout/Order/Exception/GuestNotAuthenticatedException.php',
         'Shopware\\Core\\Checkout\\Order\\Exception\\LanguageOfOrderDeleteException' => __DIR__ . '/..' . '/shopware/core/Checkout/Order/Exception/LanguageOfOrderDeleteException.php',
         'Shopware\\Core\\Checkout\\Order\\Exception\\PaymentMethodNotAvailableException' => __DIR__ . '/..' . '/shopware/core/Checkout/Order/Exception/PaymentMethodNotAvailableException.php',
+        'Shopware\\Core\\Checkout\\Order\\Exception\\WrongGuestCredentialsException' => __DIR__ . '/..' . '/shopware/core/Checkout/Order/Exception/WrongGuestCredentialsException.php',
         'Shopware\\Core\\Checkout\\Order\\Listener\\OrderStateChangeEventListener' => __DIR__ . '/..' . '/shopware/core/Checkout/Order/Listener/OrderStateChangeEventListener.php',
         'Shopware\\Core\\Checkout\\Order\\OrderCollection' => __DIR__ . '/..' . '/shopware/core/Checkout/Order/OrderCollection.php',
         'Shopware\\Core\\Checkout\\Order\\OrderDefinition' => __DIR__ . '/..' . '/shopware/core/Checkout/Order/OrderDefinition.php',
@@ -6961,6 +6965,7 @@ class ComposerStaticInite45af5bc6e39fbf41c3f0ae828c88ed1
         'Shopware\\Core\\Framework\\Api\\Controller\\CacheController' => __DIR__ . '/..' . '/shopware/core/Framework/Api/Controller/CacheController.php',
         'Shopware\\Core\\Framework\\Api\\Controller\\CaptchaController' => __DIR__ . '/..' . '/shopware/core/Framework/Api/Controller/CaptchaController.php',
         'Shopware\\Core\\Framework\\Api\\Controller\\Exception\\ExpectedUserHttpException' => __DIR__ . '/..' . '/shopware/core/Framework/Api/Controller/Exception/ExpectedUserHttpException.php',
+        'Shopware\\Core\\Framework\\Api\\Controller\\Exception\\PermissionDeniedException' => __DIR__ . '/..' . '/shopware/core/Framework/Api/Controller/Exception/PermissionDeniedException.php',
         'Shopware\\Core\\Framework\\Api\\Controller\\FallbackController' => __DIR__ . '/..' . '/shopware/core/Framework/Api/Controller/FallbackController.php',
         'Shopware\\Core\\Framework\\Api\\Controller\\IndexingController' => __DIR__ . '/..' . '/shopware/core/Framework/Api/Controller/IndexingController.php',
         'Shopware\\Core\\Framework\\Api\\Controller\\InfoController' => __DIR__ . '/..' . '/shopware/core/Framework/Api/Controller/InfoController.php',
@@ -11706,10 +11711,10 @@ class ComposerStaticInite45af5bc6e39fbf41c3f0ae828c88ed1
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInite45af5bc6e39fbf41c3f0ae828c88ed1::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInite45af5bc6e39fbf41c3f0ae828c88ed1::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInite45af5bc6e39fbf41c3f0ae828c88ed1::$prefixesPsr0;
-            $loader->classMap = ComposerStaticInite45af5bc6e39fbf41c3f0ae828c88ed1::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInitd084a630c2d63974a2dcc798be9e6af3::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInitd084a630c2d63974a2dcc798be9e6af3::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInitd084a630c2d63974a2dcc798be9e6af3::$prefixesPsr0;
+            $loader->classMap = ComposerStaticInitd084a630c2d63974a2dcc798be9e6af3::$classMap;
 
         }, null, ClassLoader::class);
     }
