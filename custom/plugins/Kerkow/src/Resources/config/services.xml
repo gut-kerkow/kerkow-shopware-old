@@ -7,6 +7,9 @@
 
         <service id="Kerkow\Storefront\Subscriber\RegisterNewsletterSubscriber">
             <tag name="kernel.event_subscriber"/>
+            <argument type="service" id="newsletter_recipient.repository" />
+            <argument type="service" id="Symfony\Component\EventDispatcher\EventDispatcherInterface" />
+            <argument type="service" id="Shopware\Core\System\SalesChannel\Context\SalesChannelContextPersister"/>
         </service>
 
     </services>

@@ -27,3 +27,4 @@
 
 # Config
 /config/jwt/
+.vscode/launch.json
