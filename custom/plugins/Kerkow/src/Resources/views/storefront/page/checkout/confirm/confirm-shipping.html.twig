@@ -17,23 +17,9 @@
 			{% endblock %}
 
 			{% block page_checkout_confirm_shipping_current %}
-				<div class="d-flex justify-content-between">
+				<div class="confirm-shipping-options">
 					<div class="confirm-shipping-image align-self-center">
-						{% block page_checkout_confirm_shipping_current_image %}
-							{% if context.shippingMethod.media %}
-								{% sw_thumbnails 'confirm-shipping-current-image-thumbnails' with {
-                                media: context.shippingMethod.media,
-                                sizes: {
-                                    'default': '100px'
-                                },
-                                attributes: {
-                                    'class': 'confirm-shipping-method-image',
-                                    'alt': (context.shippingMethod.media.translated.alt ?: context.shippingMethod.translated.name),
-                                    'title': (context.shippingMethod.media.translated.title ?: context.shippingMethod.translated.name)
-                                }
-                            } %}
-							{% endif %}
-						{% endblock %}
+						{% sw_include '@kerkow/storefront/page/checkout/confirm/change-shipping.html.twig' %}
 					</div>
 					<div class="confirm-shipping-delivery-date">
 						{% block page_checkout_confirm_shipping_current_text %}
@@ -93,7 +79,6 @@
 			{% endblock %}
 
 			{% block page_checkout_confirm_shipping_modal_toggle %}
-
 			{% endblock %}
 
 			{% block page_checkout_confirm_shipping_modal %}
@@ -112,7 +97,7 @@
 							</div>
 							<div class="modal-body">
 								{% block page_checkout_confirm_shipping_form %}
-									<form id="confirmShippingForm" name="confirmShippingForm" action="{{ path('frontend.custom.changeDeliveryDate') }}" data-form-csrf-handler="true" method="post">
+									<form id="changeDeliveryDate" name="changeDeliveryDate" action="{{ path('frontend.custom.changeDeliveryDate') }}" data-form-csrf-handler="true" method="post">
 
 										{% block page_checkout_confirm_shipping_form_csrf %}
 											{{ sw_csrf('frontend.custom.changeDeliveryDate') }}

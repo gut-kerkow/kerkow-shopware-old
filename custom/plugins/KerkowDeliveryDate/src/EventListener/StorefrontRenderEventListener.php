@@ -34,14 +34,15 @@ class StorefrontRenderEventListener implements EventSubscriberInterface
     private function getDelierableDate(SalesChannelContext $context): array
     {
         // Define the deliverable days of the week
-        $deliverable_dates = [1, /*monda*/ 3, /*wednesday*/ 5 /*friday*/];
+        $deliverable_dates = [2, /*tuesday*/ 3, /*wednesday*/ 4, /*wednesday*/ 5, /*friday*/ 6 /*saturday*/];
 
         // define holidays
         $holidays = [
+            '22 Dec 2020',
+            '23 Dec 2020',
             '24 Dec 2020',
             '25 Dec 2020',
             '26 Dec 2020',
-            '31 Dec 2020',
             '01 Jan 2021',
             '08 Mar 2021',
             '02 Apr 2021',

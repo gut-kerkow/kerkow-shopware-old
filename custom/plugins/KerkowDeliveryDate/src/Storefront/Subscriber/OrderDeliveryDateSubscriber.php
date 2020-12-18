@@ -39,6 +39,7 @@ class OrderDeliveryDateSubscriber implements EventSubscriberInterface
 
     public function onCheckoutFinish(CheckoutOrderPlacedEvent $event): void
     {
+        // This function writes the Delivery Date to database
 
         $order = $event->getOrder();
         $customFields = $order->getCustomFields();

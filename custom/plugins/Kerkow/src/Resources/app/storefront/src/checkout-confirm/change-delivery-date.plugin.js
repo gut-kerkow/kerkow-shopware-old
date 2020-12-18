@@ -10,7 +10,7 @@ export default class ChangeDeliveryDatePlugin extends Plugin {
     deliveryDisplaySelector: ".product-detail-deliver-date",
     deliveryDateInputSelector: ".js-delivery-date-input-field",
     deliverySlotInputSelector: ".js-delivery-slot-input-field",
-    deliveryForm: "form",
+    deliveryForm: "#changeDeliveryDate",
     deliveryFormDateInput: "#js_delivery_date_input",
     deliveryFormSlotInput: "#js_delivery_slot_input",
     weekdays: [

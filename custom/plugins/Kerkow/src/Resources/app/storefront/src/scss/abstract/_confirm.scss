@@ -32,9 +32,21 @@
       border: 0;
     }
   }
-  .confirm-payment-shipping {
+  .confirm-payment-shipping,
+  .confirm-shipping-method {
     padding-top: 1rem;
     margin-bottom: 0;
+  }
+  .confirm-shipping-fields {
+    .confirm-shipping-method {
+      border-bottom: 1px solid $kerkow-line-grey;
+      .payment-method {
+        border-bottom: none;
+      }
+    }
+    .confirm-shipping-method:last-of-type {
+      border-bottom: none;
+    }
   }
   .confirm-payment {
     .card-body {
@@ -43,8 +55,6 @@
     margin-bottom: 0.5rem;
   }
   .payment-method {
-    border-bottom: 1px solid $kerkow-line-grey;
-
     .payment-method-description {
       @include gt-black;
       color: $kerkow-blue;
@@ -57,6 +67,20 @@
     .payment-method-image {
       max-height: 22px;
       margin-right: 0;
+    }
+  }
+  .shipping-method {
+    .shipping-method-description {
+      @include gt-black;
+      color: $kerkow-blue;
+      font-size: 1rem;
+      line-height: 1.5rem;
+      p {
+        @include source-light;
+      }
+    }
+    .form-group {
+      margin-bottom: 0;
     }
   }
   label {

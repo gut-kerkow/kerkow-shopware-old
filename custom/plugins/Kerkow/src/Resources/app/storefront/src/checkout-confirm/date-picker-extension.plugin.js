@@ -17,11 +17,12 @@ export default class DatePickerExtensionPlugin extends DatePickerPlugin {
     inline: true,
     enable: null,
     holidays: [
+      "2020-12-23",
       "2020-12-24",
       "2020-12-25",
       "2020-12-26",
-      "2020-12-31",
       "2021-01-01",
+      "2021-01-02",
       "2021-03-08",
       "2021-04-02",
       "2021-04-05",
@@ -36,8 +37,6 @@ export default class DatePickerExtensionPlugin extends DatePickerPlugin {
     ],
     defaultDate: null,
   };
-
-  static holidays = {};
 
   init() {
     let localeIndex = "default";
@@ -62,7 +61,7 @@ export default class DatePickerExtensionPlugin extends DatePickerPlugin {
       "-" +
       ("0" + (maxDateObject.getMonth() + 1)).slice(-2) +
       "-" +
-      maxDateObject.getDate();
+      ("0" + maxDateObject.getDate()).slice(-2);
     this.options.enable = this._getDeliverableDays();
 
     flatpickr(this.el, {
@@ -85,13 +84,19 @@ export default class DatePickerExtensionPlugin extends DatePickerPlugin {
       date <= maxDate;
       date.setDate(date.getDate() + 1)
     ) {
-      if (date.getDay() == 1 || date.getDay() == 3 || date.getDay() == 5) {
+      if (
+        date.getDay() == 2 ||
+        date.getDay() == 3 ||
+        date.getDay() == 4 ||
+        date.getDay() == 5 ||
+        date.getDay() == 6
+      ) {
         var dateString =
           date.getFullYear() +
           "-" +
-          (date.getMonth() + 1) +
+          ("0" + (date.getMonth() + 1)).slice(-2) +
           "-" +
-          date.getDate();
+          ("0" + date.getDate()).slice(-2);
         if (!this.options.holidays.includes(dateString)) {
           deliverableDates.push(dateString);
         }

@@ -6,6 +6,7 @@ import OffCanvasCartPluginExtension from "./offcanvas-cart/offcanvas-cart-extens
 import ContenProductListPlugin from "./conten-product-list/content-product-list.plugin";
 import toggleLoginRegisterPlugin from "./checkout-register/toggle-login-register.plugin";
 import changePaymentPlugin from "./checkout-confirm/change-payment.plugin";
+import changeShippingPlugin from "./checkout-confirm/change-shipping.plugin";
 import DatePickerExtensionPlugin from "./checkout-confirm/date-picker-extension.plugin";
 import ChangeDeliveryDatePlugin from "./checkout-confirm/change-delivery-date.plugin";
 import SuperAddressPlugin from "./super-address/super-address.plugin";
@@ -43,6 +44,11 @@ PluginManager.register(
   "ChangePayment",
   changePaymentPlugin,
   "[data-change-payment]"
+);
+PluginManager.register(
+  "ChangeShipping",
+  changeShippingPlugin,
+  "[data-change-shipping]"
 );
 PluginManager.override(
   "DatePicker",
