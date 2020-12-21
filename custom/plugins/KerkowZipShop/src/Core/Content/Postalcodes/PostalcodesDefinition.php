@@ -9,7 +9,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\IdField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\StringField;
-use Shopware\Core\Framework\DataAbstractionLayer\Field\IntField;
 use Shopware\Core\Framework\DataAbstractionLayer\FieldCollection;
 
 class PostalcodesDefinition extends EntityDefinition
@@ -35,7 +34,7 @@ class PostalcodesDefinition extends EntityDefinition
     {
         return new FieldCollection([
             (new IdField('id', 'id'))->addFlags(new Required(), new PrimaryKey()),
-            (new IntField('zip', 'zip'))->addFlags(new Required()),
+            (new StringField('zip', 'zip'))->addFlags(new Required()),
             (new StringField('city', 'city'))->addFlags(new Required())
         ]);
     }

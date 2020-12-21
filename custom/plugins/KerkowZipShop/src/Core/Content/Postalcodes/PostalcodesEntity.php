@@ -12,7 +12,7 @@ class PostalcodesEntity extends Entity
     use EntityIdTrait;
 
     /**
-     * @var int
+     * @var string
      */
     protected $zip;
 
@@ -22,12 +22,12 @@ class PostalcodesEntity extends Entity
     protected $city;
 
 
-    public function getZip(): ?int
+    public function getZip(): ?string
     {
         return $this->zip;
     }
 
-    public function setZip(int $zip): void
+    public function setZip(string $zip): void
     {
         $this->zip = $zip;
     }

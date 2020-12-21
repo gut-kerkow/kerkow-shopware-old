@@ -207,26 +207,6 @@
             ]
         }
     },
-    "ZipShop": {
-        "basePath": "custom\/plugins\/KerkowZipShop\/src\/",
-        "views": [
-            "Resources\/views"
-        ],
-        "technicalName": "zip-shop",
-        "administration": {
-            "path": "Resources\/app\/administration\/src",
-            "entryFilePath": "Resources\/app\/administration\/src\/main.js",
-            "webpack": null
-        },
-        "storefront": {
-            "path": "Resources\/app\/storefront\/src",
-            "entryFilePath": "Resources\/app\/storefront\/src\/main.js",
-            "webpack": null,
-            "styleFiles": [
-                "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/KerkowZipShop\/src\/Resources\/app\/storefront\/src\/scss\/base.scss"
-            ]
-        }
-    },
     "CustomModules": {
         "basePath": "custom\/plugins\/KerkowCustomModules\/src\/",
         "views": [
@@ -279,6 +259,26 @@
             "entryFilePath": null,
             "webpack": null,
             "styleFiles": []
+        }
+    },
+    "ZipShop": {
+        "basePath": "custom\/plugins\/KerkowZipShop\/src\/",
+        "views": [
+            "Resources\/views"
+        ],
+        "technicalName": "zip-shop",
+        "administration": {
+            "path": "Resources\/app\/administration\/src",
+            "entryFilePath": "Resources\/app\/administration\/src\/main.js",
+            "webpack": null
+        },
+        "storefront": {
+            "path": "Resources\/app\/storefront\/src",
+            "entryFilePath": "Resources\/app\/storefront\/src\/main.js",
+            "webpack": null,
+            "styleFiles": [
+                "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/KerkowZipShop\/src\/Resources\/app\/storefront\/src\/scss\/base.scss"
+            ]
         }
     }
 }

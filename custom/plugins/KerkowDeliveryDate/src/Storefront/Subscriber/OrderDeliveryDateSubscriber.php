@@ -45,7 +45,6 @@ class OrderDeliveryDateSubscriber implements EventSubscriberInterface
         $customFields = $order->getCustomFields();
         $request = $this->requestStack->getCurrentRequest();
         $customFields["delivery_date"] = $request->request->get("deliveryDate");
-        $customFields["delivery_slot"] = $request->request->get("deliverySlot");
         $context = $event->getContext();
         $this->orderRepository->upsert(
             [

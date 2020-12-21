@@ -121,7 +121,6 @@
 
 								<span class="product-detail-deliver-tomorrow">
 									{{ "kerkow.actualDeliverTomorrow"|trans|raw }}
-									{{ "kerkow.deliverySlot.18to20"|trans }}
 								</span>
 							</div>
 						{% else %}
@@ -131,7 +130,6 @@
 								</p>
 								<span class="product-detail-deliver-date">
 									{{ "kerkow.actualDeliverTime"|trans({'%day%': day, '%date%': deliveryInfos.date|date("d"), '%month%': month}) }}
-									{{ "kerkow.deliverySlot.18to20"|trans }}
 								</span>
 							</div>
 							{% block page_product_detail_delivery_notice %}

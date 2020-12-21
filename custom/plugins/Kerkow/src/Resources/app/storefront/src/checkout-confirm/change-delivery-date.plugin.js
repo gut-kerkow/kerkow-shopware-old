@@ -9,10 +9,8 @@ export default class ChangeDeliveryDatePlugin extends Plugin {
     deliveryDateSelector: ".js-select-date-picker",
     deliveryDisplaySelector: ".product-detail-deliver-date",
     deliveryDateInputSelector: ".js-delivery-date-input-field",
-    deliverySlotInputSelector: ".js-delivery-slot-input-field",
     deliveryForm: "#changeDeliveryDate",
     deliveryFormDateInput: "#js_delivery_date_input",
-    deliveryFormSlotInput: "#js_delivery_slot_input",
     weekdays: [
       "Sonntag",
       "Montag",
@@ -44,10 +42,6 @@ export default class ChangeDeliveryDatePlugin extends Plugin {
         this.el,
         this.options.saveButtonSelector
       );
-      this._deliverySlot = DomAccess.querySelector(
-        this.el,
-        this.options.deliverySlotSelector
-      );
       this._deliveryDate = DomAccess.querySelector(
         this.el,
         this.options.deliveryDateSelector
@@ -60,18 +54,10 @@ export default class ChangeDeliveryDatePlugin extends Plugin {
         document,
         this.options.deliveryDateInputSelector
       );
-      this._deliverySlotInput = DomAccess.querySelector(
-        document,
-        this.options.deliverySlotInputSelector
-      );
       this._form = DomAccess.querySelector(this.el, this.options.deliveryForm);
       this._formDateInput = DomAccess.querySelector(
         this.el,
         this.options.deliveryFormDateInput
-      );
-      this._formSlotInput = DomAccess.querySelector(
-        this.el,
-        this.options.deliveryFormSlotInput
       );
     } catch (e) {
       console.log(e);
@@ -95,12 +81,9 @@ export default class ChangeDeliveryDatePlugin extends Plugin {
    */
   _saveDates(event) {
     event.preventDefault();
-    const deliverySlot = this._deliverySlot.value;
-    const deliveryDate = new Date(this._deliveryDate.value);
 
-    // Update the Form Fields
+    // Update the Form Field
     this._formDateInput.value = this._deliveryDate.value;
-    this._formSlotInput.value = deliverySlot;
     this._form.submit();
   }
 }

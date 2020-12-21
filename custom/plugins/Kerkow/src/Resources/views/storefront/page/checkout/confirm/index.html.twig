@@ -189,12 +189,6 @@
 					{% endblock %}
 
 					{% block page_checkout_aside_actions %}
-						{% set freeShippingDelta = 80 - page.cart.price.positionPrice %}
-						{% if freeShippingDelta > 0 %}
-							<div class="checkout-calculate-free-shipping alert alert-primary">
-								{{ "kerkow.getFreeShipping"|trans({'%delta%': freeShippingDelta})|replace({'.': ','}) }}
-							</div>
-						{% endif %}
 						<div class="checkout-aside-action">
 
 							<form id="confirmOrderForm" action="{{ path('frontend.checkout.finish.order') }}" data-form-csrf-handler="true" data-form-preserver="true" method="post">
@@ -206,16 +200,11 @@
 
 								{% if page.extensions["customDeliveryDate"] %}
 									{% set deliveryDate = page.extensions["customDeliveryDate"] %}
-									{% set deliverySlot = page.extensions["customDeliverySlot"] %}
 								{% else %}
 									{% set deliveryDate = deliveryInfos.date %}
-									{% set deliverySlot = "18to20" %}
 								{% endif %}
 								{% block page_delivery_date_input_field %}
 									<input type="hidden" name="deliveryDate" class="js-delivery-date-input-field" value="{{ deliveryDate|date("Y-m-d") }}">
-								{% endblock %}
-								{% block page_delivery_slot_input_field %}
-									<input type="hidden" name="deliverySlot" class="js-delivery-slot-input-field" value="{{ deliverySlot }}">
 								{% endblock %}
 								{% block page_checkout_confirm_form_submit %}
 									{{ parent() }}

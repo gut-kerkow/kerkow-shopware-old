@@ -21,6 +21,7 @@ export default class DatePickerExtensionPlugin extends DatePickerPlugin {
       "2020-12-24",
       "2020-12-25",
       "2020-12-26",
+      "2020-12-31",
       "2021-01-01",
       "2021-01-02",
       "2021-03-08",

@@ -26,10 +26,8 @@
 							{% block page_product_delivery_date %}
 								{% if page.extensions["customDeliveryDate"] %}
 									{% set date = page.extensions["customDeliveryDate"] %}
-									{% set slotString = 'kerkow.deliverySlot.'~page.extensions["customDeliverySlot"] %}
 								{% else %}
 									{% set date = deliveryInfos.date %}
-									{% set slotString = 'kerkow.deliverySlot.18to20' %}
 								{% endif %}
 								{% set dayString =  'general.day.'~date|date("D") %}
 								{% set day =  dayString|trans %}
@@ -109,7 +107,6 @@
 
 										{% block page_checkout_confirm_shipping_data %}
 											<input type="hidden" name="deliveryDate" id="js_delivery_date_input">
-											<input type="hidden" name="deliverySlot" id="js_delivery_slot_input">
 										{% endblock %}
 
 										{% block page_checkout_confirm_shipping_form_fields %}

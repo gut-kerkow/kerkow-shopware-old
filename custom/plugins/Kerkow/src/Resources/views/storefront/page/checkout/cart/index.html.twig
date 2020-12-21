@@ -55,14 +55,12 @@
 							<div class="delivery-time">
 								<span class="product-detail-deliver-tomorrow">
 									{{ "kerkow.actualDeliverTomorrow"|trans|raw }}
-									{{ "kerkow.deliverySlot.18to20"|trans }}
 								</span>
 							</div>
 						{% else %}
 							<div class="delivery-time">
 								<span class="product-detail-deliver-date">
 									{{ "kerkow.actualDeliverTime"|trans({'%day%': day, '%date%': deliveryInfos.date|date("d"), '%month%': month}) }}
-									{{ "kerkow.deliverySlot.18to20"|trans }}
 								</span>
 							</div>
 						{% endif %}
@@ -103,12 +101,6 @@
 												</div>
 											{% endblock %}
 										</div>
-										{% set freeShippingDelta = 80 - page.cart.price.positionPrice %}
-										{% if freeShippingDelta > 0 %}
-											<div class="checkout-calculate-free-shipping alert alert-primary">
-												{{ "kerkow.getFreeShipping"|trans({'%delta%': freeShippingDelta})|replace({'.': ','}) }}
-											</div>
-										{% endif %}
 									{% endblock %}
 
 									{% block page_checkout_aside_actions %}

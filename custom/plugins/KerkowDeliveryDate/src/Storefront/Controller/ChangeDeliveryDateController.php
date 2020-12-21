@@ -49,7 +49,6 @@ class ChangeDeliveryDateController extends StorefrontController
     public function changeDeliveryDate(Request $request, RequestDataBag $data, SalesChannelContext $context)
     {
         $parameters["deliveryDate"] = $data->get("deliveryDate");
-        $parameters["deliverySlot"] = $data->get("deliverySlot");
         $now = new DateTime();
         $parameters["customDeliveryTimestamp"] = $now->format('Y-m-d H:i:s');
 

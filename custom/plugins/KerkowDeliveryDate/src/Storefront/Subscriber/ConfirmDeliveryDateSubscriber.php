@@ -46,7 +46,6 @@ class ConfirmDeliveryDateSubscriber implements EventSubscriberInterface
 
             if ($createdAt->diff($now)->i <= 10) {
                 $extensions['customDeliveryDate'] = new DateTime($persistedData['deliveryDate']);
-                $extensions['customDeliverySlot'] = $persistedData['deliverySlot'];
                 $extensions['createdAt'] = $createdAt->diff($now);
             }
         } else {

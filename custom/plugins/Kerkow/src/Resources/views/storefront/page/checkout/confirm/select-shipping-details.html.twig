@@ -13,21 +13,6 @@
 					</button>
 				</div>
 				<div class="modal-body">
-					<div class="select-delivery-time-slot-container d-flex">
-						<div class="select-delivery-time-slot-label align-self-center">
-							{{ "kerkow.selectTimeSlot"|trans|raw }}
-						</div>
-						<div class="select-delivery-time-slot-select">
-							<select class="js-delivery-date-select">
-								<option value="18to20">
-									18:00 - 20:00 Uhr
-								</option>
-								<option value="19to21" {% if page.extensions["customDeliverySlot"] == "19to21" %} selected="selected" {% endif %}>
-									19:00 - 21:00 Uhr
-								</option>
-							</select>
-						</div>
-					</div>
 					{% block page_checkout_confirm_shipping_form %}
 						<div class="row">
 							<div class="col-12 delivery-calender-label">

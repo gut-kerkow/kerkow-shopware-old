@@ -1,0 +1,38 @@
+.account {
+  .account-welcome {
+    h1 {
+      @include gt-black;
+      color: $kerkow-blue;
+    }
+  }
+  .card-title {
+    @include gt-black;
+    color: $kerkow-blue;
+  }
+  p {
+    @include alright-regular;
+    $color: $kerkow-grey;
+  }
+  .btn-light {
+    &:not([disabled]) {
+      color: white;
+      &:active,
+      &:hover {
+        background-color: white;
+        color: $kerkow-blue;
+        border-color: $kerkow-blue;
+      }
+      background-color: $kerkow-blue;
+      @include alright-medium;
+      border-radius: 1px;
+    }
+  }
+}
+@include media-breakpoint-up(md) {
+  .account {
+    margin-top: 2rem;
+    .account-welcome {
+      margin-bottom: 4rem;
+    }
+  }
+}
