@@ -134,6 +134,6 @@ class ShipmentController extends AbstractController
         /** @var Queue $queue */
         $queue = ServiceRegister::getService(Queue::CLASS_NAME);
         $task = new OrderSyncTask([$order->getId()]);
-        $queue->enqueue($this->configService->getQueueName(), $task);
+        $queue->enqueue($this->configService->getEntityQueueName('order', $order->getId()), $task);
     }
 }
