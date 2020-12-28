@@ -59,7 +59,7 @@ class StorefrontRenderEventListener implements EventSubscriberInterface
         ];
 
         // Latest Order hour
-        $latest_hour = 11; // Eleven here means 12'o clock
+        $latest_hour = 1; // One here means 2'o clock in the morning
 
         // DateObject of Today
         $date = new DateTime();
