@@ -78,7 +78,9 @@
                 {% block sw_order_line_items_grid_grid_columns %}
                     {% block sw_order_line_items_grid_grid_columns_article_number %}
                         <template #column-articleNumber="{ item }">
-                            {{ item.payload.productNumber }}
+                            <template v-if="item.payload">
+                                {{ item.payload.productNumber }}
+                            </template>
                         </template>
                     {% endblock %}
                     {% block sw_order_line_items_grid_grid_columns_label %}

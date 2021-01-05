@@ -123,6 +123,8 @@ class OrderRepository
         return [
             'addresses',
             'lineItems.product',
+            'lineItems.product.options',
+            'lineItems.product.options.group',
             'currency',
             'orderCustomer.customer',
             'deliveries.shippingMethod',

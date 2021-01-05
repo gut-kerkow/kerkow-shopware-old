@@ -319,6 +319,17 @@ class OrderService implements OrderServiceInterface
                 $orderItem->setSku($productEntity->getProductNumber());
                 $totalWeight += $quantity * $weight;
                 $orderItem->setWeight(round($weight, 2));
+                
+                $orderItemProperties = [];
+                foreach ($productEntity->getOptions() as $option) {
+                    $group = $option->getGroup();
+
+                    if ($group) {
+                        $orderItemProperties[$group->getTranslation('name')] = $option->getTranslation('name');
+                    }
+                }
+
+                $orderItem->setProperties($orderItemProperties);
             }
 
             $orderItems[] = $orderItem;
