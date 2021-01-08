@@ -56,6 +56,7 @@ class StorefrontRenderEventListener implements EventSubscriberInterface
             '25 Dec 2021',
             '26 Dec 2021',
             '31 Dec 2021',
+            '01 Jan 2022',
         ];
 
         // Latest Order hour
@@ -72,8 +73,9 @@ class StorefrontRenderEventListener implements EventSubscriberInterface
     {
 
         if (!$holiday_mode) {
-            // Check if order day is itself a holiday. Do it 3 times as it could be maximum 3 holidays in a row
+            // Check if packing-day (delivery date -1 day) is itself a holiday. Do it 3 times as it could be maximum 3 holidays in a row
             for ($k = 0; $k < 3; $k++) {
+
                 if (in_array($date->format("d M Y"), $holidays, true)) {
                     // reset latest_hour
                     $latest_hour = 23;
@@ -86,39 +88,28 @@ class StorefrontRenderEventListener implements EventSubscriberInterface
         //Check if current time is before latest order hour
 
         if ($date->format('H') > $latest_hour) {
-            // Check if it's friday after latest_hour
+            // Check if it's saturday after latest_hour
             if ($day_of_week >= 5) {
-
                 $date->modify('next tuesday');
             } else {
-                // If it's thursday afer latest hour, make monday out of it
-                if ($day_of_week == 4) {
-                    $date->modify('next monday');
-                } else {
-
-                    $date->add(new DateInterval('P2D'));
-                }
+                // If it's friday afer latest hour, make tuesday out of it
+                $date->add(new DateInterval('P2D'));
             }
         } else {
             // check if it saturday or sunday
             if ($day_of_week == 6 || $day_of_week == 0) {
                 $date->modify('next tuesday');
             } else {
-                // If It's friday before latest_hour, make monday out of it
-                if ($day_of_week == 5) {
-                    $date->modify('next monday');
-                } else {
 
-                    $date->add(new DateInterval('P1D'));
-                }
+                $date->add(new DateInterval('P1D'));
             }
         }
 
         $day_of_week = $date->format('w');
         $last = clone $date;
-        $last->modify('next monday');
-
-
+        $last->modify('next tuesday');
+        $packing_day = clone $date;
+        $packing_day = $packing_day->sub(new DateInterval('P1D'));
 
         foreach ($deliverable_dates as $day) {
 
@@ -128,7 +119,12 @@ class StorefrontRenderEventListener implements EventSubscriberInterface
                 $days_from_now = $day - $day_of_week;
                 $next_deliverable_day = $date->add(new DateInterval('P' . $days_from_now . 'D'));
                 $last = $next_deliverable_day;
+
                 if (in_array($next_deliverable_day->format("d M Y"), $holidays, true)) {
+                    // reset latest_hour
+                    $latest_hour = 23;
+                    $this->getNextDeliverableDay($last, $deliverable_dates, $holidays, $latest_hour, true);
+                } elseif (in_array($packing_day->format("d M Y"), $holidays, true)) {
                     // reset latest_hour
                     $latest_hour = 23;
                     $this->getNextDeliverableDay($last, $deliverable_dates, $holidays, $latest_hour, true);
