@@ -34,7 +34,7 @@ class StorefrontRenderEventListener implements EventSubscriberInterface
     private function getDelierableDate(SalesChannelContext $context): array
     {
         // Define the deliverable days of the week
-        $deliverable_dates = [2, /*tuesday*/ 3, /*wednesday*/ 4, /*wednesday*/ 5, /*friday*/ 6 /*saturday*/];
+        $deliverable_dates = [2, /*tuesday*/ 3, /*wednesday*/ 4, /*wednesday*/ 5, /*friday*/];
 
         // define holidays
         $holidays = [
@@ -88,8 +88,8 @@ class StorefrontRenderEventListener implements EventSubscriberInterface
         //Check if current time is before latest order hour
 
         if ($date->format('H') > $latest_hour) {
-            // Check if it's saturday after latest_hour
-            if ($day_of_week >= 5) {
+            // Check if it's friday after latest_hour
+            if ($day_of_week >= 4) {
                 $date->modify('next tuesday');
             } else {
                 // If it's friday afer latest hour, make tuesday out of it
@@ -97,7 +97,7 @@ class StorefrontRenderEventListener implements EventSubscriberInterface
             }
         } else {
             // check if it saturday or sunday
-            if ($day_of_week == 6 || $day_of_week == 0) {
+            if ($day_of_week >= 5 || $day_of_week == 0) {
                 $date->modify('next tuesday');
             } else {
 

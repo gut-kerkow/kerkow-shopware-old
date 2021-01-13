@@ -95,8 +95,7 @@ export default class DatePickerExtensionPlugin extends DatePickerPlugin {
         date.getDay() == 2 ||
         date.getDay() == 3 ||
         date.getDay() == 4 ||
-        date.getDay() == 5 ||
-        date.getDay() == 6
+        date.getDay() == 5
       ) {
         var dateString =
           date.getFullYear() +
