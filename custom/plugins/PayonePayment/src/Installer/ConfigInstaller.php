@@ -28,6 +28,7 @@ class ConfigInstaller implements InstallerInterface
         'paypalAuthorizationMethod'                => 'preauthorization',
         'paypalExpressAuthorizationMethod'         => 'preauthorization',
         'sofortAuthorizationMethod'                => 'authorization',
+        'secureInvoiceAuthorizationMethod'         => 'preauthorization',
 
         // Default payment status mapping
         'paymentStatusAppointed'      => StateMachineTransitionActions::ACTION_REOPEN,
@@ -112,7 +113,7 @@ class ConfigInstaller implements InstallerInterface
         // Nothing to do here
     }
 
-    private function setDefaultValues(Context $context)
+    private function setDefaultValues(Context $context): void
     {
         $domain = 'PayonePayment.settings.';
 

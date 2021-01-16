@@ -35,10 +35,15 @@ class TransactionStatusService implements TransactionStatusServiceInterface
     public const ACTION_REDIRECT        = 'redirect';
     public const ACTION_INVOICE         = 'invoice';
     public const ACTION_UNDERPAID       = 'underpaid';
+    public const ACTION_TRANSFER        = 'transfer';
+    public const ACTION_REMINDER        = 'reminder';
+    public const ACTION_VAUTHORIZATION  = 'vauthorization';
+    public const ACTION_VSETTLEMENT     = 'vsettlement';
 
     public const STATUS_PREFIX    = 'paymentStatus';
     public const STATUS_COMPLETED = 'completed';
 
+    public const AUTHORIZATION_TYPE_AUTHORIZATION    = 'authorization';
     public const AUTHORIZATION_TYPE_PREAUTHORIZATION = 'preauthorization';
 
     public const TRANSACTION_TYPE_GT = 'GT';
@@ -124,6 +129,10 @@ class TransactionStatusService implements TransactionStatusServiceInterface
             ->addAssociation('stateMachineState');
         /** @var null|OrderTransactionEntity $transaction */
         $transaction = $this->transactionRepository->search($transactionCriteria, $context)->first();
+
+        if ($transaction === null || $transaction->getStateMachineState() === null) {
+            return;
+        }
 
         if ($transitionName === StateMachineTransitionActions::ACTION_PAID && $transaction->getStateMachineState()->getTechnicalName() === OrderTransactionStates::STATE_PARTIALLY_PAID) {
             // If the previous state is "paid_partially", "paid" is currently not allowed as direct transition, see https://github.com/shopwareLabs/SwagPayPal/blob/b63efb9/src/Util/PaymentStatusUtil.php#L79
