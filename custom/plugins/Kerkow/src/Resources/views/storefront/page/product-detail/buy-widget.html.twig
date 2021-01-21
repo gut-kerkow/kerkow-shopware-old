@@ -178,7 +178,7 @@
 					{% endif %}
 
 
-					{% if page.product.active %}
+					{% if page.product.active and page.product.availableStock > 0 %}
 						<div class="product-detail-form-container">
 							{% sw_include '@Storefront/storefront/page/product-detail/buy-widget-form.html.twig' %}
 						</div>

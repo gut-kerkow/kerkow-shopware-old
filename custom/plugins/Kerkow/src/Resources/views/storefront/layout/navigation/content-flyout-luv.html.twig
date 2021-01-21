@@ -1,0 +1,36 @@
+{% block layout_navigation_content_flyout %}
+
+	{% block layout_navigation_content_flyout_container %}
+		<div class="row navigation-flyout-content content-flyout-content js_content_flyout">
+			{% block layout_navigation_content_flyout_categories %}
+				<div class="col-3">
+					<ul>
+						<li data-target="kerkow">
+							<a href="/Laeden-Verkauf/#kerkow" class="active">
+								Hofladen Kerkow
+							</a>
+						</li>
+						<li data-target="berlin">
+							<a href="/Laeden-Verkauf/#berlin">
+								Bio-Metzgerei Berlin Mitte
+							</a>
+						</li>
+						<li data-target="gastro">
+							<a href="/Laeden-Verkauf/#gastro">
+								Gastronomie und Handel
+							</a>
+						</li>
+
+					</ul>
+				</div>
+
+			{% endblock %}
+			{% block layout_navigation_content_flyout_content %}
+				{% sw_include '@Storefront/storefront/layout/navigation/flyout-content/kerkow.html.twig' %}
+				{% sw_include '@Storefront/storefront/layout/navigation/flyout-content/berlin.html.twig' %}
+				{% sw_include '@Storefront/storefront/layout/navigation/flyout-content/gastro.html.twig' %}
+			{% endblock %}
+		</div>
+	{% endblock %}
+
+{% endblock %}

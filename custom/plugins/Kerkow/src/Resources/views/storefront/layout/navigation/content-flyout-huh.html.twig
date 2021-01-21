@@ -1,0 +1,65 @@
+{% block layout_navigation_content_flyout %}
+
+	{% block layout_navigation_content_flyout_container %}
+		<div class="row navigation-flyout-content content-flyout-content js_content_flyout">
+			{% block layout_navigation_content_flyout_categories %}
+				<div class="col-3" data-content="huh">
+					<ul>
+						<li data-target="lws">
+							<a href="/Hof-Handwerk/#landwirtschaft" class="active">
+								Ökologische Landwirtschaft
+							</a>
+						</li>
+						<li data-target="idea">
+							<a href="/Hof-Handwerk/#idee">
+								Idee
+							</a>
+						</li>
+						<li data-target="angus">
+							<a href="/Hof-Handwerk/#angus">
+								Angusrinder
+							</a>
+						</li>
+						<li data-target="hfs">
+							<a href="/Hof-Handwerk/#handwerk">
+								Hofschlachtung
+							</a>
+						</li>
+						<li data-target="pth">
+							<a href="/Hof-Handwerk/#partnerhoefe">
+								Partnerhöfe
+							</a>
+						</li>
+						<li data-target="hwv">
+							<a href="/Hof-Handwerk/#handwerk">
+								Handwerkliche Verarbeitung
+							</a>
+						</li>
+						<li data-target="kuk">
+							<a href="/Hof-Handwerk/#kunst">
+								Kunst und Kultur
+							</a>
+						</li>
+						<li data-target="events">
+							<a href="/Hof-Handwerk/#veranstaltungen">
+								Veranstaltungen
+							</a>
+						</li>
+					</ul>
+				</div>
+
+			{% endblock %}
+			{% block layout_navigation_content_flyout_content %}
+				{% sw_include '@Storefront/storefront/layout/navigation/flyout-content/landwirtschaft.html.twig' %}
+				{% sw_include '@Storefront/storefront/layout/navigation/flyout-content/idee.html.twig' %}
+				{% sw_include '@Storefront/storefront/layout/navigation/flyout-content/angusrinder.html.twig' %}
+				{% sw_include '@Storefront/storefront/layout/navigation/flyout-content/hofschlachtung.html.twig' %}
+				{% sw_include '@Storefront/storefront/layout/navigation/flyout-content/partnerhoefe.html.twig' %}
+				{% sw_include '@Storefront/storefront/layout/navigation/flyout-content/handwerk.html.twig' %}
+				{% sw_include '@Storefront/storefront/layout/navigation/flyout-content/kunst.html.twig' %}
+				{% sw_include '@Storefront/storefront/layout/navigation/flyout-content/veranstaltungen.html.twig' %}
+			{% endblock %}
+		</div>
+	{% endblock %}
+
+{% endblock %}

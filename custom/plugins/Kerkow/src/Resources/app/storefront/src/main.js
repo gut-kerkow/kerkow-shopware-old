@@ -10,6 +10,7 @@ import changeShippingPlugin from "./checkout-confirm/change-shipping.plugin";
 import DatePickerExtensionPlugin from "./checkout-confirm/date-picker-extension.plugin";
 import ChangeDeliveryDatePlugin from "./checkout-confirm/change-delivery-date.plugin";
 import SuperAddressPlugin from "./super-address/super-address.plugin";
+import ContentFlyoutPlugin from "./content-flyout/content-flyout.plugin";
 
 // Register them via the existing PluginManager
 const PluginManager = window.PluginManager;
@@ -65,3 +66,4 @@ PluginManager.register(
   SuperAddressPlugin,
   "[data-super-address]"
 );
+PluginManager.register("ContentFlyout", ContentFlyoutPlugin);

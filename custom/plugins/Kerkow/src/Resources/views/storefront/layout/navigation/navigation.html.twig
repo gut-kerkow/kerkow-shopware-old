@@ -63,6 +63,29 @@
 			</div>
 		{% endblock %}
 
+		{% block layout_main_navigation_content_flyout_wrapper %}
+			{% block layout_main_navigation_content_flyout_container %}
+				<div class="navigation-flyouts flyout-content">
+					{% block layout_main_navigation_content_flyout %}
+						<div class="navigation-flyout" data-flyout-content-id="huh">
+							<div class="container">
+								{% block layout_main_navigation_content_flyout_include_huh %}
+									{% sw_include '@Storefront/storefront/layout/navigation/content-flyout-huh.html.twig' %}
+								{% endblock %}
+							</div>
+						</div>
+						<div class="navigation-flyout" data-flyout-content-id="luv">
+							<div class="container">
+								{% block layout_main_navigation_content_flyout_include_luv %}
+									{% sw_include '@Storefront/storefront/layout/navigation/content-flyout-luv.html.twig' %}
+								{% endblock %}
+							</div>
+						</div>
+					{% endblock %}
+				</div>
+			{% endblock %}
+		{% endblock %}
+
 		{% block layout_main_navigation_menu_flyout_wrapper %}
 			{% set navigationChildrenCount = 0 %}
 			{% for treeItem in page.header.navigation.tree %}
