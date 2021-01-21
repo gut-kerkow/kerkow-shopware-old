@@ -60,6 +60,12 @@
             <template v-if="item.customFields.delivery_date">
                 <strong>{{ item.customFields.delivery_date | date() }}<strong>
             </template>
+            <template v-else-if="item.customFields.migration_Kerkow5API_order_attribute1">
+                <strong>{{ item.customFields.migration_Kerkow5API_order_attribute1 | date() }}<strong>
+            </template>
+            <template v-else>
+                n/a
+            </template>
         </template>
     {% endblock %}
     {% block sw_order_list_grid_columns_payment_type %}
