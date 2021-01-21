@@ -39,10 +39,17 @@
 .navbar-light {
   .navbar-nav {
     .nav-item {
+      padding: $nav-link-padding-y $nav-link-padding-x;
+      padding-right: $navbar-nav-link-padding-x;
+      padding-left: $navbar-nav-link-padding-x;
       .nav-link {
+        padding: 0;
         @include alright-regular;
         color: $kerkow-grey;
       }
+    }
+    .nav-item-cart {
+      padding: 0;
     }
   }
 }
@@ -51,11 +58,13 @@
     .nav-item {
       .nav-link {
         font-size: 0.8rem;
+        padding-bottom: 6px;
+        &:hover {
+          border-bottom: 4px solid $kerkow-grey;
+        }
       }
       &:first-of-type {
-        .nav-link {
-          padding-left: 0;
-        }
+        padding-left: 0;
       }
     }
   }
