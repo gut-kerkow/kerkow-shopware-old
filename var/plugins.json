@@ -165,26 +165,6 @@
             "styleFiles": []
         }
     },
-    "PayonePayment": {
-        "basePath": "custom\/plugins\/PayonePayment\/src\/",
-        "views": [
-            "Resources\/views"
-        ],
-        "technicalName": "payone-payment",
-        "administration": {
-            "path": "Resources\/app\/administration\/src",
-            "entryFilePath": "Resources\/app\/administration\/src\/main.js",
-            "webpack": null
-        },
-        "storefront": {
-            "path": "Resources\/app\/storefront\/src",
-            "entryFilePath": "Resources\/app\/storefront\/src\/main.js",
-            "webpack": null,
-            "styleFiles": [
-                "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/PayonePayment\/src\/Resources\/app\/storefront\/src\/scss\/base.scss"
-            ]
-        }
-    },
     "Kerkow": {
         "basePath": "custom\/plugins\/Kerkow\/src\/",
         "views": [
@@ -278,6 +258,26 @@
             "webpack": null,
             "styleFiles": [
                 "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/KerkowZipShop\/src\/Resources\/app\/storefront\/src\/scss\/base.scss"
+            ]
+        }
+    },
+    "PayonePayment": {
+        "basePath": "custom\/plugins\/PayonePayment\/src\/",
+        "views": [
+            "Resources\/views"
+        ],
+        "technicalName": "payone-payment",
+        "administration": {
+            "path": "Resources\/app\/administration\/src",
+            "entryFilePath": "Resources\/app\/administration\/src\/main.js",
+            "webpack": null
+        },
+        "storefront": {
+            "path": "Resources\/app\/storefront\/src",
+            "entryFilePath": "Resources\/app\/storefront\/src\/main.js",
+            "webpack": null,
+            "styleFiles": [
+                "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/PayonePayment\/src\/Resources\/app\/storefront\/src\/scss\/base.scss"
             ]
         }
     }
