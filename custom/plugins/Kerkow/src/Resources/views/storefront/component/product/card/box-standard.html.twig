@@ -14,15 +14,16 @@
 		<a href="{{ seoUrl('frontend.detail.page', {'productId': id}) }}" title="{{ name }}" class="product-image-link is-{{ displayMode }}">
 			{% if cover.url %}
 				{% set attributes = {
-                                        'class': 'product-image is-'~displayMode,
+                                        'class': 'lazyload product-image is-'~displayMode,
                                         'alt': (cover.translated.alt ?: name),
-                                        'title': (cover.translated.title ?: name)
+                                        'title': (cover.translated.title ?: name),
+										load: false
                                     } %}
 
 				{% if displayMode == 'cover' or displayMode == 'contain' %}
 					{% set attributes = attributes|merge({ 'data-object-fit': displayMode }) %}
 				{% endif %}
-
+				{% set load = false %}
 				{% sw_thumbnails 'product-image-thumbnails' with {
                                         media: cover,
                                         sizes: {
