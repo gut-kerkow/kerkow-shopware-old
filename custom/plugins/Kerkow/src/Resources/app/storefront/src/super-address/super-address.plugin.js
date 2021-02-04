@@ -21,6 +21,7 @@ export default class SuperAddressPlugin extends Plugin {
       return;
     }
     this._honeyInput.classList.add(this.options.hiddenClass);
+    this._honeyInput.required = false;
     this._registerEvents();
   }
 
