@@ -7,6 +7,7 @@
       "greeting": "Layouts",
       "createNewLayout": "Create new layout",
       "deleteDisabledToolTip": "The layout you want to delete is still assigned to at least one category.",
+      "deleteDisabledProductToolTip": "The layout you want to delete is still assigned to at least one product.",
       "disabledAddingBlocksToolTip": "Adding blocks only works in your default system language.",
       "buttonDelete": "Delete"
     },
@@ -26,6 +27,7 @@
       "gridHeaderName": "Name",
       "gridHeaderType": "Type",
       "gridHeaderAssignment": "Assigned categories",
+      "gridHeaderAssignments": "Assignments",
       "gridHeaderCreated": "Created"
     },
     "section": {
@@ -251,7 +253,8 @@
         "label": "Product listing",
         "config": {
           "tab": {
-            "sorting": "Sorting"
+            "sorting": "Sorting",
+            "filter": "Filter"
           },
           "sorting": {
             "labelShowSorting": "Show product sorting",
@@ -270,6 +273,20 @@
             },
             "defaultSortingInUse": "This product sorting is already selected as default sorting.",
             "defaultSortingCantBeDisabled": "This sorting is the default sorting. It has to be active to cause no problems with your product listing."
+          },
+          "filter": {
+            "infoText": "Make sure that a filter block is added to your layout to see this setting in action.",
+            "labelFilterByManufacturer": "Filter by manufacturer",
+            "labelFilterByRating": "Filter by rating",
+            "labelFilterByPrice": "Filter by price",
+            "labelFilterForFreeShipping": "Filter for free shipping",
+            "labelUseFilterByProperties": "Configure filterable product properties",
+            "helpTextUseFilterByProperties": "If disabled, filters for all existing properties are displayed in this layout.",
+            "descriptionTextUseFilterByProperties": "Properties that are set to not filterable are not displayed here. You can change this in the <a href=\"#/sw/property/index\" target=\"_blank\">properties</a> module.",
+            "gridHeaderStatus": "Status",
+            "gridHeaderName": "Name",
+            "gridEmptyStateLabel": "No properties found.",
+            "gridEmptyStateHint": "Try another search term"
           }
         }
       },
@@ -331,7 +348,7 @@
       "sidebarFilter": {
         "label": "Product filter",
         "infoText": {
-          "filterElement": "This element's filter data is automatically loaded. The content just shows a sample preview."
+          "filterElement": "This element's filter data is automatically loaded. The displayed filters can be configured via the Listing Element."
         }
       },
       "text": {
@@ -466,7 +483,25 @@
         }
       },
       "crossSelling": {
-        "label": "Cross Selling"
+        "label": "Cross Selling",
+        "preview": {
+          "label": {
+            "crossSellingTitle": "Cross Selling title"
+          }
+        },
+        "config": {
+          "label": {
+            "selection": "Product",
+            "minWidth": "Minimal width"
+          },
+          "placeholder": {
+            "selection": "Select product...",
+            "minWidth": "Enter minimal width..."
+          },
+          "infoText": {
+            "productDetailElement": "This element's product data is automatically loaded by the product associated with this layout. The content just shows a sample preview."
+          }
+        }
       }
     },
     "blocks": {
@@ -491,6 +526,12 @@
               "reviews": "Reviews"
             }
           }
+        },
+        "galleryBuyBox": {
+          "label": "Image gallery and buy box"
+        },
+        "crossSelling": {
+          "label": "Cross Selling"
         }
       },
       "image": {
@@ -613,13 +654,17 @@
         "labelSalesChannel": "Sales Channel",
         "placeholderSalesChannel": "Choose a Sales Channel...",
         "resetOptionSalesChannel": "All Sales Channels",
+        "helpTextSalesChannel": "Layouts assigned to specific Sales Channels will override layout assignments in \"All Sales Channels\".",
         "labelShopPages": "Shop pages",
-        "confirmChangesConfirm": "Confirm",
+        "confirmChanges": "Apply",
+        "confirmChangesConfirm": "Apply",
         "confirmChangesRestorePrev": "Discard",
-        "confirmChangesTextCategories": "You have removed layout assignments from categories. If you confirm these changes, the category will be displayed using a default fallback layout.",
-        "confirmChangesTextShopPages": "You have removed layout assignments from shop pages. If you confirm these changes, the shop page will be displayed in a default fallback layout.",
+        "confirmChangesTextCategories": "You have removed layout assignments from categories. If you confirm these changes, those categories will no longer have a layout assigned.",
+        "confirmChangesTextCategoriesAssignedLayouts": "Some of the selected categories already have a layout assigned. If you proceed those previous assignments will be replaced with the current layout.",
+        "confirmChangesTextShopPages": "You have removed layout assignments from shop pages. If you confirm these changes, those shop pages will no longer have a layout assigned",
+        "confirmChangesTextGeneral": "Select \"Apply\" if you want to overwrite the previous layout assignments.<br>Select \"Discard\" if you want to restore the previous layout assignments.<br>Select \"Cancel\" if you want to continue editing the layout assignments.",
         "confirmChangesText": "Do you want to apply your changes?",
-        "confirmChangesTitle": "Confirm changes",
+        "confirmChangesTitle": "Confirm assignment",
         "shopPagesLoadError": "Unable to load shop pages",
         "shopPagesSaveError": "Unable to save shop pages",
         "tabCategories": "Categories",
@@ -635,6 +680,13 @@
           "contactPage": "Contact forms",
           "newsletterPage": "Newsletter pages"
         }
+      },
+      "cmsMissingElementModal": {
+        "headline": "Missing elements",
+        "title": "The element <span>{element}</span> is missing in this product detail page. | The elements <span>{element}</span> are missing in this product detail page.",
+        "subtitle": "Customers visiting this page will miss out on important product information.",
+        "paragraph": "Do you want to save the layout anyway?",
+        "buttonSave": "Save layout"
       },
       "cmsListItem": {
         "emptyText": "No layout assigned",

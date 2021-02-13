@@ -10,7 +10,7 @@
 
 		{% if product.customFields["custom_cradleware_active"] %}
 			{% block component_product_cradleware_box_price %}
-				{% set listPrice = product.priceRange or product.calculatedPrices.count > 0 ? null : referncePrice.price %}
+				{% set listPrice = product.priceRange or product.calculatedPrices.count > 0 ? null : product.calculatedPrice.listPrice %}
 				<p class="product-price{% if referncePrice.price.percentage > 0 %} with-list-price{% endif %}">
 					{% if product.priceRange %}
 						{% if referncePrice.unitName == "g" %}
@@ -27,8 +27,9 @@
 							{{ "#{referncePrice.price|currency}/#{referncePrice.unitName}" }}
 						{% endif %}
 						{% if listPrice.percentage > 0 %}
+							{% set calculatedListPrice = listPrice.price / referncePrice.purchaseUnit * referncePrice.referenceUnit %}
 							<span class="list-price">
-								{{ listPrice.price|currency }}
+								{{ "(#{calculatedListPrice|currency}/#{referncePrice.referenceUnit}#{referncePrice.unitName})" }}
 							</span>
 
 						{% endif %}

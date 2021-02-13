@@ -68,9 +68,12 @@
       "labelMetaTitle": "Meta title",
       "labelMetaDescription": "Meta description",
       "labelKeywords": "SEO keywords",
+      "labelCanonicalUrlMode": "Use single canonical URL for all variants",
+      "labelCanonicalProduct": "Variant for canonical URL",
       "placeholderMetaTitle": "Enter meta title...",
       "placeholderMetaDescription": "Enter meta description...",
-      "placeholderKeywords": "Enter one or more keywords ..."
+      "placeholderKeywords": "Enter one or more keywords...",
+      "placeholderCanonicalProduct": "Select a variant..."
     },
     "settingsForm": {
       "labelCreatedAt": "Creation date",
@@ -128,8 +131,7 @@
       "cardTitleReviews": "Reviews",
       "cardTitleMedia": "Media",
       "labelContextMenuAddToProduct": "Add to product",
-      "cardTitleSeo": "SEO",
-      "cardTitleLayout": "Layout assignment"
+      "cardTitleSeo": "SEO"
     },
     "reviewForm": {
       "labelStatus": "Visible",
@@ -163,6 +165,7 @@
       "columnPrice": "Price (gross / net)",
       "contextMenuDuplicate": "Duplicate",
       "contextMenuDelete": "Delete",
+      "settingShowListPrices": "Show list prices",
       "toolbarLabel": "Rules"
     },
     "list": {
@@ -194,6 +197,7 @@
       "variantModalInlineEditStockPlaceholder": "Enter stock...",
       "notificationVariantDeleteSuccess": "Successfully deleted \"{variantName}\". | Successfully deleted {amount} variants.",
       "notificationVariantDeleteError": "There went something wrong while deleting \"{variantName}\". | Something went wrong while deleting multiple variants.",
+      "notificationVariantDeleteErrorCanonicalUrl": "\"{variantName}\" could not be deleted because it is used as a canonical URL template. | Variants could not be deleted because one is used as a canonical URL template.",
       "notificationVariantSaveSuccess": "Succesfully saved \"{variantName}\".",
       "variantDeleteModalTitle": "Delete variant",
       "variantDeleteModalText": "Are your sure you want to delete the variant \"{variantName}\"?",
@@ -211,6 +215,7 @@
       "tabGeneral": "General",
       "tabAdvancedPrices": "Advanced pricing",
       "tabVariation": "Variants",
+      "tabLayout": "Layout",
       "tabCrossSelling": "Cross Selling",
       "tabProperties": "Property assignment",
       "messageSaveSuccess": "Product \"{name}\" has been saved.",
@@ -230,11 +235,15 @@
       "advancedPricesNotExisting": "No advanced prices available for this product yet.",
       "columnFrom": "Quantity from...",
       "columnTo": "to...",
+      "columnType": "Type",
       "selectRule": "Select a conditional rule...",
       "advancedPricesInherited": "This product has inherited prices from its parent.",
       "linkAdvancedPricesOfParent": "Show prices of parent product",
       "inheritSwitchLabel": "Use advanced prices from parent product",
-      "advancedPricesNotInherited": "You can now use custom pricing rules for this variant."
+      "advancedPricesNotInherited": "You can now use custom pricing rules for this variant.",
+      "advancedListPricePriceLabel": "Price",
+      "advancedListPriceLabel": "List price",
+      "advancedPriceDisabledTooltip": "The start value of the first listing price has to be 1."
     },
     "properties": {
       "cardTitleProperties": "Available properties",
@@ -280,6 +289,7 @@
       "generatedListDeleteModalButtonDelete": "Delete",
       "generatedListMessageSaveSuccess": "Variant has been saved.",
       "generatedListMessageSaveError": "Variant could not be saved.",
+      "generatedListMessageDeleteErrorCanonicalUrl": "Variant could not be deleted because it is being used as the canonical url template.",
       "generatedListMessageDeleteSuccess": "Variant has been deleted.",
       "overview": {
         "filterReset": "Reset",
@@ -326,6 +336,10 @@
         "cancel": "Cancel",
         "save": "Save"
       }
+    },
+    "layout": {
+      "title": "Layout assignment",
+      "subtitle": "You may change product detail pages by assigning custom layouts. If no custom layout is assigned here, the default layout will be used."
     },
     "crossselling": {
       "cardTitleCrossSelling": "Cross Selling",

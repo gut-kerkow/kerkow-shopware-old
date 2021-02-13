@@ -46,7 +46,7 @@ describe('Order: Test order state', () => {
             method: 'post'
         }).as('findOrder');
 
-        cy.get(`${page.elements.dataGridRow}--0`).contains('Max Mustermann');
+        cy.get(`${page.elements.dataGridRow}--0`).contains('Mustermann, Max');
         cy.clickContextMenuItem(
             '.sw-order-list__order-view-action',
             page.elements.contextMenuButton,
@@ -82,11 +82,26 @@ describe('Order: Test order state', () => {
             const documentId = xhr.response.body.documentId;
             const documentDeepLink = xhr.response.body.documentDeepLink;
 
-            return cy.request(`/api/v*/_action/document/${documentId}/${documentDeepLink}`);
-        }).then((xhr) => {
-            expect(xhr).to.have.property('status', 200);
-            expect(xhr.headers).to.have.property('content-type', 'application/pdf');
+            cy.getCookie('bearerAuth').then((bearerAuth) => {
+                return JSON.parse(bearerAuth.value).access;
+            }).then((authToken) => {
+                return cy.request(
+                        {
+                            headers: {
+                                Accept: 'application/vnd.api+json',
+                                Authorization: `Bearer ${authToken}`,
+                                'Content-Type': 'application/json'
+                            },
+                            method: 'GET',
+                            url: `/api/v*/_action/document/${documentId}/${documentDeepLink}`
+                        }
+                    );
+            }).then((xhr) => {
+                expect(xhr).to.have.property('status', 200);
+                expect(xhr.headers).to.have.property('content-type', 'application/pdf');
+            });
         });
+
 
         cy.wait('@findDocumentCall').then((xhr) => {
             cy.log(`metal.total${xhr.responseBody.meta.total}`);
@@ -102,7 +117,7 @@ describe('Order: Test order state', () => {
         });
 
         cy.get(page.elements.smartBarBack).click();
-        cy.get(`${page.elements.dataGridRow}--0`).contains('Max Mustermann');
+        cy.get(`${page.elements.dataGridRow}--0`).contains('Mustermann, Max');
         cy.clickContextMenuItem(
             '.sw-order-list__order-view-action',
             page.elements.contextMenuButton,

@@ -9,11 +9,6 @@
                     {% endblock %}
                     <br/>
                 {% endif %}
-                {% if address.vatId %}
-                    {% block component_address_company_vat_id %}
-                        {{ "address.companyVatLabel"|trans|sw_sanitize }}: {{ address.vatId }}
-                    {% endblock %}
-                {% endif %}
                 </p>
             {% endblock %}
         {% endif %}

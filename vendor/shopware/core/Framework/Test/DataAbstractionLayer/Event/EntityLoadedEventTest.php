@@ -8,6 +8,7 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityLoadedEvent;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\IdField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToManyAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
@@ -211,7 +212,7 @@ class EntityLoadedEventTest extends TestCase
         $subEvent = $event->getEvents()->first();
 
         // check if sub events are marked as nested so they don't create nested events again
-        $property = ReflectionHelper::getProperty(get_class($subEvent), 'nested');
+        $property = ReflectionHelper::getProperty(\get_class($subEvent), 'nested');
         static::assertFalse($property->getValue($subEvent));
 
         // there should be no more events as they are dispatched within the $root event
@@ -231,10 +232,10 @@ class TestDefinition extends EntityDefinition
     protected function defineFields(): FieldCollection
     {
         return new FieldCollection([
-            new IdField('id', 'id'),
-            new ManyToOneAssociationField('many_to_one', 'many_to_one', self::class, 'id', true),
-            new OneToManyAssociationField('one_to_many', self::class, 'test_id'),
-            new ManyToManyAssociationField('many_to_many', self::class, ProductCategoryDefinition::class, 'test_id', 'test_id'),
+            (new IdField('id', 'id'))->addFlags(new ApiAware()),
+            (new ManyToOneAssociationField('many_to_one', 'many_to_one', self::class, 'id', true))->addFlags(new ApiAware()),
+            (new OneToManyAssociationField('one_to_many', self::class, 'test_id'))->addFlags(new ApiAware()),
+            (new ManyToManyAssociationField('many_to_many', self::class, ProductCategoryDefinition::class, 'test_id', 'test_id'))->addFlags(new ApiAware()),
         ]);
     }
 }

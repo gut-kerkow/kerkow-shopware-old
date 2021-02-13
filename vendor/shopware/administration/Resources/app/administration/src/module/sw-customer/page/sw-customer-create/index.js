@@ -60,6 +60,7 @@ Component.register('sw-customer-create', {
             this.customer.defaultBillingAddressId = this.address.id;
             this.customer.defaultShippingAddressId = this.address.id;
             this.customer.password = '';
+            this.customer.vatIds = [];
         },
 
         saveFinish() {

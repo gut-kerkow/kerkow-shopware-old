@@ -14,9 +14,9 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\BoolField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\DateTimeField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Field;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\FkField;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Deprecated;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Extension;
-use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\ReadProtected;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Since;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\WriteProtected;
@@ -199,9 +199,13 @@ class OpenApiDefinitionSchemaBuilder
             return false;
         }
 
-        /** @var ReadProtected|null $readProtected */
-        $readProtected = $field->getFlag(ReadProtected::class);
-        if ($readProtected && !$readProtected->isSourceAllowed($forSalesChannel ? SalesChannelApiSource::class : AdminApiSource::class)) {
+        /** @var ApiAware|null $flag */
+        $flag = $field->getFlag(ApiAware::class);
+        if ($flag === null) {
+            return false;
+        }
+
+        if (!$flag->isSourceAllowed($forSalesChannel ? SalesChannelApiSource::class : AdminApiSource::class)) {
             return false;
         }
 
@@ -387,23 +391,23 @@ class OpenApiDefinitionSchemaBuilder
 
     private function getPropertyByField(Field $field): Property
     {
-        $fieldClass = get_class($field);
+        $fieldClass = \get_class($field);
 
         $property = new Property([
             'type' => $this->getType($fieldClass),
             'property' => $field->getPropertyName(),
         ]);
 
-        if (\is_a($fieldClass, DateTimeField::class, true)) {
+        if (is_a($fieldClass, DateTimeField::class, true)) {
             $property->format = 'date-time';
         }
-        if (\is_a($fieldClass, FloatField::class, true)) {
+        if (is_a($fieldClass, FloatField::class, true)) {
             $property->format = 'float';
         }
-        if (\is_a($fieldClass, IntField::class, true)) {
+        if (is_a($fieldClass, IntField::class, true)) {
             $property->format = 'int64';
         }
-        if (\is_a($fieldClass, IdField::class, true) || \is_a($fieldClass, FkField::class, true)) {
+        if (is_a($fieldClass, IdField::class, true) || is_a($fieldClass, FkField::class, true)) {
             $property->type = 'string';
             $property->format = 'uuid';
         }
@@ -428,16 +432,16 @@ class OpenApiDefinitionSchemaBuilder
 
         $property->type = $this->getType($fieldClass);
 
-        if (\is_a($fieldClass, DateTimeField::class, true)) {
+        if (is_a($fieldClass, DateTimeField::class, true)) {
             $property->format = 'date-time';
         }
-        if (\is_a($fieldClass, FloatField::class, true)) {
+        if (is_a($fieldClass, FloatField::class, true)) {
             $property->format = 'float';
         }
-        if (\is_a($fieldClass, IntField::class, true)) {
+        if (is_a($fieldClass, IntField::class, true)) {
             $property->format = 'int64';
         }
-        if (\is_a($fieldClass, IdField::class, true) || \is_a($fieldClass, FkField::class, true)) {
+        if (is_a($fieldClass, IdField::class, true) || is_a($fieldClass, FkField::class, true)) {
             $property->type = 'string';
             $property->format = 'uuid';
         }
@@ -447,19 +451,19 @@ class OpenApiDefinitionSchemaBuilder
 
     private function getType(string $fieldClass): string
     {
-        if (\is_a($fieldClass, FloatField::class, true)) {
+        if (is_a($fieldClass, FloatField::class, true)) {
             return 'number';
         }
-        if (\is_a($fieldClass, IntField::class, true)) {
+        if (is_a($fieldClass, IntField::class, true)) {
             return 'integer';
         }
-        if (\is_a($fieldClass, BoolField::class, true)) {
+        if (is_a($fieldClass, BoolField::class, true)) {
             return 'boolean';
         }
-        if (\is_a($fieldClass, ListField::class, true)) {
+        if (is_a($fieldClass, ListField::class, true)) {
             return 'array';
         }
-        if (\is_a($fieldClass, JsonField::class, true)) {
+        if (is_a($fieldClass, JsonField::class, true)) {
             return 'object';
         }
 

@@ -4,6 +4,7 @@ namespace Shopware\Core\System\SalesChannel\Context;
 
 use Shopware\Core\Checkout\Cart\CartRuleLoader;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
+use Shopware\Core\Framework\Util\Random;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class SalesChannelContextService implements SalesChannelContextServiceInterface
@@ -71,11 +72,15 @@ class SalesChannelContextService implements SalesChannelContextServiceInterface
     {
         $parameters = $this->contextPersister->load($token, $salesChannelId);
 
+        if ($parameters['expired'] ?? false) {
+            $token = Random::getAlphanumericString(32);
+        }
+
         if ($languageId) {
             $parameters[self::LANGUAGE_ID] = $languageId;
         }
 
-        if (func_num_args() >= 4 && !array_key_exists(self::CURRENCY_ID, $parameters)) {
+        if (\func_num_args() >= 4 && !\array_key_exists(self::CURRENCY_ID, $parameters)) {
             $currencyId = func_get_arg(3);
 
             if ($currencyId !== null) {

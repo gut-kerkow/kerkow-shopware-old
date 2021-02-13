@@ -7,7 +7,13 @@ const { Criteria } = Shopware.Data;
 Component.register('sw-product-list', {
     template,
 
-    inject: ['repositoryFactory', 'numberRangeService', 'acl'],
+    inject: [
+        'repositoryFactory',
+        'numberRangeService',
+        'acl',
+        'filterFactory',
+        'feature'
+    ],
 
     mixins: [
         Mixin.getByName('notification'),
@@ -27,7 +33,8 @@ Component.register('sw-product-list', {
             total: 0,
             product: null,
             cloning: false,
-            productEntityVariantModal: false
+            productEntityVariantModal: false,
+            filterCriteria: new Criteria()
         };
     },
 
@@ -68,8 +75,46 @@ Component.register('sw-product-list', {
             });
         },
 
+        productCriteria() {
+            const productCriteria = new Criteria(this.page, this.limit);
+
+            productCriteria.setTerm(this.term);
+            productCriteria.addFilter(Criteria.equals('product.parentId', null));
+            productCriteria.addSorting(Criteria.sort(this.sortBy, this.sortDirection, this.naturalSorting));
+            productCriteria.addAssociation('cover');
+            productCriteria.addAssociation('manufacturer');
+
+            return productCriteria;
+        },
+
+        currencyCriteria() {
+            return new Criteria(1, 500);
+        },
+
         showVariantModal() {
             return !!this.productEntityVariantModal;
+        },
+
+        listFilters() {
+            return this.filterFactory.create('product', {
+                'active-filter': {
+                    property: 'active',
+                    label: 'Active'
+                },
+                'category-filter': {
+                    property: 'categories',
+                    label: 'Category'
+                }
+            });
+        }
+    },
+
+    watch: {
+        productCriteria: {
+            handler() {
+                this.getList();
+            },
+            deep: true
         }
     },
 
@@ -103,20 +148,9 @@ Component.register('sw-product-list', {
         getList() {
             this.isLoading = true;
 
-            const productCriteria = new Criteria(this.page, this.limit);
-            this.naturalSorting = this.sortBy === 'productNumber';
-
-            productCriteria.setTerm(this.term);
-            productCriteria.addFilter(Criteria.equals('product.parentId', null));
-            productCriteria.addSorting(Criteria.sort(this.sortBy, this.sortDirection, this.naturalSorting));
-            productCriteria.addAssociation('cover');
-            productCriteria.addAssociation('manufacturer');
-
-            const currencyCriteria = new Criteria(1, 500);
-
             return Promise.all([
-                this.productRepository.search(productCriteria, Shopware.Context.api),
-                this.currencyRepository.search(currencyCriteria, Shopware.Context.api)
+                this.productRepository.search(this.productCriteria, Shopware.Context.api),
+                this.currencyRepository.search(this.currencyCriteria, Shopware.Context.api)
             ]).then((result) => {
                 const products = result[0];
                 const currencies = result[1];
@@ -158,6 +192,11 @@ Component.register('sw-product-list', {
         onChangeLanguage(languageId) {
             Shopware.State.commit('context/setApiLanguageId', languageId);
             this.getList();
+        },
+
+        updateCriteria(criteria) {
+            this.page = 1;
+            this.filterCriteria = criteria;
         },
 
         getCurrencyPriceByCurrencyId(currencyId, prices) {
@@ -230,13 +269,7 @@ Component.register('sw-product-list', {
         },
 
         onColumnSort(column) {
-            this.$refs.swProductGrid.loading = true;
-
-            const context = Object.assign({}, Shopware.Context.api);
-            context.currencyId = column.currencyId;
-
-            return this.$refs.swProductGrid.repository.search(this.$refs.swProductGrid.items.criteria, context)
-                .then(this.$refs.swProductGrid.applyResult);
+            this.onSortColumn(column);
         },
 
         productHasVariants(productEntity) {

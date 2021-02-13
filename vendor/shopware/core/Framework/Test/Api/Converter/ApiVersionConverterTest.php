@@ -80,10 +80,10 @@ class ApiVersionConverterTest extends TestCase
             new Criteria(),
             $deprecatedDefinition,
             $this->getDeprecatedEntity(),
-            'http://localhost',
+            'http://localhost/api/v3',
             1
         );
-        $result = \json_decode($result, true);
+        $result = json_decode($result, true);
 
         static::assertEquals(10, $result['data']['attributes']['price']);
         static::assertArrayNotHasKey('prices', $result['data']['attributes']);
@@ -103,10 +103,10 @@ class ApiVersionConverterTest extends TestCase
             new Criteria(),
             $deprecatedDefinition,
             $this->getDeprecatedEntity(),
-            'http://localhost',
+            'http://localhost/api/v3',
             2
         );
-        $result = \json_decode($result, true);
+        $result = json_decode($result, true);
 
         static::assertEquals([10], $result['data']['attributes']['prices']);
         static::assertArrayNotHasKey('price', $result['data']['attributes']);
@@ -126,7 +126,7 @@ class ApiVersionConverterTest extends TestCase
             new Criteria(),
             $deprecatedDefinition,
             $this->getDeprecatedEntity(),
-            'http://localhost',
+            'http://localhost/api/v3',
             1
         );
 
@@ -147,7 +147,7 @@ class ApiVersionConverterTest extends TestCase
             new Criteria(),
             $deprecatedDefinition,
             $this->getDeprecatedEntity(),
-            'http://localhost',
+            'http://localhost/api/v3',
             2
         );
 
@@ -191,7 +191,7 @@ class ApiVersionConverterTest extends TestCase
         $conversionException = new ApiConversionException();
         $apiVersionConverter->convertPayload($definition, ['bar' => 'asdf'], 1, $conversionException);
 
-        static::assertSame([], \iterator_to_array($conversionException->getErrors()));
+        static::assertSame([], iterator_to_array($conversionException->getErrors()));
     }
 
     public function testTryingToWriteFieldFromFutureLeadsToException(): void

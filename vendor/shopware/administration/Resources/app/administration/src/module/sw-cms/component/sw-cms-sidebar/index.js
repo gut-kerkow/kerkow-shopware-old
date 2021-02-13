@@ -2,6 +2,7 @@ import template from './sw-cms-sidebar.html.twig';
 import './sw-cms-sidebar.scss';
 
 const { Component, Mixin } = Shopware;
+const { Criteria } = Shopware.Data;
 const { cloneDeep } = Shopware.Utils.object;
 const types = Shopware.Utils.types;
 
@@ -95,6 +96,29 @@ Component.register('sw-cms-sidebar', {
                 message: this.$tc('sw-cms.detail.tooltip.cannotSelectProductPageLayout'),
                 disabled: this.page.type !== 'product_detail'
             };
+        },
+
+        demoCriteria() {
+            if (this.demoEntity === 'product') {
+                const criteria = new Criteria();
+                criteria.addAssociation('options.group');
+
+                return criteria;
+            }
+
+            return new Criteria();
+        },
+
+        demoContext() {
+            if (this.demoEntity === 'product') {
+                return { ...Shopware.Context.api, inheritance: true };
+            }
+
+            return Shopware.Context.api;
+        },
+
+        blockTypes() {
+            return Object.keys(this.cmsBlocks);
         }
     },
 
@@ -373,11 +397,11 @@ Component.register('sw-cms-sidebar', {
         },
 
         getMainContentBlocks(sectionBlocks) {
-            return sectionBlocks.filter((block) => block.sectionPosition === 'main');
+            return sectionBlocks.filter((block) => this.blockTypeExists(block.type) && block.sectionPosition === 'main');
         },
 
         getSidebarContentBlocks(sectionBlocks) {
-            return sectionBlocks.filter((block) => block.sectionPosition === 'sidebar');
+            return sectionBlocks.filter((block) => this.blockTypeExists(block.type) && block.sectionPosition === 'sidebar');
         },
 
         pageUpdate() {
@@ -386,6 +410,10 @@ Component.register('sw-cms-sidebar', {
 
         onOpenLayoutAssignment() {
             this.$emit('open-layout-assignment');
+        },
+
+        blockTypeExists(type) {
+            return this.blockTypes.includes(type);
         }
     }
 });

@@ -32,13 +32,13 @@ describe('Country: Test crud operations', () => {
         cy.get('input[name=sw-field--country-name]').typeAndCheck('01.Niemandsland');
 
         cy.window().then((win) => {
-            if (!win.Shopware.Feature.isActive('FEATURE_NEXT_10559')) {
-                return;
-            }
-
             // Check tax free companies field exists and clicks
             cy.get('.sw-settings-country-detail__field-tax-free-companies input').should('be.visible');
             cy.get('.sw-settings-country-detail__field-tax-free-companies input').click();
+
+            // Check validate vat id for correct format field exists and clicks
+            cy.get('.sw-settings-country-detail__field-check-vatid-format input').should('be.visible');
+            cy.get('.sw-settings-country-detail__field-check-vatid-format input').click();
         });
 
         cy.get(page.elements.countrySaveAction).click();

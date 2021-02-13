@@ -193,11 +193,20 @@
 
                         {% block sw_cms_detail_layout_assignment_modal %}
                             <sw-cms-layout-assignment-modal
-                                v-if="feature.isActive('FEATURE_NEXT_11389') && showLayoutAssignmentModal"
+                                v-if="showLayoutAssignmentModal"
                                 @modal-close="closeLayoutAssignmentModal"
                                 @confirm="onConfirmLayoutAssignment"
                                 :page="page">
                             </sw-cms-layout-assignment-modal>
+                        {% endblock %}
+
+                        {% block sw_cms_detail_missing_element_modal %}
+                            <sw-cms-missing-element-modal
+                                v-if="showMissingElementModal"
+                                :missingElements="missingElements"
+                                @modal-close="onCloseMissingElementModal"
+                                @modal-save="onSaveMissingElementModal">
+                            </sw-cms-missing-element-modal>
                         {% endblock %}
 
                         {% block sw_cms_detail_loader %}

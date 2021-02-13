@@ -1,5 +1,6 @@
 {
     "name": "shopware/elasticsearch",
+    "version": "6.3.5.1",
     "description": "Elasticsearch for Shopware",
     "type": "library",
     "license": "MIT",
@@ -23,7 +24,6 @@
         }
     },
     "minimum-stability": "dev",
-    "version": "6.3.4.1",
     "require": {
         "ext-curl": "*",
         "doctrine/dbal": "2.10.1",

@@ -297,6 +297,9 @@ class DocumentService
             $criteria->addFilter(new EqualsFilter('deepLinkCode', $deepLinkCode));
         }
 
+        $criteria->addAssociation('deliveries.shippingOrderAddress.country');
+        $criteria->addAssociation('orderCustomer.customer');
+
         $versionContext = $context->createWithVersionId($versionId);
 
         $this->eventDispatcher->dispatch(new DocumentOrderCriteriaEvent($criteria, $versionContext));

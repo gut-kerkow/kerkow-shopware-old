@@ -50,6 +50,13 @@
                                     } %}
                                 {% endblock %}
 
+                                {% block component_account_register_company_fields %}
+                                    {% sw_include '@Storefront/storefront/component/address/address-personal-company.html.twig' with {
+                                        'prefix': 'billingAddress',
+                                        'address': data.get('billingAddress')
+                                    } %}
+                                {% endblock %}
+
                                 {% set formGroupMail %}
                                     {% block component_account_register_personal_mail %}
                                         {% block component_account_register_personal_mail_label %}
@@ -253,6 +260,7 @@
                                         {% endblock %}
 
                                         {% block component_account_register_address_billing_fields %}
+                                            {# @deprecated tag:v6.4.0 hasSelectedBusiness variable will be removed #}
                                             {% sw_include '@Storefront/storefront/component/address/address-form.html.twig' with {
                                                 'prefix': 'billingAddress',
                                                 'data': data.get('billingAddress'),

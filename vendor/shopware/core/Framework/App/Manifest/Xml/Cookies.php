@@ -2,6 +2,9 @@
 
 namespace Shopware\Core\Framework\App\Manifest\Xml;
 
+/**
+ * @internal only for use by the app-system, will be considered internal from v6.4.0 onward
+ */
 class Cookies extends XmlElement
 {
     public const NAME_TAG = 'snippet-name';
@@ -61,7 +64,7 @@ class Cookies extends XmlElement
                 continue;
             }
 
-            if (in_array($child->tagName, [self::NAME_TAG, self::DESCRIPTION_TAG, self::COOKIE_TAG, self::VALUE_TAG, self::EXPIRATION_TAG], true)) {
+            if (\in_array($child->tagName, [self::NAME_TAG, self::DESCRIPTION_TAG, self::COOKIE_TAG, self::VALUE_TAG, self::EXPIRATION_TAG], true)) {
                 $cookie[self::kebabCaseToSnakeCase($child->tagName)] = $child->nodeValue;
             }
 

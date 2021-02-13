@@ -41,6 +41,7 @@ Component.register('sw-cms-detail', {
             salesChannels: [],
             isLoading: false,
             isSaveSuccessful: false,
+            isSaveable: false,
             currentSalesChannelKey: null,
             selectedBlockSectionId: null,
             currentMappingEntity: null,
@@ -48,11 +49,36 @@ Component.register('sw-cms-detail', {
             demoEntityId: null,
             productDetailBlocks: [
                 {
+                    type: 'cross-selling',
+                    elements: [
+                        {
+                            slot: 'content',
+                            type: 'cross-selling',
+                            config: {}
+                        }
+                    ]
+                },
+                {
                     type: 'product-description-reviews',
                     elements: [
                         {
                             slot: 'content',
                             type: 'product-description-reviews',
+                            config: {}
+                        }
+                    ]
+                },
+                {
+                    type: 'gallery-buybox',
+                    elements: [
+                        {
+                            slot: 'left',
+                            type: 'image-gallery',
+                            config: {}
+                        },
+                        {
+                            slot: 'right',
+                            type: 'buy-box',
                             config: {}
                         }
                     ]
@@ -74,6 +100,8 @@ Component.register('sw-cms-detail', {
                 }
             ],
             showLayoutAssignmentModal: false,
+            showMissingElementModal: false,
+            missingElements: [],
             previousRoute: ''
         };
     },
@@ -221,6 +249,15 @@ Component.register('sw-cms-detail', {
 
         currentDeviceView() {
             return this.cmsPageState.currentCmsDeviceView;
+        },
+
+        demoProductCriteria() {
+            const criteria = new Criteria();
+            criteria.addAssociation('media');
+            criteria.addAssociation('deliveryTime');
+            criteria.addAssociation('manufacturer.media');
+
+            return criteria;
         }
     },
 
@@ -333,6 +370,7 @@ Component.register('sw-cms-detail', {
         updateDataMapping() {
             const mappingEntity = this.cmsPageTypeSettings.entity;
 
+
             if (!mappingEntity) {
                 Shopware.State.commit('cmsPageState/removeCurrentMappingEntity');
                 Shopware.State.commit('cmsPageState/removeCurrentMappingTypes');
@@ -359,6 +397,10 @@ Component.register('sw-cms-detail', {
         },
 
         loadFirstDemoEntity() {
+            if (this.cmsPageState.currentMappingEntity === 'product') {
+                return;
+            }
+
             const criteria = new Criteria();
 
             if (this.cmsPageState.currentMappingEntity === 'category') {
@@ -414,7 +456,13 @@ Component.register('sw-cms-detail', {
                 return;
             }
 
-            this.currentMappingEntityRepo.get(demoEntityId, Shopware.Context.api).then((entity) => {
+            const demoContext = this.cmsPageState.currentMappingEntity === 'product'
+                ? { ...Shopware.Context.api, inheritance: true }
+                : Shopware.Context.api;
+
+            const demoCriteria = this.cmsPageState.currentMappingEntity === 'product' ? this.demoProductCriteria : new Criteria();
+
+            this.currentMappingEntityRepo.get(demoEntityId, demoContext, demoCriteria).then((entity) => {
                 if (!entity) {
                     return;
                 }
@@ -562,6 +610,10 @@ Component.register('sw-cms-detail', {
             return warningMessages;
         },
 
+        getMissingElements(elements) {
+            return Object.keys(elements).filter((key) => elements[key] === 0);
+        },
+
         onSave() {
             this.isSaveSuccessful = false;
 
@@ -577,9 +629,7 @@ Component.register('sw-cms-detail', {
             }
             const sections = this.page.sections;
 
-            if (this.feature.isActive('FEATURE_NEXT_11389') &&
-                !this.page.categories.length &&
-                this.previousRoute === 'sw.cms.create') {
+            if (!this.page.categories.length && this.previousRoute === 'sw.cms.create') {
                 this.openLayoutAssignmentModal();
 
                 return Promise.reject();
@@ -643,6 +693,14 @@ Component.register('sw-cms-detail', {
                 }
             }
 
+            const missingElements = this.getMissingElements(foundProductPageElements);
+            if (this.page.type === 'product_detail' && missingElements.length > 0 && !this.isSaveable) {
+                this.missingElements = missingElements;
+                this.showMissingElementModal = true;
+
+                return Promise.reject();
+            }
+
             if (foundEmptyRequiredField.length > 0) {
                 const warningMessage = this.$tc('sw-cms.detail.notification.messageMissingBlockFields');
                 this.createNotificationError({
@@ -653,8 +711,6 @@ Component.register('sw-cms-detail', {
             }
 
             this.deleteEntityAndRequiredConfigKey(this.page.sections);
-
-            // TODO: NEXT-11886 Show missing element modal if there is no product page element in product page layout
 
             return this.onSaveEntity();
         },
@@ -870,6 +926,21 @@ Component.register('sw-cms-detail', {
 
         onConfirmLayoutAssignment() {
             this.previousRoute = '';
+        },
+
+        onCloseMissingElementModal() {
+            this.showMissingElementModal = false;
+        },
+
+        onSaveMissingElementModal() {
+            this.showMissingElementModal = false;
+            this.isSaveable = true;
+
+            this.$nextTick(() => {
+                this.onSave().finally(() => {
+                    this.isSaveable = false;
+                });
+            });
         }
     }
 });

@@ -7,7 +7,7 @@ use Shopware\Core\Checkout\Cart\Error\ErrorCollection;
 use Shopware\Core\Framework\Api\Context\SalesChannelApiSource;
 use Shopware\Core\Framework\Api\Converter\ApiVersionConverter;
 use Shopware\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
-use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\ReadProtected;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\AggregationResult\AggregationResultCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopware\Core\Framework\Struct\Collection;
@@ -86,6 +86,7 @@ class StructEncoder
 
     private function encodeStruct(Struct $struct, int $apiVersion, ResponseFields $fields)
     {
+        /** @var array<string, mixed> $data */
         $data = $this->serializer->normalize($struct);
 
         $alias = $struct->getApiAlias();
@@ -107,12 +108,12 @@ class StructEncoder
                 continue;
             }
 
-            if (!is_array($value)) {
+            if (!\is_array($value)) {
                 continue;
             }
 
             $object = $value;
-            if (array_key_exists($property, $struct->getVars())) {
+            if (\array_key_exists($property, $struct->getVars())) {
                 $object = $struct->getVars()[$property];
             }
 
@@ -157,7 +158,7 @@ class StructEncoder
                 continue;
             }
 
-            if (!is_array($value)) {
+            if (!\is_array($value)) {
                 continue;
             }
 
@@ -185,13 +186,17 @@ class StructEncoder
         $definition = $this->definitionRegistry->getByEntityName($type);
 
         $field = $definition->getField($property);
-        if (!$field || !$field->is(ReadProtected::class)) {
+        if (!$field) {
             return !$this->apiVersionConverter->isAllowed($type, $property, $apiVersion);
         }
 
-        /** @var ReadProtected $protection */
-        $protection = $field->getFlag(ReadProtected::class);
-        if (!$protection->isSourceAllowed(SalesChannelApiSource::class)) {
+        /** @var ApiAware|null $flag */
+        $flag = $field->getFlag(ApiAware::class);
+        if ($flag === null) {
+            return true;
+        }
+
+        if (!$flag->isSourceAllowed(SalesChannelApiSource::class)) {
             return true;
         }
 
@@ -224,7 +229,7 @@ class StructEncoder
 
     private function isStructArray($object): bool
     {
-        if (!is_array($object)) {
+        if (!\is_array($object)) {
             return false;
         }
 

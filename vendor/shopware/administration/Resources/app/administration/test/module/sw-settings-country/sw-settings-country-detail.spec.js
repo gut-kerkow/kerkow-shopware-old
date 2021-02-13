@@ -7,7 +7,6 @@ import 'src/app/component/base/sw-container';
 function createWrapper(privileges = []) {
     const localVue = createLocalVue();
     localVue.directive('tooltip', {});
-    Shopware.Feature.flags.FEATURE_NEXT_10559 = true;
 
     return shallowMount(Shopware.Component.build('sw-settings-country-detail'), {
         localVue,
@@ -63,9 +62,6 @@ function createWrapper(privileges = []) {
 
                     return privileges.includes(identifier);
                 }
-            },
-            feature: {
-                isActive: () => true
             }
         },
 
@@ -161,6 +157,9 @@ describe('module/sw-settings-country/page/sw-settings-country-detail', () => {
         const countryCompaniesTaxFreeField = wrapper.find(
             'sw-switch-field-stub[label="sw-settings-country.detail.labelCompanyTaxFree"]'
         );
+        const countryCheckVatIdFormatField = wrapper.find(
+            'sw-switch-field-stub[label="sw-settings-country.detail.labelCheckVatIdFormat"]'
+        );
         const countryForceStateInRegistrationField = wrapper.find(
             'sw-field-stub[label="sw-settings-country.detail.labelForceStateInRegistration"]'
         );
@@ -174,6 +173,7 @@ describe('module/sw-settings-country/page/sw-settings-country-detail', () => {
         expect(countryShippingAvailableField.attributes().disabled).toBeUndefined();
         expect(countryTaxFreeField.attributes().disabled).toBeUndefined();
         expect(countryCompaniesTaxFreeField.attributes().disabled).toBeUndefined();
+        expect(countryCheckVatIdFormatField.attributes().disabled).toBeUndefined();
         expect(countryForceStateInRegistrationField.attributes().disabled).toBeUndefined();
     });
 
@@ -208,6 +208,9 @@ describe('module/sw-settings-country/page/sw-settings-country-detail', () => {
         const countryCompaniesTaxFreeField = wrapper.find(
             'sw-switch-field-stub[label="sw-settings-country.detail.labelCompanyTaxFree"]'
         );
+        const countryCheckVatIdFormatField = wrapper.find(
+            'sw-switch-field-stub[label="sw-settings-country.detail.labelCheckVatIdFormat"]'
+        );
         const countryForceStateInRegistrationField = wrapper.find(
             'sw-field-stub[label="sw-settings-country.detail.labelForceStateInRegistration"]'
         );
@@ -221,6 +224,7 @@ describe('module/sw-settings-country/page/sw-settings-country-detail', () => {
         expect(countryShippingAvailableField.attributes().disabled).toBeTruthy();
         expect(countryTaxFreeField.attributes().disabled).toBeTruthy();
         expect(countryCompaniesTaxFreeField.attributes().disabled).toBeTruthy();
+        expect(countryCheckVatIdFormatField.attributes().disabled).toBeTruthy();
         expect(countryForceStateInRegistrationField.attributes().disabled).toBeTruthy();
     });
 

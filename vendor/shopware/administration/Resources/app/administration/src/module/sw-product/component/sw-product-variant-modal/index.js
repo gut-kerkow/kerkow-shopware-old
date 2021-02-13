@@ -140,6 +140,14 @@ Component.register('sw-product-variant-modal', {
                     align: 'right'
                 }
             ];
+        },
+
+        canBeDeletedCriteria() {
+            const criteria = new Criteria();
+            const variantIds = this.toBeDeletedVariants.map(variant => variant.id);
+            criteria.addFilter(Criteria.equalsAny('canonicalProductId', variantIds));
+
+            return criteria;
         }
     },
 
@@ -338,31 +346,54 @@ Component.register('sw-product-variant-modal', {
             const variantName = this.toBeDeletedVariants[0].translated.name || this.productEntity.translated.name;
             const amount = variantIds.length;
 
-            this.productRepository.syncDeleted(variantIds, Shopware.Context.api)
-                .then(() => {
-                    this.createNotificationSuccess({
+            this.canVariantsBeDeleted().then(canBeDeleted => {
+                if (!canBeDeleted) {
+                    this.isDeleteButtonLoading = false;
+                    this.isDeletionOver = true;
+
+                    this.createNotificationError({
                         message: this.$tc(
-                            'sw-product.list.notificationVariantDeleteSuccess',
+                            'sw-product.list.notificationVariantDeleteErrorCanonicalUrl',
                             amount,
-                            { variantName, amount }
+                            { variantName }
                         )
                     });
 
-                    this.fetchProductVariants();
-                })
-                .catch(() => {
-                    this.createNotificationError({
-                        message: this.$tc(
-                            'sw-product.list.notificationVariantDeleteError',
-                            amount,
-                            { variantName, amount }
-                        )
+                    return;
+                }
+
+                this.productRepository.syncDeleted(variantIds, Shopware.Context.api)
+                    .then(() => {
+                        this.createNotificationSuccess({
+                            message: this.$tc(
+                                'sw-product.list.notificationVariantDeleteSuccess',
+                                amount,
+                                { variantName, amount }
+                            )
+                        });
+
+                        this.fetchProductVariants();
+                    })
+                    .catch(() => {
+                        this.createNotificationError({
+                            message: this.$tc(
+                                'sw-product.list.notificationVariantDeleteError',
+                                amount,
+                                { variantName, amount }
+                            )
+                        });
+                    })
+                    .finally(() => {
+                        this.isDeleteButtonLoading = false;
+                        this.isDeletionOver = true;
                     });
-                })
-                .finally(() => {
-                    this.isDeleteButtonLoading = false;
-                    this.isDeletionOver = true;
-                });
+            });
+        },
+
+        async canVariantsBeDeleted() {
+            const products = await this.productRepository.search(this.canBeDeletedCriteria, Shopware.Context.api);
+
+            return products.length === 0;
         },
 
         onInlineEditSave(editedVariant) {

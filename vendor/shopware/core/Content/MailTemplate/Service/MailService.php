@@ -115,6 +115,9 @@ class MailService implements MailServiceInterface
             return null;
         }
 
+        $data = $mailBeforeValidateEvent->getData();
+        $templateData = $mailBeforeValidateEvent->getTemplateData();
+
         $definition = $this->getValidationDefinition($context);
         $this->dataValidator->validate($data, $definition);
 
@@ -140,6 +143,7 @@ class MailService implements MailServiceInterface
         $senderEmail = $this->getSender($data, $salesChannelId);
 
         $contents = $this->buildContents($data, $salesChannel);
+        $this->templateRenderer->initialize();
         if (isset($data['testMode']) && (bool) $data['testMode'] === true) {
             $this->templateRenderer->enableTestMode();
         }

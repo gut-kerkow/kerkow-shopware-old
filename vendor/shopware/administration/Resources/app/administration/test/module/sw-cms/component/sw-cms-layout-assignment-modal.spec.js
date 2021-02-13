@@ -12,15 +12,18 @@ import 'src/app/component/base/sw-button';
 const mockCategories = [
     {
         name: 'Computers',
-        id: 'uuid1'
+        id: 'uuid1',
+        cmsPageId: null
     },
     {
         name: 'Home',
-        id: 'uuid2'
+        id: 'uuid2',
+        cmsPageId: null
     },
     {
         name: 'Garden',
-        id: 'uuid3'
+        id: 'uuid3',
+        cmsPageId: null
     }
 ];
 
@@ -36,8 +39,7 @@ function createWrapper(layoutType = 'product_list', privileges = []) {
                 categories: new EntityCollection(null, null, null, new Criteria(), mockCategories),
                 type: layoutType,
                 id: 'uuid007'
-            },
-            shopPageSalesChannelId: null
+            }
         },
         stubs: {
             'sw-modal': Shopware.Component.build('sw-modal'),
@@ -75,6 +77,22 @@ function createWrapper(layoutType = 'product_list', privileges = []) {
                             'core.basicInformation.imprintPage': 'uuid2',
                             'core.basicInformation.revocationPage': 'uuid3',
                             'core.basicInformation.newsletterPage': 'uuid007'
+                        });
+                    }
+
+                    if (salesChannelId === 'storefront_id') {
+                        return Promise.resolve({
+                            'core.basicInformation.contactPage': 'uuid007',
+                            'core.basicInformation.imprintPage': 'uuid2',
+                            'core.basicInformation.revocationPage': 'uuid3'
+                        });
+                    }
+
+                    if (salesChannelId === 'headless_id') {
+                        return Promise.resolve({
+                            'core.basicInformation.contactPage': 'uuid1',
+                            'core.basicInformation.imprintPage': 'uuid2',
+                            'core.basicInformation.revocationPage': 'uuid3'
                         });
                     }
 
@@ -181,6 +199,61 @@ describe('module/sw-cms/component/sw-cms-sidebar', () => {
         expect(wrapper.emitted('confirm')).toBeTruthy();
     });
 
+    it('should add a category which already has a different assigned layout', async () => {
+        const wrapper = createWrapper();
+
+        wrapper.setData({
+            page: {
+                categories: new EntityCollection(null, null, null, new Criteria(), [
+                    ...mockCategories,
+                    {
+                        name: 'New category',
+                        id: 'uuid4',
+                        cmsPageId: 'totallyDifferentId'
+                    },
+                    {
+                        name: 'Also very new category',
+                        id: 'uuid4',
+                        cmsPageId: null
+                    }
+                ])
+            }
+        });
+
+        // Confirm changes
+        wrapper.find('.sw-cms-layout-assignment-modal__action-confirm').trigger('click');
+
+        // Wait for warning modal
+        await wrapper.vm.$nextTick();
+
+        // Change warning should appear because one new category has already an assigned layout
+        expect(wrapper.find('.sw-cms-layout-assignment-modal__confirm-changes-modal').exists()).toBeTruthy();
+        expect(wrapper.find('.sw-cms-layout-assignment-modal__confirm-text-assigned-layouts').exists()).toBeTruthy();
+        expect(wrapper.find('.sw-cms-layout-assignment-modal__confirm-text-general').exists()).toBeTruthy();
+
+        // Confirm changes
+        wrapper.find('.sw-cms-layout-assignment-modal__action-changes-confirm').trigger('click');
+
+        await wrapper.vm.$nextTick(); // Wait for validation
+        await wrapper.vm.$nextTick(); // Wait for warning modal to close
+        await wrapper.vm.$nextTick(); // Wait for main modal to close
+
+        expect(wrapper.vm.page.categories).toEqual(expect.arrayContaining([
+            {
+                name: 'New category',
+                id: 'uuid4',
+                cmsPageId: 'totallyDifferentId'
+            },
+            {
+                name: 'Also very new category',
+                id: 'uuid4',
+                cmsPageId: null
+            }
+        ]));
+        expect(wrapper.emitted('modal-close')).toBeTruthy();
+        expect(wrapper.emitted('confirm')).toBeTruthy();
+    });
+
     it('should remove categories and confirm', async () => {
         const wrapper = createWrapper();
 
@@ -207,6 +280,7 @@ describe('module/sw-cms/component/sw-cms-sidebar', () => {
         // Change warning should appear because of removed category
         expect(wrapper.find('.sw-cms-layout-assignment-modal__confirm-changes-modal').exists()).toBeTruthy();
         expect(wrapper.find('.sw-cms-layout-assignment-modal__confirm-text-categories').exists()).toBeTruthy();
+        expect(wrapper.find('.sw-cms-layout-assignment-modal__confirm-text-general').exists()).toBeTruthy();
 
         // Confirm changes
         wrapper.find('.sw-cms-layout-assignment-modal__action-changes-confirm').trigger('click');
@@ -245,6 +319,7 @@ describe('module/sw-cms/component/sw-cms-sidebar', () => {
         // Change warning should appear because of removed category
         expect(wrapper.find('.sw-cms-layout-assignment-modal__confirm-changes-modal').exists()).toBeTruthy();
         expect(wrapper.find('.sw-cms-layout-assignment-modal__confirm-text-categories').exists()).toBeTruthy();
+        expect(wrapper.find('.sw-cms-layout-assignment-modal__confirm-text-general').exists()).toBeTruthy();
 
         // Discard changes
         wrapper.find('.sw-cms-layout-assignment-modal__action-changes-discard').trigger('click');
@@ -282,6 +357,7 @@ describe('module/sw-cms/component/sw-cms-sidebar', () => {
         // Change warning should appear because of removed category
         expect(wrapper.find('.sw-cms-layout-assignment-modal__confirm-changes-modal').exists()).toBeTruthy();
         expect(wrapper.find('.sw-cms-layout-assignment-modal__confirm-text-categories').exists()).toBeTruthy();
+        expect(wrapper.find('.sw-cms-layout-assignment-modal__confirm-text-general').exists()).toBeTruthy();
 
         // Keep editing
         wrapper.find('.sw-cms-layout-assignment-modal__action-keep-editing').trigger('click');
@@ -362,6 +438,7 @@ describe('module/sw-cms/component/sw-cms-sidebar', () => {
         // Change warning should appear because of deleted shop page
         expect(wrapper.find('.sw-cms-layout-assignment-modal__confirm-changes-modal').exists()).toBeTruthy();
         expect(wrapper.find('.sw-cms-layout-assignment-modal__confirm-text-shop-pages').exists()).toBeTruthy();
+        expect(wrapper.find('.sw-cms-layout-assignment-modal__confirm-text-general').exists()).toBeTruthy();
 
         // Confirm changes
         wrapper.find('.sw-cms-layout-assignment-modal__action-changes-confirm').trigger('click');
@@ -409,6 +486,7 @@ describe('module/sw-cms/component/sw-cms-sidebar', () => {
         // Change warning should appear because of deleted shop page
         expect(wrapper.find('.sw-cms-layout-assignment-modal__confirm-changes-modal').exists()).toBeTruthy();
         expect(wrapper.find('.sw-cms-layout-assignment-modal__confirm-text-shop-pages').exists()).toBeTruthy();
+        expect(wrapper.find('.sw-cms-layout-assignment-modal__confirm-text-general').exists()).toBeTruthy();
 
         // Discard changes
         wrapper.find('.sw-cms-layout-assignment-modal__action-changes-discard').trigger('click');
@@ -444,6 +522,55 @@ describe('module/sw-cms/component/sw-cms-sidebar', () => {
             'core.basicInformation.contactPage',
             'core.basicInformation.newsletterPage'
         ]);
+    });
+
+    it('should load system config with different sales channel', async () => {
+        const wrapper = createWrapper('page', ['system.system_config']);
+
+        // Select shop page tab
+        wrapper.find('.sw-cms-layout-assignment-modal__tab-shop-pages').trigger('click');
+
+        // Wait for tab content to open
+        await wrapper.vm.$nextTick();
+
+        // Set new sales channel id
+        wrapper.setData({
+            shopPageSalesChannelId: 'storefront_id'
+        });
+
+        // Trigger sales channel select change
+        wrapper.find('.sw-cms-layout-assignment-modal__sales-channel-select').trigger('change');
+
+        // Wait for system config to be loaded
+        await wrapper.vm.$nextTick();
+
+        expect(wrapper.vm.selectedShopPages.storefront_id).toEqual([
+            'core.basicInformation.contactPage'
+        ]);
+    });
+
+    it('should load system config with different sales channel without matching shop pages', async () => {
+        const wrapper = createWrapper('page', ['system.system_config']);
+
+        // Select shop page tab
+        wrapper.find('.sw-cms-layout-assignment-modal__tab-shop-pages').trigger('click');
+
+        // Wait for tab content to open
+        await wrapper.vm.$nextTick();
+
+        // Set new sales channel id
+        wrapper.setData({
+            shopPageSalesChannelId: 'headless_id'
+        });
+
+        // Trigger sales channel select change
+        wrapper.find('.sw-cms-layout-assignment-modal__sales-channel-select').trigger('change');
+
+        // Wait for system config to be loaded
+        await wrapper.vm.$nextTick();
+
+        // Value should be null for inheritance switch
+        expect(wrapper.vm.selectedShopPages.headless_id).toEqual(null);
     });
 
     it('should load system config when changing sales channel', async () => {

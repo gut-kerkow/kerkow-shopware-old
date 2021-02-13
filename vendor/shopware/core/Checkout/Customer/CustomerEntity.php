@@ -101,6 +101,11 @@ class CustomerEntity extends Entity
     protected $title;
 
     /**
+     * @var array|null
+     */
+    protected $vatIds;
+
+    /**
      * @var string|null
      */
     protected $affiliateCode;
@@ -311,8 +316,6 @@ class CustomerEntity extends Entity
     protected $boundSalesChannel;
 
     /**
-     * @internal (flag:FEATURE_NEXT_10549)
-     *
      * @var CustomerWishlistCollection|null
      */
     protected $wishlists;
@@ -470,6 +473,16 @@ class CustomerEntity extends Entity
     public function setTitle(?string $title): void
     {
         $this->title = $title;
+    }
+
+    public function getVatIds(): ?array
+    {
+        return $this->vatIds;
+    }
+
+    public function setVatIds(?array $vatIds): void
+    {
+        $this->vatIds = $vatIds;
     }
 
     public function getActive(): bool
@@ -893,17 +906,11 @@ class CustomerEntity extends Entity
         $this->boundSalesChannel = $boundSalesChannel;
     }
 
-    /**
-     * @internal (flag:FEATURE_NEXT_10549)
-     */
     public function getWishlists(): ?CustomerWishlistCollection
     {
         return $this->wishlists;
     }
 
-    /**
-     * @internal (flag:FEATURE_NEXT_10549)
-     */
     public function setWishlists(CustomerWishlistCollection $wishlists): void
     {
         $this->wishlists = $wishlists;

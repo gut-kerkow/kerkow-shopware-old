@@ -98,6 +98,12 @@
     }
   }
 }
+.product-badges {
+  left: unset;
+}
+.badge-discount {
+  background-color: $kerkow-blue;
+}
 @include media-breakpoint-up(lg) {
   .cms-block-content-product-listing,
   .cms-element-product-listing,

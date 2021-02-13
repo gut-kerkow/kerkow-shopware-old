@@ -4,7 +4,6 @@ namespace Shopware\Core\Content\Product;
 
 use Shopware\Core\Checkout\Cart\Delivery\Struct\DeliveryDate;
 use Shopware\Core\Checkout\Customer\Aggregate\CustomerWishlist\CustomerWishlistCollection;
-use Shopware\Core\Checkout\Customer\Aggregate\CustomerWishlistProduct\CustomerWishlistProductDefinition;
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
 use Shopware\Core\Content\Category\CategoryCollection;
 use Shopware\Core\Content\Cms\CmsPageEntity;
@@ -129,7 +128,7 @@ class ProductEntity extends Entity
     protected $deliveryTime;
 
     /**
-     * @var int
+     * @var int|null
      */
     protected $restockTime;
 
@@ -473,18 +472,19 @@ class ProductEntity extends Entity
     protected $customSearchKeywords;
 
     /**
-     * @internal (flag:FEATURE_NEXT_10549)
-     *
      * @var CustomerWishlistCollection|null
      */
-    protected $customerWishlists;
+    protected $wishlists;
 
     /**
-     * @internal (flag:FEATURE_NEXT_10549)
-     *
-     * @var CustomerWishlistProductDefinition|null
+     * @var string|null
      */
-    protected $wishlists;
+    protected $canonicalProductId;
+
+    /**
+     * @var ProductEntity|null
+     */
+    protected $canonicalProduct;
 
     public function __construct()
     {
@@ -891,12 +891,12 @@ class ProductEntity extends Entity
         $this->listingPrices = $listingPrices;
     }
 
-    public function getRestockTime(): int
+    public function getRestockTime(): ?int
     {
         return $this->restockTime;
     }
 
-    public function setRestockTime(int $restockTime): void
+    public function setRestockTime(?int $restockTime): void
     {
         $this->restockTime = $restockTime;
     }
@@ -1410,35 +1410,33 @@ class ProductEntity extends Entity
         $this->customSearchKeywords = $customSearchKeywords;
     }
 
-    /**
-     *  @internal (flag:FEATURE_NEXT_10549)
-     */
-    public function getCustomerWishlists(): ?CustomerWishlistCollection
-    {
-        return $this->customerWishlists;
-    }
-
-    /**
-     *  @internal (flag:FEATURE_NEXT_10549)
-     */
-    public function setCustomerWishlists(CustomerWishlistCollection $customerWishlists): void
-    {
-        $this->customerWishlists = $customerWishlists;
-    }
-
-    /**
-     *  @internal (flag:FEATURE_NEXT_10549)
-     */
-    public function getWishlists(): ?CustomerWishlistProductDefinition
+    public function getWishlists(): ?CustomerWishlistCollection
     {
         return $this->wishlists;
     }
 
-    /**
-     *  @internal (flag:FEATURE_NEXT_10549)
-     */
-    public function setWishlists(CustomerWishlistProductDefinition $wishlists): void
+    public function setWishlists(CustomerWishlistCollection $wishlists): void
     {
         $this->wishlists = $wishlists;
+    }
+
+    public function getCanonicalProductId(): ?string
+    {
+        return $this->canonicalProductId;
+    }
+
+    public function setCanonicalProductId(string $canonicalProductId): void
+    {
+        $this->canonicalProductId = $canonicalProductId;
+    }
+
+    public function getCanonicalProduct(): ?ProductEntity
+    {
+        return $this->canonicalProduct;
+    }
+
+    public function setCanonicalProduct(ProductEntity $product): void
+    {
+        $this->canonicalProduct = $product;
     }
 }

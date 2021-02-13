@@ -40,7 +40,7 @@ class ContainerProvider implements ServiceProviderInterface
      */
     public function register(Container $container): void
     {
-        $recoveryRoot = dirname(__DIR__, 2);
+        $recoveryRoot = \dirname(__DIR__, 2);
         $container['config'] = $this->config;
         $container['install.language'] = '';
 
@@ -52,6 +52,10 @@ class ContainerProvider implements ServiceProviderInterface
             }
 
             return trim($version ?? '9999999-dev');
+        };
+
+        $container['env.path'] = static function () {
+            return SW_PATH . '/.env';
         };
 
         $container['slim.app'] = static function ($c) {

@@ -204,7 +204,7 @@ class ThumbnailService
                 $this->mediaRepository->update([$mediaData], $context);
             });
 
-            return count($savedThumbnails);
+            return \count($savedThumbnails);
         }
     }
 
@@ -237,13 +237,13 @@ class ThumbnailService
         /** @var string $file */
         $file = $this->getFileSystem($media)->read($filePath);
         $image = @imagecreatefromstring($file);
-        if (!$image) {
+        if ($image === false) {
             throw new FileTypeNotSupportedException($media->getId());
         }
 
-        if (function_exists('exif_read_data')) {
+        if (\function_exists('exif_read_data')) {
             /** @var resource $stream */
-            $stream = fopen('php://memory', 'r+');
+            $stream = fopen('php://memory', 'r+b');
 
             try {
                 // use in-memory stream to read the EXIF-metadata,
@@ -259,6 +259,10 @@ class ThumbnailService
                     $image = imagerotate($image, 180, 0);
                 } elseif (!empty($exif['Orientation']) && $exif['Orientation'] === 6) {
                     $image = imagerotate($image, -90, 0);
+                }
+
+                if ($image === false) {
+                    throw new FileTypeNotSupportedException($media->getId());
                 }
             } catch (\Exception $e) {
                 // Ignore.
@@ -344,7 +348,7 @@ class ThumbnailService
         $thumbnail = imagecreatetruecolor($thumbnailSize['width'], $thumbnailSize['height']);
 
         if (!$type->is(ImageType::TRANSPARENT)) {
-            $colorWhite = imagecolorallocate($thumbnail, 255, 255, 255);
+            $colorWhite = (int) imagecolorallocate($thumbnail, 255, 255, 255);
             imagefill($thumbnail, 0, 0, $colorWhite);
         } else {
             imagealphablending($thumbnail, false);

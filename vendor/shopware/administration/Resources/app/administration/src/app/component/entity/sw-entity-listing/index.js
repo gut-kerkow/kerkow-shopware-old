@@ -34,6 +34,14 @@ Component.extend('sw-entity-listing', 'sw-data-grid', {
             default: true
         },
 
+        steps: {
+            type: Array,
+            required: false,
+            default() {
+                return [10, 25, 50, 75, 100];
+            }
+        },
+
         fullPage: {
             type: Boolean,
             required: false,
@@ -74,6 +82,11 @@ Component.extend('sw-entity-listing', 'sw-data-grid', {
             type: Boolean,
             required: false,
             default: true
+        },
+        disableDataFetching: {
+            type: Boolean,
+            required: false,
+            default: false
         }
     },
 
@@ -138,13 +151,9 @@ Component.extend('sw-entity-listing', 'sw-data-grid', {
 
         deleteItems() {
             this.isBulkLoading = true;
-            const promises = [];
+            const selectedIds = Object.values(this.selection).map(selectedProxy => selectedProxy.id);
 
-            Object.values(this.selection).forEach((selectedProxy) => {
-                promises.push(this.repository.delete(selectedProxy.id, this.items.context));
-            });
-
-            return Promise.all(promises).then(() => {
+            return this.repository.syncDeleted(selectedIds, this.items.context).then(() => {
                 return this.deleteItemsFinish();
             }).catch(() => {
                 return this.deleteItemsFinish();
@@ -210,6 +219,10 @@ Component.extend('sw-entity-listing', 'sw-data-grid', {
                 return false;
             }
 
+            if (this.disableDataFetching) {
+                return false;
+            }
+
             return this.doSearch();
         },
 
@@ -217,9 +230,16 @@ Component.extend('sw-entity-listing', 'sw-data-grid', {
             this.items.criteria.setPage(page);
             this.items.criteria.setLimit(limit);
 
+            // @deprecated tag:v6.4.0 - Use 'page-change' event instead
             this.$emit('paginate', this.lastSortedColumn);
 
+            this.$emit('page-change', { page, limit });
+
             if (this.lastSortedColumn && this.lastSortedColumn.useCustomSort) {
+                return false;
+            }
+
+            if (this.disableDataFetching) {
                 return false;
             }
 
