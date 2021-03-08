@@ -25,7 +25,9 @@
 					<nav class="navbar navbar-expand-sm navbar-light navbar-actions">
 						<div class="navbar-collapse" id="navbarSupportedContent">
 							<ul class="navbar-nav mr-auto">
-								{{ parent() }}
+								{% block layout_header_actions_account %}
+									{% sw_include '@Kerkow/storefront/layout/header/header-actions.html.twig' %}
+								{% endblock %}
 							</ul>
 						</div>
 					</nav>

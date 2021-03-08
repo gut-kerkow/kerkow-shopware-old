@@ -11,6 +11,11 @@
             "extensions": []
         },
         {
+            "filepath": "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/KerkowZipShop\/src\/Resources\/app\/storefront\/src\/main.js",
+            "resolveMapping": [],
+            "extensions": []
+        },
+        {
             "filepath": "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/PayonePayment\/src\/Resources\/app\/storefront\/src\/main.js",
             "resolveMapping": [],
             "extensions": []
@@ -39,6 +44,11 @@
             "resolveMapping": {
                 "vendor": "\/Users\/kevin\/Sites\/kerkow_re\/vendor\/shopware\/storefront\/Resources\/app\/storefront\/vendor"
             },
+            "extensions": []
+        },
+        {
+            "filepath": "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/KerkowZipShop\/src\/Resources\/app\/storefront\/src\/scss\/base.scss",
+            "resolveMapping": [],
             "extensions": []
         },
         {

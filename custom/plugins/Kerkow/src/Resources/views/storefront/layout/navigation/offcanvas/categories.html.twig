@@ -7,5 +7,37 @@
 {% set active = navigation.active %}
 
 {% block layout_navigation_offcanvas_navigation_categories %}
-	{{ parent() }}
+	<div class="navigation-offcanvas-container js-navigation-offcanvas">
+		<div class="navigation-offcanvas-overlay-content js-navigation-offcanvas-overlay-content">
+			{% if not isRoot %}
+				{% sw_include '@Storefront/storefront/layout/navigation/offcanvas/show-all-link.html.twig' with { item: active } %}
+			{% else %}
+				{% sw_include '@Storefront/storefront/layout/navigation/offcanvas/general-headline.html.twig' %}
+			{% endif %}
+
+			<ul
+				class="list-unstyled navigation-offcanvas-list">
+
+
+				{# @var item \Shopware\Core\Content\Category\Tree\TreeItem #}
+				{% for item in children.tree %}
+					{% sw_include '@Storefront/storefront/layout/navigation/offcanvas/item-link.html.twig' with { item: item, activeId: activeId } %}
+				{% endfor %}
+			</ul>
+			{% if isRoot %}
+				{% sw_include '@kerkow/storefront/layout/navigation/offcanvas/about-us.html.twig'  %}
+			{% endif %}
+			{% block utilities_offcanvas_footer_actions %}
+				<nav class="footer-actions">
+					{% sw_include '@Storefront/storefront/layout/header/search.html.twig' %}
+					<ul class="navbar-nav d-flex justify-content-between">
+						{% block header_navigation_offcanvas_footer_action %}
+							{% sw_include '@kerkow/storefront/layout/header/actions/account-widget.html.twig' %}
+						{% endblock %}
+					</ul>
+				</nav>
+
+			{% endblock %}
+		</div>
+	</div>
 {% endblock %}
