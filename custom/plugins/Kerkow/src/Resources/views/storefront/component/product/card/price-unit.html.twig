@@ -7,7 +7,6 @@
 	{% set referncePrice = product.calculatedPrice.referencePrice %}
 
 	<div class="product-price-info">
-
 		{% if product.customFields["custom_cradleware_active"] %}
 			{% block component_product_cradleware_box_price %}
 				{% set listPrice = product.priceRange or product.calculatedPrices.count > 0 ? null : product.calculatedPrice.listPrice %}
@@ -21,17 +20,33 @@
 					{% elseif product.calculatedPrices|length == 1 %}
 						{{ product.calculatedPrices.first.unitPrice|currency }}
 					{% else %}
-						{% if referncePrice.unitName == "g" %}
-							{{ "#{referncePrice.price|currency}/#{referncePrice.referenceUnit}#{referncePrice.unitName}" }}
-						{% else %}
-							{{ "#{referncePrice.price|currency}/#{referncePrice.unitName}" }}
-						{% endif %}
-						{% if listPrice.percentage > 0 %}
-							{% set calculatedListPrice = listPrice.price / referncePrice.purchaseUnit * referncePrice.referenceUnit %}
-							<span class="list-price">
-								{{ "(#{calculatedListPrice|currency}/#{referncePrice.referenceUnit}#{referncePrice.unitName})" }}
-							</span>
+						{% if referncePrice %}
 
+							{% if referncePrice.unitName == "g" %}
+								{{ "#{referncePrice.price|currency}/#{referncePrice.referenceUnit}#{referncePrice.unitName}" }}
+							{% else %}
+								{{ "#{referncePrice.price|currency}/#{referncePrice.unitName}" }}
+							{% endif %}
+							{% if listPrice.percentage > 0 %}
+								{% set calculatedListPrice = listPrice.price / referncePrice.purchaseUnit * referncePrice.referenceUnit %}
+								<span class="list-price">
+									{{ "(#{calculatedListPrice|currency}/#{referncePrice.referenceUnit}#{referncePrice.unitName})" }}
+								</span>
+
+							{% endif %}
+						{% else %}
+							{% if product.unit.shortCode == "g" %}
+								{{ "#{product.calculatedPrice.unitPrice|currency}/#{product.purchaseUnit}#{product.unit.shortCode}" }}
+							{% else %}
+								{{ "#{product.calculatedPrice.unitPrice|currency}/#{product.unit.shortCode}" }}
+							{% endif %}
+							{% if listPrice.percentage > 0 %}
+								{% set calculatedListPrice = listPrice.price / product.purchaseUnit * product.referenceUnit %}
+								<span class="list-price">
+									{{ "(#{product.calculatedPrice.listPrice.price|currency}/#{product.referenceUnit}#{product.unit.shortCode})" }}
+								</span>
+
+							{% endif %}
 						{% endif %}
 					{% endif %}
 				</p>

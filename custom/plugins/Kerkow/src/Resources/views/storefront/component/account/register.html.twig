@@ -1,7 +1,9 @@
 {% sw_extends '@Storefront/storefront/component/account/register.html.twig' %}
 {% block component_account_register %}
 	{% block component_account_register_add_zip_check %}
-		{{ parent() }}
+		{% if customerZip is defined %}
+			{{ parent() }}
+		{% endif %}
 	{% endblock %}
 	<div class="card register-card">
 		<div class="card-body">
@@ -68,12 +70,6 @@
 							{{ parent() }}
 						{% endblock %}
 
-						{% block component_address_form_honeypot %}
-							<div data-super-address="true">
-								<input type="text" name="super_address" id="super_address" class="js_gimme_junk" required="required">
-							</div>
-						{% endblock %}
-
 						{% block component_account_register_submit %}
 							{{ parent() }}
 						{% endblock %}
@@ -84,6 +80,8 @@
 		</div>
 	</div>
 	{% block component_account_register_add_zip_check_end %}
-		{{ parent() }}
+		{% if customerZip is defined %}
+			{{ parent() }}
+		{% endif %}
 	{% endblock %}
 {% endblock %}

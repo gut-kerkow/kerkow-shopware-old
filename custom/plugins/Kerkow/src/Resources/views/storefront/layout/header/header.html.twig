@@ -18,10 +18,18 @@
 			{% block layout_header_logo %}
 				<div class="p-2">
 					{% sw_include '@kerkow/storefront/layout/header/logo.html.twig' %}
-				</div>				
+				</div>
 			{% endblock %}
 			{% block layout_header_actions %}
-				{{ parent() }}
+				<div class="navbar-header-actions">
+					<nav class="navbar navbar-expand-sm navbar-light navbar-actions">
+						<div class="navbar-collapse" id="navbarSupportedContent">
+							<ul class="navbar-nav mr-auto">
+								{{ parent() }}
+							</ul>
+						</div>
+					</nav>
+				</div>
 			{% endblock %}
 		</div>
 	{% endblock %}

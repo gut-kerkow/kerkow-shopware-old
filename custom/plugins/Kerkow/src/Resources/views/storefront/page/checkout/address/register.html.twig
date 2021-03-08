@@ -41,10 +41,5 @@
 {% endblock %}
 
 {% block component_account_register_form_action %}
-	{% block component_address_form_honeypot %}
-		<div data-super-address="true">
-			<input type="text" name="super_address" id="super_address" class="js_gimme_junk" required="required">
-		</div>
-	{% endblock %}
 	{{ parent() }}
 {% endblock %}

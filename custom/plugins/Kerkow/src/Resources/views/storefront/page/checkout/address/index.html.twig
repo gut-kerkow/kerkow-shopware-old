@@ -14,7 +14,9 @@
 
 	{% block page_checkout_address %}
 		{% block page_checkout_address_delivery_alerts %}
-			{{ parent() }}
+			{% if customerZip is defined %}
+				{{ parent() }}
+			{% endif %}
 		{% endblock %}
 		<div class="row register-login-container" data-toggle-login-register="true">
 			<div class="col-12 col-md-6">

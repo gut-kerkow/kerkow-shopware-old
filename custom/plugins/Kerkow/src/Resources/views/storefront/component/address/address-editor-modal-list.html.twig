@@ -39,7 +39,7 @@
                                                                                         replaceSelectors: '.js-address-editor'
                                                                                     } %}
 			{% block component_address_address_editor_modal_list_address_action_shipping_form %}
-				<form action="{{ path('frontend.account.addressbook') }}" class="js-close-address-editor js-existing-address-check" method="post" data-zip="{{ address.zipcode }}" data-form-ajax-submit="true" data-form-ajax-submit-options='{{ formAjaxSubmitOptions|json_encode }}'>
+				<form action="{{ path('frontend.account.addressbook') }}" class="js-close-address-editor js-existing-address-check" method="post" {% if customerZip is defined %} data-zip="{{ address.zipcode }}" {% endif %} data-form-ajax-submit="true" data-form-ajax-submit-options='{{ formAjaxSubmitOptions|json_encode }}'>
 
 					{% block component_address_address_editor_modal_list_address_action_shipping_form_csrf %}
 						{{ parent() }}
@@ -51,7 +51,7 @@
 
 
 					{% block component_address_address_editor_modal_list_address_action_shipping_form_button %}
-						<button type="submit" title="{{ "account.addressesSetAsDefaultShippingAction"|trans|striptags }}" class="btn btn-block btn-primary d-none">
+						<button type="submit" title="{{ "account.addressesSetAsDefaultShippingAction"|trans|striptags }}" class="btn btn-block btn-primary {% if customerZip is defined %}d-none{% endif %}">
 							{% block component_address_address_editor_modal_list_address_action_shipping_form_text %}
 								{{ "account.addressesSetAsDefaultShippingAction"|trans|sw_sanitize }}
 							{% endblock %}
