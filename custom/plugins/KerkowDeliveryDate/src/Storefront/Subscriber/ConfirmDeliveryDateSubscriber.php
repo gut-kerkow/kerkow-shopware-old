@@ -43,9 +43,17 @@ class ConfirmDeliveryDateSubscriber implements EventSubscriberInterface
         if (isset($persistedData['deliveryDate'])) {
             $now = new DateTime();
             $createdAt = new DateTime($persistedData['customDeliveryTimestamp']);
-
-            if ($createdAt->diff($now)->i <= 10) {
+            $shippingMethod = $event->getSalesChannelContext()->getShippingMethod()->getName();
+            $shippingNotChanged = $persistedData["shippingMethodBeforeChange"] == $shippingMethod;
+            if (($createdAt->diff($now)->i <= 10) && $shippingNotChanged) {
                 $extensions['customDeliveryDate'] = new DateTime($persistedData['deliveryDate']);
+                if ($shippingMethod == "Angel") {
+                    if (array_key_exists("deliverySlot", $persistedData)) {
+                        $extensions['customDeliverySlot'] = $persistedData['deliverySlot'];
+                    } else {
+                        $extensions['customDeliverySlot'] = "18to20";
+                    }
+                }
                 $extensions['createdAt'] = $createdAt->diff($now);
             }
         } else {

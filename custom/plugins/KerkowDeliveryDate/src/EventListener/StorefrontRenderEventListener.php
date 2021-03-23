@@ -33,8 +33,19 @@ class StorefrontRenderEventListener implements EventSubscriberInterface
 
     private function getDelierableDate(SalesChannelContext $context): array
     {
+
+        $isAngel = false;
+        $selected_shipping = $context->getShippingMethod()->getName();
+        if ($selected_shipping == "Angel") {
+            $isAngel = true;
+        }
+
         // Define the deliverable days of the week
-        $deliverable_dates = [2, /*tuesday*/ 3, /*wednesday*/ 4, /*wednesday*/ 5, /*friday*/];
+        if ($isAngel) {
+            $deliverable_dates = [1, /*monday*/ 3, /*wednesday*/ 5, /*friday*/];
+        } else {
+            $deliverable_dates = [2, /*tuesday*/ 3, /*wednesday*/ 4, /*wednesday*/ 5, /*friday*/];
+        }
 
         // define holidays
         $holidays = [
@@ -46,6 +57,7 @@ class StorefrontRenderEventListener implements EventSubscriberInterface
             '31 Dec 2020',
             '01 Jan 2021',
             '08 Mar 2021',
+            '01 Apr 2021',
             '02 Apr 2021',
             '05 Apr 2021',
             '01 May 2021',
@@ -60,16 +72,21 @@ class StorefrontRenderEventListener implements EventSubscriberInterface
         ];
 
         // Latest Order hour
-        $latest_hour = 1; // One here means 2'o clock in the morning
+        if ($isAngel) {
+            $latest_hour = 12; // One here means 2'o clock in the morning
+        } else {
+            $latest_hour = 1; // One here means 2'o clock in the morning
+        }
+
 
         // DateObject of Today
         $date = new DateTime();
 
 
-        return $this->getNextDeliverableDay($date, $deliverable_dates, $holidays, $latest_hour, false);
+        return $this->getNextDeliverableDay($date, $deliverable_dates, $holidays, $latest_hour, false, $isAngel);
     }
 
-    private function getNextDeliverableDay($date, $deliverable_dates, $holidays, $latest_hour, $holiday_mode)
+    private function getNextDeliverableDay($date, $deliverable_dates, $holidays, $latest_hour, $holiday_mode, $isAngel)
     {
 
         if (!$holiday_mode) {
@@ -88,17 +105,32 @@ class StorefrontRenderEventListener implements EventSubscriberInterface
         //Check if current time is before latest order hour
 
         if ($date->format('H') > $latest_hour) {
-            // Check if it's friday after latest_hour
+            // Check if it's friday/thursday after latest_hour            
             if ($day_of_week >= 4) {
-                $date->modify('next tuesday');
+                if ($isAngel) {
+                    $date->modify('next monday');
+                    if ($day_of_week >= 5) {
+                        $date->modify('next wednesday');
+                    }
+                } else {
+                    $date->modify('next tuesday');
+                }
             } else {
                 // If it's friday afer latest hour, make tuesday out of it
+
                 $date->add(new DateInterval('P2D'));
             }
         } else {
             // check if it saturday or sunday
             if ($day_of_week >= 5 || $day_of_week == 0) {
-                $date->modify('next tuesday');
+                if ($isAngel) {
+                    $date->modify('next monday');
+                    if ($day_of_week >= 6 || $day_of_week == 0) {
+                        $date->modify('next wednesday');
+                    }
+                } else {
+                    $date->modify('next tuesday');
+                }
             } else {
 
                 $date->add(new DateInterval('P1D'));
@@ -109,7 +141,11 @@ class StorefrontRenderEventListener implements EventSubscriberInterface
         $last = clone $date;
         $last->modify('next tuesday');
         $packing_day = clone $date;
-        $packing_day = $packing_day->sub(new DateInterval('P1D'));
+        if ($isAngel) {
+            $last->modify('next monday');
+        } else {
+            $packing_day = $packing_day->sub(new DateInterval('P1D'));
+        }
 
         foreach ($deliverable_dates as $day) {
 
@@ -123,11 +159,11 @@ class StorefrontRenderEventListener implements EventSubscriberInterface
                 if (in_array($next_deliverable_day->format("d M Y"), $holidays, true)) {
                     // reset latest_hour
                     $latest_hour = 23;
-                    $this->getNextDeliverableDay($last, $deliverable_dates, $holidays, $latest_hour, true);
+                    $this->getNextDeliverableDay($last, $deliverable_dates, $holidays, $latest_hour, true, $isAngel);
                 } elseif (in_array($packing_day->format("d M Y"), $holidays, true)) {
                     // reset latest_hour
                     $latest_hour = 23;
-                    $this->getNextDeliverableDay($last, $deliverable_dates, $holidays, $latest_hour, true);
+                    $this->getNextDeliverableDay($last, $deliverable_dates, $holidays, $latest_hour, true, $isAngel);
                 }
 
                 return ["date" => $last, "server_time" => new DateTime()]; // found it, return quickly

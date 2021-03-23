@@ -26,6 +26,7 @@ export default class DatePickerExtensionPlugin extends DatePickerPlugin {
       "2021-01-02",
       "2021-03-08",
       "2021-03-09",
+      "2021-04-01",
       "2021-04-02",
       "2021-04-03",
       "2021-04-05",
@@ -57,6 +58,7 @@ export default class DatePickerExtensionPlugin extends DatePickerPlugin {
       time_24hr: Locales[localeIndex].time_24hr,
     };
 
+    this.options.shippingMethod = this.el.dataset.method;
     this.options.minDate = this.el.dataset.mindate;
     this.options.defaultDate = this.el.dataset.defaultdate;
     const minDateObject = new Date(this.options.minDate);
@@ -92,10 +94,13 @@ export default class DatePickerExtensionPlugin extends DatePickerPlugin {
       date.setDate(date.getDate() + 1)
     ) {
       if (
-        date.getDay() == 2 ||
-        date.getDay() == 3 ||
-        date.getDay() == 4 ||
-        date.getDay() == 5
+        (this.options.shippingMethod == "Angel" &&
+          (date.getDay() == 1 || date.getDay() == 3 || date.getDay() == 5)) ||
+        (this.options.shippingMethod != "Angel" &&
+          (date.getDay() == 2 ||
+            date.getDay() == 3 ||
+            date.getDay() == 4 ||
+            date.getDay() == 5))
       ) {
         var dateString =
           date.getFullYear() +

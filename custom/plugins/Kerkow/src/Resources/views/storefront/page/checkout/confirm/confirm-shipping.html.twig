@@ -1,6 +1,6 @@
 {% sw_extends '@Storefront/storefront/page/checkout/confirm/confirm-shipping.html.twig' %}
 {% block page_checkout_confirm_shipping_inner %}
-	<div class="card checkout-card" {% if dataChangeDeliveryDate %} data-change-delivery-date="true" {% endif %}>
+	<div class="card checkout-card" {% if dataChangeDeliveryDate %} data-change-delivery-date="true" {% endif %} data-method="{{ context.shippingMethod.name }}">
 		<div class="card-body">
 			{% set shippingMethodInvalid = true %}
 
@@ -26,8 +26,14 @@
 							{% block page_product_delivery_date %}
 								{% if page.extensions["customDeliveryDate"] %}
 									{% set date = page.extensions["customDeliveryDate"] %}
+									{% if context.shippingMethod.name == "Angel" %}
+										{% set slotString = 'kerkow.deliverySlot.'~page.extensions["customDeliverySlot"] %}
+									{% endif %}
 								{% else %}
 									{% set date = deliveryInfos.date %}
+									{% if context.shippingMethod.name == "Angel" %}
+										{% set slotString = 'kerkow.deliverySlot.18to20' %}
+									{% endif %}
 								{% endif %}
 								{% set dayString =  'general.day.'~date|date("D") %}
 								{% set day =  dayString|trans %}
@@ -107,6 +113,9 @@
 
 										{% block page_checkout_confirm_shipping_data %}
 											<input type="hidden" name="deliveryDate" id="js_delivery_date_input">
+											{% if context.shippingMethod.name == "Angel" %}
+												<input type="hidden" name="deliverySlot" id="js_delivery_slot_input">
+											{% endif %}
 										{% endblock %}
 
 										{% block page_checkout_confirm_shipping_form_fields %}

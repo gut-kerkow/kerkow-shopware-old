@@ -5,6 +5,8 @@
       "labelDeliverySlot": "Zeitfenster",
       "18to20": "18:00 bis 20:00 Uhr",
       "19to21": "19:00 bis 21:00 Uhr",
+      "20to22": "20:00 bis 22:00 Uhr",
+      "21to23": "21:00 bis 23:00 Uhr",
       "undefined": "Standard"
     }
   }

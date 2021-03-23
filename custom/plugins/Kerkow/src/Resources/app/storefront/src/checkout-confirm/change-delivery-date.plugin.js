@@ -11,6 +11,7 @@ export default class ChangeDeliveryDatePlugin extends Plugin {
     deliveryDateInputSelector: ".js-delivery-date-input-field",
     deliveryForm: "#changeDeliveryDate",
     deliveryFormDateInput: "#js_delivery_date_input",
+    deliveryFormSlotInput: "#js_delivery_slot_input",
     weekdays: [
       "Sonntag",
       "Montag",
@@ -59,6 +60,17 @@ export default class ChangeDeliveryDatePlugin extends Plugin {
         this.el,
         this.options.deliveryFormDateInput
       );
+      this.options.shippingMethod = this.el.dataset.method;
+      if (this.options.shippingMethod == "Angel") {
+        this._deliverySlot = DomAccess.querySelector(
+          this.el,
+          this.options.deliverySlotSelector
+        );
+        this._formSlotInput = DomAccess.querySelector(
+          this.el,
+          this.options.deliveryFormSlotInput
+        );
+      }
     } catch (e) {
       console.log(e);
       return;
@@ -84,6 +96,9 @@ export default class ChangeDeliveryDatePlugin extends Plugin {
 
     // Update the Form Field
     this._formDateInput.value = this._deliveryDate.value;
+    if (this.options.shippingMethod == "Angel") {
+      this._formSlotInput.value = this._deliverySlot.value;
+    }
     this._form.submit();
   }
 }

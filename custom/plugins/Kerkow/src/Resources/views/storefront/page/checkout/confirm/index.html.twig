@@ -200,12 +200,23 @@
 
 								{% if page.extensions["customDeliveryDate"] %}
 									{% set deliveryDate = page.extensions["customDeliveryDate"] %}
+									{% if context.shippingMethod.name == "Angel" %}
+										{% set deliverySlot = page.extensions["customDeliverySlot"] %}
+									{% endif %}
 								{% else %}
 									{% set deliveryDate = deliveryInfos.date %}
+									{% if context.shippingMethod.name == "Angel" %}
+										{% set deliverySlot = "18to20" %}
+									{% endif %}
 								{% endif %}
 								{% block page_delivery_date_input_field %}
 									<input type="hidden" name="deliveryDate" class="js-delivery-date-input-field" value="{{ deliveryDate|date("Y-m-d") }}">
 								{% endblock %}
+								{% if context.shippingMethod.name == "Angel" %}
+									{% block page_delivery_slot_input_field %}
+										<input type="hidden" name="deliverySlot" class="js-delivery-slot-input-field" value="{{ deliverySlot }}">
+									{% endblock %}
+								{% endif %}
 								{% block page_checkout_confirm_form_submit %}
 									{{ parent() }}
 								{% endblock %}
