@@ -140,7 +140,7 @@
         order: 4;
       }
 
-      @for $i from 6 through 24 {
+      @for $i from 6 through 36 {
         &:nth-child(#{$i}) {
           -webkit-box-ordinal-group: #{$i};
           -moz-box-ordinal-group: #{$i};

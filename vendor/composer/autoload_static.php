@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit7411e092d839f74e15dfa63ca6a38728
+class ComposerStaticInit6c38ca81b4bcecdac8a555eb4b192255
 {
     public static $files = array (
         '320cde22f66dd4f5d3fd621d3e88b98f' => __DIR__ . '/..' . '/symfony/polyfill-ctype/bootstrap.php',
@@ -131,6 +131,7 @@ class ComposerStaticInit7411e092d839f74e15dfa63ca6a38728
         ),
         'R' => 
         array (
+            'Rize\\' => 5,
             'React\\Promise\\' => 14,
             'Ramsey\\Uuid\\' => 12,
         ),
@@ -567,6 +568,10 @@ class ComposerStaticInit7411e092d839f74e15dfa63ca6a38728
         array (
             0 => __DIR__ . '/..' . '/scssphp/scssphp/src',
         ),
+        'Rize\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/rize/uri-template/src/Rize',
+        ),
         'React\\Promise\\' => 
         array (
             0 => __DIR__ . '/..' . '/react/promise/src',
@@ -879,13 +884,6 @@ class ComposerStaticInit7411e092d839f74e15dfa63ca6a38728
             'Sabberworm\\CSS' => 
             array (
                 0 => __DIR__ . '/..' . '/sabberworm/php-css-parser/lib',
-            ),
-        ),
-        'R' => 
-        array (
-            'Rize\\UriTemplate' => 
-            array (
-                0 => __DIR__ . '/..' . '/rize/uri-template/src',
             ),
         ),
         'H' => 
@@ -4949,6 +4947,7 @@ class ComposerStaticInit7411e092d839f74e15dfa63ca6a38728
         'PharIo\\Version\\GreaterThanOrEqualToVersionConstraint' => __DIR__ . '/..' . '/phar-io/version/src/constraints/GreaterThanOrEqualToVersionConstraint.php',
         'PharIo\\Version\\InvalidPreReleaseSuffixException' => __DIR__ . '/..' . '/phar-io/version/src/exceptions/InvalidPreReleaseSuffixException.php',
         'PharIo\\Version\\InvalidVersionException' => __DIR__ . '/..' . '/phar-io/version/src/exceptions/InvalidVersionException.php',
+        'PharIo\\Version\\NoPreReleaseSuffixException' => __DIR__ . '/..' . '/phar-io/version/src/exceptions/NoPreReleaseSuffixException.php',
         'PharIo\\Version\\OrVersionConstraintGroup' => __DIR__ . '/..' . '/phar-io/version/src/constraints/OrVersionConstraintGroup.php',
         'PharIo\\Version\\PreReleaseSuffix' => __DIR__ . '/..' . '/phar-io/version/src/PreReleaseSuffix.php',
         'PharIo\\Version\\SpecificMajorAndMinorVersionConstraint' => __DIR__ . '/..' . '/phar-io/version/src/constraints/SpecificMajorAndMinorVersionConstraint.php',
@@ -10185,6 +10184,7 @@ class ComposerStaticInit7411e092d839f74e15dfa63ca6a38728
         'Symfony\\Component\\Finder\\Iterator\\FileTypeFilterIterator' => __DIR__ . '/..' . '/symfony/finder/Iterator/FileTypeFilterIterator.php',
         'Symfony\\Component\\Finder\\Iterator\\FilecontentFilterIterator' => __DIR__ . '/..' . '/symfony/finder/Iterator/FilecontentFilterIterator.php',
         'Symfony\\Component\\Finder\\Iterator\\FilenameFilterIterator' => __DIR__ . '/..' . '/symfony/finder/Iterator/FilenameFilterIterator.php',
+        'Symfony\\Component\\Finder\\Iterator\\LazyIterator' => __DIR__ . '/..' . '/symfony/finder/Iterator/LazyIterator.php',
         'Symfony\\Component\\Finder\\Iterator\\MultiplePcreFilterIterator' => __DIR__ . '/..' . '/symfony/finder/Iterator/MultiplePcreFilterIterator.php',
         'Symfony\\Component\\Finder\\Iterator\\PathFilterIterator' => __DIR__ . '/..' . '/symfony/finder/Iterator/PathFilterIterator.php',
         'Symfony\\Component\\Finder\\Iterator\\RecursiveDirectoryIterator' => __DIR__ . '/..' . '/symfony/finder/Iterator/RecursiveDirectoryIterator.php',
@@ -11908,10 +11908,10 @@ class ComposerStaticInit7411e092d839f74e15dfa63ca6a38728
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit7411e092d839f74e15dfa63ca6a38728::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit7411e092d839f74e15dfa63ca6a38728::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInit7411e092d839f74e15dfa63ca6a38728::$prefixesPsr0;
-            $loader->classMap = ComposerStaticInit7411e092d839f74e15dfa63ca6a38728::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit6c38ca81b4bcecdac8a555eb4b192255::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit6c38ca81b4bcecdac8a555eb4b192255::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInit6c38ca81b4bcecdac8a555eb4b192255::$prefixesPsr0;
+            $loader->classMap = ComposerStaticInit6c38ca81b4bcecdac8a555eb4b192255::$classMap;
 
         }, null, ClassLoader::class);
     }

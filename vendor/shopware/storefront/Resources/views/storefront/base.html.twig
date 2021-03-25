@@ -1,8 +1,5 @@
 {# Set variable to "true" to enable HMR (hot page reloading) mode #}
 {% set isHMRMode = app.request.headers.get('hot-reload-mode') and app.environment == 'dev' %}
-{% if app.environment == 'dev' %}
-    {% set isHMRMode = true %}
-{% endif %}
 
 {% block base_doctype %}
 <!DOCTYPE html>
@@ -168,7 +165,7 @@
         {% block base_script_hmr_mode %}
             {% if isHMRMode %}
                 {% set baseUrl = app.request.getScheme() ~ '://' ~ app.request.getHost() %}
-                {% set port = 9999 %}
+                {% set port = app.request.headers.get('hot-reload-port') %}
                 <script type="text/javascript" src="{{ baseUrl }}:{{ port }}/js/vendor-node.js"></script>
                 <script type="text/javascript" src="{{ baseUrl }}:{{ port }}/js/vendor-shared.js"></script>
                 <script type="text/javascript" src="{{ baseUrl }}:{{ port }}/js/runtime.js"></script>
