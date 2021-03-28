@@ -57,7 +57,6 @@ class StorefrontRenderEventListener implements EventSubscriberInterface
             '31 Dec 2020',
             '01 Jan 2021',
             '08 Mar 2021',
-            '01 Apr 2021',
             '02 Apr 2021',
             '05 Apr 2021',
             '01 May 2021',

@@ -26,7 +26,6 @@ export default class DatePickerExtensionPlugin extends DatePickerPlugin {
       "2021-01-02",
       "2021-03-08",
       "2021-03-09",
-      "2021-04-01",
       "2021-04-02",
       "2021-04-03",
       "2021-04-05",
