@@ -16,6 +16,11 @@
             "extensions": []
         },
         {
+            "filepath": "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/DvsnProductOption\/src\/Resources\/app\/storefront\/src\/main.js",
+            "resolveMapping": [],
+            "extensions": []
+        },
+        {
             "filepath": "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/Kerkow\/src\/Resources\/app\/storefront\/src\/main.js",
             "resolveMapping": [],
             "extensions": []
@@ -43,6 +48,31 @@
         },
         {
             "filepath": "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/PayonePayment\/src\/Resources\/app\/storefront\/src\/scss\/base.scss",
+            "resolveMapping": [],
+            "extensions": []
+        },
+        {
+            "filepath": "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/DvsnPseudoProduct\/src\/Resources\/app\/storefront\/src\/scss\/base.scss",
+            "resolveMapping": [],
+            "extensions": []
+        },
+        {
+            "filepath": "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/DvsnPseudoProduct\/src\/Resources\/app\/storefront\/src\/scss\/page\/checkout\/_cart-item-pseudo-product.scss",
+            "resolveMapping": [],
+            "extensions": []
+        },
+        {
+            "filepath": "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/DvsnProductOption\/src\/Resources\/app\/storefront\/src\/scss\/base.scss",
+            "resolveMapping": [],
+            "extensions": []
+        },
+        {
+            "filepath": "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/DvsnProductOption\/src\/Resources\/app\/storefront\/src\/scss\/page\/product-detail\/_index.scss",
+            "resolveMapping": [],
+            "extensions": []
+        },
+        {
+            "filepath": "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/DvsnProductOption\/src\/Resources\/app\/storefront\/src\/scss\/page\/checkout\/_cart-item-product-option.scss",
             "resolveMapping": [],
             "extensions": []
         },

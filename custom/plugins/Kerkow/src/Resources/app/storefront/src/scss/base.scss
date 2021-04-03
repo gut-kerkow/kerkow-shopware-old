@@ -159,6 +159,46 @@ a {
     text-decoration: underline;
   }
 }
+.content-page {
+  @include gt-black;
+  color: #314e92;
+  font-size: 16px;
+  h1 {
+    text-align: center;
+    @include gt-black;
+    color: #314e92;
+    font-size: 26px;
+  }
+  h2 {
+    @include gt-black;
+    color: #314e92;
+    font-size: 18px;
+    text-transform: unset;
+    margin-top: 1rem;
+  }
+  h3 {
+    @include alright-medium;
+    color: #314e92;
+    font-size: 16px;
+    text-transform: unset;
+    margin-top: 1rem;
+  }
+  p {
+    @include gt-book;
+  }
+  a {
+    color: #314e92;
+    text-decoration: underline;
+  }
+  table {
+    @include alright-regular;
+    :is(th, td) {
+      border: 1px solid $kerkow-blue;
+      width: 50%;
+      padding: 0 10px;
+    }
+  }
+}
 .alert-primary {
   background-color: rgba(49, 78, 146, 0.5);
   @include alright-light;
