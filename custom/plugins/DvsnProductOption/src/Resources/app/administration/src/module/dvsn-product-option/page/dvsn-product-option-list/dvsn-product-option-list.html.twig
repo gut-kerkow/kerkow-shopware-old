@@ -1,0 +1,58 @@
+
+<sw-page class="dvsn-product-option-list">
+    <template slot="search-bar">
+        <sw-search-bar :initialSearchType="$tc('dvsn-product-option.list.search.type')"
+                       :placeholder="$tc('dvsn-product-option.list.search.placeholder')"
+                       :initialSearch="term"
+                       @search="onSearch">
+        </sw-search-bar>
+    </template>
+
+    <template slot="smart-bar-actions">
+        <sw-button data-cy="addButton" variant="primary" :routerLink="{ name: 'dvsn.product.option.create' }">
+            {{ $t('dvsn-product-option.list.actions.add') }}
+        </sw-button>
+    </template>
+
+    <template slot="content">
+        <sw-entity-listing
+            v-if="productOptions"
+            :items="productOptions"
+            :repository="repository"
+            :columns="columns"
+            :isLoading="isLoading"
+            :showActions="true"
+            :showSelection="false"
+            :showSettings="false"
+            detailRoute="dvsn.product.option.detail">
+            <template #column-name="{ item }">
+                {{ item.name }}
+            </template>
+
+            <template #column-number="{ item }">
+                {{ item.number }}
+            </template>
+
+            <template #column-active="{ item }">
+                <template>
+                    <sw-icon v-if="item.active" name="small-default-checkmark-line-medium" small class="is--active"></sw-icon>
+                    <sw-icon v-else name="small-default-x-line-medium" small class="is--inactive"></sw-icon>
+                </template>
+            </template>
+
+            <template #column-createdAt="{ item }">
+                {{ item.createdAt | date({hour: '2-digit', minute: '2-digit'}) }} Uhr
+            </template>
+        </sw-entity-listing>
+
+        <sw-loader v-if="isLoading"></sw-loader>
+    </template>
+
+    <sw-sidebar slot="sidebar">
+        <sw-sidebar-item
+            icon="default-arrow-360-left"
+            :title="$tc('dvsn-product-option.list.sidebar.refresh')"
+            @click="onRefresh">
+        </sw-sidebar-item>
+    </sw-sidebar>
+</sw-page>

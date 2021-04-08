@@ -1,11 +1,26 @@
 #!/bin/sh
 
+stage=$1
+
+if [ ! -n "$stage" ]
+then
+  stage="production"
+fi
+
+if [ "$stage" = "production" ]; then
+    FOLDER="kerkow"
+    BRANCH="master"
+else
+    FOLDER="staging"
+    BRANCH="staging"
+fi
+
 # Define a timestamp function
 timestamp() {
   date +"%Y%m%d%H%M%S" # current time
 }
 RELEASE_STAMP=$(timestamp)
-PROJECT_DIR="/home/deploy/kerkow"
+PROJECT_DIR="/home/deploy/${FOLDER}"
 SHARED_DIR="${PROJECT_DIR}/shared"
 CURRENT_DIR="${PROJECT_DIR}/current"
 RELEASES_DIR="${PROJECT_DIR}/releases"
@@ -24,7 +39,7 @@ ssh sw6_kerkow << EOF
     echo "cd ${CURRENT_RELEASE_DIR}" 
     cd ${CURRENT_RELEASE_DIR} 
     echo "Pull Master Branch from ${REPOSITORY}"
-    git clone git@github.com:fairix/kerkow2.git .
+    git clone -branch ${BRANCH} git@github.com:fairix/kerkow2.git .
     echo "Symlinking .env (ln -nsf ${SHARED_DIR}/${ENV_FILE} ${ENV_FILE})"
     ln -nsf ${SHARED_DIR}/${ENV_FILE} ${ENV_FILE}
     echo "Symlinking Media Folder (ln -nsf ${SHARED_DIR}/${MEDIA_FOLDER} ${MEDIA_FOLDER})"

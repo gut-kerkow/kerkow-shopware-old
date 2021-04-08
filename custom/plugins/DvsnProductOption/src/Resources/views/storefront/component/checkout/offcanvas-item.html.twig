@@ -1,0 +1,30 @@
+
+{# file to extend #}
+{% sw_extends '@Storefront/storefront/component/checkout/offcanvas-item.html.twig' %}
+
+{# replace image and link #}
+{% block component_offcanvas_product_image_inner %}
+    {% if lineItem.type == 'dvsn-product-option' %}
+        {% if lineItem.cover.url %}
+            {% sw_thumbnails 'cart-item-img-thumbnails' with {
+                media: lineItem.cover,
+                sizes: {
+                    'default': '100px'
+                },
+                attributes: {
+                    'class': 'img-fluid cart-item-img',
+                    'alt': (lineItem.cover.translated.alt ?: ''),
+                    'title': (lineItem.cover.translated.title ?: '')
+                }
+            } %}
+        {% else %}
+            <div class="cart-item-img">
+                <div class="cart-item-discount-icon">
+                    {% sw_include "@Storefront/storefront/utilities/icon.html.twig" with { 'name': lineItem.payload.dvsnProductOptionIcon} %}
+                </div>
+            </div>
+        {% endif %}
+    {% else %}
+        {{ parent() }}
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,86 @@
+{
+    "dvsn-product-option": {
+        "general": {
+            "name": "Produkt Optionen",
+            "menu-item-name": "Optionen",
+            "menu-item-description": "Verwalte alle Produkt Optionen hier",
+            "type": {
+                "percental": "Prozentual",
+                "absolute": "Absolut"
+            },
+            "calculation": {
+                "once": "Pro Position",
+                "quantity": "Pro Stück"
+            },
+            "icon": {
+                "bag": "Warenkorb",
+                "bag-product": "Warenkorb und Produkt",
+                "warning": "Warnung",
+                "alert": "Hinweis",
+                "trophy": "Pokal",
+                "star": "Stern",
+                "plus": "Plus Zeichen",
+                "plus-block": "Plus Zeichen - eckiger Rahmen",
+                "plus-circle": "Plus Zeichen - runder Rahmen",
+                "plus-wide": "Plus Zeichen - breit",
+                "checkmark": "Häkchen",
+                "checkmark-block": "Häkchen - eckiger Rahmen",
+                "checkmark-circle": "Häkchen - runder Rahmen",
+                "checkmark-wide": "Häkchen - breit",
+                "arrow-circle-down": "Pfeil - nach unten",
+                "arrow-circle-left": "Pfeil - nach links",
+                "arrow-circle-right": "Pfeil - nach rechts",
+                "arrow-circle-up": "Pfeil - nach oben"
+            }
+        },
+        "list": {
+            "column-number": "Nummer",
+            "column-name": "Name",
+            "column-active": "Aktiv",
+            "column-created-at": "Datum",
+            "search": {
+                "placeholder": "Durchsuche alle Produkt Optionen...",
+                "type": "Produkt Optionen"
+            },
+            "actions": {
+                "add": "Produkt Option anlegen"
+            },
+            "sidebar": {
+                "refresh": "Aktualisieren"
+            }
+        },
+        "detail": {
+            "actions": {
+                "save-button": "Speichern",
+                "cancel-button": "Abbrechen"
+            },
+            "success-title": "Pseudo Produkt gespeichert",
+            "success-message": "Das Pseudo Produkt wurde erfolgreich gespeichert.",
+            "error-message": "Ein Fehler ist aufgetreten",
+            "error-message-tax-required-title": "Steuersatz wählen",
+            "error-message-tax-required-message": "Bei der Auswahl eines absoluten Auf-/Abschlags müssen Sie einen Steuersatz wählen.",
+            "card-product": {
+                "title": "Stammdaten",
+                "active": "Aktiv",
+                "number": "Nummer",
+                "number-help": "Die Artikelnummer der Option.",
+                "name": "Name",
+                "name-help": "Der Name der Option",
+                "description": "Beschreibung",
+                "description-help": "Eine optionale Beschreibung für die Artikeldetailseite.",
+                "media": "Bild",
+                "icon-select": "Icon",
+                "icon-select-help": "Falls Sie für die Option kein Bild hinterlegen, dann können Sie hier ein Icon auswählen, das im Warenkorb angezeigt wird.",
+                "weight": "Gewicht"
+            },
+            "card-surcharge": {
+                "title": "Auf-/Abschlag",
+                "type-select": "Art des Auf-/Abschlags",
+                "surcharge": "Auf-/Abschlag",
+                "calculation-select": "Berechnung des Auf-/Abschlags",
+                "tax": "Steuersatz",
+                "tax-help": "Die Auswahl eines Steuersatzes ist nur bei einem absoluten Auf-/Abschlag verpflichtend."
+            }
+        }
+    }
+}

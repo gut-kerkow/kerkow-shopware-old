@@ -1,0 +1,23 @@
+
+{# file to extend #}
+{% sw_extends '@Storefront/storefront/page/product-detail/buy-widget.html.twig' %}
+
+{# on top off the button #}
+{% block page_product_detail_buy_form %}
+
+    {# do we even have product options? #}
+    {% if page.dvsnProductOptions is defined and page.dvsnProductOptions is iterable and page.dvsnProductOptions|length > 0 %}
+
+        {# include child template #}
+        {% sw_include '@Storefront/storefront/component/dvsn/product-option/options.html.twig' with {
+            product: page.product,
+            options: page.dvsnProductOptions,
+            config: page.dvsnProductOptionConfiguration
+        } %}
+
+    {% endif %}
+
+    {# append parent #}
+    {{ parent() }}
+
+{% endblock %}

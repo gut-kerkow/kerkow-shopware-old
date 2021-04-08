@@ -1,0 +1,44 @@
+{
+    "name": "dvsn/product-option",
+    "description": "Optionale Zusatz/Pseudo Artikel (z.B. Garantie, Geschenkpapier etc.) direkt mit kaufen",
+    "version": "1.0.2",
+    "license": "proprietary",
+    "type": "shopware-platform-plugin",
+    "authors": [
+        {
+            "name": "digitvision",
+            "homepage": "https://www.digitvision.de"
+        }
+    ],
+    "require": {
+        "shopware/core": "^6.2",
+        "shopware/storefront": "^6.2",
+        "shopware/administration": "^6.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Dvsn\\ProductOption\\": "src/"
+        }
+    },
+    "extra": {
+        "shopware-plugin-class": "Dvsn\\ProductOption\\DvsnProductOption",
+        "copyright": "digitvision",
+        "plugin-icon": "src/Resources/plugin.png",
+        "label": {
+            "de-DE": "Optionale Zusatz/Pseudo Artikel (z.B. Garantie, Geschenkpapier etc.) direkt mit kaufen",
+            "en-GB": "Add additional / optional articles to other articles"
+        },
+        "description": {
+            "de-DE": "Bieten Sie optionale Zusatzartikel (z.B. Garantie, Verpackung, Geschenk, Transport etc.) mit an. Erhöhen Sie Ihre Conversion und bieten Sie zusätzliche Dienstleistungen mit an",
+            "en-GB": "Offer optional additional items (e.g. warranty, packaging, gift, transport, etc.) Increase your conversion and offer additional services to increase cross-selling"
+        },
+        "manufacturerLink": {
+            "de-DE": "https://www.digitvision.de",
+            "en-GB": "https://www.digitvision.de"
+        },
+        "supportLink": {
+            "de-DE": "https://www.digitvision.de",
+            "en-GB": "https://www.digitvision.de"
+        }
+    }
+}

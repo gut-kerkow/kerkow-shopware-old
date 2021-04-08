@@ -1,0 +1,148 @@
+
+<sw-page class="dvsn-product-option-detail">
+    <template slot="smart-bar-actions">
+        <sw-button
+            :disabled="isLoading"
+            :routerLink="{ name: 'dvsn.product.option.list' }">
+            {{ $t('dvsn-product-option.detail.actions.cancel-button') }}
+        </sw-button>
+        <sw-button-process
+            :isLoading="isLoading"
+            v-model="isSaveSuccessful"
+            variant="primary"
+            @process-finish="saveFinish"
+            @click="onClickSave">
+            {{ $t('dvsn-product-option.detail.actions.save-button') }}
+        </sw-button-process>
+    </template>
+
+    {% block dvsn_product_option_detail_language_select %}
+    <template #language-switch>
+        <sw-language-switch
+            :saveChangesFunction="saveOnLanguageChange"
+            :abortChangeFunction="abortOnLanguageChange"
+            @on-change="onChangeLanguage">
+        </sw-language-switch>
+    </template>
+    {% endblock %}
+
+    <template slot="content">
+        <sw-card-view>
+            <sw-card :isLoading="isLoading"
+                     :title="$tc('dvsn-product-option.detail.card-product.title')">
+                <sw-field
+                    v-if="productOption" type="switch"
+                    :label="$tc('dvsn-product-option.detail.card-product.active')"
+                    :noMarginTop="true"
+                    v-model="productOption.active">
+                </sw-field>
+
+                <sw-field
+                    type="text"
+                    v-if="productOption"
+                    v-model="productOption.number"
+                    validation="required"
+                    required
+                    :label="$t('dvsn-product-option.detail.card-product.number')"
+                    :helpText="$tc('dvsn-product-option.detail.card-product.number-help')">
+                </sw-field>
+
+                <sw-field
+                    v-if="productOption"
+                    v-model="productOption.name"
+                    validation="required"
+                    required
+                    :label="$t('dvsn-product-option.detail.card-product.name')"
+                    :helpText="$tc('dvsn-product-option.detail.card-product.name-help')">
+                </sw-field>
+
+                <sw-field
+                    v-if="productOption"
+                    v-model="productOption.description"
+                    :label="$t('dvsn-product-option.detail.card-product.description')"
+                    :helpText="$tc('dvsn-product-option.detail.card-product.description-help')">
+                </sw-field>
+
+                <sw-media-field
+                    v-if="productOption"
+                    v-model="productOption.mediaId"
+                    :label="$t('dvsn-product-option.detail.card-product.media')">
+                </sw-media-field>
+
+                <sw-field
+                    v-if="productOption"
+                    v-model="productOption.icon"
+                    type="select"
+                    :helpText="$tc('dvsn-product-option.detail.card-product.icon-select-help')"
+                    :label="$tc('dvsn-product-option.detail.card-product.icon-select')">
+                    <option
+                        slot="options"
+                        v-for="option in icon"
+                        :key="option.value"
+                        :value="option.value">
+                        {{ option.label }}
+                    </option>
+                </sw-field>
+
+                <!--
+                <sw-number-field
+                    v-if="productOption"
+                    v-model="productOption.weight"
+                    numberType="float"
+                    :digits="3"
+                    :label="$t('dvsn-product-option.detail.card-product.weight')">
+                </sw-number-field>
+                -->
+            </sw-card>
+
+            <sw-card :isLoading="isLoading"
+                     :title="$tc('dvsn-product-option.detail.card-surcharge.title')">
+                <sw-field v-if="productOption"
+                          v-model="productOption.surchargeType"
+                          validation="required"
+                          required
+                          type="select"
+                          :label="$tc('dvsn-product-option.detail.card-surcharge.type-select')" >
+                    <option slot="options"
+                            v-for="option in type"
+                            :key="option.value"
+                            :value="option.value">
+                        {{ option.label }}
+                    </option>
+                </sw-field>
+
+                <sw-number-field
+                    v-if="productOption"
+                    v-model="productOption.surcharge"
+                    numberType="float"
+                    validation="required"
+                    required
+                    :digits="2"
+                    :label="$t('dvsn-product-option.detail.card-surcharge.surcharge')">
+                </sw-number-field>
+
+                <sw-field v-if="productOption"
+                          v-model="productOption.surchargeCalculation"
+                          validation="required"
+                          required
+                          type="select"
+                          :label="$tc('dvsn-product-option.detail.card-surcharge.calculation-select')" >
+                    <option slot="options"
+                            v-for="option in calculation"
+                            :key="option.value"
+                            :value="option.value">
+                        {{ option.label }}
+                    </option>
+                </sw-field>
+
+                <sw-entity-single-select
+                    v-if="productOption"
+                    entity="tax"
+                    v-model="productOption.taxId"
+                    :helpText="$tc('dvsn-product-option.detail.card-surcharge.tax-help')"
+                    :label="$t('dvsn-product-option.detail.card-surcharge.tax')">
+                </sw-entity-single-select>
+            </sw-card>
+        </sw-card-view>
+    </template>
+</sw-page>

@@ -1,0 +1,13 @@
+
+{# file to extend #}
+{% sw_extends '@Storefront/storefront/page/checkout/checkout-aside-item.html.twig' %}
+
+{# remove quantity #}
+{% block page_checkout_aside_item_quantity %}
+    {% if lineItem.type == 'dvsn-product-option' %}
+        <div class="checkout-aside-item-link-quantity">
+        </div>
+    {% else %}
+        {{ parent() }}
+    {% endif %}
+{% endblock %}

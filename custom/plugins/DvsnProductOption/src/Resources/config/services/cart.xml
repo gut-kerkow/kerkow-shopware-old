@@ -1,0 +1,25 @@
+<?xml version="1.0" ?>
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+
+        <service id="Dvsn\ProductOption\Core\Checkout\Cart\CartDataCollector">
+            <argument type="service" id="dvsn_product_option.repository" />
+            <argument type="service" id="product.repository" />
+            <argument type="service" id="sales_channel.product.repository" />
+            <argument type="service" id="Shopware\Core\Checkout\Cart\Price\QuantityPriceCalculator" />
+            <argument type="service" id="Shopware\Core\Content\Product\SalesChannel\Price\ProductPriceDefinitionBuilderInterface" />
+            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService" />
+            <tag name="shopware.cart.collector" priority="4950"/>
+        </service>
+
+        <service id="Dvsn\ProductOption\Core\Checkout\Cart\CartProcessor">
+            <argument type="service" id="product.repository" />
+            <argument type="service" id="Shopware\Core\Checkout\Cart\Price\QuantityPriceCalculator" />
+            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService" />
+            <tag name="shopware.cart.processor" priority="4950"/>
+        </service>
+
+    </services>
+</container>

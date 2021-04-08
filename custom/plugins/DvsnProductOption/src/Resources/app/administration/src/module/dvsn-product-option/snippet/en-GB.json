@@ -1,0 +1,86 @@
+{
+    "dvsn-product-option": {
+        "general": {
+            "name": "Product Options",
+            "menu-item-name": "Options",
+            "menu-item-description": "Manage all product options here",
+            "type": {
+                "percental": "Percentage",
+                "absolute": "Absolute"
+            },
+            "calculation": {
+                "once": "Per position",
+                "quantity": "Per piece"
+            },
+            "icon": {
+                "bag": "Cart",
+                "bag-product": "Cart and product",
+                "warning": "Warning",
+                "alert": "Alert",
+                "trophy": "Trophy",
+                "star": "Star",
+                "plus": "Plus symbol",
+                "plus-block": "Plus symbol - angular frame",
+                "plus-circle": "Plus symbol - round frame",
+                "plus-wide": "Plus symbol - broad",
+                "checkmark": "Checkmark",
+                "checkmark-block": "Checkmark - angular frame",
+                "checkmark-circle": "Checkmark - round frame",
+                "checkmark-wide": "Checkmark - broad",
+                "arrow-circle-down": "Arrow - down",
+                "arrow-circle-left": "Arrow - left",
+                "arrow-circle-right": "Arrow - right",
+                "arrow-circle-up": "Arrow - up"
+            }
+        },
+        "list": {
+            "column-number": "Number",
+            "column-name": "Name",
+            "column-active": "Active",
+            "column-created-at": "Date",
+            "search": {
+                "placeholder": "Search all product options...",
+                "type": "Product Options"
+            },
+            "actions": {
+                "add": "Create product option"
+            },
+            "sidebar": {
+                "refresh": "Refresh"
+            }
+        },
+        "detail": {
+            "actions": {
+                "save-button": "Save",
+                "cancel-button": "Cancel"
+            },
+            "success-title": "Product option saved",
+            "success-message": "The product option was saved successfully.",
+            "error-message": "An error has occurred",
+            "error-message-tax-required-title": "Select tax rate",
+            "error-message-tax-required-message": "When selecting an absolute surcharge, you must select a tax rate.",
+            "card-product": {
+                "title": "Master data",
+                "active": "Active",
+                "number": "Number",
+                "number-help": "The part number of the option.",
+                "name": "Name",
+                "name-help": "The name of the option.",
+                "description": "Description",
+                "description-help": "An optional description for the product detail page.",
+                "media": "Image",
+                "icon-select": "Icon",
+                "icon-select-help": "If you do not store an image for this option, you can select an icon here that will be displayed in the shopping cart.",
+                "weight": "Weight"
+            },
+            "card-surcharge": {
+                "title": "Surcharge / Discount",
+                "type-select": "Type of surcharge / discount",
+                "surcharge": "Surcharge / discount",
+                "calculation-select": "Calculation of the surcharge / discount",
+                "tax": "Tax rate",
+                "tax-help": "The selection of a tax rate is only obligatory in the case of an absolute surcharge / discount."
+            }
+        }
+    }
+}

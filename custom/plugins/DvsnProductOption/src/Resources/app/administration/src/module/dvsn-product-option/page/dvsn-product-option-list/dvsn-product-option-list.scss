@@ -1,0 +1,19 @@
+/**
+ * digitvision
+ *
+ * @category  digitvision
+ * @package   Shopware\Plugins\DvsnProductOption
+ * @copyright (c) 2020 digitvision
+ */
+
+@import "~scss/variables";
+
+.sw-page.dvsn-product-option-list {
+    .is--inactive {
+        color: $color-crimson;
+    }
+
+    .is--active {
+        color: $color-emerald;
+    }
+}

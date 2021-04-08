@@ -52,16 +52,6 @@
             "extensions": []
         },
         {
-            "filepath": "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/DvsnPseudoProduct\/src\/Resources\/app\/storefront\/src\/scss\/base.scss",
-            "resolveMapping": [],
-            "extensions": []
-        },
-        {
-            "filepath": "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/DvsnPseudoProduct\/src\/Resources\/app\/storefront\/src\/scss\/page\/checkout\/_cart-item-pseudo-product.scss",
-            "resolveMapping": [],
-            "extensions": []
-        },
-        {
             "filepath": "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/DvsnProductOption\/src\/Resources\/app\/storefront\/src\/scss\/base.scss",
             "resolveMapping": [],
             "extensions": []
