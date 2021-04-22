@@ -3,7 +3,7 @@ import Iterator from "src/helper/iterator.helper";
 
 export default class changeShippingPlugin extends Plugin {
   static options = {
-    inputSelector: "input",
+    inputSelector: "input[type=radio]",
   };
 
   init() {
@@ -15,6 +15,7 @@ export default class changeShippingPlugin extends Plugin {
     }
 
     this._registerEvents();
+    this._selectShippingIfOnlyOne();
   }
 
   /**
@@ -34,5 +35,14 @@ export default class changeShippingPlugin extends Plugin {
    */
   _submitForm() {
     this.el.submit();
+  }
+
+  _selectShippingIfOnlyOne() {
+    if (this._inputFields.length <= 1) {
+      if (!this._inputFields[0].checked) {
+        this._inputFields[0].checked = true;
+        this.el.submit();
+      }
+    }
   }
 }

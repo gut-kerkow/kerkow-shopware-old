@@ -1,0 +1,15 @@
+{% sw_extends '@Storefront/storefront/component/checkout/offcanvas-cart.html.twig' %}
+
+{% block component_offcanvas_cart_flashbags %}
+	<div class="flashbags">
+		{% for type, messages in app.flashes %}
+			{% if messages[0] != 'Die Versandart "UPS-Express" ist für Ihren aktuellen Warenkorb gesperrt.' %}
+
+				{% sw_include '@Storefront/storefront/utilities/alert.html.twig' with {
+                            type: type,
+                            list: messages
+                        } %}
+			{% endif %}
+		{% endfor %}
+	</div>
+{% endblock %}

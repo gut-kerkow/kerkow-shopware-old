@@ -2,6 +2,10 @@
   padding-top: 0;
   padding-bottom: 1rem;
   margin-bottom: 1rem;
+  &.is-nested {
+    border-left: unset;
+    padding-left: unset;
+  }
 }
 
 .cart-item-details-container {
@@ -58,8 +62,16 @@
   font-size: 1.2rem;
   line-height: 2rem;
   color: $kerkow-blue;
+  text-align: left;
 }
-
+.cart-item-product-surcharge {
+  @include alright-light;
+  font-size: 0.7rem;
+  color: $kerkow-blue;
+  text-align: right;
+  margin-top: 0.5rem;
+  width: 100%;
+}
 .cart-item-remove {
   width: 100%;
   text-align: left;
@@ -78,6 +90,10 @@
   }
   .cart-item-total-price {
     text-align: initial;
+    font-size: 0.8rem;
+  }
+  .cart-item-product-surcharge {
+    font-size: 0.8rem;
   }
   .cart-item-img-container {
     flex: 0 0 8.5rem;

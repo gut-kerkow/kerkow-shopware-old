@@ -7,14 +7,14 @@
 				{% block page_checkout_item_info_image_container %}
 					<div class="cart-item-img-container">
 						{% block page_checkout_item_info_image_link %}
+
+						{% endblock %}
+						{% block page_checkout_item_info_image_link_alternative %}
 							{% if isDiscount %}
 								<div class="cart-item-img cart-item-discount-icon">
 									{% sw_icon 'marketing' style { 'color': 'success' } %}
 								</div>
-							{% elseif isNested %}
-								<div class="cart-item-nested-icon">
-									{% sw_icon 'bag-product' style { 'color': 'light' } %}
-								</div>
+
 							{% else %}
 								<a href="{{ seoUrl('frontend.detail.page', {'productId': lineItem.referencedId}) }}" class="cart-item-img-link" title="{{ lineItem.label }}" {% if controllerAction is same as('confirmPage') %} data-toggle="modal" data-modal-class="quickview-modal" data-url="{{ path('widgets.quickview.minimal', { 'productId': lineItem.referencedId }) }}" {% endif %}>
 									{% block page_checkout_item_info_image_element %}
@@ -67,6 +67,7 @@
 														{% endblock %}
 													</div>
 												{% endblock %}
+
 												{% block page_checkout_item_info_variant_characteristics %}
 													<div class="cart-item-details-characteristics align-self-end">
 														{% for option in lineItem.payload.options %}
@@ -189,5 +190,27 @@
 			{% endblock %}
 
 		</div>
+		{% block page_checkout_item_info_product_surcharges %}
+
+			{% if isNested %}
+				{% set priceSurcharge = 0 %}
+				{% for child in lineItem.children %}
+
+					{% if child.type == 'dvsn-product-option' %}
+						{% set priceSurcharge = priceSurcharge + child.price.totalPrice %}
+					{% endif %}
+				{% endfor %}
+				{% if priceSurcharge > 0 %}
+					<div class="d-md-flex">
+						<div class="cart-item-product-surcharge">
+							{{ "kerkow.priceSurcharge"|trans({'%price%': priceSurcharge|currency}) }}
+						</div>
+					</div>
+				{% endif %}
+
+			{% endif %}
+
+		{% endblock %}
+
 	</div>
 {% endblock %}

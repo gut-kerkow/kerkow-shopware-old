@@ -37,3 +37,7 @@
 {% block layout_head_canonical %}
 	<link rel="canonical" href="{{ seoUrl('frontend.detail.page', { productId: page.product.id }) }}"/>
 {% endblock %}
+{% block layout_head_javascript_tracking %}
+	{{ parent() }}
+	<script type="text/javascript" src="{{ asset('bundles/kerkow/js/alephbet.min.js') }}"></script>
+{% endblock %}

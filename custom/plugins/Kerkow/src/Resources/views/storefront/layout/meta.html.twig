@@ -1,0 +1,5 @@
+{% sw_extends '@Storefront/storefront/layout/meta.html.twig' %}
+{% block layout_head_javascript_feature %}
+	{{ parent() }}
+	<script type="text/javascript" src="{{ asset('bundles/kerkow/js/alephbet.min.js') }}"></script>
+{% endblock %}

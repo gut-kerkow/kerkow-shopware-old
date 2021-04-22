@@ -63,6 +63,13 @@
       margin-top: 2.5rem;
     }
   }
+  .product-detail-price-surcharge {
+    display: none;
+    span {
+      text-decoration: underline;
+      cursor: pointer;
+    }
+  }
   .product-detail-content,
   .product-detail-reference-content,
   .product-detail-tax,
@@ -215,7 +222,18 @@
     img {
       height: 38px;
       width: auto;
-      margin-right: 1.5rem;
+      margin-right: 1.2rem;
+    }
+  }
+}
+#kerkowSurchargeInfo {
+  .modal-body-content {
+    @include alright-light;
+    font-size: 1rem;
+    h2 {
+      color: $kerkow-blue;
+      @include alright-medium;
+      font-size: 1rem;
     }
   }
 }

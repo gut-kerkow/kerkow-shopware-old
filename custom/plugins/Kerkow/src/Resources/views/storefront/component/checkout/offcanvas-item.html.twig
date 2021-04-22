@@ -1,0 +1,79 @@
+{% sw_extends '@Storefront/storefront/component/checkout/offcanvas-item.html.twig' %}
+
+
+{% block component_offcanvas_cart_item_container %}
+	<div class="cart-item cart-item-{{ type }}{% if isDiscount %} is-discount{% endif %}{% if isNested %} is-nested{% endif %}{% if isChild %} is-child{% endif %} js-cart-item">
+		<div class="row cart-item-row">
+			{% block component_offcanvas_product_image %}
+				<div class="col-auto">
+					{% block component_offcanvas_product_image_inner %}
+
+						<div class="cart-item-img">
+							{% if isDiscount %}
+								<div class="cart-item-discount-icon">
+									{% sw_icon 'marketing' style {
+                                            'color': 'success'
+                                        } %}
+								</div>
+
+							{% else %}
+								<a href="{{ seoUrl('frontend.detail.page', {'productId': referencedId}) }}" class="cart-item-img-link" title="{{ label }}">
+									{% if lineItem.cover.url %}
+										{% sw_thumbnails 'cart-item-img-thumbnails' with {
+                                                media: lineItem.cover,
+                                                sizes: {
+                                                    'default': '100px'
+                                                },
+                                                attributes: {
+                                                    'class': 'img-fluid cart-item-img-source',
+                                                    'alt': label,
+                                                    'title': label
+                                                }
+                                            } %}
+									{% else %}
+										{% sw_icon 'placeholder' style {
+                                                'size': 'fluid'
+                                            } %}
+									{% endif %}
+								</a>
+
+							{% endif %}
+						</div>
+					{% endblock %}
+				</div>
+			{% endblock %}
+
+			{% block component_offcanvas_product_details %}
+				{{ parent() }}
+			{% endblock %}
+
+			{% block component_offcanvas_product_remove %}
+				{{ parent() }}
+			{% endblock %}
+		</div>
+		{% block component_offcanvas_product_surcharges %}
+			{% if isNested %}
+				{% set priceSurcharge = 0 %}
+				{% for child in lineItem.children %}
+
+					{% if child.type == 'dvsn-product-option' %}
+						{% set priceSurcharge = priceSurcharge + child.price.totalPrice %}
+					{% endif %}
+				{% endfor %}
+				{% if priceSurcharge > 0 %}
+					<div class="row cart-item-row">
+						<div class="col-12 product-surcharge">
+							Inkl. maximal
+							{{ priceSurcharge|currency }}
+							{{ "general.star"|trans|sw_sanitize }}
+							Wiegeausgleich
+						</div>
+					</div>
+				{% endif %}
+
+			{% endif %}
+
+		{% endblock %}
+	</div>
+
+{% endblock %}

@@ -122,6 +122,25 @@
 				{% endblock %}
 			{% endif %}
 		{% endblock %}
+		{% block page_product_surcharge %}
+			{% if page.dvsnProductOptions is defined and page.dvsnProductOptions is iterable and page.dvsnProductOptions|length > 0 %}
+				{% set priceSurcharge = 0 %}
+				{% set priceSurchargePercentage = 0 %}
+				{% for option in page.dvsnProductOptions %}
+
+					{% set priceSurcharge = priceSurcharge + option.price %}
+					{% set priceSurchargePercentage = priceSurchargePercentage + option.surcharge %}
+				{% endfor %}
+				{% set priceSurcharge = priceSurcharge|currency %}
+				{% set priceSurchargePercentage = priceSurchargePercentage|format_number({fraction_digit: 0}) %}
+
+				<div class="product-detail-price-surcharge" data-surcharge-info="true">
+					{{ "footer.productDetailSurcharge"|trans({
+                                '%url%':'#', '%price%': priceSurcharge, '%percentage%': priceSurchargePercentage
+                            })|raw }}
+				</div>
+			{% endif %}
+		{% endblock %}
 
 		{% if page.product.purchaseUnit %}
 			{% block page_product_detail_price_unit %}
@@ -166,4 +185,5 @@
 			{% endblock %}
 		{% endif %}
 	{% endif %}
+
 {% endblock %}

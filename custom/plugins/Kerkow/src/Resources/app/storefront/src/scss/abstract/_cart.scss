@@ -33,14 +33,21 @@
         .cart-item-promotion {
           .cart-item-total-price {
             line-height: 3.5rem;
+            text-align: left;
           }
         }
         .cart-item-total-price {
           font-size: 1rem;
           line-height: 1.5rem;
+          text-align: left;
         }
         .cart-item-details-description {
           font-size: 0.9rem;
+        }
+        .cart-item-product-surcharge {
+          @include alright-light;
+          font-size: 0.5rem;
+          color: $kerkow-blue;
         }
         .cart-item-details-characteristics {
           .cart-item-details-characteristics-option {
@@ -156,6 +163,9 @@
           }
           .cart-item-details-description {
             font-size: 1rem;
+          }
+          .cart-item-product-surcharge {
+            font-size: 0.8rem;
           }
 
           .cart-item-details-characteristics {

@@ -1,0 +1,28 @@
+<div class="modal fade" id="kerkowSurchargeInfo" tabindex="-1" role="dialog" aria-labelledby="kerkowSurchargeTitle">
+	<div class="modal-dialog modal-dialog-centered" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="kerkowSurchargeTitle">
+					{{ "kerkow.surchargeTitle" | trans }}
+				</h5>
+				<button type="button" class="close js-close-modal" data-dismiss="modal" aria-label="Close">
+					<span class="close-icon">
+						{% sw_include '@kerkow/storefront/custom/icons/close-icon.html.twig' %}
+					</span>
+				</button>
+			</div>
+			<div class="modal-body js-modal-body">
+				<div class="modal-body-content">
+					{{ 'kerkow.surchargeContent' | trans | raw }}
+				</div>
+
+
+			</div>
+			<div class="modal-footer js-modal-footer">
+				<button type="button" class="btn js-close-modal" data-dismiss="modal" aria-label="Close">
+					Schließen
+				</button>
+			</div>
+		</div>
+	</div>
+</div>

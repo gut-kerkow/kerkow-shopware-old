@@ -10,6 +10,8 @@ import changeShippingPlugin from "./checkout-confirm/change-shipping.plugin";
 import DatePickerExtensionPlugin from "./checkout-confirm/date-picker-extension.plugin";
 import ChangeDeliveryDatePlugin from "./checkout-confirm/change-delivery-date.plugin";
 import ContentFlyoutPlugin from "./content-flyout/content-flyout.plugin";
+import WheighingTest from "./alephbet/weighing-test.plugin";
+import SurchargeInfo from "./surcharge-info/surcharge-info.plugin";
 
 // Register them via the existing PluginManager
 const PluginManager = window.PluginManager;
@@ -61,3 +63,5 @@ PluginManager.register(
   "[data-change-delivery-date]"
 );
 PluginManager.register("ContentFlyout", ContentFlyoutPlugin);
+PluginManager.register("WheighinTest", WheighingTest);
+PluginManager.register("SurchargeInfo", SurchargeInfo, "[data-surcharge-info]");

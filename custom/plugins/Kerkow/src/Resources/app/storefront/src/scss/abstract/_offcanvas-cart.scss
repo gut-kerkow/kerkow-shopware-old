@@ -3,8 +3,11 @@
     margin-bottom: 0;
   }
   .cart-item-price {
+    color: $kerkow-blue;
     text-align: left;
     margin-left: 0;
+    @include alright-regular;
+    font-variant-numeric: lining-nums;
   }
   .btn-secondary {
     &:not(:hover) {
@@ -17,5 +20,33 @@
 .offcanvas.is-left {
   .offcanvas-close {
     display: none;
+  }
+}
+.product-feature-list-list {
+  margin-bottom: 0;
+}
+.cart-item-characteristics {
+  margin: unset;
+}
+.offcanvas-cart {
+  .cart-item {
+    &.is-nested {
+      padding-left: unset;
+      border-left: unset;
+    }
+    .product-surcharge {
+      @include alright-light;
+      font-size: 0.8rem;
+      color: $kerkow-blue;
+      text-align: right;
+    }
+  }
+}
+.cart-item-dvsn-product-option {
+  display: none;
+}
+.cart-item {
+  &.is-nested {
+    border: unset;
   }
 }

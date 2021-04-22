@@ -1,0 +1,15 @@
+{% sw_extends '@Storefront/storefront/component/checkout/cart-alerts.html.twig' %}
+
+{% block component_checkout_cart_alerts_warnings %}
+	{% for error in page.cart.errors.warnings %}
+		{% if error.name != "UPS-Express" and error.name != "UPS-Express im Umweltpaket" %}
+
+			{% set snippetName = "error.#{error.messageKey}" %}
+
+			{% sw_include '@Storefront/storefront/utilities/alert.html.twig' with {
+                type: "warning",
+                content: snippetName|trans({'%name%': error.name})|sw_sanitize
+            } %}
+		{% endif %}
+	{% endfor %}
+{% endblock %}
