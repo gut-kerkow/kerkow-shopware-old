@@ -39,7 +39,7 @@ ssh sw6_kerkow << EOF
     echo "cd ${CURRENT_RELEASE_DIR}" 
     cd ${CURRENT_RELEASE_DIR} 
     echo "Pull Master Branch from ${REPOSITORY}"
-    git clone -branch ${BRANCH} git@github.com:fairix/kerkow2.git .
+    git clone --single-branch --branch ${BRANCH} git@github.com:fairix/kerkow2.git .
     echo "Symlinking .env (ln -nsf ${SHARED_DIR}/${ENV_FILE} ${ENV_FILE})"
     ln -nsf ${SHARED_DIR}/${ENV_FILE} ${ENV_FILE}
     echo "Symlinking Media Folder (ln -nsf ${SHARED_DIR}/${MEDIA_FOLDER} ${MEDIA_FOLDER})"
