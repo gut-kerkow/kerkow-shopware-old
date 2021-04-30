@@ -12,9 +12,9 @@ export default class WheighingTest extends Plugin {
    * @private
    */
   _registerEvents() {
-    var variant = false;
+    var chosen_variant = false;
     const that = this;
-    const tracking_adapter = false;
+    const tracking_adapter = null;
     const weighing_experiment = new AlephBet.Experiment({
       name: "Weighing markup", // the name of this experiment; required.
       tracking_adapter: tracking_adapter,
@@ -31,18 +31,18 @@ export default class WheighingTest extends Plugin {
             // Show surcharge info
             $(".product-detail-price-surcharge").show();
             // Track the view of a PDP with surcharge
-            variant = "surcharge";
+            chosen_variant = "surcharge";
             if ($elm.length) {
-              that._track("view_product", variant);
+              that._track("view_product", chosen_variant);
             }
           },
         },
         noSurcharge: {
           activate: function () {
             const $elm = $("[data-dvsn-product-option]");
-            variant = "noSurcharge";
+            chosen_variant = "noSurcharge";
             if ($elm.length) {
-              that._track("view_product", variant);
+              that._track("view_product", chosen_variant);
             }
           },
         },
@@ -53,7 +53,7 @@ export default class WheighingTest extends Plugin {
     const buy_button_clicked_goal = new AlephBet.Goal("Clicked Add to cart");
     $(".btn-buy").on("click", function () {
       // The chosen variant will be tied to the goal automatically
-      that._track("add_to_cart", variant);
+      that._track("add_to_cart", chosen_variant);
       buy_button_clicked_goal.complete();
     });
 
@@ -61,7 +61,7 @@ export default class WheighingTest extends Plugin {
     const order_button_clicked_goal = new AlephBet.Goal("Clicked Add to cart");
     $("#confirmFormSubmit").on("click", function () {
       // The chosen variant will be tied to the goal automatically
-      that._track("buy", variant);
+      that._track("buy", chosen_variant);
       order_button_clicked_goal.complete();
     });
 
@@ -74,10 +74,10 @@ export default class WheighingTest extends Plugin {
    * track
    * @private
    */
-  _track(action, variant) {
+  _track(action, chosen_variant) {
     gtag("event", action, {
       event_category: "ab_testing",
-      event_label: variant,
+      event_label: chosen_variant,
     });
   }
 }
