@@ -16,7 +16,6 @@ export default class WheighingTest extends Plugin {
     const that = this;
     const weighing_experiment = new AlephBet.Experiment({
       name: "Weighing markup", // the name of this experiment; required.
-      tracking_adapter: new AlephBet.PersistentQueueGoogleAnalyticsAdapter(),
       variants: {
         // variants for this experiment; required.
         surcharge: {
