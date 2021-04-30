@@ -73,7 +73,7 @@ class StorefrontRenderEventListener implements EventSubscriberInterface
 
         // Latest Order hour
         if ($isAngel) {
-            $latest_hour = 12; // One here means 2'o clock in the morning
+            $latest_hour = 9; // One here means 2'o clock in the morning
         } else {
             $latest_hour = 1; // One here means 2'o clock in the morning
         }
