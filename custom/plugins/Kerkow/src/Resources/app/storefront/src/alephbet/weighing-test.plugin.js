@@ -14,8 +14,10 @@ export default class WheighingTest extends Plugin {
   _registerEvents() {
     var variant = false;
     const that = this;
+    const tracking_adapter = false;
     const weighing_experiment = new AlephBet.Experiment({
       name: "Weighing markup", // the name of this experiment; required.
+      tracking_adapter: tracking_adapter,
       variants: {
         // variants for this experiment; required.
         surcharge: {
