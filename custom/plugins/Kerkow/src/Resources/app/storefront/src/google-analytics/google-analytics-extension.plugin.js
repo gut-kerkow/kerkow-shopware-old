@@ -1,4 +1,4 @@
-import GoogleAnalyticsPlugin from "../../../../../../../../../vendor/shopware/storefront/Resources/app/storefront/src/plugin/google-analytics/google-analytics.plugin";
+import GoogleAnalyticsPlugin from "src/plugin/google-analytics/google-analytics.plugin";
 import AddToCartEvent from "src/plugin/google-analytics/events/add-to-cart.event";
 import AddToCartByNumberEvent from "src/plugin/google-analytics/events/add-to-cart-by-number.event";
 import BeginCheckoutEvent from "src/plugin/google-analytics/events/begin-checkout.event";
