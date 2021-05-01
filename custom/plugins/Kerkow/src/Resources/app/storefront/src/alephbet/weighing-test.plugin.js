@@ -74,7 +74,7 @@ export default class WheighingTest extends Plugin {
    * @private
    */
   _track(action, chosen_variant) {
-    gtag("event", action, {
+    window.gtag("event", action, {
       event_category: "ab_test",
       event_label: chosen_variant,
     });
