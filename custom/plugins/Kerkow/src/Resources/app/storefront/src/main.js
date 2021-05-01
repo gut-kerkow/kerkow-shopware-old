@@ -12,9 +12,12 @@ import ChangeDeliveryDatePlugin from "./checkout-confirm/change-delivery-date.pl
 import ContentFlyoutPlugin from "./content-flyout/content-flyout.plugin";
 import WheighingTest from "./alephbet/weighing-test.plugin";
 import SurchargeInfo from "./surcharge-info/surcharge-info.plugin";
+import GoogleAnalyticsPluginExtension from "./google-analytics/google-analytics-extension.plugin";
 
 // Register them via the existing PluginManager
 const PluginManager = window.PluginManager;
+PluginManager.override("GoogleAnalytics", GoogleAnalyticsPluginExtension);
+
 PluginManager.register("SearchFlyoutMenuPlugin", SearchFlyoutMenuPlugin);
 PluginManager.register(
   "NavigationSearchWidgetPlugin",

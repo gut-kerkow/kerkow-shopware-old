@@ -1,17 +1,20 @@
-import Plugin from "src/plugin-system/plugin.class";
-import DomAccess from "src/helper/dom-access.helper";
+import AnalyticsEvent from "src/plugin/google-analytics/analytics-event";
 
-export default class WheighingTest extends Plugin {
-  init() {
-    this._elm = document.querySelector("[data-dvsn-product-option]");
-    this._registerEvents();
+export default class WheighingTest extends AnalyticsEvent {
+  supports() {
+    return true;
+  }
+
+  execute() {
+    this._startExperiment();
   }
 
   /**
    * Register events
    * @private
    */
-  _registerEvents() {
+  _startExperiment() {
+    console.log("experiment started");
     var chosen_variant = false;
     const that = this;
     const tracking_adapter = {
@@ -74,7 +77,8 @@ export default class WheighingTest extends Plugin {
    * @private
    */
   _track(action, chosen_variant) {
-    window.gtag("event", action, {
+    console.log("tracked");
+    gtag("event", action, {
       event_category: "ab_test",
       event_label: chosen_variant,
     });
