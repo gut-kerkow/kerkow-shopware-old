@@ -12,7 +12,7 @@ import SignUpEvent from "src/plugin/google-analytics/events/sign-up.event";
 import ViewItemEvent from "src/plugin/google-analytics/events/view-item.event";
 import ViewItemListEvent from "src/plugin/google-analytics/events/view-item-list.event";
 import ViewSearchResultsEvent from "src/plugin/google-analytics/events/view-search-results";
-import WheighingTest from "../alephbet/weighing-test.plugin";
+import WheighingTest from "./alephbet/weighing-test.plugin";
 
 export default class GoogleAnalyticsPluginExtension extends GoogleAnalyticsPlugin {
   registerDefaultEvents() {
