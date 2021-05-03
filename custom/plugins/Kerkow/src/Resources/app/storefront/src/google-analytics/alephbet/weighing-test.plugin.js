@@ -1,6 +1,15 @@
 import AnalyticsEvent from "src/plugin/google-analytics/analytics-event";
 
 export default class WheighingTest extends AnalyticsEvent {
+  static options = {
+    selectors: {
+      option: "div.option",
+      content: ".content",
+      checkbox: 'input[type="checkbox"]',
+      inputContainer: "div.dvsn-product-option--input-container",
+    },
+  };
+
   supports() {
     return true;
   }
@@ -34,8 +43,7 @@ export default class WheighingTest extends AnalyticsEvent {
             // activate function to execute if variant is selected
             const $elm = $("[data-dvsn-product-option]");
             $elm.find("input[type='checkbox']").each(function () {
-              $(this).prop("checked", "true");
-              $(this).trigger("change");
+              that._parseOptions(this);
             });
             // Show surcharge info
             $(".product-detail-price-surcharge").show();
@@ -77,10 +85,41 @@ export default class WheighingTest extends AnalyticsEvent {
    * @private
    */
   _track(action, chosen_variant) {
-    console.log("tracked");
     gtag("event", action, {
       event_category: "ab_test",
       event_label: chosen_variant,
     });
+  }
+
+  // parse options
+  _parseOptions(checkbox) {
+    // get this
+    const that = this;
+
+    // get the body
+    const $body = $("body");
+
+    // clear current input holder
+    $body.find("div.dvsn-product-option--input-container").html("");
+
+    // get the checkbox and the parent
+    const $checkbox = $(checkbox);
+    const $option = $checkbox.closest("div.option");
+
+    // create custom hidden field
+    let html = "";
+    html +=
+      '<input type="hidden" name="lineItemsOptions[' +
+      $option.data("id") +
+      ']" value="' +
+      $option.data("id") +
+      '">';
+
+    // add to container
+    $body
+      .find("div.dvsn-product-option--input-container")
+      .html(
+        $body.find("div.dvsn-product-option--input-container").html() + html
+      );
   }
 }
