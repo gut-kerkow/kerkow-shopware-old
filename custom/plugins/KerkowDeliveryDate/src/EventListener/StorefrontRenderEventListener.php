@@ -93,7 +93,7 @@ class StorefrontRenderEventListener implements EventSubscriberInterface
             // Check if packing-day (delivery date -1 day) is itself a holiday. Do it 3 times as it could be maximum 3 holidays in a row
             for ($k = 0; $k < 3; $k++) {
 
-                if (in_array($date->format("d M Y"), $holidays, true)) {
+                if (in_array($date->format("d M Y"), $holidays, true) && !$isAngel) {
                     // reset latest_hour
                     $latest_hour = 23;
                     // Add a day

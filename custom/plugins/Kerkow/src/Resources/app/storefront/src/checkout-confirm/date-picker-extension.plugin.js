@@ -33,7 +33,6 @@ export default class DatePickerExtensionPlugin extends DatePickerPlugin {
       "2021-04-06",
       "2021-05-01",
       "2021-05-13",
-      "2021-05-14",
       "2021-05-24",
       "2021-05-25",
       "2021-10-03",
@@ -110,6 +109,19 @@ export default class DatePickerExtensionPlugin extends DatePickerPlugin {
           ("0" + date.getDate()).slice(-2);
         if (!this.options.holidays.includes(dateString)) {
           deliverableDates.push(dateString);
+        } else {
+          if (this.options.shippingMethod != "Angel") {
+            let nextDay = new Date(date.getTime());
+            nextDay.setDate(nextDay.getDate() + 1);
+            var nextDateString =
+              nextDay.getFullYear() +
+              "-" +
+              ("0" + (nextDay.getMonth() + 1)).slice(-2) +
+              "-" +
+              ("0" + nextDay.getDate()).slice(-2);
+            console.log(nextDateString);
+            this.options.holidays.push(nextDateString);
+          }
         }
       }
     }

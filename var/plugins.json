@@ -205,24 +205,6 @@
             "styleFiles": []
         }
     },
-    "DeliveryDate": {
-        "basePath": "custom\/plugins\/KerkowDeliveryDate\/src\/",
-        "views": [
-            "Resources\/views"
-        ],
-        "technicalName": "delivery-date",
-        "administration": {
-            "path": "Resources\/app\/administration\/src",
-            "entryFilePath": "Resources\/app\/administration\/src\/main.js",
-            "webpack": null
-        },
-        "storefront": {
-            "path": "Resources\/app\/storefront\/src",
-            "entryFilePath": null,
-            "webpack": null,
-            "styleFiles": []
-        }
-    },
     "SendcloudShipping": {
         "basePath": "custom\/plugins\/SendcloudShipping\/src\/",
         "views": [
@@ -281,6 +263,24 @@
                 "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/DvsnProductOption\/src\/Resources\/app\/storefront\/src\/scss\/page\/product-detail\/_index.scss",
                 "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/DvsnProductOption\/src\/Resources\/app\/storefront\/src\/scss\/page\/checkout\/_cart-item-product-option.scss"
             ]
+        }
+    },
+    "DeliveryDate": {
+        "basePath": "custom\/plugins\/KerkowDeliveryDate\/src\/",
+        "views": [
+            "Resources\/views"
+        ],
+        "technicalName": "delivery-date",
+        "administration": {
+            "path": "Resources\/app\/administration\/src",
+            "entryFilePath": "Resources\/app\/administration\/src\/main.js",
+            "webpack": null
+        },
+        "storefront": {
+            "path": "Resources\/app\/storefront\/src",
+            "entryFilePath": null,
+            "webpack": null,
+            "styleFiles": []
         }
     }
 }
