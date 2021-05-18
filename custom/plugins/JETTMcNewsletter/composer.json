@@ -1,0 +1,41 @@
+{
+  "name": "jett/mcnewsletter",
+  "description": "JETT Mailchimp Newsletter",
+  "version": "1.0.0",
+  "type": "shopware-platform-plugin",
+  "license": "proprietary",
+  "authors": [
+    {
+      "name": "Jan Evers & Torben Tschechne",
+      "role": "Manufacturer"
+    }
+  ],
+  "require": {
+    "shopware/core": "6.*",
+    "shopware/administration": "6.*"
+  },
+  "extra": {
+    "shopware-plugin-class": "Jett\\McNewsletter\\JETTMcNewsletter",
+    "label": {
+      "de-DE": "JETT Mailchimp Newsletter",
+      "en-GB": "JETT Mailchimp Newsletter"
+    },
+    "description": {
+      "de-DE": "Synchronisiert Newsletter Abonnenten zu Mailchimp",
+      "en-GB": "Synchronizes newsletter subscribers to Mailchimp"
+    },
+    "manufacturerLink": {
+      "de-DE": "https://mc4sw.de/",
+      "en-GB": "https://mc4sw.de/"
+    },
+    "supportLink": {
+      "de-DE": "https://mc4sw.de/",
+      "en-GB": "https://mc4sw.de/"
+    }
+  },
+  "autoload": {
+    "psr-4": {
+      "Jett\\McNewsletter\\": "src/"
+    }
+  }
+}

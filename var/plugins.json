@@ -282,5 +282,23 @@
             "webpack": null,
             "styleFiles": []
         }
+    },
+    "JETTMcNewsletter": {
+        "basePath": "custom\/plugins\/JETTMcNewsletter\/src\/",
+        "views": [
+            "Resources\/views"
+        ],
+        "technicalName": "j-e-t-t-mc-newsletter",
+        "administration": {
+            "path": "Resources\/app\/administration\/src",
+            "entryFilePath": "Resources\/app\/administration\/src\/main.js",
+            "webpack": null
+        },
+        "storefront": {
+            "path": "Resources\/app\/storefront\/src",
+            "entryFilePath": null,
+            "webpack": null,
+            "styleFiles": []
+        }
     }
 }

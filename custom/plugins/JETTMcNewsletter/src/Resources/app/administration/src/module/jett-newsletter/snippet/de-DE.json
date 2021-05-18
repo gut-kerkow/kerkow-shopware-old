@@ -1,0 +1,72 @@
+{
+  "jett-mc-newsletter": {
+    "general": {
+      "mainMenuItemGeneral": "JETT Mailchimp Newsletter"
+    },
+    "module": {
+      "title": "JETT Mailchimp Newsletter",
+      "description": "Verwalte Einstellungen für JETT Mailchimp Newsletter"
+    },
+    "settings": {
+        "fields": {
+            "active": {
+                "label": "Aktiv"
+            },
+            "api_key": "API Schlüssel",
+            "lists": "Listen",
+            "sync_limit": {
+                "label": "Synchronisationslimit",
+                "tooltip": "Legt fest, wie viele E-Mail Adressen mit einem Synchronisierungslauf zu Mailchimp übertragen werden sollen."
+            },
+            "advanced_settings": {
+                "label": "Erweiterte Einstellungen anzeigen",
+                "sync_date": {
+                    "label": "Synchronisationsdatum",
+                    "tooltip": "Legt das Datum fest, ab dem Newsletter Abonnenten synchronisiert werden sollen."
+                },
+                "double_optin": {
+                    "label": "Double Opt-In",
+                    "tooltip": "Legt fest, ob der Double Optin Prozess über Shopware oder über Mailchimp erfolgen soll."
+                }
+            }
+        },
+        "buttons": {
+            "get_lists": "Listen abrufen",
+            "clear_lists": {
+                "label": "Zurücksetzen",
+                "tooltip": "Setzt den API Key, die ausgewählte Liste und das Synchronisierungsdatum zurück."
+            },
+            "save": "Speichern"
+        },
+        "titles": {
+            "log": "Protokoll",
+            "setup": "Einstellungen",
+            "settings": "Einstellungen",
+            "advanced_settings": "Erweiterte Einstellungen"
+        },
+        "tooltips": {
+            "save": "Einstellungen speichern"
+        },
+        "status": {
+            "saveSuccess": {
+              "title": "Erfolgreich",
+              "message": "Die Einstellungen wurden erfolgreich gespeichert."
+            },
+            "getSuccess": {
+                "title": "Erfolgreich",
+                "message": "Die Listen wurden erfolgreich von Mailchimp geladen."
+            }
+        },
+    "log": {
+        "table": {
+            "label" : {
+                "createdAt" : "Erstellt am",
+                "salesChannel" : "Sales Channel",
+                "status" : "Status",
+                "message" : "Nachricht"
+            }
+        }
+    }
+    }
+  }
+}

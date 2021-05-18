@@ -1,0 +1,227 @@
+{% block jett_newsletter_settings %}
+    <sw-page class="jett-newsletter-settings">
+
+        <template slot="smart-bar-actions">
+            <sw-button-process
+                    class="sw-settings-customer-group-detail__save"
+                    :isLoading="isLoading"
+                    v-model="isSaveSuccessful"
+                    :disabled="isLoading || selectedList < 1"
+                    variant="primary"
+                    v-tooltip.bottom="$tc('jett-mc-newsletter.settings.tooltip.save')"
+                    @click="onSave"
+            >
+                {{ $tc('jett-mc-newsletter.settings.buttons.save') }}
+            </sw-button-process>
+        </template>
+
+        <template slot="content">
+            <sw-card-view>
+                <template class="jett-newsletter-settings__content">
+                    <sw-tabs :isSmall="false" defaultItem="settings">
+                        <template slot-scope="{ active }" >
+                            <sw-tabs-item
+                                name="settings"
+                                :activeTab="active"
+                                :native="true"
+                            >
+                                {{ $tc('jett-mc-newsletter.settings.titles.settings') }}
+                            </sw-tabs-item>
+                            <sw-tabs-item
+                                name="log"
+                                :activeTab="active"
+                                :native="true"
+                                @click="getLogs"
+                            >
+                                {{ $tc('jett-mc-newsletter.settings.titles.log') }}
+                            </sw-tabs-item>
+                        </template>
+
+                        <template slot="content" slot-scope="{ active }">
+                            <sw-card v-if="active === 'settings'" :isLoading="getListsIsLoading">
+                                <template slot="title">
+                                    <div class="sw-card__title">
+                                        {{ $tc('jett-mc-newsletter.settings.titles.setup') }}
+                                    </div>
+                                </template>
+
+                                <template slot="toolbar">
+                                    <sw-sales-channel-switch
+                                            :label="$tc('sw-settings.system-config.labelSalesChannelSelect')"
+                                            @change-sales-channel-id="onSalesChannelChanged"
+                                    >
+                                    </sw-sales-channel-switch>
+                                </template>
+
+                                <template slot="default">
+                                    <sw-switch-field
+                                            :label="$tc('jett-mc-newsletter.settings.fields.active.label')"
+                                            v-model="isActive">
+                                    </sw-switch-field>
+
+                                    <div style="display: grid; grid-template-columns: 60% 20% 20%; align-items: center; justify-items: center;">
+
+                                        <sw-password-field
+                                                :label="$tc('jett-mc-newsletter.settings.fields.api_key')"
+                                                v-model="apiKey"
+                                                placeholder="API Key"
+                                                type="password"
+                                                :disabled="apiKey && selectedList"
+                                        ></sw-password-field>
+
+                                        <sw-button-process
+                                                @click="getLists"
+                                                :disabled="!apiKey"
+                                                variant="primary"
+                                                size="small"
+                                                :square="false"
+                                                :block="false"
+                                                :isLoading="getListsIsLoading"
+                                                :disabled="apiKey && selectedList"
+                                                style="justify-content: center; align-items: center; display: flex; width: 110px; height: 40px; margin-left: 5%;"
+                                        >
+                                            <sw-icon small name="default-action-circle-download" color="#fff"></sw-icon>
+                                            {{ $tc('jett-mc-newsletter.settings.buttons.get_lists') }}
+                                        </sw-button-process>
+
+                                        <sw-button-process
+                                            @click="clearKeyAndList"
+                                            :disabled="!apiKey"
+                                            :square="false"
+                                            :block="false"
+                                            size="small"
+                                            variant="ghost"
+                                            v-tooltip.top="$tc('jett-mc-newsletter.settings.buttons.clear_lists.tooltip')"
+                                            style="justify-content: center; align-items: center; display: flex; width: 110px; height: 40px; margin-left: 5%;"
+                                        >
+                                            <sw-icon small name="text-editor-undo" color="#189eff"></sw-icon>
+                                            {{ $tc('jett-mc-newsletter.settings.buttons.clear_lists.label') }}
+                                        </sw-button-process>
+                                    </div>
+
+                                    <sw-select-field
+                                            v-if="lists.total > 0 || selectedList"
+                                            :placeholder="$tc('jett-mc-newsletter.settings.fields.lists')"
+                                            :label="$tc('jett-mc-newsletter.settings.fields.lists')"
+                                            v-model="selectedList"
+                                            :disabled="apiKey && selectedList"
+                                    >
+                                        <option v-for="list in lists.items"
+                                                :key="list.id"
+                                                :value="list.id">
+                                            {{ list.name }}
+                                        </option>
+                                    </sw-select-field>
+
+                                    <sw-switch-field
+                                        :label="$tc('jett-mc-newsletter.settings.fields.advanced_settings.label')"
+                                        v-model="showAdvancedSettings"
+                                    >
+                                    </sw-switch-field>
+
+                                    <sw-card
+                                        v-if="showAdvancedSettings"
+                                        :title="$tc('jett-mc-newsletter.settings.titles.advanced_settings')"
+                                    >
+                                        <template slot="toolbar">
+                                            {{ $tc('jett-mc-newsletter.settings.titles.advanced_settings') }}
+                                        </template>
+                                        <template slot="default">
+                                            <sw-number-field
+                                                :label="$tc('jett-mc-newsletter.settings.fields.sync_limit.label')"
+                                                :helpText="$tc('jett-mc-newsletter.settings.fields.sync_limit.tooltip')"
+                                                numberType="int"
+                                                :step="10"
+                                                v-model="syncLimit"
+                                                :digits="2"
+                                            >
+                                            </sw-number-field>
+
+                                            <sw-datepicker
+                                                :label="$tc('jett-mc-newsletter.settings.fields.advanced_settings.sync_date.label')"
+                                                dateType="datetime-local"
+                                                v-model="lastSyncRun"
+                                                :helpText="$tc('jett-mc-newsletter.settings.fields.advanced_settings.sync_date.tooltip')"
+                                            >
+                                            </sw-datepicker>
+                                        </template>
+                                    </sw-card>
+                                </template>
+                            </sw-card>
+                            <sw-card
+                                v-if="active === 'log'"
+                                :isLoading="getLogsIsLoading"
+                            >
+                                <template slot="title">
+                                    <div class="sw-card__title">
+                                        {{ $tc('jett-mc-newsletter.settings.titles.log') }}
+                                    </div>
+                                </template>
+
+                                <template slot="toolbar">
+                                    <sw-sales-channel-switch
+                                        :label="$tc('sw-settings.system-config.labelSalesChannelSelect')"
+                                        @change-sales-channel-id="onSalesChannelChanged">
+                                    </sw-sales-channel-switch>
+                                </template>
+                                <template slot="default">
+                                    <sw-data-grid
+                                        :showSelection="false"
+                                        :dataSource="logs"
+                                        :showActions="false"
+                                        :columns="[
+                                             { property: 'createdAt', label: $tc('jett-mc-newsletter.settings.log.table.label.createdAt'), rawData: true },
+                                             { property: 'salesChannelId', label: $tc('jett-mc-newsletter.settings.log.table.label.salesChannel'), rawData: true },
+                                             { property: 'status', label: $tc('jett-mc-newsletter.settings.log.table.label.status'), rawData: true },
+                                             { property: 'message', label: $tc('jett-mc-newsletter.settings.log.table.label.message'), rawData: true },
+                                        ]">
+                                        <template #column-createdAt="{ item }">
+                                            {{ item.createdAt | date({hour: 'numeric', minute: 'numeric', second: 'numeric'})
+                                            }}
+                                        </template>
+                                        <template #column-salesChannelId="{ item }">
+                                            <span v-if="item.payload && item.payload.salesChannel">{{ item.payload.salesChannel }}</span>
+                                            <span v-else>{{ item.salesChannelId }}</span>
+                                        </template>
+                                        <template #column-status="{ item }">
+                                            <sw-icon v-if="item.status"
+                                                     name="small-default-checkmark-circle"
+                                                     size="16"
+                                                     color="#1abc9c"
+                                            >
+                                            </sw-icon>
+                                            <sw-icon v-if="!item.status"
+                                                     name="small-default-x-circle"
+                                                     size="16"
+                                                     color="#fc427b"
+                                            >
+                                            </sw-icon>
+                                        </template>
+                                        <template #column-message="{ item }">
+                                            <span>{{ item.message }}</span>
+                                            <sw-help-text
+                                                class="jett-newsletter-log__payload"
+                                                :text="(item.payload.email ? item.payload.email : item.payload.message)"
+                                            ></sw-help-text>
+                                        </template>
+                                        <template slot="pagination">
+                                            <sw-pagination
+                                                :total="logsTotal"
+                                                :limit="logsLimit"
+                                                :page="logsPage"
+                                                @page-change="onLogPageChange"
+                                                :autoHide="false"
+                                                :steps="[25]"
+                                                :total-visible="25"
+                                            ></sw-pagination>
+                                        </template>
+                                    </sw-data-grid>
+                                </template>
+                            </sw-card>
+                        </template>
+                    </sw-tabs>
+                </template>
+            </sw-card-view>
+        </template>
+    </sw-page>
+{% endblock %}
