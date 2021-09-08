@@ -10,7 +10,6 @@ export default class changeShippingPlugin extends Plugin {
     try {
       this._inputFields = this.el.querySelectorAll(this.options.inputSelector);
     } catch (e) {
-      console.log(e);
       return;
     }
 

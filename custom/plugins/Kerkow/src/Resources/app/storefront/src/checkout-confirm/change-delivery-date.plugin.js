@@ -72,7 +72,6 @@ export default class ChangeDeliveryDatePlugin extends Plugin {
         );
       }
     } catch (e) {
-      console.log(e);
       return;
     }
     this._registerEvents();

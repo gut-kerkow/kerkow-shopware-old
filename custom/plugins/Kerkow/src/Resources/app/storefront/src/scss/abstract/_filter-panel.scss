@@ -1,9 +1,110 @@
-@include media-breakpoint-down(md) {
-  .btn.filter-panel-wrapper-toggle {
-    display: none;
-  }
+.btn.filter-panel-wrapper-toggle {
+  display: none;
+}
+
+.filter-panel-wrapper {
+  display: block;
 }
 
 .offcanvas-filter {
   overflow: hidden;
+}
+
+.cms-block-sidebar-filter {
+  margin: 1rem 0 -0.5rem 0;
+  .filter-panel {
+    margin-bottom: 0;
+    .filter-panel-items-container {
+      margin-bottom: 0;
+      .filter-multi-select {
+        margin-bottom: 0;
+        .filter-property-select-list-item {
+          padding-left: 0.5rem;
+          padding-bottom: 0;
+          &:nth-child(1) {
+            padding-left: 0;
+          }
+          display: inline-flex;
+          .filterSelected {
+            svg {
+              path.inner {
+                fill: #98a6c8;
+              }
+            }
+          }
+          .filter-property-item-image {
+            svg {
+              height: 2.25rem;
+              width: initial;
+            }
+            &:hover,
+            &:focus {
+              svg {
+                path.inner {
+                  fill: #98a6c8;
+                }
+              }
+            }
+          }
+          .filter-property-item-label {
+            margin-top: 0.5rem;
+            @include alright-regular;
+            color: $kerkow-medium-grey;
+            font-size: 14px;
+            text-align: center;
+          }
+          .filter-multi-select-checkbox {
+            display: none;
+          }
+        }
+      }
+    }
+    .filter-panel-active-container {
+      display: none;
+    }
+  }
+}
+@media only screen and (max-width: 374px) {
+  .cms-block-sidebar-filter {
+    margin: 1rem 0 -0.5rem 0;
+    .filter-panel {
+      .filter-panel-items-container {
+        .filter-multi-select {
+          .filter-property-select-list-item {
+            .filter-property-item-image {
+              svg {
+                height: 1.75rem;
+              }
+            }
+            .filter-property-item-label {
+              font-size: 10px;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+@include media-breakpoint-up(sm) {
+  .cms-block-sidebar-filter {
+    margin: 3rem 0 -0.5rem 0;
+    .filter-panel {
+      .filter-panel-items-container {
+        .filter-multi-select {
+          .filter-property-select-list-item {
+            padding-left: 1.25rem;
+            .filter-property-item-image {
+              svg {
+                height: 3.5rem;
+              }
+            }
+            .filter-property-item-label {
+              font-size: 1rem;
+            }
+          }
+        }
+      }
+    }
+  }
 }

@@ -119,7 +119,6 @@ export default class DatePickerExtensionPlugin extends DatePickerPlugin {
               ("0" + (nextDay.getMonth() + 1)).slice(-2) +
               "-" +
               ("0" + nextDay.getDate()).slice(-2);
-            console.log(nextDateString);
             this.options.holidays.push(nextDateString);
           }
         }

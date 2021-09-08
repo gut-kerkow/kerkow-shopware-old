@@ -29,7 +29,6 @@ export default class ContenProductListPlugin extends Plugin {
         this.options.blurButtonSelector
       );
     } catch (e) {
-      console.log(e);
       return;
     }
     this._registerEvents();

@@ -12,6 +12,7 @@ import ChangeDeliveryDatePlugin from "./checkout-confirm/change-delivery-date.pl
 import ContentFlyoutPlugin from "./content-flyout/content-flyout.plugin";
 import SurchargeInfo from "./surcharge-info/surcharge-info.plugin";
 import GoogleAnalyticsPluginExtension from "./google-analytics/google-analytics-extension.plugin";
+import FilterCustomSelectPlugin from "./listing/filter-custom-select.plugin";
 
 // Register them via the existing PluginManager
 const PluginManager = window.PluginManager;
@@ -66,3 +67,8 @@ PluginManager.register(
 );
 PluginManager.register("ContentFlyout", ContentFlyoutPlugin);
 PluginManager.register("SurchargeInfo", SurchargeInfo, "[data-surcharge-info]");
+PluginManager.register(
+  "FilterCustomSelect",
+  FilterCustomSelectPlugin,
+  "[data-filter-custom-select]"
+);

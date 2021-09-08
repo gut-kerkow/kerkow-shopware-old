@@ -35,7 +35,6 @@ export default class toggleLoginRegisterPlugin extends Plugin {
         this.options.registerCollapseSelector
       );
     } catch (e) {
-      console.log(e);
       return;
     }
 

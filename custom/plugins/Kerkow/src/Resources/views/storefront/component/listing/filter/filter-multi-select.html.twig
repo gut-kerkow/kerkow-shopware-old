@@ -1,0 +1,36 @@
+{% sw_extends '@Storefront/storefront/component/listing/filter/filter-multi-select.html.twig' %}
+{% set filterItemId = 'filter-' ~ name ~ '-' ~ random() %}
+{% if pluginSelector is not defined %}
+	{% set pluginSelector = 'filter-custom-select' %}
+{% endif %}
+{% if dataPluginSelectorOptions is not defined %}
+	{% set dataPluginSelectorOptions = { name: name, snippets: { disabledFilterText: 'listing.disabledFilterTooltip'|trans|sw_sanitize } } %}
+{% endif %}
+{% block component_filter_multi_select %}
+	<div class="filter-multi-select filter-multi-select-{{								    name
+																														  }} filter-panel-item{% if not sidebar %} dropdown{% endif %}" data-filter-custom-select="true" data-filter-custom-select-options="{{ dataPluginSelectorOptions | json_encode }}">
+		{% block component_filter_multi_select_toggle %}
+		{% endblock %}
+		{% block
+  component_filter_multi_select_dropdown %}
+			<div class="filter-multi-select-dropdown filter-panel-item-dropdown" id="{{ filterItemId }}">
+				{% block component_filter_multi_select_list %}
+					<ul class="filter-multi-select-list">
+						{% for element in elements %}
+							{% block
+      component_filter_multi_select_list_item %}
+								<li class="filter-multi-select-list-item">
+									{% block component_filter_multi_select_list_item_inner %}
+										{% sw_include
+        '@Storefront/storefront/component/listing/filter/filter-multi-select-list-item.html.twig'
+        %}
+									{% endblock %}
+								</li>
+							{% endblock %}
+						{% endfor %}
+					</ul>
+				{% endblock %}
+			</div>
+		{% endblock %}
+	</div>
+{% endblock %}

@@ -38,7 +38,6 @@ export default class NavigationSearchWidgetPlugin extends Plugin {
         this.options.searchWidgetUrlDataAttribute
       );
     } catch (e) {
-      console.log(e);
       return;
     }
 
