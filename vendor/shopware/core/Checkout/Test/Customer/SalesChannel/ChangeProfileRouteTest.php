@@ -12,8 +12,10 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestDataCollection;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\PlatformRequest;
 
+/**
+ * @group store-api
+ */
 class ChangeProfileRouteTest extends TestCase
 {
     use IntegrationTestBehaviour;
@@ -57,7 +59,7 @@ class ChangeProfileRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/account/login',
+                '/store-api/account/login',
                 [
                     'email' => $email,
                     'password' => 'shopware',
@@ -74,7 +76,7 @@ class ChangeProfileRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/account/change-profile',
+                '/store-api/account/change-profile',
                 [
                 ]
             );
@@ -86,7 +88,6 @@ class ChangeProfileRouteTest extends TestCase
         $sources = array_column(array_column($response['errors'], 'source'), 'pointer');
         static::assertContains('/firstName', $sources);
         static::assertContains('/lastName', $sources);
-        static::assertContains('/salutationId', $sources);
     }
 
     public function testChangeName(): void
@@ -94,7 +95,7 @@ class ChangeProfileRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/account/change-profile',
+                '/store-api/account/change-profile',
                 [
                     'salutationId' => $this->getValidSalutationId(),
                     'firstName' => 'Max',
@@ -106,7 +107,7 @@ class ChangeProfileRouteTest extends TestCase
 
         static::assertTrue($response['success']);
 
-        $this->browser->request('GET', '/store-api/v' . PlatformRequest::API_VERSION . '/account/customer');
+        $this->browser->request('GET', '/store-api/account/customer');
         $customer = json_decode($this->browser->getResponse()->getContent(), true);
 
         static::assertSame('Max', $customer['firstName']);
@@ -129,7 +130,7 @@ class ChangeProfileRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/account/change-profile',
+                '/store-api/account/change-profile',
                 $changeData
             );
 
@@ -160,7 +161,7 @@ class ChangeProfileRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/account/change-profile',
+                '/store-api/account/change-profile',
                 $changeData
             );
 
@@ -189,7 +190,7 @@ class ChangeProfileRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/account/change-profile',
+                '/store-api/account/change-profile',
                 $changeData
             );
 

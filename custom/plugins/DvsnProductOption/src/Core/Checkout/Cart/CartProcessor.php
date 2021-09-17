@@ -97,11 +97,7 @@ class CartProcessor implements CartProcessorInterface
                     $definition = new QuantityPriceDefinition(
                         ($lineItem->getPrice()->getUnitPrice() / 100) * $definition->getPrice(),
                         $definition->getTaxRules(),
-                        $definition->getPrecision(),
-                        $definition->getQuantity(),
-                        $definition->isCalculated(),
-                        $definition->getReferencePriceDefinition(),
-                        $definition->getListPrice()
+                        $definition->getQuantity()
                     );
                 }
 

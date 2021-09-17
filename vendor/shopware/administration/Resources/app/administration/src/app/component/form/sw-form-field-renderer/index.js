@@ -1,8 +1,6 @@
 import template from './sw-form-field-renderer.html.twig';
 
 const { Component, Mixin } = Shopware;
-// @deprecated tag:v6.4.0.0
-const { LocalStore } = Shopware.DataDeprecated;
 const { types } = Shopware.Utils;
 
 /**
@@ -72,31 +70,35 @@ Component.register('sw-form-field-renderer', {
     template,
     inheritAttrs: false,
 
-    mixins: [
-        Mixin.getByName('sw-inline-snippet')
-    ],
-
     inject: ['repositoryFactory'],
+
+    mixins: [
+        Mixin.getByName('sw-inline-snippet'),
+    ],
 
     props: {
         type: {
             type: String,
-            required: false
+            required: false,
+            default: null,
         },
         config: {
             type: Object,
-            required: false
+            required: false,
+            default: null,
         },
+        // FIXME: add property type
+        // eslint-disable-next-line vue/require-prop-types
         value: {
-            required: true
-        }
+            required: true,
+        },
     },
 
     data() {
         return {
             currentComponentName: '',
             swFieldConfig: {},
-            currentValue: this.value
+            currentValue: this.value,
         };
     },
 
@@ -107,13 +109,8 @@ Component.register('sw-form-field-renderer', {
                 ...this.config,
                 ...this.swFieldType,
                 ...this.translations,
-                ...this.optionTranslations
+                ...this.optionTranslations,
             };
-
-            // create stores for sw-select
-            if (this.componentName === 'sw-select') {
-                this.addSwSelectStores(bind);
-            }
 
             if (this.componentName === 'sw-entity-multi-id-select') {
                 bind.repository = this.createRepository(this.config.entity);
@@ -192,7 +189,7 @@ Component.register('sw-form-field-renderer', {
                     const translation = this.getTranslations(
                         'options',
                         option,
-                        [labelProperty]
+                        [labelProperty],
                     );
                     // Merge original option with translation
                     const translatedOption = { ...option, ...translation };
@@ -203,7 +200,7 @@ Component.register('sw-form-field-renderer', {
             }
 
             return {};
-        }
+        },
     },
 
     watch: {
@@ -214,15 +211,7 @@ Component.register('sw-form-field-renderer', {
         },
         value() {
             this.currentValue = this.value;
-            // Recreate select association store on value changes and reload selections,
-            // this is necessary for languages changes for example
-            if (this.componentName === 'sw-select') {
-                if (this.bind.multi) {
-                    this.addSwSelectAssociationStore(this.bind, true);
-                }
-                this.refreshSwSelectSelections();
-            }
-        }
+        },
     },
 
     methods: {
@@ -253,57 +242,12 @@ Component.register('sw-form-field-renderer', {
             return 'sw-field';
         },
 
-        // @deprecated tag:v6.4.0.0
-        addSwSelectStores(bind) {
-            if (bind.store) {
-                return;
-            }
-
-            if (this.config.options.length < 1) {
-                throw new Error('sw-form-field-renderer - sw-select component needs options or a store');
-            }
-
-            bind.store = new LocalStore([], 'id', 'name');
-            this.config.options.forEach(({ id, name }) => {
-                bind.store.add({ id, name: this.getInlineSnippet(name) });
-            });
-
-            if (bind.multi) {
-                this.addSwSelectAssociationStore(bind, false);
-            }
-
-            this.refreshSwSelectSelections();
-        },
-
-        // @deprecated tag:v6.4.0.0
-        addSwSelectAssociationStore(bind, override) {
-            if (bind.associationStore && override === false) {
-                return;
-            }
-            const entities = [];
-            if (this.value && this.value.length > 0) {
-                this.value.forEach((value) => {
-                    entities.push(bind.store.getById(value));
-                });
-            }
-            bind.associationStore = new LocalStore(entities);
-        },
-
-        // @deprecated tag:v6.4.0.0
-        refreshSwSelectSelections() {
-            this.$nextTick(() => {
-                if (this.$refs.component) {
-                    this.$refs.component.loadSelected(true);
-                }
-            });
-        },
-
         createRepository(entity) {
             if (types.isUndefined(entity)) {
                 throw new Error('sw-form-field-renderer - sw-entity-multi-id-select component needs entity property');
             }
 
             return this.repositoryFactory.create(entity);
-        }
-    }
+        },
+    },
 });

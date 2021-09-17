@@ -5,7 +5,6 @@ import 'src/module/sw-product/component/sw-product-variants/sw-product-variants-
 function createWrapper(privileges = []) {
     const localVue = createLocalVue();
     localVue.use(Vuex);
-    localVue.directive('tooltip', {});
 
     return shallowMount(Shopware.Component.build('sw-product-variants-overview'), {
         localVue,
@@ -13,10 +12,6 @@ function createWrapper(privileges = []) {
             selectedGroups: []
         },
         mocks: {
-            $tc: () => {},
-            $router: {
-                replace: () => {}
-            },
             $route: {
                 query: {}
             },
@@ -105,13 +100,13 @@ describe('src/module/sw-product/component/sw-product-variants/sw-product-variant
         ]);
 
         const dataGrid = wrapper.find('.sw-product-variants-overview__data-grid');
-        expect(dataGrid.attributes().allowinlineedit).toBeTruthy();
+        expect(dataGrid.attributes()['allow-inline-edit']).toBeTruthy();
     });
 
     it('should disallow inline editing', async () => {
         const wrapper = createWrapper();
 
         const dataGrid = wrapper.find('.sw-product-variants-overview__data-grid');
-        expect(dataGrid.attributes().allowinlineedit).toBeFalsy();
+        expect(dataGrid.attributes()['allow-inline-edit']).toBeFalsy();
     });
 });

@@ -4,11 +4,14 @@ namespace Shopware\Core\Framework\Store\Services;
 
 use Shopware\Core\Framework\Context;
 
+/**
+ * @internal
+ */
 abstract class AbstractStoreAppLifecycleService
 {
     abstract public function installExtension(string $technicalName, Context $context): void;
 
-    abstract public function uninstallExtension(string $technicalName, Context $context): void;
+    abstract public function uninstallExtension(string $technicalName, Context $context, bool $keepUserData = false): void;
 
     abstract public function removeExtensionAndCancelSubscription(int $licenseId, string $technicalName, string $id, Context $context): void;
 
@@ -18,7 +21,7 @@ abstract class AbstractStoreAppLifecycleService
 
     abstract public function deactivateExtension(string $technicalName, Context $context): void;
 
-    abstract public function updateExtension(string $technicalName, Context $context): void;
+    abstract public function updateExtension(string $technicalName, bool $allowNewPrivileges, Context $context): void;
 
     abstract protected function getDecorated(): AbstractStoreAppLifecycleService;
 }

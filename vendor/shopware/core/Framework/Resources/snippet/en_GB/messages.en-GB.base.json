@@ -27,6 +27,7 @@
         "intraCommunity": "Intra-community delivery (EU)",
         "shippingAddress": "Shipping address",
         "phoneNumber": "Phone number: %phoneNumber%",
+        "email": "Email address: %email%",
         "ceo": "CEO",
         "lineItems": {
             "header": {
@@ -40,6 +41,7 @@
             },
             "tax": "plus %taxRate%% VAT:",
             "total": "Total:",
+            "roundedTotal": "Rounded total:",
             "totalNet": "Net total:",
             "shippingCosts": "Shipping costs"
         },

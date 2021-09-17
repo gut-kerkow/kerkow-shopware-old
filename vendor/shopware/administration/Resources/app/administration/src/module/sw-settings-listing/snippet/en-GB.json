@@ -26,6 +26,8 @@
               "releaseDate": "Release date",
               "stock": "Product stock",
               "listingPrices": "Product listing price",
+              "cheapestPrice": "Cheapest product price",
+              "price": "Default price",
               "sales": "Units sold"
             },
             "customField": "Custom field",
@@ -35,6 +37,11 @@
       }
     },
     "index": {
+      "defaultSalesChannel": {
+        "title": "Default Sales Channel",
+        "description": "Select default Sales Channels that are automatically assigned to newly created products.",
+        "linkAdvancedVisibility": "Set visibility for selected Sales Channels"
+      },
       "productSorting": {
         "title": "Sorting options",
         "addButton": "Add option",

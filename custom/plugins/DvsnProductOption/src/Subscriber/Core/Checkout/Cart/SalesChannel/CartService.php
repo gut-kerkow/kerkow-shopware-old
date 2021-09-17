@@ -14,12 +14,12 @@ use Dvsn\ProductOption\Core\Content\ProductOption\ProductOptionEntity;
 use Dvsn\ProductOption\Service\LineItemFactoryServiceInterface;
 use Dvsn\ProductOption\Service\ProductOptionCollectorServiceInterface;
 use Shopware\Core\Checkout\Cart\Cart;
-use Shopware\Core\Checkout\Cart\Event\LineItemAddedEvent;
+use Shopware\Core\Checkout\Cart\Event\BeforeLineItemAddedEvent;
 use Shopware\Core\Checkout\Cart\LineItem\LineItem;
 use Shopware\Core\Checkout\Cart\LineItem\LineItemCollection;
 use Shopware\Core\Content\Product\SalesChannel\SalesChannelProductEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\System\SalesChannel\Entity\SalesChannelRepository;
+use Shopware\Core\System\SalesChannel\Entity\SalesChannelRepositoryInterface;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -43,7 +43,7 @@ class CartService implements EventSubscriberInterface
     /**
      * ...
      *
-     * @var SalesChannelRepository
+     * @var SalesChannelRepositoryInterface
      */
     protected $salesChannelProductRepository;
 
@@ -59,13 +59,13 @@ class CartService implements EventSubscriberInterface
      *
      * @param ProductOptionCollectorServiceInterface $productOptionCollectorService
      * @param LineItemFactoryServiceInterface $lineItemFactoryService
-     * @param SalesChannelRepository $salesChannelProductRepository
+     * @param SalesChannelRepositoryInterface $salesChannelProductRepository
      * @param RequestStack $requestStack
      */
     public function __construct(
         ProductOptionCollectorServiceInterface $productOptionCollectorService,
         LineItemFactoryServiceInterface $lineItemFactoryService,
-        SalesChannelRepository $salesChannelProductRepository,
+        SalesChannelRepositoryInterface $salesChannelProductRepository,
         RequestStack $requestStack
     ) {
         // set params
@@ -81,19 +81,19 @@ class CartService implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            LineItemAddedEvent::class => 'onLineItemAdded'
+            BeforeLineItemAddedEvent::class => 'onLineItemAdded'
         ];
     }
 
     /**
      * ...
      *
-     * @param LineItemAddedEvent $event
+     * @param BeforeLineItemAddedEvent $event
      */
-    public function onLineItemAdded(LineItemAddedEvent $event)
+    public function onLineItemAdded(BeforeLineItemAddedEvent $event)
     {
         // get parameters
-        $salesChannelContext = $event->getContext();
+        $salesChannelContext = $event->getSalesChannelContext();
         $lineItem = $event->getLineItem();
         $cart = $event->getCart();
         $alreadyExists = $event->isMerged();
@@ -178,6 +178,12 @@ class CartService implements EventSubscriberInterface
                     $child
                 );
             }
+        }
+
+        // did we add any options?
+        if ($lineItem->getChildren()->count() > 0) {
+            // set payload for the view
+            $lineItem->setPayloadValue('dvsnProductOptionHasOptions', true);
         }
     }
 }

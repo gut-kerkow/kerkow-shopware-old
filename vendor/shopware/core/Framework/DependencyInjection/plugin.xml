@@ -14,9 +14,15 @@
         </service>
 
         <service id="Shopware\Core\Framework\Plugin\Command\BundleDumpCommand">
-            <argument type="service" id="Shopware\Core\Framework\Plugin\BundleConfigDumper"/>
+            <argument type="service" id="Shopware\Core\Framework\Plugin\BundleConfigGenerator"/>
+            <argument>%kernel.project_dir%</argument>
 
             <tag name="console.command"/>
+        </service>
+
+        <service id="Shopware\Core\Framework\Plugin\BundleConfigGenerator">
+            <argument type="service" id="kernel" />
+            <argument type="service" id="Shopware\Core\Framework\App\ActiveAppsLoader" />
         </service>
 
         <service id="Shopware\Core\Framework\Plugin\BundleConfigDumper">
@@ -24,12 +30,6 @@
             <argument>%kernel.project_dir%</argument>
 
             <tag name="kernel.event_subscriber" />
-        </service>
-
-        <service id="Shopware\Core\Framework\Plugin\BundleConfigGenerator">
-            <argument type="service" id="kernel" />
-            <argument type="service" id="plugin.repository" />
-            <argument type="service" id="Shopware\Core\Framework\App\ActiveAppsLoader" />
         </service>
 
         <service id="Shopware\Core\Framework\Plugin\PluginDefinition">
@@ -77,7 +77,7 @@
             <argument type="service" id="Shopware\Core\Framework\Plugin\PluginService"/>
             <argument type="service" id="Symfony\Component\Filesystem\Filesystem"/>
             <argument type="service" id="Shopware\Core\Framework\Adapter\Cache\CacheClearer"/>
-            <argument type="service" id="Shopware\Core\Framework\Store\Services\StoreService"/>
+            <argument type="service" id="shopware.store_download_client"/>
         </service>
 
         <service id="Shopware\Core\Framework\Plugin\PluginExtractor">
@@ -166,15 +166,6 @@
             <argument>%kernel.project_dir%</argument>
         </service>
 
-        <!-- Controller -->
-        <service id="Shopware\Core\Framework\Plugin\Api\PluginController" public="true">
-            <argument type="service" id="Shopware\Core\Framework\Plugin\PluginService"/>
-            <argument type="service" id="Shopware\Core\Framework\Plugin\PluginLifecycleService"/>
-            <argument type="service" id="Shopware\Core\Framework\Plugin\PluginManagementService"/>
-            <argument type="service" id="Shopware\Core\Framework\Api\Converter\ApiVersionConverter"/>
-            <argument type="service" id="Shopware\Core\Framework\Plugin\PluginDefinition"/>
-        </service>
-
         <!-- Helper -->
         <service id="Shopware\Core\Framework\Plugin\Util\PluginIdProvider" public="true">
             <argument type="service" id="plugin.repository"/>
@@ -184,7 +175,7 @@
             <argument type="service" id="shopware.filesystem.asset"/>
             <argument type="service" id="kernel"/>
             <argument type="service" id="Shopware\Core\Framework\Plugin\KernelPluginCollection"/>
-            <argument type="service" id="Shopware\Core\Framework\Adapter\Cache\CacheClearer"/>
+            <argument type="service" id="Shopware\Core\Framework\Adapter\Cache\CacheInvalidator"/>
         </service>
 
         <!-- Requirement -->

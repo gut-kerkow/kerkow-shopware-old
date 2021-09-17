@@ -3,50 +3,31 @@
 namespace Shopware\Core\Content\Seo;
 
 use Doctrine\DBAL\Connection;
-use Shopware\Core\Content\Seo\SeoUrl\SeoUrlDefinition;
+use Shopware\Core\Content\Seo\Event\SeoUrlUpdateEvent;
 use Shopware\Core\Defaults;
-use Shopware\Core\Framework\Adapter\Cache\CacheClearer;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator;
 use Shopware\Core\Framework\DataAbstractionLayer\Doctrine\MultiInsertQueryQueue;
 use Shopware\Core\Framework\DataAbstractionLayer\Doctrine\RetryableQuery;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class SeoUrlPersister
 {
-    /**
-     * @var Connection
-     */
-    private $connection;
+    private Connection $connection;
 
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $seoUrlRepository;
+    private EntityRepositoryInterface $seoUrlRepository;
 
-    /**
-     * @var EntityCacheKeyGenerator
-     */
-    private $cacheKeyGenerator;
-
-    /**
-     * @var CacheClearer
-     */
-    private $cache;
+    private EventDispatcherInterface $eventDispatcher;
 
     public function __construct(
         Connection $connection,
         EntityRepositoryInterface $seoUrlRepository,
-        EntityCacheKeyGenerator $cacheKeyGenerator,
-        CacheClearer $cache
+        EventDispatcherInterface $eventDispatcher
     ) {
         $this->connection = $connection;
         $this->seoUrlRepository = $seoUrlRepository;
-
-        $this->cacheKeyGenerator = $cacheKeyGenerator;
-        $this->cache = $cache;
+        $this->eventDispatcher = $eventDispatcher;
     }
 
     public function updateSeoUrls(Context $context, string $routeName, array $foreignKeys, iterable $seoUrls): void
@@ -59,16 +40,16 @@ class SeoUrlPersister
         $updatedFks = [];
         $obsoleted = [];
 
-        $seoUrlIds = [];
-
         $processed = [];
 
         // should be provided
         $salesChannelId = null;
+        $updates = [];
         foreach ($seoUrls as $seoUrl) {
             if ($seoUrl instanceof \JsonSerializable) {
                 $seoUrl = $seoUrl->jsonSerialize();
             }
+            $updates[] = $seoUrl;
 
             $fk = $seoUrl['foreignKey'];
             /** @var string|null $salesChannelId */
@@ -96,13 +77,10 @@ class SeoUrlPersister
                     continue;
                 }
                 $obsoleted[] = $existing['id'];
-                $seoUrlIds[] = $existing['id'];
             }
 
             $insert = [];
             $insert['id'] = Uuid::randomBytes();
-
-            $seoUrlIds[] = Uuid::fromBytesToHex($insert['id']);
 
             if ($salesChannelId) {
                 $insert['sales_channel_id'] = Uuid::fromHexToBytes($salesChannelId);
@@ -147,7 +125,7 @@ class SeoUrlPersister
             $this->connection->rollBack();
         }
 
-        $this->invalidateEntityCache($seoUrlIds);
+        $this->eventDispatcher->dispatch(new SeoUrlUpdateEvent($updates));
     }
 
     private function skipUpdate($existing, $seoUrl): bool
@@ -205,8 +183,7 @@ class SeoUrlPersister
         if (empty($ids)) {
             return;
         }
-        $tags = $this->cacheKeyGenerator->getSearchTags($this->seoUrlRepository->getDefinition(), new Criteria());
-        $this->cache->invalidateTags($tags);
+
         $ids = Uuid::fromHexToBytesList($ids);
 
         $this->connection->createQueryBuilder()
@@ -242,18 +219,5 @@ class SeoUrlPersister
         RetryableQuery::retryable(function () use ($query): void {
             $query->execute();
         });
-    }
-
-    private function invalidateEntityCache(array $seoUrlIds = []): void
-    {
-        $tags = $this->cacheKeyGenerator->getSearchTags($this->seoUrlRepository->getDefinition(), new Criteria());
-
-        if (!empty($seoUrlIds)) {
-            foreach ($seoUrlIds as $id) {
-                $tags[] = $this->cacheKeyGenerator->getEntityTag($id, SeoUrlDefinition::ENTITY_NAME);
-            }
-        }
-
-        $this->cache->invalidateTags($tags);
     }
 }

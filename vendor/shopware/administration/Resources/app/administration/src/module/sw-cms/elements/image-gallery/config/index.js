@@ -1,18 +1,18 @@
 import template from './sw-cms-el-config-image-gallery.html.twig';
 import './sw-cms-el-config-image-gallery.scss';
 
-const { Component, Mixin, Utils } = Shopware;
+const { Component, Mixin } = Shopware;
 const { cloneDeep } = Shopware.Utils.object;
 const Criteria = Shopware.Data.Criteria;
 
 Component.register('sw-cms-el-config-image-gallery', {
     template,
 
-    mixins: [
-        Mixin.getByName('cms-element')
-    ],
-
     inject: ['repositoryFactory', 'feature'],
+
+    mixins: [
+        Mixin.getByName('cms-element'),
+    ],
 
     data() {
         return {
@@ -20,7 +20,7 @@ Component.register('sw-cms-el-config-image-gallery', {
             initialFolderId: null,
             enitiy: this.element,
             mediaItems: [],
-            columnWidth: '100px'
+            columnWidth: '100px',
         };
     },
 
@@ -46,12 +46,16 @@ Component.register('sw-cms-el-config-image-gallery', {
         },
 
         sliderItemsConfigValue() {
-            return Utils.get(this.element, 'config.sliderItems.value');
+            return this.element?.config?.sliderItems?.value;
         },
 
         gridAutoRows() {
             return `grid-auto-rows: ${this.columnWidth}`;
-        }
+        },
+
+        isProductPage() {
+            return (this.cmsPageState?.currentPage?.type ?? '') === 'product_detail';
+        },
     },
 
     watch: {
@@ -60,10 +64,15 @@ Component.register('sw-cms-el-config-image-gallery', {
         },
 
         sliderItemsConfigValue(value) {
-            const isSourceMapped = Utils.get(this.element, 'config.sliderItems.source') === 'mapped';
+            if (!value) {
+                this.element.config.sliderItems.value = [];
+                return;
+            }
+
+            const isSourceMapped = this.element?.config?.sliderItems?.source === 'mapped';
             const isSliderLengthValid = value && value.length === this.sliderItems.length;
 
-            if (isSourceMapped || isSliderLengthValid) {
+            if (isSourceMapped || isSliderLengthValid || !this.sliderItems.length) {
                 return;
             }
 
@@ -76,10 +85,10 @@ Component.register('sw-cms-el-config-image-gallery', {
                     mediaId: item.media.id,
                     mediaUrl: item.media.url,
                     newTab: item.newTab,
-                    url: item.url
+                    url: item.url,
                 };
             });
-        }
+        },
     },
 
     created() {
@@ -104,15 +113,33 @@ Component.register('sw-cms-el-config-image-gallery', {
                 const criteria = new Criteria();
                 criteria.setIds(mediaIds);
 
-                const searchResult = await this.mediaRepository.search(criteria, Shopware.Context.api);
+                const searchResult = await this.mediaRepository.search(criteria);
                 this.mediaItems = mediaIds.map((mediaId) => {
                     return searchResult.get(mediaId);
                 });
             }
+
+            this.initConfig();
         },
 
         mountedComponent() {
             this.updateColumnWidth();
+        },
+
+        initConfig() {
+            if (!this.isProductPage
+                || this.element?.translated?.config
+                || this.element?.data?.sliderItems) {
+                return;
+            }
+
+            this.element.config.sliderItems.source = 'mapped';
+            this.element.config.sliderItems.value = 'product.media';
+            this.element.config.navigationDots.value = 'inside';
+            this.element.config.zoom.value = true;
+            this.element.config.fullScreen.value = true;
+            this.element.config.displayMode.value = 'contain';
+            this.element.config.minHeight.value = '430px';
         },
 
         updateColumnWidth() {
@@ -141,7 +168,7 @@ Component.register('sw-cms-el-config-image-gallery', {
                 mediaUrl: mediaItem.url,
                 mediaId: mediaItem.id,
                 url: null,
-                newTab: false
+                newTab: false,
             });
 
             this.mediaItems.push(mediaItem);
@@ -153,11 +180,11 @@ Component.register('sw-cms-el-config-image-gallery', {
             const key = mediaItem.id;
             this.element.config.sliderItems.value =
                 this.element.config.sliderItems.value.filter(
-                    (item, i) => (item.mediaId !== key || i !== index)
+                    (item, i) => (item.mediaId !== key || i !== index),
                 );
 
             this.mediaItems = this.mediaItems.filter(
-                (item, i) => (item.id !== key || i !== index)
+                (item, i) => (item.id !== key || i !== index),
             );
 
             this.updateMediaDataValue();
@@ -170,7 +197,7 @@ Component.register('sw-cms-el-config-image-gallery', {
                     mediaUrl: item.url,
                     mediaId: item.id,
                     url: null,
-                    newTab: false
+                    newTab: false,
                 });
             });
 
@@ -190,7 +217,12 @@ Component.register('sw-cms-el-config-image-gallery', {
                         }
                     });
                 });
-                this.$set(this.element.data, 'sliderItems', sliderItems);
+
+                if (!this.element.data) {
+                    this.$set(this.element, 'data', { sliderItems });
+                } else {
+                    this.$set(this.element.data, 'sliderItems', sliderItems);
+                }
             }
         },
 
@@ -203,8 +235,6 @@ Component.register('sw-cms-el-config-image-gallery', {
         onChangeDisplayMode(value) {
             if (['cover', 'contain'].includes(value)) {
                 this.element.config.verticalAlign.value = null;
-            } else {
-                this.element.config.minHeight.value = '';
             }
 
             this.$emit('element-update', this.element);
@@ -212,6 +242,6 @@ Component.register('sw-cms-el-config-image-gallery', {
 
         emitUpdateEl() {
             this.$emit('element-update', this.element);
-        }
-    }
+        },
+    },
 });

@@ -32,7 +32,9 @@ use Shopware\Core\Content\Property\Aggregate\PropertyGroupTranslation\PropertyGr
 use Shopware\Core\Content\Seo\SeoUrl\SeoUrlCollection;
 use Shopware\Core\Framework\App\Aggregate\ActionButtonTranslation\ActionButtonTranslationCollection;
 use Shopware\Core\Framework\App\Aggregate\AppTranslation\AppTranslationCollection;
+use Shopware\Core\Framework\App\Aggregate\CmsBlockTranslation\AppCmsBlockTranslationCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopware\Core\Framework\Plugin\Aggregate\PluginTranslation\PluginTranslationCollection;
 use Shopware\Core\Framework\Struct\Collection;
@@ -55,6 +57,7 @@ use Shopware\Core\System\Unit\Aggregate\UnitTranslation\UnitTranslationCollectio
 class LanguageEntity extends Entity
 {
     use EntityIdTrait;
+    use EntityCustomFieldsTrait;
 
     /**
      * @var string|null
@@ -110,11 +113,6 @@ class LanguageEntity extends Entity
      * @var SalesChannelCollection|null
      */
     protected $salesChannelDefaultAssignments;
-
-    /**
-     * @var array|null
-     */
-    protected $customFields;
 
     /**
      * @var CategoryTranslationCollection|null
@@ -342,18 +340,19 @@ class LanguageEntity extends Entity
     protected $productSortingTranslations;
 
     /**
-     * @internal (flag:FEATURE_NEXT_10552)
-     *
      * @var ProductSearchConfigEntity|null
      */
     protected $productSearchConfig;
 
     /**
-     * @internal (flag:FEATURE_NEXT_12032)
-     *
      * @var LandingPageTranslationCollection|null
      */
     protected $landingPageTranslations;
+
+    /**
+     * @var AppCmsBlockTranslationCollection|null
+     */
+    protected $appCmsBlockTranslations;
 
     public function getMailHeaderFooterTranslations(): ?MailHeaderFooterCollection
     {
@@ -715,16 +714,6 @@ class LanguageEntity extends Entity
         $this->cmsSlotTranslations = $cmsSlotTranslations;
     }
 
-    public function getCustomFields(): ?array
-    {
-        return $this->customFields;
-    }
-
-    public function setCustomFields(?array $customFields): void
-    {
-        $this->customFields = $customFields;
-    }
-
     public function getMailTemplateTranslations(): ?MailTemplateCollection
     {
         return $this->mailTemplateTranslations;
@@ -925,36 +914,34 @@ class LanguageEntity extends Entity
         $this->productSortingTranslations = $productSortingTranslations;
     }
 
-    /**
-     * @internal (flag:FEATURE_NEXT_10552)
-     */
     public function getProductSearchConfig(): ?ProductSearchConfigEntity
     {
         return $this->productSearchConfig;
     }
 
-    /**
-     * @internal (flag:FEATURE_NEXT_10552)
-     */
     public function setProductSearchConfig(ProductSearchConfigEntity $productSearchConfig): void
     {
         $this->productSearchConfig = $productSearchConfig;
     }
 
-    /**
-     * @internal (flag:FEATURE_NEXT_12032)
-     */
     public function getLandingPageTranslations(): ?LandingPageTranslationCollection
     {
         return $this->landingPageTranslations;
     }
 
-    /**
-     * @internal (flag:FEATURE_NEXT_12032)
-     */
     public function setLandingPageTranslations(LandingPageTranslationCollection $landingPageTranslations): void
     {
         $this->landingPageTranslations = $landingPageTranslations;
+    }
+
+    public function getAppCmsBlockTranslations(): ?AppCmsBlockTranslationCollection
+    {
+        return $this->appCmsBlockTranslations;
+    }
+
+    public function setAppCmsBlockTranslations(AppCmsBlockTranslationCollection $appCmsBlockTranslations): void
+    {
+        $this->appCmsBlockTranslations = $appCmsBlockTranslations;
     }
 
     public function getApiAlias(): string

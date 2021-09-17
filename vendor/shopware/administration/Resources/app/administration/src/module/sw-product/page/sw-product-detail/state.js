@@ -22,9 +22,23 @@ export default {
                 media: false,
                 rules: false,
                 variants: false,
-                defaultFeatureSet: false
+                defaultFeatureSet: false,
+                advancedMode: false,
             },
-            localMode: false
+            localMode: false,
+            advancedModeSetting: {},
+            modeSettings: [
+                'general_information',
+                'prices',
+                'deliverability',
+                'visibility_structure',
+                'media',
+                'labelling',
+                'measures_packaging',
+                'properties',
+                'essential_characteristics',
+                'custom_fields',
+            ],
         };
     },
 
@@ -89,11 +103,39 @@ export default {
         },
 
         isChild(state) {
-            if (state.product && state.product.parentId) {
+            if (state.product?.parentId) {
                 return !!state.product.parentId;
             }
             return false;
-        }
+        },
+
+        showModeSetting(state) {
+            if (state.product?.parentId) {
+                return true;
+            }
+
+            return state.advancedModeSetting.value.advancedMode.enabled;
+        },
+
+        showProductCard(state, getters) {
+            return (key) => {
+                if (state.product?.parentId) {
+                    return true;
+                }
+
+                const cardKeys = ['essential_characteristics', 'custom_fields', 'labelling'];
+
+                if (cardKeys.includes(key) && !getters.showModeSetting) {
+                    return false;
+                }
+
+                return state.modeSettings.includes(key);
+            };
+        },
+
+        advanceModeEnabled(state) {
+            return state.advancedModeSetting.value.advancedMode.enabled;
+        },
     },
 
     mutations: {
@@ -148,7 +190,12 @@ export default {
         setTaxes(state, newTaxes) {
             state.taxes = newTaxes;
 
-            if (state.product && state.product.taxId === null) {
+            if (
+                state.product &&
+                state.product.taxId === null &&
+                !state.parentProduct &&
+                !state.parentProduct.id
+            ) {
                 state.product.taxId = state.taxes[0].id;
             }
         },
@@ -159,6 +206,14 @@ export default {
 
         setDefaultFeatureSet(state, newDefaultFeatureSet) {
             state.defaultFeatureSet = newDefaultFeatureSet;
-        }
-    }
+        },
+
+        setAdvancedModeSetting(state, newAdvancedModeSetting) {
+            state.advancedModeSetting = newAdvancedModeSetting;
+        },
+
+        setModeSettings(state, newModeSettings) {
+            state.modeSettings = newModeSettings;
+        },
+    },
 };

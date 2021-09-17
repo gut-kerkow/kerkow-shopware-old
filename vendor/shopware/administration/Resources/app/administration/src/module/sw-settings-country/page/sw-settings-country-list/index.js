@@ -7,17 +7,14 @@ const { Criteria } = Shopware.Data;
 Component.register('sw-settings-country-list', {
     template,
 
-    inject: ['repositoryFactory', 'acl'],
-
-    mixins: [
-        Mixin.getByName('listing')
+    inject: [
+        'repositoryFactory',
+        'acl',
     ],
 
-    metaInfo() {
-        return {
-            title: this.$createTitle()
-        };
-    },
+    mixins: [
+        Mixin.getByName('listing'),
+    ],
 
     data() {
         return {
@@ -27,7 +24,13 @@ Component.register('sw-settings-country-list', {
             isLoading: false,
             sortDirection: 'ASC',
             naturalSorting: true,
-            showDeleteModal: false
+            showDeleteModal: false,
+        };
+    },
+
+    metaInfo() {
+        return {
+            title: this.$createTitle(),
         };
     },
 
@@ -42,7 +45,7 @@ Component.register('sw-settings-country-list', {
             }
 
             return this.$tc('global.default.edit');
-        }
+        },
     },
 
     methods: {
@@ -69,12 +72,12 @@ Component.register('sw-settings-country-list', {
         onInlineEditSave(promise, country) {
             promise.then(() => {
                 this.createNotificationSuccess({
-                    message: this.$tc('sw-settings-country.detail.messageSaveSuccess', 0, { name: country.name })
+                    message: this.$tc('sw-settings-country.detail.messageSaveSuccess', 0, { name: country.name }),
                 });
             }).catch(() => {
                 this.getList();
                 this.createNotificationError({
-                    message: this.$tc('sw-settings-country.detail.messageSaveError')
+                    message: this.$tc('sw-settings-country.detail.messageSaveError'),
                 });
             });
         },
@@ -95,7 +98,7 @@ Component.register('sw-settings-country-list', {
         onConfirmDelete(id) {
             this.showDeleteModal = false;
 
-            return this.countryRepository.delete(id, Shopware.Context.api).then(() => {
+            return this.countryRepository.delete(id).then(() => {
                 this.getList();
             });
         },
@@ -107,24 +110,24 @@ Component.register('sw-settings-country-list', {
                 inlineEdit: 'string',
                 label: 'sw-settings-country.list.columnName',
                 routerLink: 'sw.settings.country.detail',
-                primary: true
+                primary: true,
             }, {
                 property: 'position',
                 inlineEdit: 'number',
-                label: 'sw-settings-country.list.columnPosition'
+                label: 'sw-settings-country.list.columnPosition',
             }, {
                 property: 'iso',
                 inlineEdit: 'string',
-                label: 'sw-settings-country.list.columnIso'
+                label: 'sw-settings-country.list.columnIso',
             }, {
                 property: 'iso3',
                 inlineEdit: 'string',
-                label: 'sw-settings-country.list.columnIso3'
+                label: 'sw-settings-country.list.columnIso3',
             }, {
                 property: 'active',
                 inlineEdit: 'string',
-                label: 'sw-settings-country.list.columnActive'
+                label: 'sw-settings-country.list.columnActive',
             }];
-        }
-    }
+        },
+    },
 });

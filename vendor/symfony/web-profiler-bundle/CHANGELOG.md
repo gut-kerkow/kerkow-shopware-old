@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+5.2.0
+-----
+
+ * added session usage
+
+5.0.0
+-----
+
+ * removed the `ExceptionController`, use `ExceptionPanelController` instead
+ * removed the `TemplateManager::templateExists()` method
+
 4.4.0
 -----
 

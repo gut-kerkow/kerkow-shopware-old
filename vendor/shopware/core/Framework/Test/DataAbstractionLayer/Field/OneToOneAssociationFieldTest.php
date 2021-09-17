@@ -9,6 +9,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityDeletedEvent;
+use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityLoadedEventFactory;
 use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
 use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
 use Shopware\Core\Framework\DataAbstractionLayer\Read\EntityReaderInterface;
@@ -59,7 +60,8 @@ class OneToOneAssociationFieldTest extends TestCase
             $this->getContainer()->get(VersionManager::class),
             $this->getContainer()->get(EntitySearcherInterface::class),
             $this->getContainer()->get(EntityAggregatorInterface::class),
-            $this->getContainer()->get('event_dispatcher')
+            $this->getContainer()->get('event_dispatcher'),
+            $this->getContainer()->get(EntityLoadedEventFactory::class)
         );
 
         $this->subRepository = new EntityRepository(
@@ -68,15 +70,18 @@ class OneToOneAssociationFieldTest extends TestCase
             $this->getContainer()->get(VersionManager::class),
             $this->getContainer()->get(EntitySearcherInterface::class),
             $this->getContainer()->get(EntityAggregatorInterface::class),
-            $this->getContainer()->get('event_dispatcher')
+            $this->getContainer()->get('event_dispatcher'),
+            $this->getContainer()->get(EntityLoadedEventFactory::class)
         );
 
         $this->registerDefinition(SubCascadeDefinition::class);
 
+        $this->connection->rollBack();
+
         $this->connection->executeUpdate('
-DROP TABLE IF EXISTS `root`;
-DROP TABLE IF EXISTS `root_sub`;
 DROP TABLE IF EXISTS `root_sub_cascade`;
+DROP TABLE IF EXISTS `root_sub`;
+DROP TABLE IF EXISTS `root`;
 
 CREATE TABLE `root` (
   `id` binary(16) NOT NULL,
@@ -130,11 +135,15 @@ ADD FOREIGN KEY (`root_id`, `root_version_id`) REFERENCES `root` (`id`, `version
 ALTER TABLE `root_sub_many`
 ADD FOREIGN KEY (`root_sub_id`, `root_sub_version_id`) REFERENCES `root_sub` (`id`, `version_id`) ON DELETE RESTRICT ON UPDATE NO ACTION;
         ');
+
+        $this->connection->beginTransaction();
     }
 
     protected function tearDown(): void
     {
         parent::tearDown();
+
+        $this->connection->rollBack();
 
         $this->connection->executeUpdate('
 SET FOREIGN_KEY_CHECKS = 0;
@@ -144,6 +153,8 @@ DROP TABLE IF EXISTS `root_sub_cascade`;
 DROP TABLE IF EXISTS `root_sub_many`;
 SET FOREIGN_KEY_CHECKS = 1;
         ');
+
+        $this->connection->beginTransaction();
     }
 
     public function testWriteRootOverSub(): void

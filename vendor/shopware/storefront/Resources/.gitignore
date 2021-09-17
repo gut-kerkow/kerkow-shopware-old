@@ -80,3 +80,5 @@ typings/
 .dynamodb/
 
 
+app/storefront/test/app
+

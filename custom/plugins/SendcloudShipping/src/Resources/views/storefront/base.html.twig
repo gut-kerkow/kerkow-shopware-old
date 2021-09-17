@@ -4,9 +4,11 @@
     {{ parent() }}
     <script type="text/javascript" src="https://embed.sendcloud.sc/spp/1.0.0/api.min.js"></script>
     <script>
-        (function() {
-            document.addEventListener("DOMContentLoaded", function() {
-                let shippingMethodsForm = document.confirmShippingForm;
+        (function () {
+            document.addEventListener("DOMContentLoaded", function () {
+                // form has different names before shopware6.4.0
+                let shippingMethodsForm = document.confirmShippingForm || document.changeShippingForm;
+
                 if (shippingMethodsForm) {
                     let servicePointDeliveryId = document.querySelector('#servicePointDeliveryId');
                     let servicePointInfoElement = document.querySelector('#servicePointInfo');
@@ -18,6 +20,13 @@
                     let zip = document.querySelector('#sendcloudZip');
                     let countryCode = document.querySelector('#sendcloudCountry');
                     let customerNumber = document.querySelector('#sendcloudCustomerNumber');
+                    let submitOrderBtn = document.getElementById('confirmFormSubmit');
+                    let isSubmitBtnDisabled = document.getElementById('sendcloud-is-submit-btn-disabled');
+
+                    if (isSubmitBtnDisabled) {
+                        submitOrderBtn.disabled = true;
+                    }
+
                     for (let i = 0; i < radioButtons.length; i++) {
                         radioButtons[i].addEventListener('change', onRadioButtonChange);
                     }
@@ -56,12 +65,14 @@
                             }
                         }
                     }
-                    
+
                     function onShippingMethodsLoad() {
                         fetch(servicePointEndpointUrl.value + '?customerNumber=' + customerNumber.value)
-                            .then(function(response) {return response.json()})
-                            .then(function(servicePointInfoResponse){
-                                if(servicePointInfoResponse.servicePointInfo.name) {
+                            .then(function (response) {
+                                return response.json()
+                            })
+                            .then(function (servicePointInfoResponse) {
+                                if (servicePointInfoResponse.servicePointInfo.name) {
                                     enableSaveButton();
                                     showServicePointInfo(servicePointInfoResponse.servicePointInfo)
                                 } else {
@@ -117,10 +128,13 @@
                                     },
                                     body: JSON.stringify(servicePointObject)
                                 })
-                                    .then(function(response) {return response.json()})
-                                    .then(function(){
+                                    .then(function (response) {
+                                        return response.json()
+                                    })
+                                    .then(function () {
                                         enableSaveButton();
-                                        showServicePointInfo(servicePointObject)
+                                        showServicePointInfo(servicePointObject);
+                                        reloadPage();
                                     });
                             },
                             function (errors) {
@@ -129,6 +143,15 @@
                                 });
                             }
                         );
+                    }
+
+                    /**
+                     * Reload page if shipping methods are not in the popup window (versions 6.4.x)
+                     */
+                    function reloadPage() {
+                        if (!document.confirmShippingForm) {
+                            window.location.reload();
+                        }
                     }
                 }
             });

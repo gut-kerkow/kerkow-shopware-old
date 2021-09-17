@@ -1,5 +1,5 @@
 import { shallowMount, createLocalVue } from '@vue/test-utils';
-import EntityCollection from 'src/core/data-new/entity-collection.data';
+import EntityCollection from 'src/core/data/entity-collection.data';
 import utils from 'src/core/service/util.service';
 import 'src/app/component/form/select/entity/sw-entity-single-select';
 import 'src/app/component/form/select/base/sw-select-base';
@@ -79,7 +79,7 @@ const createEntitySingleSelect = (customOptions) => {
             'sw-block-field': Shopware.Component.build('sw-block-field'),
             'sw-base-field': Shopware.Component.build('sw-base-field'),
             'sw-icon': {
-                template: '<div></div>'
+                template: '<div @click="$emit(\'click\', $event)"></div>'
             },
             'sw-field-error': Shopware.Component.build('sw-field-error'),
             'sw-select-result-list': Shopware.Component.build('sw-select-result-list'),
@@ -89,7 +89,6 @@ const createEntitySingleSelect = (customOptions) => {
             'sw-loader': Shopware.Component.build('sw-loader'),
             'sw-product-variant-info': Shopware.Component.build('sw-product-variant-info')
         },
-        mocks: { $tc: key => key },
         propsData: {
             value: null,
             entity: 'test'
@@ -101,9 +100,6 @@ const createEntitySingleSelect = (customOptions) => {
                         get: (value) => Promise.resolve({ id: value, name: value })
                     };
                 }
-            },
-            feature: {
-                isActive: () => true
             }
         }
     };
@@ -182,9 +178,6 @@ describe('components/sw-entity-single-select', () => {
                             search: () => Promise.resolve(getCollection())
                         };
                     }
-                },
-                feature: {
-                    isActive: () => true
                 }
             }
         });
@@ -221,9 +214,6 @@ describe('components/sw-entity-single-select', () => {
                             }
                         };
                     }
-                },
-                feature: {
-                    isActive: () => true
                 }
             }
         });
@@ -251,9 +241,6 @@ describe('components/sw-entity-single-select', () => {
                             search: () => Promise.resolve(getCollection())
                         };
                     }
-                },
-                feature: {
-                    isActive: () => true
                 }
             }
         });
@@ -287,9 +274,6 @@ describe('components/sw-entity-single-select', () => {
                             search: () => Promise.resolve(getCollection())
                         };
                     }
-                },
-                feature: {
-                    isActive: () => true
                 }
             }
         });
@@ -324,9 +308,6 @@ describe('components/sw-entity-single-select', () => {
                             search: () => Promise.resolve(getPropertyCollection())
                         };
                     }
-                },
-                feature: {
-                    isActive: () => true
                 }
             }
         });
@@ -365,9 +346,6 @@ describe('components/sw-entity-single-select', () => {
                             get: () => Promise.resolve(fixture[0])
                         };
                     }
-                },
-                feature: {
-                    isActive: () => true
                 }
             }
         });
@@ -388,5 +366,97 @@ describe('components/sw-entity-single-select', () => {
             expect(productVariantInfo.find('.sw-product-variant-info__specification').text())
                 .toContain(fixture[0].variation[0].option);
         });
+    });
+
+    it('should display label provided by callback', async () => {
+        const swEntitySingleSelect = createEntitySingleSelect({
+            propsData: {
+                value: fixture[0].id,
+                entity: 'test',
+                labelCallback: () => 'test'
+            },
+            provide: {
+                repositoryFactory: {
+                    create: () => {
+                        return {
+                            get: () => Promise.resolve(fixture[0]),
+                            search: () => Promise.resolve(getCollection())
+                        };
+                    }
+                }
+            }
+        });
+
+        await swEntitySingleSelect.vm.$nextTick();
+        expect(swEntitySingleSelect.find('.sw-entity-single-select__selection-text').text())
+            .toEqual('test');
+
+        await swEntitySingleSelect.find('input').trigger('click');
+        await swEntitySingleSelect.vm.$nextTick();
+
+        expect(swEntitySingleSelect.find('input').element.value).toBe('test');
+        expect(swEntitySingleSelect.find('.sw-select-result__result-item-text').text()).toBe('test');
+    });
+
+    it('should show the clearable icon in the single select', async () => {
+        const wrapper = await createEntitySingleSelect({
+            attrs: {
+                showClearableButton: true
+            }
+        });
+
+        const clearableIcon = wrapper.find('.sw-select__select-indicator-clear');
+        expect(clearableIcon.isVisible()).toBe(true);
+    });
+
+    it('should clear the selection when clicking on clear icon', async () => {
+        const wrapper = await createEntitySingleSelect({
+            propsData: {
+                value: fixture[0].id,
+                entity: 'test',
+                labelCallback: () => 'test'
+            },
+            provide: {
+                repositoryFactory: {
+                    create: () => {
+                        return {
+                            get: () => Promise.resolve(fixture[0]),
+                            search: () => Promise.resolve(getCollection())
+                        };
+                    }
+                }
+            },
+            attrs: {
+                showClearableButton: true
+            }
+        });
+
+        // wait until fetched data gets rendered
+        await wrapper.vm.$nextTick();
+
+        // expect test value selected
+        let selectionText = wrapper.find('.sw-entity-single-select__selection-text');
+        expect(selectionText.text())
+            .toEqual('test');
+
+        // expect no emitted value
+        expect(wrapper.emitted('change')).toEqual(undefined);
+
+        // click on clear
+        const clearableIcon = wrapper.find('.sw-select__select-indicator-clear');
+        await clearableIcon.trigger('click');
+
+        // expect emitting resetting value
+        const emittedChangeValue = wrapper.emitted('change')[0];
+        expect(emittedChangeValue).toEqual([null]);
+
+        // emulate v-model change
+        await wrapper.setProps({
+            value: emittedChangeValue[0]
+        });
+
+        // expect empty selection
+        selectionText = wrapper.find('.sw-entity-single-select__selection-text');
+        expect(selectionText.text()).toEqual('');
     });
 });

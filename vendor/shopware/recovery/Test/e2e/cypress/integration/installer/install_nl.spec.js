@@ -69,7 +69,7 @@ describe('Minimal install', () => {
         cy.get('#c_database_user').clear().type(Cypress.env('dbUser'));
         cy.get('#c_database_password').clear().type(Cypress.env('dbPassword'));
 
-        cy.get('.custom-checkbox').click();
+        cy.get('.c_create_database').click();
 
         cy.get('#c_database_schema_new').clear().type(Cypress.env('dbName'));
         cy.get('.btn.btn-primary').contains('Installatie starten').click();
@@ -78,7 +78,7 @@ describe('Minimal install', () => {
         // @install: installation
         cy.get('section.content--main').should('be.visible');
         cy.get('.navigation--list .navigation--entry span').contains('Installatie');
-        cy.get('.database-import-finish', { timeout: 120000 }).should('be.visible');
+        cy.get('.database-import-finish', { timeout: 180000 }).should('be.visible');
 
         cy.get('.btn.btn-primary').contains('Verder').click();
 

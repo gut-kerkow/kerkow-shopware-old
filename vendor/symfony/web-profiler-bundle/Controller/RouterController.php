@@ -28,7 +28,7 @@ use Twig\Environment;
  *
  * @author Fabien Potencier <fabien@symfony.com>
  *
- * @internal since Symfony 4.4
+ * @internal
  */
 class RouterController
 {
@@ -54,13 +54,11 @@ class RouterController
     /**
      * Renders the profiler panel for the given token.
      *
-     * @param string $token The profiler token
-     *
      * @return Response A Response instance
      *
      * @throws NotFoundHttpException
      */
-    public function panelAction($token)
+    public function panelAction(string $token)
     {
         if (null === $this->profiler) {
             throw new NotFoundHttpException('The profiler must be enabled.');
@@ -92,7 +90,7 @@ class RouterController
         $traceRequest = Request::create(
             $request->getPathInfo(),
             $request->getRequestServer(true)->get('REQUEST_METHOD'),
-            [],
+            \in_array($request->getMethod(), ['DELETE', 'PATCH', 'POST', 'PUT'], true) ? $request->getRequestRequest()->all() : $request->getRequestQuery()->all(),
             $request->getRequestCookies(true)->all(),
             [],
             $request->getRequestServer(true)->all()

@@ -10,6 +10,9 @@ use Shopware\Core\Framework\Test\TestDataCollection;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\PlatformRequest;
 
+/**
+ * @group store-api
+ */
 class CustomerRouteTest extends TestCase
 {
     use IntegrationTestBehaviour;
@@ -46,7 +49,7 @@ class CustomerRouteTest extends TestCase
         $this->browser
             ->request(
                 'GET',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/account/customer',
+                '/store-api/account/customer',
                 [
                 ]
             );
@@ -66,7 +69,7 @@ class CustomerRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/account/login',
+                '/store-api/account/login',
                 [
                     'email' => $email,
                     'password' => $password,
@@ -82,7 +85,7 @@ class CustomerRouteTest extends TestCase
         $this->browser
             ->request(
                 'GET',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/account/customer',
+                '/store-api/account/customer',
                 [
                 ]
             );
@@ -97,7 +100,7 @@ class CustomerRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/account/register',
+                '/store-api/account/register',
                 $this->getGuestRegistrationData()
             );
 
@@ -113,7 +116,7 @@ class CustomerRouteTest extends TestCase
         $this->browser
             ->request(
                 'GET',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/account/customer',
+                '/store-api/account/customer',
                 [
                 ]
             );
@@ -128,7 +131,6 @@ class CustomerRouteTest extends TestCase
     {
         return [
             'guest' => true,
-            'salutationId' => $this->getValidSalutationId(),
             'firstName' => 'Max',
             'lastName' => 'Mustermann',
             'email' => 'teg-reg@example.com',
@@ -141,7 +143,6 @@ class CustomerRouteTest extends TestCase
             ],
             'shippingAddress' => [
                 'countryId' => $this->getValidCountryId(),
-                'salutationId' => $this->getValidSalutationId(),
                 'firstName' => 'Test 2',
                 'lastName' => 'Example 2',
                 'street' => 'Examplestreet 111',

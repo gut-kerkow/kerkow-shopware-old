@@ -26,7 +26,7 @@ describe('Order: Create order', () => {
 
         // network requests
         cy.route({
-            url: `${Cypress.env('apiPath')}/_proxy/store-api/**/v*/checkout/cart/line-item`,
+            url: `${Cypress.env('apiPath')}/_proxy/store-api/**/checkout/cart/line-item`,
             method: 'post'
         }).as('addLineItem');
 
@@ -60,7 +60,7 @@ describe('Order: Create order', () => {
             .should('not.be.disabled');
 
         // continue adding a valid line item
-        cy.get('.sw-order-line-items-grid-sales-channel__actions-container .sw-button-group > button')
+        cy.get('.sw-order-line-items-grid-sales-channel__actions-container .sw-button-group')
             .click();
 
         // expect a new table row visible
@@ -119,12 +119,12 @@ describe('Order: Create order', () => {
         }).as('createCustomerCall');
 
         cy.route({
-            url: `${Cypress.env('apiPath')}/_proxy/store-api/**/v*/checkout/cart/line-item`,
+            url: `${Cypress.env('apiPath')}/_proxy/store-api/**/checkout/cart/line-item`,
             method: 'post'
         }).as('addLineItem');
 
         cy.route({
-            url: `${Cypress.env('apiPath')}/_proxy/store-api/**/v*/checkout/cart/line-item`,
+            url: `${Cypress.env('apiPath')}/_proxy/store-api/**/checkout/cart/line-item`,
             method: 'patch'
         }).as('updateLineItem');
 
@@ -323,7 +323,7 @@ describe('Order: Create order', () => {
             .should('not.be.disabled');
 
         // continue adding a valid line item
-        cy.get('.sw-order-line-items-grid-sales-channel__actions-container .sw-button-group > button')
+        cy.get('.sw-order-line-items-grid-sales-channel__actions-container .sw-button-group')
             .click();
 
         // expect a new table row visible
@@ -400,9 +400,9 @@ describe('Order: Create order', () => {
     it('@base @order: add promotion code', () => {
         const page = new OrderPageObject();
 
-        cy.visit(`${Cypress.env('admin')}#/sw/promotion/index`);
+        cy.visit(`${Cypress.env('admin')}#/sw/promotion/v2/index`);
 
-        cy.get('a[href="#/sw/promotion/create"]').click();
+        cy.get('a[href="#/sw/promotion/v2/create"]').click();
 
         // Request we want to wait for later
         cy.server();
@@ -411,26 +411,27 @@ describe('Order: Create order', () => {
             method: 'post'
         }).as('savePromotion');
 
-        cy.route({
-            url: `${Cypress.env('apiPath')}/search/promotion/**/discounts`,
-            method: 'post'
-        }).as('saveDiscount');
-
         // Create promotion
-        cy.get('.sw-promotion-detail').should('be.visible');
+        cy.get('.sw-promotion-v2-detail').should('be.visible');
         cy.get('#sw-field--promotion-name').typeAndCheck('New year promotion');
         cy.get('input[name="sw-field--promotion-active"]').click();
-        cy.get('.sw-promotion-sales-channel-select').typeMultiSelectAndCheck('Storefront');
-        cy.get('.sw-promotion-sales-channel-select .sw-select-selection-list__input')
-            .type('{esc}');
 
-        cy.get('input[name="sw-field--promotion-useCodes"]').check();
-        cy.get('#sw-field--promotion-code').typeAndCheck('DISCOUNT');
-        cy.get('.sw-promotion-detail__save-action').click();
-
+        cy.get('.sw-promotion-v2-detail__save-action').click();
         cy.wait('@savePromotion').then((xhr) => {
             expect(xhr).to.have.property('status', 204);
         });
+
+        cy.get('#sw-field--selectedCodeType').select('Fixed promotion code');
+        cy.get('#sw-field--promotion-code').typeAndCheck('DISCOUNT');
+
+        // Add to Storefront SalesChannel
+        cy.get(page.elements.loader).should('not.exist');
+        cy.get('a[title="Conditions"]').click();
+        cy.get(page.elements.loader).should('not.exist');
+
+        cy.get('.sw-promotion-v2-conditions__sales-channel-selection')
+            .typeMultiSelectAndCheck('Storefront');
+        cy.get('.sw-promotion-v2-detail__save-action').click();
 
         cy.get(page.elements.smartBarBack).click();
         cy.get(`${page.elements.dataGridRow}--0 ${page.elements.dataGridColumn}--name`)
@@ -456,9 +457,14 @@ describe('Order: Create order', () => {
             .clear()
             .type('10');
 
-        cy.get('.sw-promotion-detail__save-action').click();
-        cy.wait('@saveDiscount').then((xhr) => {
-            expect(xhr).to.have.property('status', 200);
+        cy.route({
+            url: `${Cypress.env('apiPath')}/promotion/**`,
+            method: 'patch'
+        }).as('patchPromotion');
+
+        cy.get('.sw-promotion-v2-detail__save-action').click();
+        cy.wait('@patchPromotion').then((xhr) => {
+            expect(xhr).to.have.property('status', 204);
         });
 
         // Verify promotion in Administration
@@ -475,7 +481,7 @@ describe('Order: Create order', () => {
         // start server
         cy.server();
         cy.route({
-            url: `${Cypress.env('apiPath')}/_proxy/store-api/**/v*/checkout/cart/line-item`,
+            url: `${Cypress.env('apiPath')}/_proxy/store-api/**/checkout/cart/line-item`,
             method: 'post'
         }).as('addLineItem');
 
@@ -496,7 +502,7 @@ describe('Order: Create order', () => {
             .should('have.value', 'test@example.com');
 
         // continue adding a valid line item
-        cy.get('.sw-order-line-items-grid-sales-channel__actions-container .sw-button-group > button')
+        cy.get('.sw-order-line-items-grid-sales-channel__actions-container .sw-button-group')
             .click();
 
         // double click on item name cell
@@ -560,7 +566,7 @@ describe('Order: Create order', () => {
 
         // network requests
         cy.route({
-            url: `${Cypress.env('apiPath')}/_proxy/store-api/**/v*/checkout/cart/line-item`,
+            url: `${Cypress.env('apiPath')}/_proxy/store-api/**/checkout/cart/line-item`,
             method: 'post'
         }).as('addLineItem');
 
@@ -594,7 +600,7 @@ describe('Order: Create order', () => {
             .should('not.be.disabled');
 
         // continue adding a valid line item
-        cy.get('.sw-order-line-items-grid-sales-channel__actions-container .sw-button-group > button')
+        cy.get('.sw-order-line-items-grid-sales-channel__actions-container .sw-button-group')
             .click();
 
         // expect a new table row visible

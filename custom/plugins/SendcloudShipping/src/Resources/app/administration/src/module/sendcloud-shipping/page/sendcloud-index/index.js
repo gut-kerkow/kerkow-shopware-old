@@ -6,7 +6,7 @@ Component.register('sendcloud-index', {
     template,
 
     inject: [
-        'pluginService'
+        'sendcloudService'
     ],
     data() {
         return {
@@ -34,13 +34,11 @@ Component.register('sendcloud-index', {
 
     methods: {
         getCurrentRoute: function (query) {
-            const headers = this.pluginService.getBasicHeaders();
 
-            return this.pluginService.httpClient
-                .get('/sendcloud/router', {headers})
+            return this.sendcloudService.getCurrentRoute()
                 .then((response) => {
                     this.isLoading = false;
-                    let routeName = Shopware.Classes.ApiService.handleResponse(response).page;
+                    let routeName = response.page;
                     let route = {
                         name: 'sendcloud.shipping.index',
                         params: {
@@ -50,6 +48,7 @@ Component.register('sendcloud-index', {
                     };
 
                     this.$router.replace(route);
+                    this.isLoading = false;
                 }).catch(error => {
 
                 });

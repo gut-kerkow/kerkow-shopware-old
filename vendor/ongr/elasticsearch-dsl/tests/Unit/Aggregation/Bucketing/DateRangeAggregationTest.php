@@ -9,7 +9,7 @@
  * file that was distributed with this source code.
  */
 
-namespace ONGR\ElasticsearchDSL\Tests\Unit\Bucketing\Aggregation;
+namespace ONGR\ElasticsearchDSL\Tests\Unit\Aggregation\Bucketing;
 
 use ONGR\ElasticsearchDSL\Aggregation\Bucketing\DateRangeAggregation;
 
@@ -17,24 +17,22 @@ class DateRangeAggregationTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * Test if exception is thrown.
-     *
-     * @expectedException \LogicException
-     * @expectedExceptionMessage Date range aggregation must have field, format set and range added.
      */
     public function testIfExceptionIsThrownWhenNoParametersAreSet()
     {
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('Date range aggregation must have field, format set and range added.');
         $agg = new DateRangeAggregation('test_agg');
         $agg->getArray();
     }
 
     /**
      * Test if exception is thrown when both range parameters are null.
-     *
-     * @expectedException \LogicException
-     * @expectedExceptionMessage Either from or to must be set. Both cannot be null.
      */
     public function testIfExceptionIsThrownWhenBothRangesAreNull()
     {
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('Either from or to must be set. Both cannot be null.');
         $agg = new DateRangeAggregation('test_agg');
         $agg->addRange(null, null);
     }
@@ -116,9 +114,8 @@ class DateRangeAggregationTest extends \PHPUnit\Framework\TestCase
      */
     public function testDateRangeAggregationConstructor($field = null, $format = null, array $ranges = null)
     {
-        /** @var DateRangeAggregation|\PHPUnit_Framework_MockObject_MockObject $aggregation */
         $aggregation = $this->getMockBuilder('ONGR\ElasticsearchDSL\Aggregation\Bucketing\DateRangeAggregation')
-            ->setMethods(['setField', 'setFormat', 'addRange'])
+            ->onlyMethods(['setField', 'setFormat', 'addRange'])
             ->disableOriginalConstructor()
             ->getMock();
         $aggregation->expects($this->once())->method('setField')->with($field);

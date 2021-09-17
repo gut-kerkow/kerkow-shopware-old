@@ -55,7 +55,7 @@ Cypress.Commands.add('setCustomerGroup', (customerNumber, customerGroupData) => 
 Cypress.Commands.add('requestAdminApiStorefront', (data) => {
     return cy.requestAdminApi(
         'POST',
-        `api/${Cypress.env('apiVersion')}/${data.endpoint}?response=true`,
+        `api/${data.endpoint}?response=true`,
         data
     ).then((responseData) => {
         return responseData;
@@ -171,13 +171,15 @@ Cypress.Commands.add('typeAndSelect', {
 });
 
 Cypress.Commands.add('createRuleFixture', (userData, shippingMethodName = 'Standard') => {
-    const fixture = new RuleBuilderFixture();
+    return cy.authenticate().then((authInformation) => {
+        const fixture = new RuleBuilderFixture(authInformation);
 
-    return cy.fixture('rule-builder-shipping-payment.json').then((result) => {
-        return Cypress._.merge(result, userData);
-    }).then((data) => {
-        return fixture.setRuleFixture(data, shippingMethodName);
-    })
+        return cy.fixture('rule-builder-shipping-payment.json').then((result) => {
+            return Cypress._.merge(result, userData);
+        }).then((data) => {
+            return fixture.setRuleFixture(data, shippingMethodName);
+        })
+    });
 });
 
 /**
@@ -301,3 +303,18 @@ const waitUntil = (subject, checkFunction, originalOptions = {}) => {
 };
 
 Cypress.Commands.add("waitUntil", { prevSubject: "optional" }, waitUntil);
+
+/**
+ * Cleans up any previous state by restoring database and clearing caches
+ * @memberOf Cypress.Chainable#
+ * @name cleanUpPreviousState
+ * @function
+ */
+Cypress.Commands.overwrite('cleanUpPreviousState', (orig) => {
+    if (Cypress.env('localUsage')) {
+        return cy.exec(`${Cypress.env('shopwareRoot')}/bin/console e2e:restore-db`)
+            .its('code').should('eq', 0);
+    }
+
+    return orig();
+});

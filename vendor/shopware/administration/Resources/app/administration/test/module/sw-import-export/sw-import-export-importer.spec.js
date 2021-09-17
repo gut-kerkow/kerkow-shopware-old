@@ -78,9 +78,6 @@ describe('components/sw-import-export-importer', () => {
                 'sw-button': true,
                 'sw-file-input': true
             },
-            mocks: {
-                $tc: snippetPath => snippetPath
-            },
             provide: {
                 importExport: {
                     import: (profileId, importFile, cb, config) => {
@@ -105,9 +102,6 @@ describe('components/sw-import-export-importer', () => {
                 },
                 repositoryFactory: {
                     create: () => repositoryMockFactory()
-                },
-                feature: {
-                    isActive: () => true
                 }
             }
         });
@@ -221,7 +215,7 @@ describe('components/sw-import-export-importer', () => {
         );
         await variantsWarningLink.trigger('click');
 
-        const modalExporter = wrapper.findAll({ name: 'sw-import-export-importer' }).at(1);
+        const modalExporter = wrapper.findAllComponents({ name: 'sw-import-export-importer' }).at(1);
 
         expect(modalExporter.exists()).toBeTruthy();
     });
@@ -243,7 +237,7 @@ describe('components/sw-import-export-importer', () => {
         );
         await variantsWarningLink.trigger('click');
 
-        const modalExporter = wrapper.findAll({ name: 'sw-import-export-importer' }).at(1);
+        const modalExporter = wrapper.findAllComponents({ name: 'sw-import-export-importer' }).at(1);
 
         expect(modalExporter.props().sourceEntity).toBe('product_configurator_setting');
     });

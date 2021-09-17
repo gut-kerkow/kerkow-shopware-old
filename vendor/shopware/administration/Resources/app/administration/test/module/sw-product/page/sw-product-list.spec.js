@@ -1,4 +1,4 @@
-import { createLocalVue, shallowMount } from '@vue/test-utils';
+import { createLocalVue, shallowMount, config } from '@vue/test-utils';
 import VueRouter from 'vue-router';
 import 'src/module/sw-product/page/sw-product-list';
 import 'src/app/component/data-grid/sw-data-grid';
@@ -20,7 +20,6 @@ function mockContext() {
     return {
         apiPath: 'http://shopware.local/api',
         apiResourcePath: 'http://shopware.local/api/v2',
-        apiVersion: 2,
         assetsPath: 'http://shopware.local/bundles/',
         basePath: '',
         host: 'shopware.local',
@@ -90,7 +89,10 @@ function getProductData(criteria) {
             ],
             productNumber: 'SW10001',
             name: 'Product 2',
-            id: 'dcc37f845b664e24b5b2e6e77c078e6c'
+            id: 'dcc37f845b664e24b5b2e6e77c078e6c',
+            manufacturer: {
+                name: 'Manufacturer B'
+            }
         },
         {
             active: true,
@@ -114,7 +116,10 @@ function getProductData(criteria) {
             productNumber: 'SW10000',
             name: 'Product 1',
             id: 'bc5ff49955be4b919053add552c2815d',
-            childCount: 8
+            childCount: 8,
+            manufacturer: {
+                name: 'Manufacturer A'
+            }
         }
     ];
 
@@ -136,6 +141,40 @@ function getProductData(criteria) {
             }
 
             return currencyValueA - currencyValueB;
+        });
+    }
+
+    // check if grid is sorting for name
+    const sortingForName = criteria.sortings.some(sortAttr => sortAttr.field.startsWith('name'));
+
+    if (sortingForName) {
+        const sortDirection = criteria.sortings[0].order;
+        products.sort((productA, productB) => {
+            const nameA = productA.name.toLowerCase();
+            const nameB = productB.name.toLowerCase();
+
+            if (sortDirection === 'DESC') {
+                return nameA > nameB ? -1 : 1;
+            }
+
+            return nameA < nameB ? -1 : 1;
+        });
+    }
+
+    // check if grid is sorting for manufacturer name
+    const sortingForManufacturer = criteria.sortings.some(sortAttr => sortAttr.field.startsWith('manufacturer'));
+
+    if (sortingForManufacturer) {
+        const sortDirection = criteria.sortings[0].order;
+        products.sort((productA, productB) => {
+            const nameA = productA.manufacturer.name.toLowerCase();
+            const nameB = productB.manufacturer.name.toLowerCase();
+
+            if (sortDirection === 'DESC') {
+                return nameA > nameB ? -1 : 1;
+            }
+
+            return nameA < nameB ? -1 : 1;
         });
     }
 
@@ -175,9 +214,12 @@ function getCurrencyData() {
 }
 
 function createWrapper() {
+    // delete global $router and $routes mocks
+    delete config.mocks.$router;
+    delete config.mocks.$route;
+
     const localVue = createLocalVue();
     localVue.use(VueRouter);
-    localVue.directive('tooltip', {});
     localVue.filter('currency', (currency) => currency);
 
     const router = new VueRouter({
@@ -193,20 +235,14 @@ function createWrapper() {
         }]
     });
 
+    router.push({ name: 'sw.product.list' });
+
     return {
         wrapper: shallowMount(Shopware.Component.build('sw-product-list'), {
             localVue,
             router,
-            mocks: {
-                $device: { onResize: () => {} },
-                $tc: () => {},
-                $te: () => {}
-            },
             provide: {
                 numberRangeService: {},
-                feature: {
-                    isActive: () => true
-                },
                 repositoryFactory: {
                     create: (name) => {
                         if (name === 'product') {
@@ -215,10 +251,15 @@ function createWrapper() {
 
                                 return Promise.resolve(productData);
                             } };
+                        } if (name === 'user_config') {
+                            return { search: () => Promise.resolve([]) };
                         }
 
                         return { search: () => Promise.resolve(getCurrencyData()) };
                     }
+                },
+                filterFactory: {
+                    create: () => []
                 },
                 acl: {
                     can: () => true
@@ -256,9 +297,7 @@ function createWrapper() {
                 'sw-sidebar-item': {
                     template: '<div></div>'
                 },
-                'router-link': {
-                    template: '<div></div>'
-                },
+                'router-link': true,
                 'sw-language-switch': {
                     template: '<div></div>'
                 },
@@ -288,6 +327,12 @@ function createWrapper() {
         router: router
     };
 }
+
+Shopware.Service().register('filterService', () => {
+    return {
+        mergeWithStoredFilters: (storeKey, criteria) => criteria
+    };
+});
 
 describe('module/sw-product/page/sw-product-list', () => {
     let wrapper;
@@ -327,6 +372,7 @@ describe('module/sw-product/page/sw-product-list', () => {
         // sort grid after price ASC
         await currencyColumnHeader.trigger('click');
         await wrapper.vm.$nextTick();
+        await wrapper.vm.$nextTick();
 
         const sortedPriceCells = wrapper.findAll('.sw-data-grid__cell--price-EUR');
         const firstSortedPriceCell = sortedPriceCells.at(0);
@@ -349,19 +395,21 @@ describe('module/sw-product/page/sw-product-list', () => {
 
         // sort grid after price ASC
         await currencyColumnHeader.trigger('click');
+
+        await wrapper.vm.$nextTick();
         await wrapper.vm.$nextTick();
 
         const euroCells = wrapper.findAll('.sw-data-grid__cell--price-EUR');
         const [firstEuroCell, secondEuroCell] = euroCells.wrappers;
 
-        expect(firstEuroCell.text()).toBe('600');
-        expect(secondEuroCell.text()).toBe('200');
+        expect(firstEuroCell.text()).toBe('200');
+        expect(secondEuroCell.text()).toBe('600');
 
         const poundCells = wrapper.findAll('.sw-data-grid__cell--price-GBP');
         const [firstPoundCell, secondPoundCell] = poundCells.wrappers;
 
-        expect(firstPoundCell.text()).toBe('400');
-        expect(secondPoundCell.text()).toBe('22');
+        expect(firstPoundCell.text()).toBe('22');
+        expect(secondPoundCell.text()).toBe('400');
 
         const columnHeaders = wrapper.findAll('.sw-data-grid__cell.sw-data-grid__cell--header');
         const poundColumn = columnHeaders.at(6);
@@ -369,12 +417,80 @@ describe('module/sw-product/page/sw-product-list', () => {
         await poundColumn.trigger('click');
 
         await wrapper.vm.$nextTick();
+        await wrapper.vm.$nextTick();
 
-        const sortedPoundCells = wrapper.findAll('.sw-data-grid__cell--price-GBP');
-        const [firstSortedPoundCell, secondSortedPoundCell] = sortedPoundCells.wrappers;
+        let sortedPoundCells = wrapper.findAll('.sw-data-grid__cell--price-GBP');
+        let [firstSortedPoundCell, secondSortedPoundCell] = sortedPoundCells.wrappers;
 
         expect(firstSortedPoundCell.text()).toBe('22');
         expect(secondSortedPoundCell.text()).toBe('400');
+
+        await poundColumn.trigger('click');
+
+        await wrapper.vm.$nextTick();
+        await wrapper.vm.$nextTick();
+
+        sortedPoundCells = wrapper.findAll('.sw-data-grid__cell--price-GBP');
+        [firstSortedPoundCell, secondSortedPoundCell] = sortedPoundCells.wrappers;
+
+        expect(firstSortedPoundCell.text()).toBe('400');
+        expect(secondSortedPoundCell.text()).toBe('22');
+    });
+
+    it('should sort products by name', async () => {
+        await wrapper.vm.getList();
+
+        const currencyColumnHeader = wrapper.find('.sw-data-grid__cell--header.sw-data-grid__cell--0');
+
+        await currencyColumnHeader.trigger('click');
+        await wrapper.vm.$nextTick();
+        await wrapper.vm.$nextTick();
+
+        const productNamesASCSorted = wrapper.findAll('.sw-data-grid__cell--name');
+        const [firstProductNameASCSorted, secondProductNameASCSorted] = productNamesASCSorted.wrappers;
+
+        expect(firstProductNameASCSorted.text()).toBe('Product 1');
+        expect(secondProductNameASCSorted.text()).toBe('Product 2');
+
+        await currencyColumnHeader.trigger('click');
+        await wrapper.vm.$nextTick();
+        await wrapper.vm.$nextTick();
+
+        const productNamesDESCSorted = wrapper.findAll('.sw-data-grid__cell--name');
+        const [firstProductNameDESCSorted, secondProductNameDESCSorted] = productNamesDESCSorted.wrappers;
+
+        expect(firstProductNameDESCSorted.text()).toBe('Product 2');
+        expect(secondProductNameDESCSorted.text()).toBe('Product 1');
+
+        const params = new URLSearchParams(window.location.href);
+        expect(params.get('naturalSorting')).toBe('false');
+        expect(wrapper.vm.naturalSorting).toBe(false);
+    });
+
+    it('should sort products by Manufacturer name', async () => {
+        await wrapper.vm.getList();
+
+        const currencyColumnHeader = wrapper.find('.sw-data-grid__cell--header.sw-data-grid__cell--2');
+
+        await currencyColumnHeader.trigger('click');
+        await wrapper.vm.$nextTick();
+        await wrapper.vm.$nextTick();
+
+        const manufacturerNamesASCSorted = wrapper.findAll('.sw-data-grid__cell--manufacturer-name');
+        const [firstManufacturerNameASCSorted, secondManufacturerNameASCSorted] = manufacturerNamesASCSorted.wrappers;
+
+        expect(firstManufacturerNameASCSorted.text()).toBe('Manufacturer A');
+        expect(secondManufacturerNameASCSorted.text()).toBe('Manufacturer B');
+
+        await currencyColumnHeader.trigger('click');
+        await wrapper.vm.$nextTick();
+        await wrapper.vm.$nextTick();
+
+        const manufacturerNamesDESCSorted = wrapper.findAll('.sw-data-grid__cell--manufacturer-name');
+        const [firstManufacturerNameDESCSorted, secondManufacturerNameDESCSorted] = manufacturerNamesDESCSorted.wrappers;
+
+        expect(firstManufacturerNameDESCSorted.text()).toBe('Manufacturer B');
+        expect(secondManufacturerNameDESCSorted.text()).toBe('Manufacturer A');
     });
 
     it('should return price when given currency id', async () => {

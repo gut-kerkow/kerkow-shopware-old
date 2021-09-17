@@ -4,6 +4,7 @@ namespace Shopware\Core\Checkout\Customer\Aggregate\CustomerAddress;
 
 use Shopware\Core\Checkout\Customer\CustomerEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopware\Core\System\Country\Aggregate\CountryState\CountryStateEntity;
 use Shopware\Core\System\Country\CountryEntity;
@@ -12,6 +13,7 @@ use Shopware\Core\System\Salutation\SalutationEntity;
 class CustomerAddressEntity extends Entity
 {
     use EntityIdTrait;
+    use EntityCustomFieldsTrait;
 
     /**
      * @var string
@@ -29,7 +31,7 @@ class CustomerAddressEntity extends Entity
     protected $countryStateId;
 
     /**
-     * @var string
+     * @var string|null
      */
     protected $salutationId;
 
@@ -74,13 +76,6 @@ class CustomerAddressEntity extends Entity
     protected $street;
 
     /**
-     * @deprecated tag:v6.4.0 - Will be removed
-     *
-     * @var string|null
-     */
-    protected $vatId;
-
-    /**
      * @var string|null
      */
     protected $phoneNumber;
@@ -115,11 +110,6 @@ class CustomerAddressEntity extends Entity
      */
     protected $customer;
 
-    /**
-     * @var array|null
-     */
-    protected $customFields;
-
     public function getCustomerId(): string
     {
         return $this->customerId;
@@ -150,7 +140,7 @@ class CustomerAddressEntity extends Entity
         $this->countryStateId = $countryStateId;
     }
 
-    public function getSalutationId(): string
+    public function getSalutationId(): ?string
     {
         return $this->salutationId;
     }
@@ -240,22 +230,6 @@ class CustomerAddressEntity extends Entity
         $this->street = $street;
     }
 
-    /**
-     * @deprecated tag:v6.4.0 - Will be removed
-     */
-    public function getVatId(): ?string
-    {
-        return $this->vatId;
-    }
-
-    /**
-     * @deprecated tag:v6.4.0 - Will be removed
-     */
-    public function setVatId(string $vatId): void
-    {
-        $this->vatId = $vatId;
-    }
-
     public function getPhoneNumber(): ?string
     {
         return $this->phoneNumber;
@@ -324,15 +298,5 @@ class CustomerAddressEntity extends Entity
     public function setCustomer(CustomerEntity $customer): void
     {
         $this->customer = $customer;
-    }
-
-    public function getCustomFields(): ?array
-    {
-        return $this->customFields;
-    }
-
-    public function setCustomFields(array $customFields): void
-    {
-        $this->customFields = $customFields;
     }
 }

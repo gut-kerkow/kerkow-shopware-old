@@ -1,7 +1,7 @@
 @import "~scss/variables";
 
-$sw-sidebar-item-headline-color:   $color-kashmir;
-$sw-sidebar-item-color-border:     $color-steam-cloud;
+$sw-sidebar-item-headline-color:   $color-darkgray-200;
+$sw-sidebar-item-color-border:     $color-gray-300;
 $sw-sidebar-item-width-navigation: 64px;
 $sw-sidebar-item-width-content:    400px;
 
@@ -39,7 +39,7 @@ $sw-sidebar-item-width-content:    400px;
     .sw-sidebar-item__content {
         position: relative;
         width: 100%;
-        height: 100%
+        height: 100%;
     }
 
     .sw-sidebar-item__scrollable-container {

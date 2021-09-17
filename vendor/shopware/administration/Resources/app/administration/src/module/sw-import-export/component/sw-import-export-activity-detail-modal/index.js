@@ -13,7 +13,7 @@ Shopware.Component.register('sw-import-export-activity-detail-modal', {
     inject: ['importExport'],
 
     mixins: [
-        Mixin.getByName('notification')
+        Mixin.getByName('notification'),
     ],
 
     props: {
@@ -22,8 +22,8 @@ Shopware.Component.register('sw-import-export-activity-detail-modal', {
             required: false,
             default() {
                 return {};
-            }
-        }
+            },
+        },
     },
 
     data() {
@@ -34,7 +34,7 @@ Shopware.Component.register('sw-import-export-activity-detail-modal', {
     computed: {
         typeText() {
             return this.$tc(`sw-import-export.activity.detail.${this.logEntity.activity}Label`);
-        }
+        },
     },
 
     methods: {
@@ -42,14 +42,23 @@ Shopware.Component.register('sw-import-export-activity-detail-modal', {
             return format.fileSize(size);
         },
 
-        getDownloadUrl(file) {
-            return this.importExport.getDownloadUrl(file.id, file.accessToken);
+        /**
+         * @deprecated tag:v6.5.0 - Remove unused method, use openDownload instead
+         */
+        getDownloadUrl() {
+            Shopware.Utils.debug.error('The method getDownloadUrl has been replaced with openDownload.');
+
+            return '';
+        },
+
+        async openDownload(id) {
+            return window.open(await this.importExport.getDownloadUrl(id), '_blank');
         },
 
         getStateLabel(state) {
             const translationKey = `sw-import-export.activity.status.${state}`;
 
             return this.$te(translationKey) ? this.$tc(translationKey) : state;
-        }
-    }
+        },
+    },
 });

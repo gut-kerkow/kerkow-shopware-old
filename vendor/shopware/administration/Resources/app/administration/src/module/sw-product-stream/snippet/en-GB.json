@@ -42,12 +42,17 @@
       },
       "values": {
         "active": "Active",
+        "availableStock": "Available stock",
+        "ratingAverage": "Rating average",
         "additionalText": "Additional text",
         "allowNotification": "Allow notification",
-        "customFields": "Custom Fields",
+        "customFields": "Custom fields",
+        "category": "Category",
         "categories": "Categories",
         "categoriesRo": "Categories",
+        "cheapestPrice": "Price",
         "choose": "Choose",
+        "createdAt": "Date of creation",
         "description": "Description",
         "descriptionLong": "Description long",
         "ean": "EAN",
@@ -59,6 +64,7 @@
         "keywords": "Keywords",
         "length": "Length",
         "linked": "Linked",
+        "manufacturerId": "Manufacturer",
         "manufacturer": "Manufacturer",
         "manufacturerNumber": "Manufacturer number",
         "markAsTopseller": "Marked as topseller",
@@ -76,6 +82,7 @@
         "product": "Product",
         "productNumber": "Product number",
         "purchasePrice": "Purchase price",
+        "purchasePrices": "Purchase prices",
         "purchaseUnit": "Purchase unit",
         "referenceUnit": "Reference unit",
         "releaseDate": "Release date",
@@ -99,7 +106,9 @@
         "options": "Options",
         "properties": "Properties",
         "property_group": "Group",
-        "property_group_option": "Property value"
+        "property_group_option": "Property value",
+        "product_manufacturer": "Manufacturer",
+        "percentage": "Percentage ratio price/list price"
       }
     },
     "detail": {

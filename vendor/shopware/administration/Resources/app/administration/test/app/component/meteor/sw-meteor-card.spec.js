@@ -14,33 +14,22 @@ function createWrapper(customConfig = {}) {
 }
 
 describe('src/app/component/meteor/sw-meteor-card', () => {
-    /** @type Wrapper */
-    let wrapper;
-
     beforeAll(async () => {
-        Shopware.Feature.init({
-            FEATURE_NEXT_12608: true
-        });
+        global.activeFeatureFlags = ['FEATURE_NEXT_12608'];
 
         await import('src/app/component/meteor/sw-meteor-card');
         await import('src/app/component/base/sw-tabs');
         await import('src/app/component/base/sw-tabs-item');
     });
 
-    beforeEach(async () => {
-        wrapper = await createWrapper();
-    });
+    it('should be a Vue.JS component', () => {
+        const wrapper = createWrapper();
 
-    afterEach(async () => {
-        if (wrapper) await wrapper.destroy();
-    });
-
-    it('should be a Vue.JS component', async () => {
         expect(wrapper.vm).toBeTruthy();
     });
 
-    it('should render the content of the default slot', async () => {
-        wrapper = await createWrapper({
+    it('should render the content of the default slot', () => {
+        const wrapper = createWrapper({
             slots: {
                 default: '<p>I am in the default slot</p>'
             }
@@ -50,8 +39,8 @@ describe('src/app/component/meteor/sw-meteor-card', () => {
         expect(contentWrapper.text()).toEqual('I am in the default slot');
     });
 
-    it('should render the content of the default scoped slot', async () => {
-        wrapper = await createWrapper({
+    it('should render the content of the default scoped slot', () => {
+        const wrapper = createWrapper({
             scopedSlots: {
                 default: '<p>I am in the default slot</p>'
             }
@@ -61,8 +50,8 @@ describe('src/app/component/meteor/sw-meteor-card', () => {
         expect(contentWrapper.text()).toEqual('I am in the default slot');
     });
 
-    it('should render the title as prop', async () => {
-        wrapper = await createWrapper({
+    it('should render the title as prop', () => {
+        const wrapper = createWrapper({
             propsData: {
                 title: 'Welcome to Shopware'
             }
@@ -72,8 +61,8 @@ describe('src/app/component/meteor/sw-meteor-card', () => {
         expect(title.text()).toEqual('Welcome to Shopware');
     });
 
-    it('should render as hero card', async () => {
-        wrapper = await createWrapper({
+    it('should render as hero card', () => {
+        const wrapper = createWrapper({
             propsData: {
                 hero: true
             }
@@ -83,25 +72,24 @@ describe('src/app/component/meteor/sw-meteor-card', () => {
     });
 
     it('should render a loading indicator', async () => {
-        let loader = wrapper.find('sw-loader-stub');
-        expect(loader.exists()).toBe(false);
-
-        wrapper = await createWrapper({
-            propsData: {
-                isLoading: true
-            },
+        const wrapper = createWrapper({
             slots: {
                 default: '<p>Lorem Ipsum</p>'
             }
         });
+
+        let loader = wrapper.find('sw-loader-stub');
+        expect(loader.exists()).toBe(false);
+
+        await wrapper.setProps({ isLoading: true });
 
         loader = wrapper.find('sw-loader-stub');
         expect(loader.exists()).toBe(true);
         expect(loader.isVisible()).toBe(true);
     });
 
-    it('should render a large card', async () => {
-        wrapper = await createWrapper({
+    it('should render a large card', () => {
+        const wrapper = createWrapper({
             propsData: {
                 large: true
             }
@@ -110,8 +98,8 @@ describe('src/app/component/meteor/sw-meteor-card', () => {
         expect(wrapper.classes()).toContain('sw-meteor-card--large');
     });
 
-    it('should render a something in the toolbar slot', async () => {
-        wrapper = await createWrapper({
+    it('should render a something in the toolbar slot', () => {
+        const wrapper = createWrapper({
             slots: {
                 toolbar: '<p>I am in the toolbar slot</p>'
             }
@@ -121,8 +109,8 @@ describe('src/app/component/meteor/sw-meteor-card', () => {
         expect(toolbarSlot.text()).toEqual('I am in the toolbar slot');
     });
 
-    it('should render a something in the footer slot', async () => {
-        wrapper = await createWrapper({
+    it('should render a something in the footer slot', () => {
+        const wrapper = createWrapper({
             slots: {
                 footer: '<p>I am in the footer slot</p>'
             }
@@ -132,8 +120,8 @@ describe('src/app/component/meteor/sw-meteor-card', () => {
         expect(footerSlot.text()).toEqual('I am in the footer slot');
     });
 
-    it('should render a something in the grid slot', async () => {
-        wrapper = await createWrapper({
+    it('should render a something in the grid slot', () => {
+        const wrapper = createWrapper({
             slots: {
                 grid: '<p>I am in the grid slot</p>'
             }
@@ -143,8 +131,8 @@ describe('src/app/component/meteor/sw-meteor-card', () => {
         expect(contentWrapper.text()).toEqual('I am in the grid slot');
     });
 
-    it('should render a something in the action slot', async () => {
-        wrapper = await createWrapper({
+    it('should render a something in the action slot', () => {
+        const wrapper = createWrapper({
             slots: {
                 action: '<p>I am in the action slot</p>'
             }
@@ -154,8 +142,8 @@ describe('src/app/component/meteor/sw-meteor-card', () => {
         expect(actionsSlot.text()).toEqual('I am in the action slot');
     });
 
-    it('should render the tabs', async () => {
-        wrapper = shallowMount({
+    it('should render the tabs', () => {
+        const wrapper = shallowMount({
             template: `
 <sw-meteor-card defaultTab="tab1">
 
@@ -176,11 +164,6 @@ describe('src/app/component/meteor/sw-meteor-card', () => {
                 'sw-meteor-card': Shopware.Component.build('sw-meteor-card'),
                 'sw-tabs': Shopware.Component.build('sw-tabs'),
                 'sw-tabs-item': Shopware.Component.build('sw-tabs-item')
-            },
-            mocks: {
-                $device: {
-                    onResize: () => {}
-                }
             }
         });
 
@@ -190,7 +173,7 @@ describe('src/app/component/meteor/sw-meteor-card', () => {
     });
 
     it('should render tabs and change content', async () => {
-        wrapper = shallowMount({
+        const wrapper = shallowMount({
             template: `
 <sw-meteor-card defaultTab="tab1">
 
@@ -211,11 +194,6 @@ describe('src/app/component/meteor/sw-meteor-card', () => {
                 'sw-meteor-card': Shopware.Component.build('sw-meteor-card'),
                 'sw-tabs': Shopware.Component.build('sw-tabs'),
                 'sw-tabs-item': Shopware.Component.build('sw-tabs-item')
-            },
-            mocks: {
-                $device: {
-                    onResize: () => {}
-                }
             }
         });
 

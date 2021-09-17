@@ -3,12 +3,6 @@ import 'src/module/sw-cms/component/sw-cms-layout-modal';
 
 function createWrapper() {
     return shallowMount(Shopware.Component.build('sw-cms-layout-modal'), {
-        mocks: {
-            $t: key => key,
-            $tc: key => key,
-            $router: { replace: () => {} },
-            $route: { query: '' }
-        },
         provide: {
             repositoryFactory: {
                 create: () => ({
@@ -55,10 +49,7 @@ describe('module/sw-cms/component/sw-cms-layout-modal', () => {
             ]
         }));
 
-        expect(wrapper.vm.pageRepository.search).toHaveBeenCalledWith(
-            wrapper.vm.cmsPageCriteria,
-            Shopware.Context.api
-        );
+        expect(wrapper.vm.pageRepository.search).toHaveBeenCalledWith(wrapper.vm.cmsPageCriteria);
     });
 
     it('should search cms pages without criteria filters', async () => {
@@ -71,9 +62,6 @@ describe('module/sw-cms/component/sw-cms-layout-modal', () => {
             filters: []
         }));
 
-        expect(wrapper.vm.pageRepository.search).toHaveBeenCalledWith(
-            wrapper.vm.cmsPageCriteria,
-            Shopware.Context.api
-        );
+        expect(wrapper.vm.pageRepository.search).toHaveBeenCalledWith(wrapper.vm.cmsPageCriteria);
     });
 });

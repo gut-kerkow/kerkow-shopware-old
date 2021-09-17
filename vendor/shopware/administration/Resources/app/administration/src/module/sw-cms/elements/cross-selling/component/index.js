@@ -9,12 +9,12 @@ Component.register('sw-cms-el-cross-selling', {
 
     mixins: [
         Mixin.getByName('cms-element'),
-        Mixin.getByName('placeholder')
+        Mixin.getByName('placeholder'),
     ],
 
     data() {
         return {
-            sliderBoxLimit: 3
+            sliderBoxLimit: 3,
         };
     },
 
@@ -24,17 +24,17 @@ Component.register('sw-cms-el-cross-selling', {
                 config: {
                     boxLayout: {
                         source: 'static',
-                        value: this.element.config.boxLayout.value
+                        value: this.element.config.boxLayout.value,
                     },
                     displayMode: {
                         source: 'static',
-                        value: this.element.config.displayMode.value
+                        value: this.element.config.displayMode.value,
                     },
                     elMinWidth: {
                         source: 'static',
-                        value: this.element.config.elMinWidth.value
-                    }
-                }
+                        value: this.element.config.elMinWidth.value,
+                    },
+                },
             };
         },
 
@@ -53,7 +53,7 @@ Component.register('sw-cms-el-cross-selling', {
         crossSelling() {
             if (!this.element.data.product || !this.element.data.product.crossSellings.length) {
                 return {
-                    name: 'Cross selling title'
+                    name: 'Cross selling title',
                 };
             }
 
@@ -72,21 +72,21 @@ Component.register('sw-cms-el-cross-selling', {
             }
 
             return null;
-        }
+        },
     },
 
     watch: {
         'element.config.elMinWidth.value': {
             handler() {
                 this.setSliderRowLimit();
-            }
+            },
         },
 
         currentDeviceView() {
             setTimeout(() => {
                 this.setSliderRowLimit();
             }, 400);
-        }
+        },
     },
 
     created() {
@@ -112,7 +112,9 @@ Component.register('sw-cms-el-cross-selling', {
                 this.createdComponent();
             }
 
-            if (this.currentDeviceView === 'mobile' || (this.$refs.productHolder && this.$refs.productHolder.offsetWidth < 500)) {
+            if (this.currentDeviceView === 'mobile'
+                || (this.$refs.productHolder && this.$refs.productHolder.offsetWidth < 500)
+            ) {
                 this.sliderBoxLimit = 1;
                 return;
             }
@@ -124,7 +126,9 @@ Component.register('sw-cms-el-cross-selling', {
                 return;
             }
 
-            if (parseInt(this.element.config.elMinWidth.value.replace('px', ''), 10) <= 0) {
+            if (parseInt(
+                this.element.config.elMinWidth.value.replace('px', ''), 10,
+            ) <= 0) {
                 return;
             }
 
@@ -132,7 +136,9 @@ Component.register('sw-cms-el-cross-selling', {
             const fakeLookWidth = 100;
             const boxWidth = this.$refs.productHolder.offsetWidth;
             const elGap = 32;
-            let elWidth = parseInt(this.element.config.elMinWidth.value.replace('px', ''), 10);
+            let elWidth = parseInt(
+                this.element.config.elMinWidth.value.replace('px', ''), 10,
+            );
 
             if (elWidth >= 300) {
                 elWidth -= fakeLookWidth;
@@ -146,17 +152,17 @@ Component.register('sw-cms-el-cross-selling', {
                 config: {
                     boxLayout: {
                         source: 'static',
-                        value: this.element.config.boxLayout.value
+                        value: this.element.config.boxLayout.value,
                     },
                     displayMode: {
                         source: 'static',
-                        value: this.element.config.displayMode.value
-                    }
+                        value: this.element.config.displayMode.value,
+                    },
                 },
                 data: {
-                    product
-                }
+                    product,
+                },
             };
-        }
-    }
+        },
+    },
 });

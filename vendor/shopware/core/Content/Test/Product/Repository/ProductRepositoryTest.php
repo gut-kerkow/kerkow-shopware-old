@@ -10,15 +10,18 @@ use Shopware\Core\Content\Product\Aggregate\ProductMedia\ProductMediaEntity;
 use Shopware\Core\Content\Product\Aggregate\ProductPrice\ProductPriceEntity;
 use Shopware\Core\Content\Product\Aggregate\ProductSearchKeyword\ProductSearchKeywordCollection;
 use Shopware\Core\Content\Product\Aggregate\ProductSearchKeyword\ProductSearchKeywordEntity;
+use Shopware\Core\Content\Product\DataAbstractionLayer\SearchKeywordUpdater;
 use Shopware\Core\Content\Product\Exception\DuplicateProductNumberException;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Content\Product\ProductEntity;
+use Shopware\Core\Content\Test\Product\ProductBuilder;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Api\Context\SystemSource;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
 use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
+use Shopware\Core\Framework\DataAbstractionLayer\Pricing\CashRoundingConfig;
 use Shopware\Core\Framework\DataAbstractionLayer\Pricing\Price;
 use Shopware\Core\Framework\DataAbstractionLayer\Pricing\PriceCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -27,7 +30,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\IdSearchResult;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\WriteException;
-use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Test\IdsCollection;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseHelper\CallableClass;
@@ -69,12 +71,20 @@ class ProductRepositoryTest extends TestCase
      */
     private $context;
 
+    /**
+     * @var SearchKeywordUpdater
+     */
+    private $searchKeywordUpdater;
+
     protected function setUp(): void
     {
         $this->repository = $this->getContainer()->get('product.repository');
         $this->eventDispatcher = $this->getContainer()->get('event_dispatcher');
         $this->connection = $this->getContainer()->get(Connection::class);
         $this->context = Context::createDefaultContext();
+
+        $this->searchKeywordUpdater = $this->getContainer()->get(SearchKeywordUpdater::class);
+        $this->resetSearchKeywordUpdaterConfig();
     }
 
     public function testWritePrice(): void
@@ -120,8 +130,10 @@ class ProductRepositoryTest extends TestCase
                     'shortName' => 'test',
                     'name' => 'name',
                     'symbol' => 'A',
-                    'isoCode' => 'A',
+                    'isoCode' => 'XX',
                     'decimalPrecision' => 2,
+                    'itemRounding' => json_decode(json_encode(new CashRoundingConfig(2, 0.01, true)), true),
+                    'totalRounding' => json_decode(json_encode(new CashRoundingConfig(2, 0.01, true)), true),
                 ],
             ],
             $this->context
@@ -460,7 +472,6 @@ class ProductRepositoryTest extends TestCase
 
         $product = $products->get($ids[0]);
 
-        /* @var ProductEntity $product */
         static::assertInstanceOf(ProductEntity::class, $product);
         static::assertInstanceOf(TaxEntity::class, $product->getTax());
         static::assertSame('without id', $product->getTax()->getName());
@@ -543,7 +554,6 @@ class ProductRepositoryTest extends TestCase
 
         $product = $products->get($ids[0]);
 
-        /* @var ProductEntity $product */
         static::assertInstanceOf(ProductEntity::class, $product);
         static::assertInstanceOf(ProductManufacturerEntity::class, $product->getManufacturer());
         static::assertSame('without id', $product->getManufacturer()->getName());
@@ -673,7 +683,6 @@ class ProductRepositoryTest extends TestCase
 
         $product = $products->get($id);
 
-        /* @var ProductEntity $product */
         static::assertSame($id, $product->getId());
 
         static::assertEquals(new Price(Defaults::CURRENCY, 10, 15, false), $product->getCurrencyPrice(Defaults::CURRENCY));
@@ -994,7 +1003,6 @@ class ProductRepositoryTest extends TestCase
         $products = $this->repository->search($criteria, Context::createDefaultContext());
         $product = $products->get($child);
 
-        /* @var ProductEntity $product */
         static::assertSame('Child transformed to parent', $product->getName());
         static::assertSame(13.0, $product->getCurrencyPrice(Defaults::CURRENCY)->getGross());
         static::assertSame('test3', $product->getManufacturer()->getName());
@@ -1092,7 +1100,6 @@ class ProductRepositoryTest extends TestCase
         $products = $this->repository->search($criteria, Context::createDefaultContext());
         $product = $products->get($child);
 
-        /* @var ProductEntity $product */
         static::assertSame('Child transformed to parent', $product->getName());
         static::assertSame(13.0, $product->getCurrencyPrice(Defaults::CURRENCY)->getGross());
         static::assertSame('test3', $product->getManufacturer()->getName());
@@ -2105,8 +2112,6 @@ class ProductRepositoryTest extends TestCase
 
     public function testCreateAndAssignCMSPage(): void
     {
-        Feature::skipTestIfInActive('FEATURE_NEXT_10078', $this);
-
         $id = Uuid::randomHex();
 
         $cmsPageId = Uuid::randomHex();
@@ -2283,80 +2288,6 @@ class ProductRepositoryTest extends TestCase
         static::assertNull($price->getQuantityEnd());
     }
 
-    public function testPaginatedAssociationWithBlacklist(): void
-    {
-        $manufacturerId = Uuid::randomHex();
-        $ruleId = Uuid::randomHex();
-        $ruleId2 = Uuid::randomHex();
-
-        $default = [
-            'productNumber' => Uuid::randomHex(),
-            'stock' => 10,
-            'tax' => ['name' => 'test', 'taxRate' => 15, 'id' => $manufacturerId],
-            'name' => 'test product',
-            'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 10, 'net' => 9, 'linked' => false]],
-            'manufacturer' => ['name' => 'test', 'id' => $manufacturerId],
-        ];
-
-        $withRules = array_merge($default, ['blacklistIds' => [$ruleId], 'productNumber' => Uuid::randomHex()]);
-
-        $withRules2 = array_merge($default, ['blacklistIds' => [$ruleId], 'productNumber' => Uuid::randomHex()]);
-
-        $default2 = array_merge($default, ['productNumber' => Uuid::randomHex()]);
-
-        $products = [
-            $default,
-            $withRules,
-            $withRules2,
-            $default2,
-        ];
-
-        $this->repository->create($products, Context::createDefaultContext());
-
-        $criteria = new Criteria([$manufacturerId]);
-        $criteria->getAssociation('products')->setLimit(4);
-
-        $repo = $this->getContainer()->get('product_manufacturer.repository');
-
-        $context = $this->createContext();
-        /** @var ProductManufacturerEntity $manufacturer */
-        $manufacturer = $repo->search($criteria, $context)->get($manufacturerId);
-
-        //test if all products can be read if context contains no rules
-        static::assertInstanceOf(ProductManufacturerEntity::class, $manufacturer);
-
-        static::assertInstanceOf(ProductCollection::class, $manufacturer->getProducts());
-        static::assertCount(4, $manufacturer->getProducts());
-
-        //test if two of four products can be read if context contains no rule
-        $criteria = new Criteria([$manufacturerId]);
-        $criteria->getAssociation('products')->setLimit(2);
-
-        $repo = $this->getContainer()->get('product_manufacturer.repository');
-
-        $context = $this->createContext();
-        /** @var ProductManufacturerEntity $manufacturer */
-        $manufacturer = $repo->search($criteria, $context)->get($manufacturerId);
-
-        static::assertInstanceOf(ProductManufacturerEntity::class, $manufacturer);
-        static::assertInstanceOf(ProductCollection::class, $manufacturer->getProducts());
-        static::assertCount(2, $manufacturer->getProducts());
-
-        //test if two of four products can be read if context contains no rule
-        $criteria = new Criteria([$manufacturerId]);
-        $criteria->getAssociation('products')->setLimit(4);
-
-        $repo = $this->getContainer()->get('product_manufacturer.repository');
-
-        $context = $this->createContext([$ruleId, $ruleId2]);
-        /** @var ProductManufacturerEntity $manufacturer */
-        $manufacturer = $repo->search($criteria, $context)->get($manufacturerId);
-
-        static::assertInstanceOf(ProductManufacturerEntity::class, $manufacturer);
-        static::assertInstanceOf(ProductCollection::class, $manufacturer->getProducts());
-        static::assertCount(2, $manufacturer->getProducts());
-    }
-
     public function testWriteProductCategoriesWithoutId(): void
     {
         $id = Uuid::randomHex();
@@ -2453,6 +2384,76 @@ class ProductRepositoryTest extends TestCase
 
         static::assertEquals(
             array_values($ids->getList(['a', 'c', 'b', 'd'])),
+            $result->getIds()
+        );
+    }
+
+    public function testPriceSortingWithDifferentCurrencyNoFallback(): void
+    {
+        $ids = new TestDataCollection();
+        $isoCode = 'DEM';
+        $currencyFactor = 0.5;
+        $ids->create($isoCode);
+
+        $this->getContainer()->get('currency.repository')->create(
+            [
+                [
+                    'id' => $ids->get($isoCode),
+                    'factor' => $currencyFactor,
+                    'shortName' => 'test',
+                    'name' => 'name',
+                    'symbol' => 'DM',
+                    'isoCode' => $isoCode,
+                    'decimalPrecision' => 2,
+                    'itemRounding' => json_decode(json_encode(new CashRoundingConfig(2, 0.01, true)), true),
+                    'totalRounding' => json_decode(json_encode(new CashRoundingConfig(2, 0.01, true)), true),
+                ],
+            ],
+            Context::createDefaultContext()
+        );
+
+        $data = [
+            (new ProductBuilder($ids, 'a'))->price(99.94, null, 'default', 99.94)->build(),
+            (new ProductBuilder($ids, 'b'))->price(15, 10)->price(99.93, null, $isoCode, 99.93)->build(),
+            (new ProductBuilder($ids, 'c'))->price(15, 10)->price(99.97, null, $isoCode, 99.97)->build(),
+            (new ProductBuilder($ids, 'd'))->price(15, 10)->price(99.91, null, $isoCode, 99.91)->build(),
+            (new ProductBuilder($ids, 'e'))->price(15, 10)->price(99.95, null, $isoCode, 99.95)->build(),
+        ];
+
+        $this->repository->create($data, Context::createDefaultContext());
+
+        foreach (['', '.listPrice'] as $priceType) {
+            $criteria = new Criteria($ids->all());
+            $criteria->addSorting(new FieldSorting(sprintf('price.%s%s.gross', $ids->get($isoCode), $priceType)));
+
+            $result = $this->repository->searchIds($criteria, Context::createDefaultContext());
+
+            static::assertEquals(
+                array_values($ids->getList(['a', 'd', 'b', 'e', 'c'])),
+                $result->getIds()
+            );
+
+            $criteria = new Criteria($ids->all());
+            $criteria->addSorting(new FieldSorting(sprintf('price.%s%s.gross', $ids->get($isoCode), $priceType), 'DESC'));
+
+            $result = $this->repository->searchIds($criteria, Context::createDefaultContext());
+
+            static::assertEquals(
+                array_values($ids->getList(['c', 'e', 'b', 'd', 'a'])),
+                $result->getIds()
+            );
+        }
+
+        // test context with currency id
+        $context = new Context(new SystemSource(), [], $ids->get($isoCode), [Defaults::LANGUAGE_SYSTEM], Defaults::LIVE_VERSION, $currencyFactor);
+
+        $criteria = new Criteria($ids->all());
+        $criteria->addSorting(new FieldSorting('price'));
+
+        $result = $this->repository->searchIds($criteria, $context);
+
+        static::assertEquals(
+            array_values($ids->getList(['a', 'd', 'b', 'e', 'c'])),
             $result->getIds()
         );
     }
@@ -2819,9 +2820,276 @@ class ProductRepositoryTest extends TestCase
         }
     }
 
+    public function testChildren(): void
+    {
+        $rootId = 'f1d2554b0ce847cd82f3ac9bd1c0dfca';
+        $data = [
+            'id' => $rootId,
+            'name' => 'Variant product',
+            'productNumber' => 'TEST',
+            'price' => [
+                [
+                    'gross' => 111,
+                    'net' => 111,
+                    'currencyId' => 'b7d2554b0ce847cd82f3ac9bd1c0dfca',
+                    'linked' => false,
+                ],
+            ],
+            'stock' => 1234,
+            'tax' => [
+                'taxRate' => 0,
+                'name' => 'foo',
+            ],
+            'manufacturer' => [
+                'id' => 'b7d2554b0ce847cd82f3ac9bd1c0dfca',
+                'name' => 'Test variant manufacturer',
+            ],
+            'manufacturerId' => 'b7d2554b0ce847cd82f3ac9bd1c0dfca',
+            'properties' => [
+                [
+                    'id' => 'f1d2554b0ce847cd82f3ac9bd1c0dfba',
+                    'name' => 'red',
+                    'colorHexCode' => '#ff0000',
+                    'group' => [
+                        'id' => 'adf2554b0ce847cd82f3ac9bd1c0dfba',
+                        'name' => 'color',
+                        'displayType' => 'color',
+                    ],
+                ],
+                [
+                    'id' => 'f1d2554b0ce847cd82f3ac9bd1c0dfbb',
+                    'name' => 'green',
+                    'colorHexCode' => '#00ff00',
+                    'groupId' => 'adf2554b0ce847cd82f3ac9bd1c0dfba',
+                ],
+                [
+                    'id' => 'f1d2554b0ce847cd82f3ac9bd1c0dfbc',
+                    'name' => 'blue',
+                    'colorHexCode' => '#0000ff',
+                    'groupId' => 'adf2554b0ce847cd82f3ac9bd1c0dfba',
+                ],
+            ],
+            'children' => [
+                [
+                    'productNumber' => 'TEST.1',
+                    'stock' => 10,
+                    'options' => [
+                        ['id' => 'f1d2554b0ce847cd82f3ac9bd1c0dfba'],
+                    ],
+                ],
+                [
+                    'productNumber' => 'TEST.2',
+                    'stock' => 10,
+                    'options' => [
+                        ['id' => 'f1d2554b0ce847cd82f3ac9bd1c0dfbb'],
+                    ],
+                ],
+                [
+                    'productNumber' => 'TEST.3',
+                    'stock' => 10,
+                    'options' => [
+                        ['id' => 'f1d2554b0ce847cd82f3ac9bd1c0dfbc'],
+                    ],
+                ],
+            ],
+            'configuratorSettings' => [
+                [
+                    'id' => 'f1d2554b0ce847cd82f3ac9bd1c0dfaa',
+                    'optionId' => 'f1d2554b0ce847cd82f3ac9bd1c0dfba',
+                ],
+                [
+                    'id' => 'f1d2554b0ce847cd82f3ac9bd1c0dfab',
+                    'optionId' => 'f1d2554b0ce847cd82f3ac9bd1c0dfbb',
+                ],
+                [
+                    'id' => 'f1d2554b0ce847cd82f3ac9bd1c0dfac',
+                    'optionId' => 'f1d2554b0ce847cd82f3ac9bd1c0dfbc',
+                ],
+            ],
+        ];
+
+        $this->repository->upsert([$data], Context::createDefaultContext());
+        $critera = new Criteria([$rootId]);
+        $critera->addAssociation('configuratorSettings');
+        /** @var ProductEntity $result */
+        $result = $this->repository->search($critera, Context::createDefaultContext())->first();
+
+        static::assertCount(3, $result->getConfiguratorSettings());
+    }
+
+    public function testUpdateDescriptionToBeNull(): void
+    {
+        $id = Uuid::randomHex();
+        $description = 'My name is Product Test';
+
+        $data = [
+            'id' => $id,
+            'name' => 'test',
+            'description' => $description,
+            'productNumber' => Uuid::randomHex(),
+            'stock' => 10,
+            'price' => [
+                ['currencyId' => Defaults::CURRENCY, 'gross' => 15, 'net' => 10, 'linked' => false],
+            ],
+            'manufacturer' => ['name' => 'test'],
+            'tax' => ['name' => 'test', 'taxRate' => 15],
+        ];
+
+        $this->repository->create([$data], $this->context);
+
+        /** @var ProductEntity $product */
+        $product = $this->repository
+            ->search(new Criteria([$id]), $this->context)
+            ->get($id);
+
+        static::assertSame($description, $product->getDescription());
+
+        $this->repository->update([
+            ['description' => null, 'id' => $id],
+        ], $this->context);
+
+        $product = $this->repository
+            ->search(new Criteria([$id]), $this->context)
+            ->get($id);
+
+        static::assertNull($product->getDescription());
+    }
+
+    public function testUpdatePropertyIdsForVariantsWhenUpdateFromParents(): void
+    {
+        $context = Context::createDefaultContext();
+
+        $productId = Uuid::randomHex();
+        $variantA = Uuid::randomHex();
+        $variantB = Uuid::randomHex();
+        $propertyIds = [
+            'f1d2554b0ce847cd82f3ac9bd1c0dfba',
+            'f1d2554b0ce847cd82f3ac9bd1c0dfbb',
+            'f1d2554b0ce847cd82f3ac9bd1c0dfbc',
+        ];
+
+        $data = [
+            'id' => $productId,
+            'name' => 'Master product',
+            'productNumber' => 'TEST',
+            'price' => [
+                [
+                    'gross' => 111,
+                    'net' => 111,
+                    'currencyId' => 'b7d2554b0ce847cd82f3ac9bd1c0dfca',
+                    'linked' => false,
+                ],
+            ],
+            'stock' => 1234,
+            'tax' => [
+                'taxRate' => 0,
+                'name' => 'foo',
+            ],
+            'manufacturer' => [
+                'id' => 'b7d2554b0ce847cd82f3ac9bd1c0dfca',
+                'name' => 'Test variant manufacturer',
+            ],
+            'manufacturerId' => 'b7d2554b0ce847cd82f3ac9bd1c0dfca',
+            'properties' => [
+                [
+                    'id' => $propertyIds[0],
+                    'name' => 'red',
+                    'colorHexCode' => '#ff0000',
+                    'group' => [
+                        'id' => 'adf2554b0ce847cd82f3ac9bd1c0dfba',
+                        'name' => 'color',
+                        'displayType' => 'color',
+                    ],
+                ],
+                [
+                    'id' => $propertyIds[1],
+                    'name' => 'green',
+                    'colorHexCode' => '#00ff00',
+                    'groupId' => 'adf2554b0ce847cd82f3ac9bd1c0dfba',
+                ],
+            ],
+            'children' => [
+                [
+                    'productNumber' => 'TEST.1',
+                    'id' => $variantA,
+                    'stock' => 10,
+                    'options' => [
+                        ['id' => $propertyIds[0]],
+                    ],
+                ],
+                [
+                    'productNumber' => 'TEST.2',
+                    'id' => $variantB,
+                    'stock' => 10,
+                    'options' => [
+                        ['id' => $propertyIds[1]],
+                    ],
+                ],
+            ],
+            'configuratorSettings' => [
+                [
+                    'id' => 'f1d2554b0ce847cd82f3ac9bd1c0dfaa',
+                    'optionId' => $propertyIds[0],
+                ],
+                [
+                    'id' => 'f1d2554b0ce847cd82f3ac9bd1c0dfab',
+                    'optionId' => $propertyIds[1],
+                ],
+            ],
+        ];
+
+        $this->repository->upsert([$data], $context);
+
+        $variants = $this->repository->search(new Criteria([$variantB, $variantA]), $context)->getElements();
+        $product = $this->repository->search(new Criteria([$productId]), $context)->first();
+
+        static::assertCount(2, $variants);
+        static::assertNotNull($product);
+
+        $productProperties = $product->getPropertyIds();
+        $variantAProperties = $variants[$variantA]->getPropertyIds();
+        $variantBProperties = $variants[$variantB]->getPropertyIds();
+        sort($productProperties);
+        sort($variantAProperties);
+        sort($variantBProperties);
+
+        static::assertEquals($productProperties, $variantAProperties);
+        static::assertEquals($productProperties, $variantBProperties);
+
+        $data = [
+            'properties' => [
+                [
+                    'id' => $propertyIds[2],
+                    'name' => 'green',
+                    'colorHexCode' => '#00ff00',
+                    'groupId' => 'adf2554b0ce847cd82f3ac9bd1c0dfba',
+                ],
+            ],
+            'id' => $productId,
+        ];
+
+        $this->repository->upsert([$data], $this->context);
+
+        $variants = $this->repository->search(new Criteria([$variantB, $variantA]), $context)->getElements();
+        $product = $this->repository->search(new Criteria([$productId]), $context)->first();
+
+        static::assertCount(2, $variants);
+        static::assertNotNull($product);
+
+        $productProperties = $product->getPropertyIds();
+        $variantAProperties = $variants[$variantA]->getPropertyIds();
+        $variantBProperties = $variants[$variantB]->getPropertyIds();
+        sort($productProperties);
+        sort($variantAProperties);
+        sort($variantBProperties);
+
+        static::assertEquals($productProperties, $variantAProperties);
+        static::assertEquals($productProperties, $variantBProperties);
+    }
+
     private function createLanguageContext(array $languages, bool $inheritance)
     {
-        return new Context(new SystemSource(), [], Defaults::CURRENCY, $languages, Defaults::LIVE_VERSION, 1.0, 2, $inheritance);
+        return new Context(new SystemSource(), [], Defaults::CURRENCY, $languages, Defaults::LIVE_VERSION, 1.0, $inheritance);
     }
 
     private function createContext(array $ruleIds = []): Context
@@ -2831,7 +3099,6 @@ class ProductRepositoryTest extends TestCase
 
     private function createLanguage(string $id, ?string $parentId = Defaults::LANGUAGE_SYSTEM): void
     {
-        /* @var EntityRepositoryInterface $languageRepository */
         $languageRepository = $this->getContainer()->get('language.repository');
 
         $languageRepository->upsert(
@@ -2856,6 +3123,22 @@ class ProductRepositoryTest extends TestCase
                 ],
             ],
             Context::createDefaultContext()
+        );
+    }
+
+    private function resetSearchKeywordUpdaterConfig(): void
+    {
+        $class = new \ReflectionClass($this->searchKeywordUpdater);
+        $property = $class->getProperty('decorated');
+        $property->setAccessible(true);
+        $searchKeywordUpdaterInner = $property->getValue($this->searchKeywordUpdater);
+
+        $class = new \ReflectionClass($searchKeywordUpdaterInner);
+        $property = $class->getProperty('config');
+        $property->setAccessible(true);
+        $property->setValue(
+            $searchKeywordUpdaterInner,
+            []
         );
     }
 }

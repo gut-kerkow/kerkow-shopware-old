@@ -100,13 +100,13 @@ describe('module/sw-settings-snippet/page/sw-settings-snippet-detail', () => {
                     params: {
                         key: 'account.addressCreateBtn'
                     }
-                },
-                $tc: key => key
+                }
             },
             provide: {
                 repositoryFactory: {
                     create: () => ({
-                        search: () => Promise.resolve(getSnippetSets())
+                        search: () => Promise.resolve(getSnippetSets()),
+                        create: () => Promise.resolve()
                     })
                 },
                 acl: {
@@ -135,9 +135,15 @@ describe('module/sw-settings-snippet/page/sw-settings-snippet-detail', () => {
                 validationService: {}
             },
             stubs: {
-                'sw-page': '<div class="sw-page"><slot name="smart-bar-actions"></slot><slot name="content"></slot></div>',
-                'sw-card': '<div><slot></slot><slot name="grid"></slot></div>',
-                'sw-card-view': '<div><slot></slot></div>',
+                'sw-page': {
+                    template: '<div class="sw-page"><slot name="smart-bar-actions"></slot><slot name="content"></slot></div>'
+                },
+                'sw-card': {
+                    template: '<div><slot></slot><slot name="grid"></slot></div>'
+                },
+                'sw-card-view': {
+                    template: '<div><slot></slot></div>'
+                },
                 'sw-field': Shopware.Component.build('sw-field'),
                 'sw-text-field': Shopware.Component.build('sw-text-field'),
                 'sw-contextual-field': Shopware.Component.build('sw-contextual-field'),

@@ -77,7 +77,7 @@ class ProductListingCMSElementResolverTest extends TestCase
 
         if ($availableSortings) {
             foreach ($listing->getAvailableSortings() as $availableSorting) {
-                static::assertContains($availableSorting->getKey(), $availableSortings);
+                static::assertArrayHasKey($availableSorting->getKey(), $availableSortings);
             }
         }
     }
@@ -198,7 +198,7 @@ class ProductListingCMSElementResolverTest extends TestCase
 
         $actualSortings = array_values($actualSortings);
 
-        arsort($availableSortings, SORT_DESC | SORT_NUMERIC);
+        arsort($availableSortings, \SORT_DESC | \SORT_NUMERIC);
         $availableSortings = array_keys($availableSortings);
 
         static::assertEquals($availableSortings, $actualSortings);

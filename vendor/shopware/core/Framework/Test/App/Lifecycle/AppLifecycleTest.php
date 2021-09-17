@@ -5,9 +5,12 @@ namespace Shopware\Core\Framework\Test\App\Lifecycle;
 use Doctrine\DBAL\Connection;
 use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
+use Shopware\Core\Content\Media\File\FileLoader;
 use Shopware\Core\Defaults;
-use Shopware\Core\Framework\Api\Context\AdminApiSource;
+use Shopware\Core\Framework\Api\Context\SystemSource;
 use Shopware\Core\Framework\App\Aggregate\ActionButton\ActionButtonEntity;
+use Shopware\Core\Framework\App\Aggregate\CmsBlock\AppCmsBlockEntity;
 use Shopware\Core\Framework\App\AppCollection;
 use Shopware\Core\Framework\App\AppEntity;
 use Shopware\Core\Framework\App\Event\AppDeletedEvent;
@@ -26,6 +29,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopware\Core\Framework\Test\App\GuzzleTestClientBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\SystemConfigTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
@@ -40,30 +44,15 @@ class AppLifecycleTest extends TestCase
     use GuzzleTestClientBehaviour;
     use SystemConfigTestBehaviour;
 
-    /**
-     * @var AppLifecycle
-     */
-    private $appLifecycle;
+    private AppLifecycle $appLifecycle;
 
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $appRepository;
+    private EntityRepositoryInterface $appRepository;
 
-    /**
-     * @var Context
-     */
-    private $context;
+    private Context $context;
 
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $actionButtonRepository;
+    private EntityRepositoryInterface $actionButtonRepository;
 
-    /**
-     * @var EventDispatcherInterface
-     */
-    private $eventDispatcher;
+    private EventDispatcherInterface $eventDispatcher;
 
     public function setUp(): void
     {
@@ -72,11 +61,7 @@ class AppLifecycleTest extends TestCase
 
         $this->appLifecycle = $this->getContainer()->get(AppLifecycle::class);
 
-        $userRepository = $this->getContainer()->get('user.repository');
-        $userId = $userRepository->searchIds(new Criteria(), Context::createDefaultContext())->firstId();
-        $source = new AdminApiSource($userId);
-        $source->setIsAdmin(true);
-        $this->context = Context::createDefaultContext($source);
+        $this->context = new Context(new SystemSource(), [], Defaults::CURRENCY, [Defaults::LANGUAGE_SYSTEM]);
 
         $this->eventDispatcher = $this->getContainer()->get('event_dispatcher');
     }
@@ -98,8 +83,10 @@ class AppLifecycleTest extends TestCase
 
         static::assertTrue($eventWasReceived);
         $this->eventDispatcher->removeListener(AppInstalledEvent::class, $onAppInstalled);
+        $criteria = new Criteria();
+        $criteria->addAssociation('integration');
         /** @var AppCollection $apps */
-        $apps = $this->appRepository->search(new Criteria(), $this->context)->getEntities();
+        $apps = $this->appRepository->search($criteria, $this->context)->getEntities();
 
         static::assertCount(1, $apps);
         static::assertEquals('test', $apps->first()->getName());
@@ -119,12 +106,15 @@ class AppLifecycleTest extends TestCase
 
         static::assertEquals($appId, $apps->first()->getId());
         static::assertFalse($apps->first()->isConfigurable());
+        static::assertFalse($apps->first()->getIntegration()->getAdmin());
         $this->assertDefaultActionButtons();
         $this->assertDefaultModules($apps->first());
         $this->assertDefaultPrivileges($apps->first()->getAclRoleId());
         $this->assertDefaultCustomFields($apps->first()->getId());
         $this->assertDefaultWebhooks($apps->first()->getId());
         $this->assertDefaultTemplate($apps->first()->getId());
+        $this->assertDefaultPaymentMethods($apps->first()->getId());
+        $this->assertDefaultCmsBlocks($apps->first()->getId());
     }
 
     public function testInstallRollbacksRegistrationFailure(): void
@@ -248,10 +238,10 @@ class AppLifecycleTest extends TestCase
 
         $this->appRepository->create([[
             'id' => $id,
-            'name' => 'SwagApp',
+            'name' => 'test',
             'path' => __DIR__ . '/../Manifest/_fixtures/test',
             'version' => '0.0.1',
-            'label' => 'test',
+            'label' => 'Swag App',
             'accessToken' => 'test',
             'appSecret' => 's3cr3t',
             'modules' => [
@@ -291,7 +281,7 @@ class AppLifecycleTest extends TestCase
             ],
             'aclRole' => [
                 'id' => $roleId,
-                'name' => 'SwagApp',
+                'name' => 'test',
             ],
             'webhooks' => [
                 [
@@ -309,17 +299,39 @@ class AppLifecycleTest extends TestCase
                 [
                     'path' => 'storefront/layout/header/logo.html.twig',
                     'template' => 'will be overwritten',
-                    'active' => true,
+                    'active' => false,
                 ],
                 [
                     'path' => 'storefront/got/removed',
                     'template' => 'will be removed',
-                    'active' => true,
+                    'active' => false,
+                ],
+            ],
+            'paymentMethods' => [
+                [
+                    'paymentMethod' => [
+                        'handlerIdentifier' => 'app\\test\\myMethod',
+                        'name' => 'My method',
+                        'active' => false,
+                        'media' => [
+                            'private' => true,
+                        ],
+                    ],
+                    'appName' => 'test',
+                    'identifier' => 'myMethod',
+                ],
+                [
+                    'paymentMethod' => [
+                        'handlerIdentifier' => 'app\\test\\toBeRemoved',
+                        'name' => 'This method shall be removed',
+                        'active' => false,
+                    ],
+                    'appName' => 'test',
+                    'identifier' => 'toBeRemoved',
                 ],
             ],
         ]], Context::createDefaultContext());
 
-        /** @var PermissionPersister $permissionPersister */
         $permissionPersister = $this->getContainer()->get(PermissionPersister::class);
         $permissions = Permissions::fromArray([
             'product' => ['update'],
@@ -363,7 +375,8 @@ class AppLifecycleTest extends TestCase
         $this->assertDefaultPrivileges($apps->first()->getAclRoleId());
         $this->assertDefaultCustomFields($id);
         $this->assertDefaultWebhooks($apps->first()->getId());
-        $this->assertDefaultTemplate($apps->first()->getId());
+        $this->assertDefaultTemplate($apps->first()->getId(), false);
+        $this->assertDefaultPaymentMethods($apps->first()->getId());
     }
 
     public function testUpdateActiveApp(): void
@@ -373,10 +386,10 @@ class AppLifecycleTest extends TestCase
 
         $this->appRepository->create([[
             'id' => $id,
-            'name' => 'SwagApp',
+            'name' => 'test',
             'path' => __DIR__ . '/../Manifest/_fixtures/test',
             'version' => '0.0.1',
-            'label' => 'test',
+            'label' => 'Swag App',
             'accessToken' => 'test',
             'appSecret' => 's3cr3t',
             'active' => true,
@@ -417,7 +430,7 @@ class AppLifecycleTest extends TestCase
             ],
             'aclRole' => [
                 'id' => $roleId,
-                'name' => 'SwagApp',
+                'name' => 'test',
             ],
             'webhooks' => [
                 [
@@ -443,9 +456,31 @@ class AppLifecycleTest extends TestCase
                     'active' => true,
                 ],
             ],
+            'paymentMethods' => [
+                [
+                    'paymentMethod' => [
+                        'handlerIdentifier' => 'app\\test\\myMethod',
+                        'name' => 'My method',
+                        'active' => true,
+                        'media' => [
+                            'private' => false,
+                        ],
+                    ],
+                    'appName' => 'test',
+                    'identifier' => 'myMethod',
+                ],
+                [
+                    'paymentMethod' => [
+                        'handlerIdentifier' => 'app\\test\\toBeRemoved',
+                        'name' => 'This method shall be removed',
+                        'active' => true,
+                    ],
+                    'appName' => 'test',
+                    'identifier' => 'toBeRemoved',
+                ],
+            ],
         ]], Context::createDefaultContext());
 
-        /** @var PermissionPersister $permissionPersister */
         $permissionPersister = $this->getContainer()->get(PermissionPersister::class);
         $permissions = Permissions::fromArray([
             'product' => ['update'],
@@ -490,19 +525,21 @@ class AppLifecycleTest extends TestCase
         $this->assertDefaultCustomFields($id);
         $this->assertDefaultWebhooks($apps->first()->getId());
         $this->assertDefaultTemplate($apps->first()->getId());
+        $this->assertDefaultPaymentMethods($apps->first()->getId());
     }
 
-    public function testUpdateDoesNotInstallElementsNeedingAppSecretIfItIsMissing(): void
+    public function testUpdateDoesRunRegistrationIfNecessary(): void
     {
         $id = Uuid::randomHex();
         $roleId = Uuid::randomHex();
 
         $this->appRepository->create([[
             'id' => $id,
-            'name' => 'SwagApp',
+            'active' => true,
+            'name' => 'test',
             'path' => __DIR__ . '/../Manifest/_fixtures/test',
             'version' => '0.0.1',
-            'label' => 'test',
+            'label' => 'Swag App',
             'accessToken' => 'test',
             'integration' => [
                 'label' => 'test',
@@ -517,7 +554,7 @@ class AppLifecycleTest extends TestCase
             ],
             'aclRole' => [
                 'id' => $roleId,
-                'name' => 'SwagApp',
+                'name' => 'test',
             ],
             'templates' => [
                 [
@@ -533,7 +570,6 @@ class AppLifecycleTest extends TestCase
             ],
         ]], Context::createDefaultContext());
 
-        /** @var PermissionPersister $permissionPersister */
         $permissionPersister = $this->getContainer()->get(PermissionPersister::class);
         $permissions = Permissions::fromArray([
             'product' => ['update'],
@@ -550,17 +586,24 @@ class AppLifecycleTest extends TestCase
 
         $this->appLifecycle->update($manifest, $app, $this->context);
 
+        static::assertTrue($this->didRegisterApp());
+
         $criteria = new Criteria();
         $criteria->addAssociation('actionButtons');
         $criteria->addAssociation('webhooks');
+        $criteria->addAssociation('paymentMethods');
         /** @var AppCollection $apps */
         $apps = $this->appRepository->search($criteria, $this->context)->getEntities();
 
         static::assertCount(1, $apps);
 
-        static::assertCount(0, $apps->first()->getActionButtons());
-        static::assertCount(0, $apps->first()->getModules());
-        static::assertCount(0, $apps->first()->getWebhooks());
+        $this->assertDefaultActionButtons();
+        $this->assertDefaultModules($apps->first());
+        $this->assertDefaultPrivileges($apps->first()->getAclRoleId());
+        $this->assertDefaultCustomFields($id);
+        $this->assertDefaultWebhooks($apps->first()->getId());
+        $this->assertDefaultTemplate($apps->first()->getId());
+        $this->assertDefaultPaymentMethods($apps->first()->getId());
     }
 
     public function testUpdateSetsConfiguration(): void
@@ -584,7 +627,7 @@ class AppLifecycleTest extends TestCase
             ],
             'aclRole' => [
                 'id' => $roleId,
-                'name' => 'SwagApp',
+                'name' => 'withConfig',
             ],
         ]], Context::createDefaultContext());
 
@@ -631,7 +674,7 @@ class AppLifecycleTest extends TestCase
             ],
             'aclRole' => [
                 'id' => $roleId,
-                'name' => 'SwagApp',
+                'name' => 'withConfig',
             ],
         ]], Context::createDefaultContext());
 
@@ -653,7 +696,124 @@ class AppLifecycleTest extends TestCase
         ], $systemConfigService->getDomain('withConfig.config'));
     }
 
+    public function testUpdateDoesClearJsonFieldsIfTheyAreNotPresentInManifest(): void
+    {
+        $id = Uuid::randomHex();
+        $roleId = Uuid::randomHex();
+        $path = str_replace($this->getContainer()->getParameter('kernel.project_dir') . '/', '', __DIR__ . '/../Manifest/_fixtures/withConfig');
+
+        $this->appRepository->create([[
+            'id' => $id,
+            'name' => 'withConfig',
+            'path' => $path,
+            'version' => '0.0.1',
+            'label' => 'test',
+            'accessToken' => 'test',
+            'modules' => [['test']],
+            'cookies' => [['test']],
+            'mainModule' => ['test'],
+            'appSecret' => 'iamsecret',
+            'integration' => [
+                'label' => 'test',
+                'writeAccess' => false,
+                'accessKey' => 'test',
+                'secretAccessKey' => 'test',
+            ],
+            'aclRole' => [
+                'id' => $roleId,
+                'name' => 'SwagApp',
+            ],
+        ]], Context::createDefaultContext());
+
+        $app = [
+            'id' => $id,
+            'roleId' => $roleId,
+        ];
+
+        $manifest = Manifest::createFromXmlFile(__DIR__ . '/../Manifest/_fixtures/minimal/manifest.xml');
+
+        $this->appLifecycle->update($manifest, $app, $this->context);
+
+        /** @var AppCollection $apps */
+        $apps = $this->appRepository->search(new Criteria(), $this->context)->getEntities();
+
+        static::assertCount(1, $apps);
+        static::assertEmpty($apps->first()->getModules());
+        static::assertEmpty($apps->first()->getCookies());
+        static::assertNull($apps->first()->getMainModule());
+    }
+
     public function testDelete(): void
+    {
+        $appId = Uuid::randomHex();
+        $roleId = Uuid::randomHex();
+        $integrationId = Uuid::randomHex();
+
+        $this->appRepository->create([[
+            'id' => $appId,
+            'name' => 'Test',
+            'path' => __DIR__ . '/../Manifest/_fixtures/test',
+            'version' => '0.0.1',
+            'label' => 'test',
+            'accessToken' => 'test',
+            'actionButtons' => [
+                [
+                    'entity' => 'order',
+                    'view' => 'detail',
+                    'action' => 'test',
+                    'label' => 'test',
+                    'url' => 'test.com',
+                ],
+            ],
+            'integration' => [
+                'id' => $integrationId,
+                'label' => 'test',
+                'writeAccess' => false,
+                'accessKey' => 'test',
+                'secretAccessKey' => 'test',
+            ],
+            'aclRole' => [
+                'id' => $roleId,
+                'name' => 'Test',
+            ],
+        ]], Context::createDefaultContext());
+
+        $app = [
+            'id' => $appId,
+            'roleId' => $roleId,
+        ];
+
+        $eventWasReceived = false;
+        $onAppDeleted = function (AppDeletedEvent $event) use (&$eventWasReceived, $appId): void {
+            $eventWasReceived = true;
+            static::assertEquals($appId, $event->getAppId());
+        };
+        $this->eventDispatcher->addListener(AppDeletedEvent::class, $onAppDeleted);
+
+        $this->appLifecycle->delete('Test', $app, $this->context);
+
+        static::assertTrue($eventWasReceived);
+        $this->eventDispatcher->removeListener(AppDeletedEvent::class, $onAppDeleted);
+        $apps = $this->appRepository->searchIds(new Criteria([$appId]), $this->context)->getIds();
+        static::assertCount(0, $apps);
+
+        /** @var EntityRepositoryInterface $aclRoleRepository */
+        $aclRoleRepository = $this->getContainer()->get('acl_role.repository');
+        $roles = $aclRoleRepository->searchIds(new Criteria([$roleId]), $this->context)->getIds();
+        static::assertCount(1, $roles);
+
+        /** @var EntityRepositoryInterface $integrationRepository */
+        $integrationRepository = $this->getContainer()->get('integration.repository');
+        $integrations = $integrationRepository->searchIds(new Criteria([$integrationId]), $this->context)->getIds();
+        static::assertCount(1, $integrations);
+
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('appId', $appId));
+        $apps = $this->actionButtonRepository->searchIds($criteria, $this->context)->getIds();
+        static::assertCount(0, $apps);
+    }
+
+    public function testDeleteAppDispatchedOnce(): void
     {
         $appId = Uuid::randomHex();
         $roleId = Uuid::randomHex();
@@ -682,7 +842,7 @@ class AppLifecycleTest extends TestCase
             ],
             'aclRole' => [
                 'id' => $roleId,
-                'name' => 'SwagApp',
+                'name' => 'Test',
             ],
         ]], Context::createDefaultContext());
 
@@ -691,29 +851,18 @@ class AppLifecycleTest extends TestCase
             'roleId' => $roleId,
         ];
 
-        $eventWasReceived = false;
-        $onAppDeleted = function (AppDeletedEvent $event) use (&$eventWasReceived, $appId): void {
-            $eventWasReceived = true;
+        $countEventDispatched = 0;
+        $onAppDeleted = function (AppDeletedEvent $event) use (&$countEventDispatched, $appId): void {
+            ++$countEventDispatched;
             static::assertEquals($appId, $event->getAppId());
         };
         $this->eventDispatcher->addListener(AppDeletedEvent::class, $onAppDeleted);
 
         $this->appLifecycle->delete('Test', $app, $this->context);
 
-        static::assertTrue($eventWasReceived);
         $this->eventDispatcher->removeListener(AppDeletedEvent::class, $onAppDeleted);
-        $apps = $this->appRepository->searchIds(new Criteria([$appId]), $this->context)->getIds();
-        static::assertCount(0, $apps);
 
-        /** @var EntityRepositoryInterface $aclRoleRepository */
-        $aclRoleRepository = $this->getContainer()->get('acl_role.repository');
-        $roles = $aclRoleRepository->searchIds(new Criteria([$roleId]), $this->context)->getIds();
-        static::assertCount(0, $roles);
-
-        $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('appId', $appId));
-        $apps = $this->actionButtonRepository->searchIds($criteria, $this->context)->getIds();
-        static::assertCount(0, $apps);
+        static::assertSame(1, $countEventDispatched);
     }
 
     public function testDeleteWithCustomFields(): void
@@ -729,10 +878,125 @@ class AppLifecycleTest extends TestCase
             'roleId' => $apps->first()->getAclRoleId(),
         ];
 
-        $this->appLifecycle->delete('SwagApp', $app, $this->context);
+        $this->appLifecycle->delete('test', $app, $this->context);
 
         $apps = $this->appRepository->searchIds(new Criteria(), $this->context)->getIds();
         static::assertCount(0, $apps);
+    }
+
+    public function testDeleteAppDeletesConfigWhenUserDataShouldNotBeKept(): void
+    {
+        $manifest = Manifest::createFromXmlFile(__DIR__ . '/../Manifest/_fixtures/withConfig/manifest.xml');
+        $this->appLifecycle->install($manifest, true, $this->context);
+
+        /** @var AppCollection $apps */
+        $apps = $this->appRepository->search(new Criteria(), $this->context)->getEntities();
+
+        static::assertCount(1, $apps);
+        static::assertEquals('withConfig', $apps->first()->getName());
+        /** @var AppEntity $app */
+        $app = $apps->first();
+
+        $systemConfigService = $this->getContainer()->get(SystemConfigService::class);
+        $this->resetInternalSystemConfigCache();
+        static::assertEquals([
+            'withConfig.config.email' => 'no-reply@shopware.de',
+        ], $systemConfigService->getDomain('withConfig.config'));
+
+        $this->appLifecycle->delete('withConfig', ['id' => $app->getId()], $this->context);
+
+        $this->resetInternalSystemConfigCache();
+        static::assertEquals([], $systemConfigService->getDomain('withConfig.config'));
+    }
+
+    public function testDeleteAppDoesNotDeleteConfigWhenUserDataShouldBeKept(): void
+    {
+        $manifest = Manifest::createFromXmlFile(__DIR__ . '/../Manifest/_fixtures/withConfig/manifest.xml');
+        $this->appLifecycle->install($manifest, true, $this->context);
+
+        /** @var AppCollection $apps */
+        $apps = $this->appRepository->search(new Criteria(), $this->context)->getEntities();
+
+        static::assertCount(1, $apps);
+        static::assertEquals('withConfig', $apps->first()->getName());
+        /** @var AppEntity $app */
+        $app = $apps->first();
+
+        $systemConfigService = $this->getContainer()->get(SystemConfigService::class);
+        $this->resetInternalSystemConfigCache();
+        static::assertEquals([
+            'withConfig.config.email' => 'no-reply@shopware.de',
+        ], $systemConfigService->getDomain('withConfig.config'));
+
+        $this->appLifecycle->delete('withConfig', ['id' => $app->getId()], $this->context, true);
+
+        $this->resetInternalSystemConfigCache();
+        static::assertEquals([
+            'withConfig.config.email' => 'no-reply@shopware.de',
+        ], $systemConfigService->getDomain('withConfig.config'));
+    }
+
+    public function testInstallWithUpdateAclRole(): void
+    {
+        $connection = $this->getContainer()->get(Connection::class);
+        $userId = Uuid::randomHex();
+        $this->createUser($userId);
+
+        $aclRoleId = Uuid::randomHex();
+        $this->createAclRole($aclRoleId, ['app.all']);
+
+        $this->createAclUserRole($userId, $aclRoleId);
+
+        $manifest = Manifest::createFromXmlFile(__DIR__ . '/../Manifest/_fixtures/test/manifest.xml');
+
+        $this->appLifecycle->install($manifest, true, $this->context);
+
+        $criteria = new Criteria();
+        $criteria->addAssociation('integration');
+        /** @var AppCollection $apps */
+        $apps = $this->appRepository->search($criteria, $this->context)->getEntities();
+
+        static::assertCount(1, $apps);
+        static::assertEquals('test', $apps->first()->getName());
+
+        $privileges = $connection->fetchColumn('
+            SELECT `privileges`
+            FROM `acl_role`
+            WHERE `id` = :aclRoleId
+        ', ['aclRoleId' => Uuid::fromHexToBytes($aclRoleId)]);
+
+        $privileges = json_decode($privileges, true);
+
+        static::assertContains('app.' . $apps->first()->getName(), $privileges);
+    }
+
+    public function testDeleteWithDeleteAclRole(): void
+    {
+        $manifest = Manifest::createFromXmlFile(__DIR__ . '/../Manifest/_fixtures/test/manifest.xml');
+        $this->appLifecycle->install($manifest, true, $this->context);
+
+        $apps = $this->appRepository->search(new Criteria(), $this->context)->getEntities();
+        static::assertCount(1, $apps);
+
+        $aclRoleId = Uuid::randomHex();
+        $appPrivilege = 'app.' . $apps->first()->getName();
+        $this->createAclRole($aclRoleId, [$appPrivilege]);
+
+        $app = [
+            'id' => $apps->first()->getId(),
+            'roleId' => $apps->first()->getAclRoleId(),
+        ];
+
+        $this->appLifecycle->delete('test', $app, $this->context);
+
+        $apps = $this->appRepository->searchIds(new Criteria(), $this->context)->getIds();
+        static::assertCount(0, $apps);
+
+        /** @var EntityRepositoryInterface $aclRoleRepository */
+        $aclRoleRepository = $this->getContainer()->get('acl_role.repository');
+        $aclRole = $aclRoleRepository->search(new Criteria([$aclRoleId]), $this->context)->first();
+
+        static::assertNotContains($appPrivilege, $aclRole->getPrivileges());
     }
 
     private function assertDefaultActionButtons(): void
@@ -749,16 +1013,29 @@ class AppLifecycleTest extends TestCase
 
     private function assertDefaultModules(AppEntity $app): void
     {
-        static::assertCount(1, $app->getModules());
+        static::assertCount(2, $app->getModules());
 
         static::assertEquals([
-            'label' => [
-                'en-GB' => 'My first own module',
-                'de-DE' => 'Mein erstes eigenes Modul',
+            [
+                'label' => [
+                    'en-GB' => 'My first own module',
+                    'de-DE' => 'Mein erstes eigenes Modul',
+                ],
+                'source' => 'https://test.com',
+                'name' => 'first-module',
+                'parent' => 'sw-test-structure-module',
+                'position' => 10,
+            ], [
+                'label' => [
+                    'en-GB' => 'My menu entry for modules',
+                    'de-DE' => 'Mein Menüeintrag für Module',
+                ],
+                'source' => null,
+                'name' => 'structure-module',
+                'parent' => 'sw-catalogue',
+                'position' => 50,
             ],
-            'source' => 'https://test.com',
-            'name' => 'first-module',
-        ], $app->getModules()[0]);
+        ], $app->getModules());
     }
 
     private function assertDefaultPrivileges(string $roleId): void
@@ -823,6 +1100,7 @@ class AppLifecycleTest extends TestCase
             ],
             'translated' => true,
         ], $customFieldSet->getConfig());
+        static::assertTrue($customFieldSet->isGlobal());
     }
 
     private function assertDefaultWebhooks(string $appId): void
@@ -852,26 +1130,113 @@ class AppLifecycleTest extends TestCase
         static::assertEquals('checkout.order.placed', $secondWebhook->getEventName());
     }
 
-    private function assertDefaultTemplate(string $appId): void
+    private function assertDefaultTemplate(string $appId, bool $active = true): void
     {
         /** @var EntityRepositoryInterface $templateRepository */
         $templateRepository = $this->getContainer()->get('app_template.repository');
 
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('appId', $appId));
-
+        $criteria->addSorting(new FieldSorting('path', FieldSorting::ASCENDING));
         $templates = $templateRepository->search($criteria, $this->context)->getEntities();
 
-        static::assertCount(1, $templates);
+        static::assertCount(2, $templates);
+        $templates = array_values($templates->getElements());
 
         /** @var TemplateEntity $template */
-        $template = $templates->first();
+        $template = $templates[0];
+        static::assertEquals('storefront/layout/header/header.html.twig', $template->getPath());
+        static::assertStringEqualsFile(
+            __DIR__ . '/../Manifest/_fixtures/test/Resources/views/storefront/layout/header/header.html.twig',
+            $template->getTemplate()
+        );
+        static::assertEquals($active, $template->isActive());
+
+        /** @var TemplateEntity $template */
+        $template = $templates[1];
         static::assertEquals('storefront/layout/header/logo.html.twig', $template->getPath());
         static::assertStringEqualsFile(
             __DIR__ . '/../Manifest/_fixtures/test/Resources/views/storefront/layout/header/logo.html.twig',
             $template->getTemplate()
         );
-        static::assertTrue($template->isActive());
+        static::assertEquals($active, $template->isActive());
+    }
+
+    private function assertDefaultPaymentMethods(string $appId): void
+    {
+        /** @var EntityRepositoryInterface $paymentMethodRepository */
+        $paymentMethodRepository = $this->getContainer()->get('payment_method.repository');
+
+        $criteria = new Criteria();
+        $criteria->addAssociation('appPaymentMethod');
+        $criteria->addFilter(new EqualsFilter('appPaymentMethod.appId', $appId));
+
+        $paymentMethods = $paymentMethodRepository->search($criteria, $this->context)->getEntities();
+
+        static::assertCount(2, $paymentMethods);
+
+        /** @var PaymentMethodEntity|null $paymentMethod */
+        $paymentMethod = $paymentMethods->filterByProperty('name', 'The app payment method')->first();
+        static::assertNotNull($paymentMethod);
+        static::assertSame('The app payment method', $paymentMethod->getName());
+        static::assertSame('handler_app_test_mymethod', $paymentMethod->getFormattedHandlerIdentifier());
+        static::assertNotNull($paymentMethod->getMediaId());
+        $fileLoader = $this->getContainer()->get(FileLoader::class);
+        static::assertNotEmpty($fileLoader->loadMediaFile($paymentMethod->getMediaId(), $this->context));
+        $appPaymentMethod = $paymentMethod->getAppPaymentMethod();
+        static::assertNotNull($appPaymentMethod);
+        static::assertSame('test', $appPaymentMethod->getAppName());
+        static::assertSame('myMethod', $appPaymentMethod->getIdentifier());
+        static::assertSame('https://payment.app/payment/process', $appPaymentMethod->getPayUrl());
+        static::assertSame('https://payment.app/payment/finalize', $appPaymentMethod->getFinalizeUrl());
+    }
+
+    private function assertDefaultCmsBlocks(string $appId): void
+    {
+        /** @var EntityRepositoryInterface $cmsBlockRepository */
+        $cmsBlockRepository = $this->getContainer()->get('app_cms_block.repository');
+
+        $criteria = new Criteria();
+        $criteria->addFilter(
+            new EqualsFilter('appId', $appId)
+        );
+
+        $cmsBlocks = $cmsBlockRepository->search($criteria, $this->context)->getEntities();
+        static::assertCount(2, $cmsBlocks);
+
+        /** @var AppCmsBlockEntity|null $firstCmsBlock */
+        $firstCmsBlock = $cmsBlocks->filterByProperty('name', 'my-first-block')->first();
+        static::assertEquals('my-first-block', $firstCmsBlock->getName());
+        static::assertEquals('First block from app', $firstCmsBlock->getLabel());
+        static::assertJsonStringEqualsJsonFile(
+            __DIR__ . '/_fixtures/cms/expectedFirstCmsBlock.json',
+            json_encode($firstCmsBlock->getBlock())
+        );
+        static::assertEquals(
+            file_get_contents(__DIR__ . '/../Manifest/_fixtures/test/Resources/cms/blocks/my-first-block/preview.html'),
+            $firstCmsBlock->getTemplate()
+        );
+        static::assertEquals(
+            file_get_contents(__DIR__ . '/../Manifest/_fixtures/test/Resources/cms/blocks/my-first-block/styles.css'),
+            $firstCmsBlock->getStyles()
+        );
+
+        /** @var AppCmsBlockEntity|null $secondCmsBlock */
+        $secondCmsBlock = $cmsBlocks->filterByProperty('name', 'my-second-block')->first();
+        static::assertEquals('my-second-block', $secondCmsBlock->getName());
+        static::assertEquals('Second block from app', $secondCmsBlock->getLabel());
+        static::assertJsonStringEqualsJsonFile(
+            __DIR__ . '/_fixtures/cms/expectedSecondCmsBlock.json',
+            json_encode($secondCmsBlock->getBlock())
+        );
+        static::assertEquals(
+            file_get_contents(__DIR__ . '/../Manifest/_fixtures/test/Resources/cms/blocks/my-second-block/previewExpected.html'),
+            $secondCmsBlock->getTemplate()
+        );
+        static::assertEquals(
+            file_get_contents(__DIR__ . '/../Manifest/_fixtures/test/Resources/cms/blocks/my-second-block/styles.css'),
+            $secondCmsBlock->getStyles()
+        );
     }
 
     private function setNewSystemLanguage(string $iso): void
@@ -904,5 +1269,40 @@ class AppLifecycleTest extends TestCase
         $isoId = $localeRepository->search($criteria, Context::createDefaultContext())->first()->getId();
 
         return $isoId;
+    }
+
+    private function createUser($userId): void
+    {
+        $this->getContainer()->get(Connection::class)->insert('user', [
+            'id' => Uuid::fromHexToBytes($userId),
+            'first_name' => 'test',
+            'last_name' => '',
+            'email' => 'test@example.com',
+            'username' => 'userTest',
+            'password' => password_hash('123456', \PASSWORD_BCRYPT),
+            'locale_id' => Uuid::fromHexToBytes($this->getLocaleIdOfSystemLanguage()),
+            'active' => 1,
+            'admin' => 1,
+            'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+        ]);
+    }
+
+    private function createAclRole($aclRoleId, $privileges): void
+    {
+        $this->getContainer()->get(Connection::class)->insert('acl_role', [
+            'id' => Uuid::fromHexToBytes($aclRoleId),
+            'name' => 'aclTest',
+            'privileges' => json_encode($privileges),
+            'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+        ]);
+    }
+
+    private function createAclUserRole($userId, $aclRoleId): void
+    {
+        $this->getContainer()->get(Connection::class)->insert('acl_user_role', [
+            'user_id' => Uuid::fromHexToBytes($userId),
+            'acl_role_id' => Uuid::fromHexToBytes($aclRoleId),
+            'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+        ]);
     }
 }

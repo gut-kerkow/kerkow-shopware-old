@@ -8,7 +8,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\DecodeByHydratorException;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InvalidSerializerFieldException;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Field;
-use Shopware\Core\Framework\DataAbstractionLayer\Field\FkField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToManyAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\DataStack\KeyValuePair;
@@ -29,6 +28,72 @@ class ManyToManyAssociationFieldSerializer implements FieldSerializerInterface
         WriteCommandExtractor $writeExtrator
     ) {
         $this->writeExtrator = $writeExtrator;
+    }
+
+    public function normalize(Field $field, array $data, WriteParameterBag $parameters): array
+    {
+        if (!$field instanceof ManyToManyAssociationField) {
+            throw new InvalidSerializerFieldException(ManyToManyAssociationField::class, $field);
+        }
+
+        $key = $field->getPropertyName();
+        $value = $data[$key] ?? null;
+
+        if ($value === null) {
+            return $data;
+        }
+
+        $referencedDefinition = $field->getMappingDefinition();
+
+        if (!\is_array($value)) {
+            throw new ExpectedArrayException($parameters->getPath() . '/' . $key);
+        }
+
+        $mappingAssociation = $this->getMappingAssociation($referencedDefinition, $field);
+
+        foreach ($value as $keyValue => $subresources) {
+            $mapped = $subresources;
+            if ($mappingAssociation) {
+                $mapped = $this->map($referencedDefinition, $field, $mappingAssociation, $subresources);
+            }
+
+            if (!\is_array($mapped)) {
+                throw new ExpectedArrayException($parameters->getPath() . '/' . $key);
+            }
+
+            $clonedParams = $parameters->cloneForSubresource(
+                $referencedDefinition,
+                $parameters->getPath() . '/' . $key . '/' . $keyValue
+            );
+
+            $done = [];
+
+            foreach ($mapped as $property => $_) {
+                if (\array_key_exists($property, $done)) {
+                    continue;
+                }
+                $f = $referencedDefinition->getFields()->get($property);
+                if ($f === null) {
+                    continue;
+                }
+                $mapped = $f->getSerializer()->normalize($f, $mapped, $clonedParams);
+                $done[$property] = true;
+            }
+
+            foreach ($referencedDefinition->getPrimaryKeys() as $pkField) {
+                if (\array_key_exists($pkField->getPropertyName(), $done)) {
+                    continue;
+                }
+                $mapped = $pkField->getSerializer()->normalize($pkField, $mapped, $clonedParams);
+                $done[$pkField->getPropertyName()] = true;
+            }
+
+            $value[$keyValue] = $mapped;
+        }
+
+        $data[$key] = $value;
+
+        return $data;
     }
 
     public function encode(
@@ -54,20 +119,13 @@ class ManyToManyAssociationFieldSerializer implements FieldSerializerInterface
             throw new ExpectedArrayException($parameters->getPath() . '/' . $key);
         }
 
-        $mappingAssociation = $this->getMappingAssociation($referencedDefinition, $field);
-
         foreach ($value as $keyValue => $subresources) {
-            $mapped = $subresources;
-            if ($mappingAssociation) {
-                $mapped = $this->map($referencedDefinition, $field, $mappingAssociation, $subresources);
-            }
-
-            if (!\is_array($mapped)) {
+            if (!\is_array($subresources)) {
                 throw new ExpectedArrayException($parameters->getPath() . '/' . $key);
             }
 
             $this->writeExtrator->extract(
-                $mapped,
+                $subresources,
                 $parameters->cloneForSubresource(
                     $referencedDefinition,
                     $parameters->getPath() . '/' . $key . '/' . $keyValue
@@ -78,13 +136,18 @@ class ManyToManyAssociationFieldSerializer implements FieldSerializerInterface
         yield from [];
     }
 
-    public function decode(Field $field, $value): void
+    /**
+     * @deprecated tag:v6.5.0 The parameter $value will be native typed
+     */
+    public function decode(Field $field, /*?string */$value): void
     {
         throw new DecodeByHydratorException($field);
     }
 
-    protected function getMappingAssociation(EntityDefinition $referencedDefinition, ManyToManyAssociationField $field): ?ManyToOneAssociationField
-    {
+    protected function getMappingAssociation(
+        EntityDefinition $referencedDefinition,
+        ManyToManyAssociationField $field
+    ): ?ManyToOneAssociationField {
         $associations = $referencedDefinition->getFields()->filterInstance(ManyToOneAssociationField::class);
 
         /** @var ManyToOneAssociationField $association */
@@ -97,7 +160,13 @@ class ManyToManyAssociationFieldSerializer implements FieldSerializerInterface
         return null;
     }
 
-    protected function map(EntityDefinition $referencedDefinition, ManyToManyAssociationField $field, ManyToOneAssociationField $association, $data): array
+    /**
+     * @param array $data
+     *
+     * @deprecated tag:v6.5.0 The parameter $data will be native typed
+     * @deprecated tag:v6.5.0 The unused parameter $field will be removed
+     */
+    protected function map(EntityDefinition $referencedDefinition, ManyToManyAssociationField $field, ManyToOneAssociationField $association, /*array */$data): array
     {
         // not only foreign key provided? data is provided as insert or update command
         if (\count($data) > 1) {
@@ -136,7 +205,6 @@ class ManyToManyAssociationFieldSerializer implements FieldSerializerInterface
             return [$association->getPropertyName() => $data];
         }
 
-        /* @var FkField $fk */
         return [
             $fk->getPropertyName() => $data[$association->getReferenceField()],
 

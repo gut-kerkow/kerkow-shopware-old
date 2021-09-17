@@ -3,7 +3,6 @@
 namespace Shopware\Core\Content\Category;
 
 use Shopware\Core\Content\Category\Aggregate\CategoryTranslation\CategoryTranslationCollection;
-use Shopware\Core\Content\Category\Service\CategoryBreadcrumbBuilder;
 use Shopware\Core\Content\Cms\CmsPageEntity;
 use Shopware\Core\Content\Media\MediaEntity;
 use Shopware\Core\Content\Product\ProductCollection;
@@ -11,14 +10,15 @@ use Shopware\Core\Content\ProductStream\ProductStreamEntity;
 use Shopware\Core\Content\Seo\MainCategory\MainCategoryCollection;
 use Shopware\Core\Content\Seo\SeoUrl\SeoUrlCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopware\Core\System\SalesChannel\SalesChannelCollection;
-use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 use Shopware\Core\System\Tag\TagCollection;
 
 class CategoryEntity extends Entity
 {
     use EntityIdTrait;
+    use EntityCustomFieldsTrait;
 
     /**
      * @var string|null
@@ -66,6 +66,11 @@ class CategoryEntity extends Entity
     protected $childCount;
 
     /**
+     * @var int
+     */
+    protected $visibleChildCount = 0;
+
+    /**
      * @var bool
      */
     protected $displayNestedProducts;
@@ -104,11 +109,6 @@ class CategoryEntity extends Entity
      * @var string|null
      */
     protected $afterCategoryId;
-
-    /**
-     * @var array|null
-     */
-    protected $customFields;
 
     /**
      * @var TagCollection|null
@@ -154,6 +154,21 @@ class CategoryEntity extends Entity
      * @var SalesChannelCollection|null
      */
     protected $serviceSalesChannels;
+
+    /**
+     * @var string|null
+     */
+    protected $linkType;
+
+    /**
+     * @var bool|null
+     */
+    protected $linkNewTab;
+
+    /**
+     * @var string|null
+     */
+    protected $internalLink;
 
     /**
      * @var string|null
@@ -275,6 +290,16 @@ class CategoryEntity extends Entity
         $this->childCount = $childCount;
     }
 
+    public function getVisibleChildCount(): int
+    {
+        return $this->visibleChildCount;
+    }
+
+    public function setVisibleChildCount(int $visibleChildCount): void
+    {
+        $this->visibleChildCount = $visibleChildCount;
+    }
+
     public function getParent(): ?CategoryEntity
     {
         return $this->parent;
@@ -363,16 +388,6 @@ class CategoryEntity extends Entity
     public function setAfterCategoryId(string $afterCategoryId): void
     {
         $this->afterCategoryId = $afterCategoryId;
-    }
-
-    public function getCustomFields(): ?array
-    {
-        return $this->customFields;
-    }
-
-    public function setCustomFields(?array $customFields): void
-    {
-        $this->customFields = $customFields;
     }
 
     public function getTags(): ?TagCollection
@@ -465,6 +480,36 @@ class CategoryEntity extends Entity
         $this->serviceSalesChannels = $serviceSalesChannels;
     }
 
+    public function getLinkType(): ?string
+    {
+        return $this->linkType;
+    }
+
+    public function setLinkType(?string $linkType): void
+    {
+        $this->linkType = $linkType;
+    }
+
+    public function getLinkNewTab(): ?bool
+    {
+        return $this->linkNewTab;
+    }
+
+    public function setLinkNewTab(?bool $linkNewTab): void
+    {
+        $this->linkNewTab = $linkNewTab;
+    }
+
+    public function getInternalLink(): ?string
+    {
+        return $this->internalLink;
+    }
+
+    public function setInternalLink(?string $internalLink): void
+    {
+        $this->internalLink = $internalLink;
+    }
+
     public function getExternalLink(): ?string
     {
         return $this->externalLink;
@@ -537,16 +582,6 @@ class CategoryEntity extends Entity
     public function setBreadcrumb(?array $breadcrumb): void
     {
         $this->breadcrumb = $breadcrumb;
-    }
-
-    /**
-     * @deprecated tag:v6.4.0.0 - Use CategoryBreadcrumbBuilder instead
-     */
-    public function buildSeoBreadcrumb(?string $navigationCategoryId = null, ?SalesChannelEntity $salesChannel = null): ?array
-    {
-        $builder = new CategoryBreadcrumbBuilder();
-
-        return $builder->build($this, $salesChannel, $navigationCategoryId);
     }
 
     public function jsonSerialize(): array

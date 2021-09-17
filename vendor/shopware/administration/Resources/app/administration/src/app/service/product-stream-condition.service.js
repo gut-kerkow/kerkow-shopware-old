@@ -11,273 +11,133 @@ const utils = Shopware.Utils;
  * @returns {Object}
  */
 export default function conditionService() {
-    const blacklist = [
-        'createdAt',
-        'updatedAt',
-        'afterCategoryId',
-        'versionId',
-        'afterCategoryVersionId',
-        'autoIncrement',
-        'canonicalUrl',
-        'children',
-        'childCount',
-        'facetIds',
-        'mediaId',
-        'parent',
-        'parentId',
-        'parentVersionId',
-        'sortingIds',
-        'metaTitle',
-        'metaDescription',
-        'metaKeywords',
-        'additionalText',
-        'products',
-        'product',
-        'productId',
-        'productVersionId',
-        'optionId',
-        'groupId',
-        'media',
-        'salesChannelId',
-        'typeId',
-        'languageId',
-        'currencyId',
-        'paymentMethodId',
-        'shippingMethodId',
-        'countryId',
-        'navigationId',
-        'navigationVersionId',
-        'mailHeaderFooterId',
-        'manufacturerId',
-        'manufacturerNumber',
-        'unitId',
-        'taxId',
-        'coverId',
-        'productMediaVersionId',
-        'propertyIds',
-        'optionIds',
-        'orders',
-        'customers',
-        'seoUrls',
-        'translated',
-        'tagIds',
-        'customerGroupId',
-        'newsletterRecipients',
-        'numberRanges',
-        'promotionSalesChannels',
-        'seoUrlTemplates',
-        'shippingMethods',
-        'markAsTopseller',
-        'variantRestrictions',
-        'configuratorGroupConfig',
-        'cmsPageId',
-        'navigationCategoryId',
-        'navigationCategoryVersionId',
-        'footerCategoryId',
-        'footerCategoryVersionId',
-        'serviceCategoryId',
-        'serviceCategoryVersionId',
-        'position',
-        'navigationCategory',
-        'footerCategory',
-        'serviceCategory',
-        'numberRangeSalesChannels',
-        'documentBaseConfigSalesChannels',
-        'translations',
-        'translation',
-        'mainCategories'
+    const allowedProperties = [
+        'id',
     ];
 
-    const entityBlacklist = {
-        price: [
-            'linked'
-        ],
-        tax: [
-            'customFields',
-            'name',
-            'products',
-            'productServices'
-        ],
+    const entityAllowedProperties = {
         tag: [
-            'categories'
+            'id',
         ],
         category: [
-            'displayNestedProducts',
-            'path',
-            'level',
-            'template',
-            'customFields',
-            'cmsDescription',
-            'cmsHeadline',
-            'createdAt',
-            'extensions',
-            'external',
-            'hideFilter',
-            'hideSortings',
-            'hideTop',
-            'media',
-            'navigations',
-            'nestedProducts',
-            'productBoxLayout',
-            'navigationSalesChannels',
-            'footerSalesChannels',
-            'serviceSalesChannels',
-            'cmsPage',
-            'externalLink',
-            'slotConfig'
+            'id',
         ],
         product_manufacturer: [
-            'link',
-            'customFields',
-            'media',
-            'description'
-        ],
-        unit: [
-            'customFields',
-            'shortCode'
-        ],
-        product_configurator_setting: [
-            'versionId',
-            'prices',
-            'createdAt',
-            'updatedAt',
-            'customFields',
-            'id'
+            'id',
         ],
         property_group_option: [
-            'colorHexCode',
-            'productConfigurators',
-            'productServices',
-            'productProperties',
-            'productOptions',
-            'customFields',
-            'productConfiguratorSettings'
+            'id',
         ],
         property_group: [
-            'description',
-            'filterable',
-            'comparable',
-            'displayType',
-            'sortingType',
-            'options',
-            'customFields'
+            'id',
         ],
         product_visibility: [
-            'id'
+            'id',
         ],
         sales_channel: [
-            'name',
-            'accessKey',
-            'configuration',
-            'customFields',
-            'extensions',
-            'type',
-            'currencies',
-            'languages',
-            'countries',
-            'paymentMethods',
-            'shippingMethods',
-            'country',
-            'domains',
-            'systemConfigs',
-            'navigation',
-            'productVisibilities',
-            'mailHeaderFooter',
-            'mailTemplates',
-            'language',
-            'paymentMethod',
-            'shippingMethod',
-            'currency',
-            'customerGroup',
-            'shortName',
-            'themes'
+            'id',
         ],
         product: [
-            'blacklistIds',
-            'whitelistIds',
-            'productManufacturerVersionId',
-            'listingPrices',
-            'categoryTree',
-            'extensions',
-            'productServices',
-            'cover',
-            'metaTitle',
-            'prices',
-            'services',
-            'searchKeywords',
-            'categories',
-            'canonicalUrl',
-            'purchaseSteps',
-            'options',
-            'customFields'
-        ]
+            'id',
+            'active',
+            'name',
+            'description',
+            'ratingAverage',
+            'cheapestPrice',
+            'productNumber',
+            'stock',
+            'availableStock',
+            'releaseDate',
+            'tags',
+            'weight',
+            'height',
+            'width',
+            'length',
+            'sales',
+            'manufacturer',
+            'categoriesRo',
+            'shippingFree',
+            'visibilities',
+            'properties',
+            'isCloseout',
+            'purchasePrices',
+            'createdAt',
+        ],
+    };
+
+    const allowedJsonAccessors = {
+        'price.percentage': {
+            value: 'price.percentage',
+            type: 'float',
+            trans: 'percentage',
+        },
     };
 
     const productFilterTypes = {
         equals: {
             identifier: 'equals',
-            label: 'sw-product-stream.filter.type.equals'
+            label: 'sw-product-stream.filter.type.equals',
         },
 
         equalsAny: {
             identifier: 'equalsAny',
-            label: 'sw-product-stream.filter.type.equalsAny'
+            label: 'sw-product-stream.filter.type.equalsAny',
         },
 
         contains: {
             identifier: 'contains',
-            label: 'sw-product-stream.filter.type.contains'
+            label: 'sw-product-stream.filter.type.contains',
         },
 
         lessThan: {
             identifier: 'lessThan',
-            label: 'sw-product-stream.filter.type.lessThan'
+            label: 'sw-product-stream.filter.type.lessThan',
         },
 
         greaterThan: {
             identifier: 'greaterThan',
-            label: 'sw-product-stream.filter.type.greaterThan'
+            label: 'sw-product-stream.filter.type.greaterThan',
         },
 
         lessThanEquals: {
             identifier: 'lessThanEquals',
-            label: 'sw-product-stream.filter.type.lessThanEquals'
+            label: 'sw-product-stream.filter.type.lessThanEquals',
         },
 
         greaterThanEquals: {
             identifier: 'greaterThanEquals',
-            label: 'sw-product-stream.filter.type.greaterThanEquals'
+            label: 'sw-product-stream.filter.type.greaterThanEquals',
         },
 
         notEquals: {
             identifier: 'notEquals',
-            label: 'sw-product-stream.filter.type.notEquals'
+            label: 'sw-product-stream.filter.type.notEquals',
         },
 
         notEqualsAny: {
             identifier: 'notEqualsAny',
-            label: 'sw-product-stream.filter.type.notEqualsAny'
+            label: 'sw-product-stream.filter.type.notEqualsAny',
         },
 
         notContains: {
             identifier: 'notContains',
-            label: 'sw-product-stream.filter.type.notContains'
+            label: 'sw-product-stream.filter.type.notContains',
         },
 
         range: {
             identifier: 'range',
-            label: 'sw-product-stream.filter.type.range'
+            label: 'sw-product-stream.filter.type.range',
         },
 
         not: {
             identifier: 'not',
-            label: 'sw-product-stream.filter.type.not'
-        }
+            label: 'sw-product-stream.filter.type.not',
+        },
     };
 
     const operatorSets = {
         boolean: [
-            productFilterTypes.equals
+            productFilterTypes.equals,
         ],
         string: [
             productFilterTypes.equals,
@@ -285,7 +145,7 @@ export default function conditionService() {
             productFilterTypes.equalsAny,
             productFilterTypes.notEqualsAny,
             productFilterTypes.contains,
-            productFilterTypes.notContains
+            productFilterTypes.notContains,
         ],
 
         date: [
@@ -295,14 +155,14 @@ export default function conditionService() {
             productFilterTypes.lessThan,
             productFilterTypes.lessThanEquals,
             productFilterTypes.notEquals,
-            productFilterTypes.range
+            productFilterTypes.range,
         ],
 
         uuid: [
             productFilterTypes.equals,
             productFilterTypes.notEquals,
             productFilterTypes.equalsAny,
-            productFilterTypes.notEqualsAny
+            productFilterTypes.notEqualsAny,
         ],
 
         int: [
@@ -312,7 +172,7 @@ export default function conditionService() {
             productFilterTypes.lessThan,
             productFilterTypes.lessThanEquals,
             productFilterTypes.notEquals,
-            productFilterTypes.range
+            productFilterTypes.range,
         ],
 
         float: [
@@ -322,7 +182,7 @@ export default function conditionService() {
             productFilterTypes.lessThan,
             productFilterTypes.lessThanEquals,
             productFilterTypes.notEquals,
-            productFilterTypes.range
+            productFilterTypes.range,
         ],
 
         object: [
@@ -332,23 +192,23 @@ export default function conditionService() {
             productFilterTypes.lessThan,
             productFilterTypes.lessThanEquals,
             productFilterTypes.notEquals,
-            productFilterTypes.range
+            productFilterTypes.range,
         ],
 
         default: [
             productFilterTypes.equals,
             productFilterTypes.notEquals,
             productFilterTypes.equalsAny,
-            productFilterTypes.notEqualsAny
-        ]
+            productFilterTypes.notEqualsAny,
+        ],
     };
 
     return {
-        isPropertyInBlacklist,
-        addToGeneralBlacklist,
-        addToEntityBlacklist,
-        removeFromGeneralBlacklist,
-        removeFromEntityBlacklist,
+        isPropertyInAllowList,
+        addToGeneralAllowList,
+        addToEntityAllowList,
+        removeFromGeneralAllowList,
+        removeFromEntityAllowList,
         getConditions,
         getAndContainerData,
         isAndContainer,
@@ -360,7 +220,8 @@ export default function conditionService() {
         negateOperator,
         getOperator,
         isNegatedType,
-        isRangeType
+        isRangeType,
+        allowedJsonAccessors,
     };
 
     /**
@@ -368,37 +229,39 @@ export default function conditionService() {
      * @param {string} property
      * @returns {boolean}
      */
-    function isPropertyInBlacklist(definition, property) {
-        return blacklist.includes(property)
-            || (entityBlacklist.hasOwnProperty(definition) && entityBlacklist[definition].includes(property));
+    function isPropertyInAllowList(definition, property) {
+        return allowedProperties.includes(property)
+            || (entityAllowedProperties.hasOwnProperty(definition)
+                && entityAllowedProperties[definition].includes(property)
+            );
     }
 
     /**
      * @param {string[]} properties
      */
-    function addToGeneralBlacklist(properties) {
-        blacklist.push(...properties);
+    function addToGeneralAllowList(properties) {
+        allowedProperties.push(...properties);
     }
 
     /**
      * @param {string} entity
      * @param {string[]} properties
      */
-    function addToEntityBlacklist(entity, properties) {
-        if (entityBlacklist[entity]) {
-            entityBlacklist[entity].push(...properties);
+    function addToEntityAllowList(entity, properties) {
+        if (entityAllowedProperties[entity]) {
+            entityAllowedProperties[entity].push(...properties);
             return;
         }
 
-        entityBlacklist[entity] = properties;
+        entityAllowedProperties[entity] = properties;
     }
 
     /**
      * @param {string[]} properties
      */
-    function removeFromGeneralBlacklist(properties) {
+    function removeFromGeneralAllowList(properties) {
         properties.forEach(entry => {
-            blacklist.splice(blacklist.indexOf(entry), 1);
+            allowedProperties.splice(allowedProperties.indexOf(entry), 1);
         });
     }
 
@@ -406,13 +269,13 @@ export default function conditionService() {
      * @param {string} entity
      * @param {string[]} properties
      */
-    function removeFromEntityBlacklist(entity, properties) {
-        if (!entityBlacklist[entity]) {
+    function removeFromEntityAllowList(entity, properties) {
+        if (!entityAllowedProperties[entity]) {
             return;
         }
 
         properties.forEach(entry => {
-            entityBlacklist[entity].splice(entityBlacklist[entity].indexOf(entry), 1);
+            entityAllowedProperties[entity].splice(entityAllowedProperties[entity].indexOf(entry), 1);
         });
     }
 
@@ -422,8 +285,8 @@ export default function conditionService() {
                 type: 'productStreamFilter',
                 component: 'sw-product-stream-filter',
                 label: 'product',
-                scopes: ['product']
-            }
+                scopes: ['product'],
+            },
         ];
     }
 
@@ -494,7 +357,7 @@ export default function conditionService() {
         return [
             productFilterTypes.notContains.identifier,
             productFilterTypes.notEqualsAny.identifier,
-            productFilterTypes.notEquals.identifier
+            productFilterTypes.notEquals.identifier,
         ].includes(type);
     }
 
@@ -504,7 +367,7 @@ export default function conditionService() {
             productFilterTypes.lessThanEquals.identifier,
             productFilterTypes.greaterThan.identifier,
             productFilterTypes.greaterThanEquals.identifier,
-            productFilterTypes.range.identifier
+            productFilterTypes.range.identifier,
         ].includes(type);
     }
 }

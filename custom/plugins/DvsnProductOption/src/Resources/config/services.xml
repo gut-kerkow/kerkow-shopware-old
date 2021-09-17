@@ -9,6 +9,5 @@
         <import resource="./services/entity-extension.xml"/>
         <import resource="./services/subscriber.xml"/>
         <import resource="./services/cart.xml"/>
-        <import resource="./services/snippet-file.xml"/>
     </imports>
 </container>

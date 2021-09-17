@@ -30,7 +30,7 @@ class UserValidationController extends AbstractController
 
     /**
      * @Since("6.0.0.0")
-     * @Route("api/v{version}/_action/user/check-email-unique", name="api.action.check-email-unique", methods={"POST"})
+     * @Route("api/_action/user/check-email-unique", name="api.action.check-email-unique", methods={"POST"})
      *
      * @throws MissingRequestParameterException
      */
@@ -44,8 +44,8 @@ class UserValidationController extends AbstractController
             throw new MissingRequestParameterException('id');
         }
 
-        $email = $request->request->get('email');
-        $id = $request->request->get('id');
+        $email = (string) $request->request->get('email');
+        $id = (string) $request->request->get('id');
 
         return new JsonResponse(
             ['emailIsUnique' => $this->userValidationService->checkEmailUnique($email, $id, $context)]
@@ -54,7 +54,7 @@ class UserValidationController extends AbstractController
 
     /**
      * @Since("6.0.0.0")
-     * @Route("api/v{version}/_action/user/check-username-unique", name="api.action.check-username-unique", methods={"POST"})
+     * @Route("api/_action/user/check-username-unique", name="api.action.check-username-unique", methods={"POST"})
      *
      * @throws MissingRequestParameterException
      */
@@ -68,8 +68,8 @@ class UserValidationController extends AbstractController
             throw new MissingRequestParameterException('id');
         }
 
-        $username = $request->request->get('username');
-        $id = $request->request->get('id');
+        $username = (string) $request->request->get('username');
+        $id = (string) $request->request->get('id');
 
         return new JsonResponse(
             ['usernameIsUnique' => $this->userValidationService->checkUsernameUnique($username, $id, $context)]

@@ -6,7 +6,6 @@ use Doctrine\DBAL\Connection;
 use Shopware\Core\Content\Media\Aggregate\MediaFolderConfiguration\MediaFolderConfigurationCollection;
 use Shopware\Core\Content\Media\Aggregate\MediaFolderConfiguration\MediaFolderConfigurationDefinition;
 use Shopware\Core\Content\Media\Event\MediaFolderConfigurationIndexerEvent;
-use Shopware\Core\Framework\Adapter\Cache\CacheClearer;
 use Shopware\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
 use Shopware\Core\Framework\DataAbstractionLayer\Doctrine\RetryableQuery;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
@@ -35,11 +34,6 @@ class MediaFolderConfigurationIndexer extends EntityIndexer
     private $connection;
 
     /**
-     * @var CacheClearer
-     */
-    private $cacheClearer;
-
-    /**
      * @var EventDispatcherInterface
      */
     private $eventDispatcher;
@@ -48,13 +42,11 @@ class MediaFolderConfigurationIndexer extends EntityIndexer
         IteratorFactory $iteratorFactory,
         EntityRepositoryInterface $repository,
         Connection $connection,
-        CacheClearer $cacheClearer,
         EventDispatcherInterface $eventDispatcher
     ) {
         $this->iteratorFactory = $iteratorFactory;
         $this->repository = $repository;
         $this->connection = $connection;
-        $this->cacheClearer = $cacheClearer;
         $this->eventDispatcher = $eventDispatcher;
     }
 
@@ -63,7 +55,12 @@ class MediaFolderConfigurationIndexer extends EntityIndexer
         return 'media_folder_configuration.indexer';
     }
 
-    public function iterate($offset): ?EntityIndexingMessage
+    /**
+     * @param array|null $offset
+     *
+     * @deprecated tag:v6.5.0 The parameter $offset will be native typed
+     */
+    public function iterate(/*?array */$offset): ?EntityIndexingMessage
     {
         $iterator = $this->iteratorFactory->createIterator($this->repository->getDefinition(), $offset);
 
@@ -115,8 +112,6 @@ class MediaFolderConfigurationIndexer extends EntityIndexer
             ]);
         }
 
-        $this->eventDispatcher->dispatch(new MediaFolderConfigurationIndexerEvent($ids, $context));
-
-        $this->cacheClearer->invalidateIds($ids, MediaFolderConfigurationDefinition::ENTITY_NAME);
+        $this->eventDispatcher->dispatch(new MediaFolderConfigurationIndexerEvent($ids, $context, $message->getSkip()));
     }
 }

@@ -1,3 +1,5 @@
+import Vue from 'vue';
+
 const { Directive } = Shopware;
 const { debug } = Shopware.Utils;
 const { hasOwnProperty } = Shopware.Utils.object;
@@ -7,7 +9,7 @@ const availableTooltipPlacements = [
     'top',
     'right',
     'bottom',
-    'left'
+    'left',
 ];
 
 const tooltipRegistry = new Map();
@@ -36,15 +38,15 @@ class Tooltip {
         hideDelay = showDelay,
         disabled = false,
         appearance = 'dark',
-        showOnDisabledElements = false
+        showOnDisabledElements = false,
     }) {
         this._id = id;
         this._placement = Tooltip.validatePlacement(placement);
         this._message = Tooltip.validateMessage(message);
         this._width = Tooltip.validateWidth(width);
         this._parentDOMElement = element;
-        this._showDelay = showDelay;
-        this._hideDelay = hideDelay;
+        this._showDelay = showDelay ?? 100;
+        this._hideDelay = hideDelay ?? 100;
         this._disabled = disabled;
         this._appearance = appearance;
         this._showOnDisabledElements = showOnDisabledElements;
@@ -53,6 +55,7 @@ class Tooltip {
         this._isShown = false;
         this._state = false;
         this._DOMElement = null;
+        this._vue = null;
         this._parentDOMElementWrapper = null;
         this._actualTooltipPlacement = null;
     }
@@ -68,8 +71,8 @@ class Tooltip {
      * Initializes the tooltip.
      * Needs to be called after the parent DOM Element is inserted to the DOM.
      */
-    init() {
-        this._DOMElement = this.createDOMElement();
+    init(node) {
+        this._DOMElement = this.createDOMElement(node);
 
         if (this._showOnDisabledElements) {
             this._parentDOMElementWrapper = this.createParentDOMElementWrapper();
@@ -102,6 +105,16 @@ class Tooltip {
         if (message && this._message !== message) {
             this._message = Tooltip.validateMessage(message);
             this._DOMElement.innerHTML = this._message;
+
+            this._vue.$destroy();
+            this._vue = new Vue({
+                el: this._DOMElement,
+                parent: this._vue.$parent,
+                template: this._DOMElement.outerHTML,
+            });
+
+            this._DOMElement = this._vue.$el;
+            this.registerEvents();
         }
 
         if (width && this._width !== width) {
@@ -156,7 +169,7 @@ class Tooltip {
     /**
      * @returns {HTMLElement}
      */
-    createDOMElement() {
+    createDOMElement(node) {
         const element = document.createElement('div');
         element.innerHTML = this._message;
         element.style.width = `${this._width}px`;
@@ -164,7 +177,13 @@ class Tooltip {
         element.classList.add('sw-tooltip');
         element.classList.add(`sw-tooltip--${this._appearance}`);
 
-        return element;
+        this._vue = new Vue({
+            el: element,
+            parent: node.context,
+            template: element.outerHTML,
+        });
+
+        return this._vue.$el;
     }
 
     registerEvents() {
@@ -195,7 +214,7 @@ class Tooltip {
     }
 
     _toggle() {
-        if (this._state && !this._isShown) {
+        if (this._state && !this._isShown && this._doesParentExist()) {
             this.showTooltip();
             return;
         }
@@ -203,6 +222,18 @@ class Tooltip {
         if (!this._state && this._isShown) {
             this.hideTooltip();
         }
+    }
+
+    /**
+     * Gets the parent element by tag name and tooltip id and returns true or false whether the element exists.
+     * @returns {boolean}
+     * @private
+     */
+    _doesParentExist() {
+        const tooltipIdOfParentElement = this._parentDOMElement.getAttribute('tooltip-id');
+        const htmlTagOfParentElement = this._parentDOMElement.tagName.toLowerCase();
+
+        return !!document.querySelector(`${htmlTagOfParentElement}[tooltip-id="${tooltipIdOfParentElement}"]`);
     }
 
     /**
@@ -226,6 +257,7 @@ class Tooltip {
             return;
         }
         this._DOMElement.remove();
+        this._vue.$destroy();
         this._isShown = false;
     }
 
@@ -303,7 +335,7 @@ class Tooltip {
             top: boundingClientRect.top > 0,
             right: boundingClientRect.right < windowWidth,
             bottom: boundingClientRect.bottom < windowHeight,
-            left: boundingClientRect.left > 0
+            left: boundingClientRect.left > 0,
         };
 
         return visibleBorders.top && visibleBorders.right && visibleBorders.bottom && visibleBorders.left;
@@ -317,7 +349,7 @@ class Tooltip {
         if (!availableTooltipPlacements.includes(placement)) {
             debug.warn(
                 'Tooltip Directive',
-                `The modifier has to be one of these "${availableTooltipPlacements.join(',')}"`
+                `The modifier has to be one of these "${availableTooltipPlacements.join(',')}"`,
             );
             return 'top';
         }
@@ -329,9 +361,10 @@ class Tooltip {
      * @returns {string}
      */
     static validateMessage(message) {
-        if (!message) {
-            debug.warn('Tooltip Directive', 'The tooltip needs a message');
+        if (typeof message !== 'string') {
+            debug.warn('Tooltip Directive', 'The tooltip needs a message with type string');
         }
+
         return message;
     }
 
@@ -395,7 +428,7 @@ function createOrUpdateTooltip(el, { value, modifiers }) {
         hideDelay: hideDelay,
         disabled: disabled,
         appearance: appearance,
-        showOnDisabledElements: showOnDisabledElements
+        showOnDisabledElements: showOnDisabledElements,
     };
 
     if (el.hasAttribute('tooltip-id')) {
@@ -460,11 +493,13 @@ Directive.register('tooltip', {
     /**
      * Initialize the tooltip once it has been inserted to the DOM.
      * @param el
+     * @param binding
+     * @param node
      */
-    inserted: (el) => {
+    inserted: (el, binding, node) => {
         if (el.hasAttribute('tooltip-id')) {
             const tooltip = tooltipRegistry.get(el.getAttribute('tooltip-id'));
-            tooltip.init();
+            tooltip.init(node);
         }
-    }
+    },
 });

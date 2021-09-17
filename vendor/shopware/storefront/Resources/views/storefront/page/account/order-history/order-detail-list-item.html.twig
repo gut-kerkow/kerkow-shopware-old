@@ -1,13 +1,21 @@
 {% block page_account_order_item_detail_list_item %}
     {% set isDiscount = (not lineItem.good and lineItem.price.totalPrice <= 0) %}
     {% set isNested = lineItem.children.count > 0 %}
+    {% set childrenTemplate = '@Storefront/storefront/page/account/order-history/order-detail-list-item-children.html.twig' %}
+
+    {# @deprecated tag:v6.5.0 - var will be removed - use 'childrenTemplate' instead #}
     {% set childTemplate = '@Storefront/storefront/page/account/order-history/order-detail-list-item.html.twig' %}
 
+    {# @deprecated tag:v6.5.0 - var will be removed with no replacement #}
+    {% set cartItemClasses = '' %}
+
     {% block page_account_order_item_detail_list_item_container %}
-        <div class="order-item-detail-list-item order-detail-item-{{ lineItem.type }}{% if isDiscount %} is-discount{% endif %}{% if isNested %} is-nested{% endif %}{% if isChild %} is-child{% endif %}">
+        <div class="order-item-detail-list-item order-detail-item-{{ lineItem.type }}{% if isDiscount %} is-discount{% endif %} {{ cartItemClasses }}">
             <div class="row order-detail-content-row">
+
                 {% block page_account_order_item_detail_image %}
                     <div class="col-12 col-md-2 order-item order-item-image">
+
                         {% block page_account_order_item_detail_image_value %}
                             <div class="order-item-product-image">
                                 {% if isDiscount %}
@@ -27,6 +35,7 @@
                                     <a href="{{ url }}"
                                        class="product-image-link"
                                        title="{{ lineItem.label }}">
+
                                         {% block page_checkout_item_info_image_element %}
                                             {% if lineItem.cover %}
                                                 {% sw_thumbnails 'cart-item-img-thumbnails' with {
@@ -48,15 +57,18 @@
                                                 </div>
                                             {% endif %}
                                         {% endblock %}
+
                                     </a>
                                 {% endif %}
                             </div>
                         {% endblock %}
+
                     </div>
                 {% endblock %}
 
                 {% block page_account_order_item_detail_name %}
                     <div class="col-12 col-md-4 order-item order-item-name">
+
                         {% block page_account_order_item_detail_name_value %}
                             {% if isDiscount %}
                                 <strong class="name-value">
@@ -97,8 +109,10 @@
 
                             {% if referencePrice.purchaseUnit %}
                                 <div class="order-price-unit">
+
                                     {% block page_account_order_item_detail_purchaseunit %}
                                         <div class="order-price-purchase">
+
                                             {% block page_account_order_item_detail_purchaseunit_label %}
                                                 <span class="order-price-purchase-label">
                                                     {{ "account.orderItemInfoContent"|trans|sw_sanitize }}
@@ -110,29 +124,35 @@
                                                    {{ referencePrice.purchaseUnit }} {{ referencePrice.unitName }}
                                                 </span>
                                             {% endblock %}
+
                                         </div>
                                     {% endblock %}
 
                                     {% block page_account_order_item_detail_referenceunit %}
                                         {% if referencePrice.referenceUnit is not null %}
                                             <div class="order-price-reference">
+
                                                 {% block page_account_order_item_detail_referenceunit_content %}
                                                     <span class="order-price-reference-content">
                                                         ({{ referencePrice.price|currency(order.currency.isoCode) }}{{ "general.star"|trans|sw_sanitize }} / {{ referencePrice.referenceUnit }} {{ referencePrice.unitName }})
                                                     </span>
                                                 {% endblock %}
+
                                             </div>
                                         {% endif %}
                                     {% endblock %}
+
                                 </div>
                             {% endif %}
                         {% endblock %}
+
                     </div>
                 {% endblock %}
 
                 {% block page_account_order_item_detail_quantity %}
                     <div class="col-12 col-md-2 order-item order-item-quantity">
                         {% if not isChild %}
+
                             {% block page_account_order_item_detail_quantity_label %}
                                 <strong class="order-item-label order-item-quantity-label">
                                     {{ "account.orderItemColumnQuantity"|trans|sw_sanitize }}{{ "account.colonCharacter"|trans|sw_sanitize }}
@@ -144,13 +164,15 @@
                                     {{ lineItem.quantity }}
                                 </span>
                             {% endblock %}
+
                         {% endif %}
                     </div>
                 {% endblock %}
 
                 {% block page_account_order_item_detail_price %}
                     <div class="col-12 col-md-2 order-item order-item-price">
-                        {% if not isDiscount and not isNested %}
+                        {% if not isDiscount %}
+
                             {% block page_account_order_item_detail_price_label %}
                                 <strong class="order-item-label order-item-price-label">
                                     {{ "account.orderItemColumnPrice"|trans|sw_sanitize }}{{ "account.colonCharacter"|trans|sw_sanitize }}
@@ -159,21 +181,21 @@
 
                             {% block page_account_order_item_detail_price_value %}
                                 <span class="order-item-value order-item-price-value">
-                                    {% if lineItem.unitPrice and lineItem.type == 'product' %}
-                                        {{ lineItem.unitPrice|currency(order.currency.isoCode) }}{{ "general.star"|trans|sw_sanitize }}
-                                    {% elseif lineItem.type == 'promotion' %}
+                                    {% if lineItem.type == 'promotion' %}
                                         /
                                     {% else %}
-                                        {{ "account.orderItemInfoFree"|trans|sw_sanitize }}{{ "account.colonCharacter"|trans|sw_sanitize }}
+                                        {{ lineItem.unitPrice|currency(order.currency.isoCode) }}{{ "general.star"|trans|sw_sanitize }}
                                     {% endif %}
                                 </span>
                             {% endblock %}
+
                         {% endif %}
                     </div>
                 {% endblock %}
 
                 {% block page_account_order_item_detail_total %}
                     <div class="col-12 col-md-2 order-item order-item-total">
+
                         {% block page_account_order_item_detail_total_label %}
                             <strong class="order-item-label order-item-total-label">
                                 {{ "account.orderItemColumnTotal"|trans|sw_sanitize }}{{ "account.colonCharacter"|trans|sw_sanitize }}
@@ -182,26 +204,31 @@
 
                         {% block page_account_order_item_detail_total_value %}
                             <span class="order-item-value order-item-total-value">
-                                {% if lineItem.totalPrice %}
-                                    {{ lineItem.totalPrice|currency(order.currency.isoCode) }}{{ "general.star"|trans|sw_sanitize }}
-                                {% else %}
-                                    {{ "account.orderItemInfoFree"|trans|sw_sanitize }}
-                                {% endif %}
+                                {{ lineItem.totalPrice|currency(order.currency.isoCode) }}{{ "general.star"|trans|sw_sanitize }}
                             </span>
                         {% endblock %}
+
                     </div>
                 {% endblock %}
+
             </div>
+
+            {% block page_account_order_item_detail_children_template %}
+                {% if isNested %}
+                    {# @deprecated tag:v6.5.0 - `page_account_order_item_detail_list_item_children` will be moved to `@Storefront/storefront/page/account/order-history/order-detail-list-item-children.html.twig` #}
+                    {% block page_account_order_item_detail_list_item_children %}
+                        {% sw_include childrenTemplate %}
+                    {% endblock %}
+                {% endif %}
+            {% endblock %}
+
+            {% block page_account_order_item_detail_list_item_divider %}
+                <div class="order-item-detail-list-item-divider"></div>
+            {% endblock %}
+
         </div>
     {% endblock %}
 
-    {% block page_account_order_item_detail_list_item_children %}
-        {% for lineItem in lineItem.children %}
-            {% block page_account_order_item_detail_list_item_child %}
-                {% sw_include childTemplate with {
-                    'isChild': true
-                } %}
-            {% endblock %}
-        {% endfor %}
-    {% endblock %}
+    {# @deprecated tag:v6.5.0 - block will be removed #}
+    {% block page_account_order_item_detail_list_item_child %}{% endblock %}
 {% endblock %}

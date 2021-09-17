@@ -19,15 +19,21 @@ import RuleConditionService from 'src/app/service/rule-condition.service';
 import ProductStreamConditionService from 'src/app/service/product-stream-condition.service';
 import StateStyleService from 'src/app/service/state-style.service';
 import CustomFieldService from 'src/app/service/custom-field.service';
+import ExtensionHelperService from 'src/app/service/extension-helper.service';
 import LanguageAutoFetchingService from 'src/app/service/language-auto-fetching.service';
 import SearchTypeService from 'src/app/service/search-type.service';
-import ShortcutService from 'src/app/service/shortcut.service';
 import LicenseViolationsService from 'src/app/service/license-violations.service';
+import ShortcutService from 'src/app/service/shortcut.service';
 import LocaleToLanguageService from 'src/app/service/locale-to-language.service';
 import addPluginUpdatesListener from 'src/core/service/plugin-updates-listener.service';
 import addShopwareUpdatesListener from 'src/core/service/shopware-updates-listener.service';
 import addCustomerGroupRegistrationListener from 'src/core/service/customer-group-registration-listener.service';
 import LocaleHelperService from 'src/app/service/locale-helper.service';
+import FilterService from 'src/app/service/filter.service';
+import AppCmsService from 'src/app/service/app-cms.service';
+import MediaDefaultFolderService from 'src/app/service/media-default-folder.service';
+import AppAclService from 'src/app/service/app-acl.service';
+import ShopwareDiscountCampaignService from 'src/app/service/discount-campaign.service';
 
 /** Import Feature */
 import Feature from 'src/core/feature';
@@ -98,6 +104,12 @@ Application
     .addServiceProvider('customFieldDataProviderService', () => {
         return CustomFieldService();
     })
+    .addServiceProvider('extensionHelperService', () => {
+        return new ExtensionHelperService({
+            storeService: Shopware.Service('storeService'),
+            extensionStoreActionService: Shopware.Service('extensionStoreActionService'),
+        });
+    })
     .addServiceProvider('languageAutoFetchingService', () => {
         return LanguageAutoFetchingService();
     })
@@ -124,6 +136,27 @@ Application
             Shopware: Shopware,
             localeRepository: Shopware.Service('repositoryFactory').create('locale'),
             snippetService: Shopware.Service('snippetService'),
-            localeFactory: Application.getContainer('factory').locale
+            localeFactory: Application.getContainer('factory').locale,
         });
+    })
+    .addServiceProvider('filterService', () => {
+        return new FilterService({
+            userConfigRepository: Shopware.Service('repositoryFactory').create('user_config'),
+        });
+    })
+    .addServiceProvider('mediaDefaultFolderService', () => {
+        return MediaDefaultFolderService();
+    })
+    .addServiceProvider('appAclService', () => {
+        return new AppAclService({
+            privileges: Shopware.Service('privileges'),
+            appRepository: Shopware.Service('repositoryFactory').create('app'),
+        });
+    })
+    .addServiceProvider('appCmsService', (container) => {
+        const appCmsBlocksService = container.appCmsBlocks;
+        return new AppCmsService(appCmsBlocksService, adapter);
+    })
+    .addServiceProvider('shopwareDiscountCampaignService', () => {
+        return new ShopwareDiscountCampaignService();
     });

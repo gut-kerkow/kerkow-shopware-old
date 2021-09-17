@@ -11,6 +11,7 @@ use Shopware\Core\Content\Product\SalesChannel\SalesChannelProductEntity;
 use Shopware\Core\Content\Product\SalesChannel\SalesChannelProductSubscriber;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\Pricing\CashRoundingConfig;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestDataCollection;
@@ -60,9 +61,10 @@ class SalesChannelProductSubscriberTest extends TestCase
         yield 'closeout with less stock' => [2, true, 2, 1, 10, 100];
         yield 'use configured max purchase for closeout with stock' => [10, true, 30, 1, 10, 50];
         yield 'not configured, use stock because closeout' => [2, true, 2, 1, null, 50];
-        yield 'next step would be higher than available' => [6, true, 9, 6, 20, 20];
-        yield 'second step would be higher than available' => [12, true, 13, 6, 20, 20];
-        yield 'max config is not in steps' => [12, true, 100, 12, 22, 22];
+        yield 'next step would be higher than available' => [7, true, 9, 6, 20, 20];
+        yield 'second step would be higher than available' => [13, true, 13, 6, 20, 20];
+        yield 'max config is not in steps' => [13, true, 100, 12, 22, 22];
+        yield 'max config is last step' => [15, false, 100, 2, 15, 15];
     }
 
     public function testListPrices(): void
@@ -82,6 +84,8 @@ class SalesChannelProductSubscriberTest extends TestCase
                     'symbol' => 'XXX',
                     'isoCode' => 'XX',
                     'decimalPrecision' => 3,
+                    'itemRounding' => json_decode(json_encode(new CashRoundingConfig(3, 0.01, true)), true),
+                    'totalRounding' => json_decode(json_encode(new CashRoundingConfig(3, 0.01, true)), true),
                 ],
             ], $ids->context);
 
@@ -128,22 +132,32 @@ class SalesChannelProductSubscriberTest extends TestCase
             // create a new product for this case
             $id = $ids->create('product-' . $i);
 
+            $price = [
+                [
+                    'currencyId' => $case->currencyId,
+                    'gross' => $case->gross,
+                    'net' => $case->net,
+                    'linked' => false,
+                    'listPrice' => [
+                        'gross' => $case->wasGross,
+                        'net' => $case->wasNet,
+                        'linked' => false,
+                    ],
+                ],
+            ];
+            if ($case->currencyId !== Defaults::CURRENCY) {
+                $price[] = [
+                    'currencyId' => Defaults::CURRENCY,
+                    'gross' => 1,
+                    'net' => 1,
+                    'linked' => false,
+                ];
+            }
+
             $data = array_merge($defaults, [
                 'id' => $id,
                 'productNumber' => $id,
-                'price' => [
-                    [
-                        'currencyId' => $case->currencyId,
-                        'gross' => $case->gross,
-                        'net' => $case->net,
-                        'linked' => false,
-                        'listPrice' => [
-                            'gross' => $case->wasGross,
-                            'net' => $case->wasNet,
-                            'linked' => false,
-                        ],
-                    ],
-                ],
+                'price' => $price,
             ]);
 
             $this->getContainer()->get('product.repository')

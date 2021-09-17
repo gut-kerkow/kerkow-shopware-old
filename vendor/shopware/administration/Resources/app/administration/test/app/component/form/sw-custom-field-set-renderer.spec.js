@@ -140,16 +140,7 @@ function createWrapper(props) {
                 })
             },
             validationService: {},
-            mediaService: {},
-            feature: {
-                isActive: () => true
-            }
-        },
-        mocks: {
-            $tc: key => key,
-            $device: {
-                onResize: () => {}
-            }
+            mediaService: {}
         }
     });
 }
@@ -160,7 +151,6 @@ describe('src/app/component/form/sw-custom-field-set-renderer', () => {
 
     const configuredFields = [
         {
-            skip: false,
             testFieldLabel: 'single select',
             customFieldType: 'select',
             customFieldConfigType: 'select',
@@ -197,7 +187,6 @@ describe('src/app/component/form/sw-custom-field-set-renderer', () => {
             }
         },
         {
-            skip: false,
             testFieldLabel: 'multi select',
             customFieldType: 'select',
             customFieldConfigType: 'select',
@@ -238,7 +227,6 @@ describe('src/app/component/form/sw-custom-field-set-renderer', () => {
             }
         },
         {
-            skip: false,
             testFieldLabel: 'text field',
             customFieldType: 'text',
             customFieldConfigType: 'text',
@@ -263,7 +251,6 @@ describe('src/app/component/form/sw-custom-field-set-renderer', () => {
             }
         },
         {
-            skip: false,
             testFieldLabel: 'media field',
             customFieldType: 'text',
             customFieldConfigType: 'media',
@@ -294,7 +281,6 @@ describe('src/app/component/form/sw-custom-field-set-renderer', () => {
             }
         },
         {
-            skip: false,
             testFieldLabel: 'number field int',
             customFieldType: 'int',
             customFieldConfigType: 'number',
@@ -320,7 +306,6 @@ describe('src/app/component/form/sw-custom-field-set-renderer', () => {
             }
         },
         {
-            skip: false,
             testFieldLabel: 'number field float',
             customFieldType: 'float',
             customFieldConfigType: 'number',
@@ -346,7 +331,6 @@ describe('src/app/component/form/sw-custom-field-set-renderer', () => {
             }
         },
         {
-            skip: false,
             testFieldLabel: 'datetime field',
             customFieldType: 'datetime',
             customFieldConfigType: 'date',
@@ -372,7 +356,6 @@ describe('src/app/component/form/sw-custom-field-set-renderer', () => {
             }
         },
         {
-            skip: false,
             testFieldLabel: 'checkbox field',
             customFieldType: 'bool',
             customFieldConfigType: 'checkbox',
@@ -398,7 +381,6 @@ describe('src/app/component/form/sw-custom-field-set-renderer', () => {
             }
         },
         {
-            skip: false,
             testFieldLabel: 'active/inactive switch field',
             customFieldType: 'bool',
             customFieldConfigType: 'switch',
@@ -424,7 +406,6 @@ describe('src/app/component/form/sw-custom-field-set-renderer', () => {
             }
         },
         {
-            skip: false,
             testFieldLabel: 'text editor field',
             customFieldType: 'html',
             customFieldConfigType: 'textEditor',
@@ -450,7 +431,6 @@ describe('src/app/component/form/sw-custom-field-set-renderer', () => {
             }
         },
         {
-            skip: false,
             testFieldLabel: 'colorpicker field',
             customFieldType: 'text',
             customFieldConfigType: 'colorpicker',
@@ -483,7 +463,7 @@ describe('src/app/component/form/sw-custom-field-set-renderer', () => {
     });
 
     afterEach(async () => {
-        if (wrapper) await wrapper.destroy();
+        if (wrapper) wrapper.destroy();
     });
 
     it('should be a Vue.JS component', async () => {
@@ -666,6 +646,7 @@ describe('src/app/component/form/sw-custom-field-set-renderer', () => {
         expect(tabs).toHaveLength(2);
     });
 
+    // eslint-disable-next-line max-len
     it('should not filter custom field sets when entity has no parent and customFieldSetSelectionActive not set', async () => {
         const props = {
             entity: {
@@ -710,6 +691,7 @@ describe('src/app/component/form/sw-custom-field-set-renderer', () => {
         expect(tabs).toHaveLength(2);
     });
 
+    // eslint-disable-next-line max-len
     it('should not filter custom field sets when customFieldSetSelectionActive not set and parent has no selection', async () => {
         const props = {
             entity: {
@@ -1048,7 +1030,6 @@ describe('src/app/component/form/sw-custom-field-set-renderer', () => {
      * Iterate through each possible custom field and check if everything works as expected
      */
     configuredFields.forEach(({
-        skip,
         testFieldLabel,
         fieldName,
         customFieldType,
@@ -1067,8 +1048,6 @@ describe('src/app/component/form/sw-custom-field-set-renderer', () => {
         domFieldValueAfter,
         changeValueFunction
     }) => {
-        if (skip) return;
-
         it(`should render the custom field and update value: ${testFieldLabel}`, async () => {
             wrapper = await createWrapper({
                 entity: {

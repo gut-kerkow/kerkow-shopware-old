@@ -11,25 +11,13 @@ use Shopware\Core\System\Language\LanguageCollection;
 
 class ElasticsearchOutdatedIndexDetector
 {
-    /**
-     * @var Client
-     */
-    private $client;
+    private Client $client;
 
-    /**
-     * @var ElasticsearchRegistry
-     */
-    private $registry;
+    private ElasticsearchRegistry $registry;
 
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $languageRepository;
+    private EntityRepositoryInterface $languageRepository;
 
-    /**
-     * @var ElasticsearchHelper
-     */
-    private $helper;
+    private ElasticsearchHelper $helper;
 
     public function __construct(
         Client $client,
@@ -48,9 +36,7 @@ class ElasticsearchOutdatedIndexDetector
      */
     public function get(): ?array
     {
-        $allIndices = $this->client->indices()->get(
-            ['index' => implode(',', $this->getPrefixes())]
-        );
+        $allIndices = $this->getAllIndices();
 
         if (empty($allIndices)) {
             return [];
@@ -68,16 +54,24 @@ class ElasticsearchOutdatedIndexDetector
         return $indicesToBeDeleted;
     }
 
+    public function getAllUsedIndices(): array
+    {
+        $allIndices = $this->getAllIndices();
+
+        if (empty($allIndices)) {
+            return [];
+        }
+
+        return array_map(function (array $index) {
+            return $index['settings']['index']['provided_name'];
+        }, $allIndices);
+    }
+
     private function getLanguages(): EntityCollection
     {
-        return (Context::createDefaultContext())->disableCache(
-            function (Context $uncached) {
-                return $this
-                    ->languageRepository
-                    ->search(new Criteria(), $uncached)
-                    ->getEntities();
-            }
-        );
+        return $this->languageRepository
+            ->search(new Criteria(), Context::createDefaultContext())
+            ->getEntities();
     }
 
     /**
@@ -98,5 +92,22 @@ class ElasticsearchOutdatedIndexDetector
         }
 
         return $prefixes;
+    }
+
+    private function getAllIndices(): array
+    {
+        $prefixes = array_chunk($this->getPrefixes(), 5);
+
+        $allIndices = [];
+
+        foreach ($prefixes as $prefix) {
+            $indices = $this->client->indices()->get(
+                ['index' => implode(',', $prefix)]
+            );
+
+            $allIndices = array_merge($allIndices, $indices);
+        }
+
+        return $allIndices;
     }
 }

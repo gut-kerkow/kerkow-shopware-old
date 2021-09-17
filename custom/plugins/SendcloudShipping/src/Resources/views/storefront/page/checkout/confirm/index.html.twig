@@ -3,6 +3,7 @@
 
 {% block page_checkout_confirm_form_submit %}
     {% if page.extensions.sendcloud.disableSubmitButton %}
+        <input id="sendcloud-is-submit-btn-disabled" type="hidden" value="{{ page.extensions.sendcloud.disableSubmitButton }}">
         <div role="alert" class="alert alert-danger alert-has-icon">
             <span class="icon icon-blocked">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
@@ -17,13 +18,5 @@
         </div>
     {% endif %}
 
-    <button id="confirmFormSubmit"
-            class="btn btn-primary btn-block btn-lg"
-            form="confirmOrderForm"
-            {% if page.cart.errors.blockOrder > 0 or page.extensions.sendcloud.disableSubmitButton %}
-                disabled
-            {% endif %}
-            type="submit">
-        {{ "checkout.confirmSubmit"|trans|sw_sanitize }}
-    </button>
+    {{ parent() }}
 {% endblock %}

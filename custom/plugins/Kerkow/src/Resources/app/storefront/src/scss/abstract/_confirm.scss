@@ -60,8 +60,10 @@
       color: $kerkow-blue;
       font-size: 1rem;
       line-height: 1.5rem;
+      word-wrap: normal;
       p {
         @include source-light;
+        color: $kerkow-blue;
       }
     }
     .payment-method-image {
@@ -75,12 +77,19 @@
       color: $kerkow-blue;
       font-size: 1rem;
       line-height: 1.5rem;
+      word-wrap: normal;
+      width: 100%;
       p {
         @include source-light;
+        color: $kerkow-blue;
       }
     }
     .form-group {
       margin-bottom: 0;
+    }
+    .confirm-shipping-method-image {
+      max-height: 35px;
+      margin-right: 0.25rem;
     }
   }
   label {
@@ -285,7 +294,7 @@
   .is-act-editorder {
     .checkout {
       .checkout-main {
-        @extend .col-lg-10;
+        @include make-col(10, 12);
         margin-left: 8.33333%;
       }
     }

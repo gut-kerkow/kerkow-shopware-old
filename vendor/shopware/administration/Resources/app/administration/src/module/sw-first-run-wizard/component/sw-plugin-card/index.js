@@ -6,31 +6,33 @@ const { Component } = Shopware;
 Component.register('sw-plugin-card', {
     template,
 
-    inject: ['storeService', 'pluginService', 'cacheApiService'],
+    inject: ['cacheApiService', 'extensionHelperService'],
+
+    mixins: ['sw-extension-error'],
 
     props: {
         plugin: {
             type: Object,
-            required: true
+            required: true,
         },
         showDescription: {
             type: Boolean,
             default: true,
-            required: false
-        }
+            required: false,
+        },
     },
 
     data() {
         return {
             pluginIsLoading: false,
-            pluginIsSaveSuccessful: false
+            pluginIsSaveSuccessful: false,
         };
     },
 
     computed: {
         pluginIsNotActive() {
             return !this.plugin.active;
-        }
+        },
     },
 
     methods: {
@@ -44,13 +46,12 @@ Component.register('sw-plugin-card', {
             this.pluginIsLoading = true;
             this.pluginIsSaveSuccessful = false;
 
-            return this.storeService.downloadPlugin(pluginName, true)
+            return this.extensionHelperService.downloadAndActivateExtension(pluginName)
                 .then(() => {
                     this.pluginIsSaveSuccessful = true;
-                    return this.pluginService.install(pluginName);
                 })
-                .then(() => {
-                    return this.pluginService.activate(pluginName);
+                .catch(error => {
+                    this.showExtensionErrors(error);
                 })
                 .finally(() => {
                     this.pluginIsLoading = false;
@@ -58,6 +59,6 @@ Component.register('sw-plugin-card', {
 
                     this.$emit('onPluginInstalled', pluginName);
                 });
-        }
-    }
+        },
+    },
 });

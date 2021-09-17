@@ -14,15 +14,9 @@ use Symfony\Component\Validator\Constraints\Type;
 
 class LineItemDimensionWeightRule extends Rule
 {
-    /**
-     * @var float
-     */
-    protected $amount;
+    protected ?float $amount;
 
-    /**
-     * @var string
-     */
-    protected $operator;
+    protected string $operator;
 
     public function __construct(string $operator = self::OPERATOR_EQ, ?float $amount = null)
     {
@@ -47,7 +41,7 @@ class LineItemDimensionWeightRule extends Rule
             return false;
         }
 
-        foreach ($scope->getCart()->getLineItems() as $lineItem) {
+        foreach ($scope->getCart()->getLineItems()->getFlat() as $lineItem) {
             if ($this->matchWeightDimension($lineItem)) {
                 return true;
             }
@@ -58,8 +52,7 @@ class LineItemDimensionWeightRule extends Rule
 
     public function getConstraints(): array
     {
-        return [
-            'amount' => [new NotBlank(), new Type('numeric')],
+        $constraints = [
             'operator' => [
                 new NotBlank(),
                 new Choice(
@@ -70,10 +63,19 @@ class LineItemDimensionWeightRule extends Rule
                         self::OPERATOR_EQ,
                         self::OPERATOR_GT,
                         self::OPERATOR_LT,
+                        self::OPERATOR_EMPTY,
                     ]
                 ),
             ],
         ];
+
+        if ($this->operator === self::OPERATOR_EMPTY) {
+            return $constraints;
+        }
+
+        $constraints['amount'] = [new NotBlank(), new Type('numeric')];
+
+        return $constraints;
     }
 
     /**
@@ -91,7 +93,6 @@ class LineItemDimensionWeightRule extends Rule
 
         $this->amount = (float) $this->amount;
 
-        /* @var float $weight */
         switch ($this->operator) {
             case self::OPERATOR_GTE:
                 return FloatComparator::greaterThanOrEquals($weight, $this->amount);
@@ -110,6 +111,9 @@ class LineItemDimensionWeightRule extends Rule
 
             case self::OPERATOR_NEQ:
                 return FloatComparator::notEquals($weight, $this->amount);
+
+            case self::OPERATOR_EMPTY:
+                return empty($weight);
 
             default:
                 throw new UnsupportedOperatorException($this->operator, self::class);

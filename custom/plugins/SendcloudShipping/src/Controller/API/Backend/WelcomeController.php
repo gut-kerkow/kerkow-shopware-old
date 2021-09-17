@@ -38,6 +38,7 @@ class WelcomeController extends AbstractController
      *
      * @RouteScope(scopes={"api"})
      * @Route(path="/api/v{version}/sendcloud/redirectUrl", name="api.sendcloud.redirectUrl", methods={"GET", "POST"})
+     * @Route(path="/api/sendcloud/redirectUrl", name="api.sendcloud.redirectUrl.new", methods={"GET", "POST"})
      *
      * @return JsonApiResponse
      **/

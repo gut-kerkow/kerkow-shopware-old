@@ -16,19 +16,23 @@ exports[`module/sw-settings/page/sw-settings-index should render correctly 1`] =
         <a
           class="sw-tabs-item sw-settings__tab-shop"
           title="sw-settings.index.tabShop"
+          to="[object Object]"
         >
           
-                                        sw-settings.index.tabShop
-                                    
+                        sw-settings.index.tabShop
+                     
+          <!---->
         </a>
          
         <a
           class="sw-tabs-item sw-settings__tab-system"
           title="sw-settings.index.tabSystem"
+          to="[object Object]"
         >
           
-                                        sw-settings.index.tabSystem
-                                    
+                        sw-settings.index.tabSystem
+                     
+          <!---->
         </a>
          
         <!---->
@@ -49,78 +53,14 @@ exports[`module/sw-settings/page/sw-settings-index should render correctly 1`] =
         <h1
           class="sw-settings__content-header"
         >
-          sw-settings.index.title
+          
+                        sw-settings.index.title
+                    
         </h1>
          
         <div
           class="sw-card sw-settings__card"
         >
-          <div
-            class="sw-settings__content-grid"
-            id="sw-settings__content-grid-shop"
-          >
-            <a
-              class="sw-settings-item"
-              id="sw-settings-shipping"
-              to="[object Object]"
-            >
-              <div
-                class="sw-settings-item__icon background--enabled"
-              >
-                <span
-                  name="default-package-open"
-                />
-              </div>
-               
-              <div
-                class="sw-settings-item__label"
-              >
-                a
-              </div>
-            </a>
-            <a
-              class="sw-settings-item"
-              id="sw-settings-snippet"
-              to="[object Object]"
-            >
-              <div
-                class="sw-settings-item__icon background--enabled"
-              >
-                <span
-                  name="default-object-globe"
-                />
-              </div>
-               
-              <div
-                class="sw-settings-item__label"
-              >
-                h
-              </div>
-            </a>
-            <a
-              class="sw-settings-item"
-              id="sw-settings-listing"
-              to="[object Object]"
-            >
-              <div
-                class="sw-settings-item__icon background--enabled"
-              >
-                <span
-                  name="default-symbol-products"
-                />
-              </div>
-               
-              <div
-                class="sw-settings-item__label"
-              >
-                s
-              </div>
-            </a>
-             
-            <div />
-             
-            <!---->
-          </div>
           <div
             class="sw-settings__content-grid"
             id="sw-settings__content-grid-system"
@@ -142,7 +82,9 @@ exports[`module/sw-settings/page/sw-settings-index should render correctly 1`] =
               <div
                 class="sw-settings-item__label"
               >
-                a
+                
+            a
+        
               </div>
             </a>
             <a
@@ -161,7 +103,9 @@ exports[`module/sw-settings/page/sw-settings-index should render correctly 1`] =
               <div
                 class="sw-settings-item__label"
               >
-                b
+                
+            b
+        
               </div>
             </a>
             <a
@@ -180,19 +124,81 @@ exports[`module/sw-settings/page/sw-settings-index should render correctly 1`] =
               <div
                 class="sw-settings-item__label"
               >
-                c
+                
+            c
+        
               </div>
             </a>
-             
-            <!---->
-             
-            <div />
           </div>
-           
           <div
             class="sw-settings__content-grid"
+            id="sw-settings__content-grid-shop"
             style="display: none;"
-          />
+          >
+            <a
+              class="sw-settings-item"
+              id="sw-settings-shipping"
+              to="[object Object]"
+            >
+              <div
+                class="sw-settings-item__icon background--enabled"
+              >
+                <span
+                  name="default-package-open"
+                />
+              </div>
+               
+              <div
+                class="sw-settings-item__label"
+              >
+                
+            a
+        
+              </div>
+            </a>
+            <a
+              class="sw-settings-item"
+              id="sw-settings-snippet"
+              to="[object Object]"
+            >
+              <div
+                class="sw-settings-item__icon background--enabled"
+              >
+                <span
+                  name="default-object-globe"
+                />
+              </div>
+               
+              <div
+                class="sw-settings-item__label"
+              >
+                
+            h
+        
+              </div>
+            </a>
+            <a
+              class="sw-settings-item"
+              id="sw-settings-listing"
+              to="[object Object]"
+            >
+              <div
+                class="sw-settings-item__icon background--enabled"
+              >
+                <span
+                  name="default-symbol-products"
+                />
+              </div>
+               
+              <div
+                class="sw-settings-item__label"
+              >
+                
+            s
+        
+              </div>
+            </a>
+          </div>
         </div>
       </div>
     </div>

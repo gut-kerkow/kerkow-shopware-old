@@ -21,24 +21,25 @@ Component.register('sw-snippet-field-edit-modal', {
     template,
 
     inject: [
-        'snippetService', // @deprecated tag:v6.4.0.0
-        'acl'
+        // @Jonas no usage found, still relevant?
+        'acl',
+        'repositoryFactory',
     ],
 
     props: {
         snippets: {
             type: Array,
-            required: true
+            required: true,
         },
 
         snippetSets: {
             type: Array,
-            required: true
+            required: true,
         },
 
         translationKey: {
             type: String,
-            required: true
+            required: true,
         },
 
         fieldType: {
@@ -47,14 +48,14 @@ Component.register('sw-snippet-field-edit-modal', {
             validValues: ['text', 'textarea'],
             validator(value) {
                 return ['text', 'textarea'].includes(value);
-            }
-        }
+            },
+        },
     },
 
     data() {
         return {
             isLoading: false,
-            editableSnippets: []
+            editableSnippets: [],
         };
     },
 
@@ -67,7 +68,11 @@ Component.register('sw-snippet-field-edit-modal', {
 
         currentAuthor() {
             return `user/${Shopware.State.get('session').currentUser.username}`;
-        }
+        },
+
+        snippetRepository() {
+            return this.repositoryFactory.create('snippet');
+        },
     },
 
     created() {
@@ -79,20 +84,30 @@ Component.register('sw-snippet-field-edit-modal', {
             this.isLoading = true;
 
             this.snippetSets.forEach((snippetSet) => {
-                let existingSnippet = this.snippets.find(item => item.setId === snippetSet.id);
+                const existingSnippet = this.snippets.find(item => item.setId === snippetSet.id);
+                const snippet = this.snippetRepository.create(Shopware.Context.api);
 
-                if (!existingSnippet) {
-                    existingSnippet = {
-                        author: this.currentAuthor,
-                        id: null,
-                        value: null,
-                        origin: null,
-                        resetTo: '',
-                        translationKey: this.translationKey,
-                        setId: snippetSet.id
-                    };
+                if (existingSnippet) {
+                    snippet.author = existingSnippet.author;
+                    snippet.id = existingSnippet.id;
+                    snippet.value = existingSnippet.value;
+                    snippet.origin = existingSnippet.origin;
+                    snippet.translationKey = existingSnippet.translationKey;
+                    snippet.setId = existingSnippet.setId;
+
+                    if (existingSnippet.id) {
+                        snippet._isNew = false;
+                    }
+                } else {
+                    snippet.author = this.currentAuthor;
+                    snippet.id = null;
+                    snippet.value = null;
+                    snippet.origin = null;
+                    snippet.translationKey = this.translationKey;
+                    snippet.setId = snippetSet.id;
                 }
-                this.editableSnippets.push(existingSnippet);
+
+                this.editableSnippets.push(snippet);
             });
 
             this.isLoading = false;
@@ -108,7 +123,7 @@ Component.register('sw-snippet-field-edit-modal', {
                 appearance: 'dark',
                 showOnDisabledElements: true,
                 disabled: this.acl.can(role),
-                message: this.$tc('sw-privileges.tooltip.warning')
+                message: this.$tc('sw-privileges.tooltip.warning'),
             };
         },
 
@@ -120,9 +135,21 @@ Component.register('sw-snippet-field-edit-modal', {
                 snippet.value = Sanitizer.sanitize(snippet.value);
                 snippet.author = this.currentAuthor;
 
-                if (snippet.resetTo !== snippet.value) {
-                    // Only save if value differs from original value
-                    responses.push(this.snippetService.save(snippet));
+                if (!snippet.hasOwnProperty('value') || snippet.value === '') {
+                    // If you clear the input-box, reset it to its origin value
+                    snippet.value = snippet.origin;
+                }
+
+                if (snippet.origin !== snippet.value) {
+                    // Only save if values differs from origin
+                    responses.push(
+                        this.snippetRepository.save(snippet, Shopware.Context.api),
+                    );
+                } else if (snippet.hasOwnProperty('id') && snippet.id !== null) {
+                    // There's no need to keep a snippet which is exactly like the file-snippet, so delete
+                    responses.push(
+                        this.snippetRepository.delete(snippet.id, Shopware.Context.api),
+                    );
                 }
             });
 
@@ -130,6 +157,6 @@ Component.register('sw-snippet-field-edit-modal', {
                 this.isLoading = false;
                 this.$emit('save');
             });
-        }
-    }
+        },
+    },
 });

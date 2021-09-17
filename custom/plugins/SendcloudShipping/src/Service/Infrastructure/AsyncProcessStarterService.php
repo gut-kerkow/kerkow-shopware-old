@@ -11,6 +11,7 @@ use Sendcloud\Shipping\Core\Infrastructure\Utility\Exceptions\HttpRequestExcepti
 use Sendcloud\Shipping\Core\Infrastructure\Utility\GuidProvider;
 use Sendcloud\Shipping\Entity\Process\ProcessEntityRepository;
 use Shopware\Core\PlatformRequest;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
@@ -32,6 +33,10 @@ class AsyncProcessStarterService implements AsyncProcessStarter
      * @var UrlGeneratorInterface
      */
     private $urlGenerator;
+    /**
+     * @var ParameterBagInterface
+     */
+    private $params;
 
     /**
      * AsyncProcessStarterService constructor.
@@ -39,15 +44,18 @@ class AsyncProcessStarterService implements AsyncProcessStarter
      * @param HttpClient $httpClient
      * @param ProcessEntityRepository $processRepository
      * @param UrlGeneratorInterface $urlGenerator
+     * @param ParameterBagInterface $params
      */
     public function __construct(
         HttpClient $httpClient,
         ProcessEntityRepository $processRepository,
-        UrlGeneratorInterface $urlGenerator
+        UrlGeneratorInterface $urlGenerator,
+        ParameterBagInterface $params
     ) {
         $this->httpClient = $httpClient;
         $this->processRepository = $processRepository;
         $this->urlGenerator = $urlGenerator;
+        $this->params = $params;
     }
 
     /**
@@ -95,6 +103,8 @@ class AsyncProcessStarterService implements AsyncProcessStarter
     public function startRunnerAsynchronously(string $guid): void
     {
         try {
+            $url = $this->formatAsyncProcessStartUrl($guid);
+            Logger::logError('Async request: ' . $url);
             $this->httpClient->requestAsync('GET', $this->formatAsyncProcessStartUrl($guid));
         } catch (\Exception $e) {
             Logger::logError('Failed to send async request: ' . $e->getMessage(), 'Integration');
@@ -111,13 +121,13 @@ class AsyncProcessStarterService implements AsyncProcessStarter
      */
     private function formatAsyncProcessStartUrl(string $guid): string
     {
-        return $this->urlGenerator->generate(
-            'api.sendcloud.async',
-            [
-                'version' => PlatformRequest::API_VERSION,
-                'guid' => $guid
-            ],
-            UrlGeneratorInterface::ABSOLUTE_URL
-        );
+        $routeName = 'api.sendcloud.async.new';
+        $params = ['guid' => $guid];
+        if (version_compare($this->params->get('kernel.shopware_version'), '6.4.0', 'lt')) {
+            $routeName = 'api.sendcloud.async';
+            $params['version'] = PlatformRequest::API_VERSION;
+        }
+
+        return $this->urlGenerator->generate($routeName, $params, UrlGeneratorInterface::ABSOLUTE_URL);
     }
 }

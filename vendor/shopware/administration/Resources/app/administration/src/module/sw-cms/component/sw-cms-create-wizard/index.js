@@ -11,27 +11,24 @@ Component.register('sw-cms-create-wizard', {
     props: {
         page: {
             type: Object,
-            required: true
-        }
+            required: true,
+        },
     },
 
     data() {
         const pageTypeNames = {
             page: this.$tc('sw-cms.detail.label.pageTypeShopPage'),
             landingpage: this.$tc('sw-cms.detail.label.pageTypeLandingpage'),
-            product_list: this.$tc('sw-cms.detail.label.pageTypeCategory')
+            product_list: this.$tc('sw-cms.detail.label.pageTypeCategory'),
+            product_detail: this.$tc('sw-cms.detail.label.pageTypeProduct'),
         };
 
         const pageTypeIcons = {
             page: 'default-object-lightbulb',
             landingpage: 'default-web-dashboard',
-            product_list: 'default-shopping-basket'
+            product_list: 'default-shopping-basket',
+            product_detail: 'default-action-tags',
         };
-
-        if (this.feature.isActive('FEATURE_NEXT_10078')) {
-            pageTypeNames.product_detail = this.$tc('sw-cms.detail.label.pageTypeProduct');
-            pageTypeIcons.product_detail = 'default-action-tags';
-        }
 
         return {
             step: 1,
@@ -40,8 +37,8 @@ Component.register('sw-cms-create-wizard', {
             steps: {
                 pageType: 1,
                 sectionType: 2,
-                pageName: 3
-            }
+                pageName: 3,
+            },
         };
     },
 
@@ -59,13 +56,13 @@ Component.register('sw-cms-create-wizard', {
         pagePreviewStyle() {
             return {
                 'background-image': this.pagePreviewMedia,
-                'background-size': 'cover'
+                'background-size': 'cover',
             };
         },
 
         assetFilter() {
             return Filter.getByName('asset');
-        }
+        },
     },
 
     watch: {
@@ -73,7 +70,7 @@ Component.register('sw-cms-create-wizard', {
             if (this.getStepName(newStep) === 'sectionType') {
                 this.page.sections = [];
             }
-        }
+        },
     },
 
     methods: {
@@ -120,6 +117,6 @@ Component.register('sw-cms-create-wizard', {
             }
 
             this.$emit('wizard-complete');
-        }
-    }
+        },
+    },
 });

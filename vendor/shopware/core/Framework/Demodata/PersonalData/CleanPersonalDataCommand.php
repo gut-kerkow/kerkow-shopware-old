@@ -48,8 +48,7 @@ class CleanPersonalDataCommand extends Command
 
     protected function configure(): void
     {
-        $this->setName(static::$defaultName)
-            ->addArgument('type', InputArgument::OPTIONAL)
+        $this->addArgument('type', InputArgument::OPTIONAL)
             ->addOption(
                 'days',
                 'd',
@@ -114,6 +113,6 @@ class CleanPersonalDataCommand extends Command
 
         $output->writeln('Personal data for ' . ($all ? implode(' and ', self::VALID_TYPES) : $type) . ' successfully cleaned!');
 
-        return 0;
+        return self::SUCCESS;
     }
 }

@@ -11,26 +11,34 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
 use Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskHandler;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory;
+use Shopware\Core\System\SalesChannel\Context\AbstractSalesChannelContextFactory;
 use Symfony\Component\Messenger\MessageBusInterface;
 
 class ProductExportGenerateTaskHandler extends ScheduledTaskHandler
 {
-    /** @var SalesChannelContextFactory */
+    /**
+     * @var AbstractSalesChannelContextFactory
+     */
     private $salesChannelContextFactory;
 
-    /** @var EntityRepositoryInterface */
+    /**
+     * @var EntityRepositoryInterface
+     */
     private $salesChannelRepository;
 
-    /** @var EntityRepositoryInterface */
+    /**
+     * @var EntityRepositoryInterface
+     */
     private $productExportRepository;
 
-    /** @var MessageBusInterface */
+    /**
+     * @var MessageBusInterface
+     */
     private $messageBus;
 
     public function __construct(
         EntityRepositoryInterface $scheduledTaskRepository,
-        SalesChannelContextFactory $salesChannelContextFactory,
+        AbstractSalesChannelContextFactory $salesChannelContextFactory,
         EntityRepositoryInterface $salesChannelRepository,
         EntityRepositoryInterface $productExportRepository,
         MessageBusInterface $messageBus
@@ -59,6 +67,7 @@ class ProductExportGenerateTaskHandler extends ScheduledTaskHandler
 
         $salesChannelIds = $this->salesChannelRepository->searchIds($criteria, Context::createDefaultContext());
 
+        /** @var string $salesChannelId */
         foreach ($salesChannelIds->getIds() as $salesChannelId) {
             $salesChannelContext = $this->salesChannelContextFactory->create(Uuid::randomHex(), $salesChannelId);
 
@@ -82,13 +91,20 @@ class ProductExportGenerateTaskHandler extends ScheduledTaskHandler
             $productExports = $this->productExportRepository->search($criteria, $salesChannelContext->getContext());
 
             if ($productExports->count() === 0) {
-                return;
+                continue;
             }
+
+            $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
 
             /** @var ProductExportEntity $productExport */
             foreach ($productExports as $productExport) {
-                $message = new ProductExportPartialGeneration($productExport->getId(), $salesChannelId);
-                $this->messageBus->dispatch($message);
+                // Make sure the product export is due to be exported
+                if ($productExport->getGeneratedAt() !== null) {
+                    if ($now->getTimestamp() - $productExport->getGeneratedAt()->getTimestamp() < $productExport->getInterval()) {
+                        continue;
+                    }
+                }
+                $this->messageBus->dispatch(new ProductExportPartialGeneration($productExport->getId(), $salesChannelId));
             }
         }
     }

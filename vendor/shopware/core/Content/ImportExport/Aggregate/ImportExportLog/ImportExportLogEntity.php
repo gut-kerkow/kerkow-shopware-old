@@ -14,6 +14,7 @@ class ImportExportLogEntity extends Entity
 
     public const ACTIVITY_IMPORT = 'import';
     public const ACTIVITY_EXPORT = 'export';
+    public const ACTIVITY_DRYRUN = 'dryrun';
     public const ACTIVITY_INVALID_RECORDS_EXPORT = 'invalid_records_export';
 
     /**
@@ -77,6 +78,11 @@ class ImportExportLogEntity extends Entity
     protected $config = [];
 
     /**
+     * @var array
+     */
+    protected $result = [];
+
+    /**
      * @var string|null
      */
     protected $invalidRecordsLogId;
@@ -90,16 +96,6 @@ class ImportExportLogEntity extends Entity
      * @var self|null
      */
     protected $failedImportLog;
-
-    /**
-     * @var \DateTimeInterface
-     */
-    protected $createdAt;
-
-    /**
-     * @var \DateTimeInterface|null
-     */
-    protected $updatedAt;
 
     public function getActivity(): string
     {
@@ -219,6 +215,16 @@ class ImportExportLogEntity extends Entity
     public function setConfig(array $config): void
     {
         $this->config = $config;
+    }
+
+    public function getResult(): array
+    {
+        return $this->result;
+    }
+
+    public function setResult(array $result): void
+    {
+        $this->result = $result;
     }
 
     public function getInvalidRecordsLogId(): ?string

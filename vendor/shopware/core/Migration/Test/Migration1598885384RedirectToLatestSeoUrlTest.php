@@ -30,7 +30,6 @@ class Migration1598885384RedirectToLatestSeoUrlTest extends TestCase
      */
     public function initialise(): void
     {
-        /* @var Connection $connection */
         $connection = $this->getContainer()->get(Connection::class);
 
         $this->removeConfig($connection);
@@ -70,7 +69,7 @@ class Migration1598885384RedirectToLatestSeoUrlTest extends TestCase
 
     private function removeAllSeoUrls(Connection $connection): void
     {
-        $connection->executeUpdate('TRUNCATE TABLE `seo_url`;');
+        $connection->executeUpdate('DELETE FROM `seo_url`;');
     }
 
     private function insertSeoUrl(Connection $connection): void

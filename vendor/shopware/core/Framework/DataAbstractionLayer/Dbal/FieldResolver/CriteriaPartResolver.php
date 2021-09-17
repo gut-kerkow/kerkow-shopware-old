@@ -20,7 +20,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\CriteriaPartInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\AndFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\OrFilter;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\SingleFieldFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Parser\SqlQueryParser;
 
 /**
@@ -28,11 +27,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Parser\SqlQueryParser;
  */
 class CriteriaPartResolver
 {
-    /**
-     * @var EntityDefinitionQueryHelper
-     */
-    private $helper;
-
     /**
      * @var Connection
      */
@@ -43,9 +37,8 @@ class CriteriaPartResolver
      */
     private $parser;
 
-    public function __construct(EntityDefinitionQueryHelper $helper, Connection $connection, SqlQueryParser $parser)
+    public function __construct(Connection $connection, SqlQueryParser $parser)
     {
-        $this->helper = $helper;
         $this->connection = $connection;
         $this->parser = $parser;
     }
@@ -134,7 +127,6 @@ class CriteriaPartResolver
             $query->setParameter($key, $value, $parsed->getType($key));
         }
 
-        /* @var SingleFieldFilter $query */
         foreach ($filter->getQueries() as $filter) {
             $filter->setResolved(self::escape($alias) . '.id IS NOT NULL');
         }
@@ -209,7 +201,6 @@ class CriteriaPartResolver
                 array_values($parameters),
                 '#mapping#.#source_column# = #alias#.#reference_column# '
                 . $this->buildMappingVersionWhere($field->getToManyReferenceDefinition(), $field)
-                . $this->buildRuleWhere($query, $context, $field->getToManyReferenceDefinition(), $alias)
             )
         );
 
@@ -284,27 +275,7 @@ class CriteriaPartResolver
             return $context->getAlias();
         }
 
-        //@deprecated tag:v6.4.0 - Uncomment this line and remove bellow sources
-        //return $resolver->join($context);
-
-        if ($resolver instanceof AbstractFieldResolver) {
-            return $resolver->join($context);
-        }
-
-        $resolver->resolve($context->getDefinition(), $context->getAlias(), $context->getField(), $context->getQuery(), $context->getContext(), $this->helper);
-
-        return $context->getAlias() . '.' . $context->getField()->getPropertyName();
-    }
-
-    private function buildRuleWhere(QueryBuilder $query, Context $context, EntityDefinition $definition, string $alias): string
-    {
-        $ruleCondition = $this->helper->buildRuleCondition($definition, $query, $alias, $context);
-
-        if ($ruleCondition === null) {
-            return '';
-        }
-
-        return ' AND ' . $ruleCondition;
+        return $resolver->join($context);
     }
 
     private function getReferenceColumn(Context $context, ManyToManyAssociationField $field): string

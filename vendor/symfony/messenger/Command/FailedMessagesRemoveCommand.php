@@ -27,6 +27,7 @@ use Symfony\Component\Messenger\Transport\Receiver\ReceiverInterface;
 class FailedMessagesRemoveCommand extends AbstractFailedMessagesCommand
 {
     protected static $defaultName = 'messenger:failed:remove';
+    protected static $defaultDescription = 'Remove given messages from the failure transport';
 
     /**
      * {@inheritdoc}
@@ -35,16 +36,18 @@ class FailedMessagesRemoveCommand extends AbstractFailedMessagesCommand
     {
         $this
             ->setDefinition([
-                new InputArgument('id', InputArgument::REQUIRED, 'Specific message id to remove'),
+                new InputArgument('id', InputArgument::REQUIRED | InputArgument::IS_ARRAY, 'Specific message id(s) to remove'),
                 new InputOption('force', null, InputOption::VALUE_NONE, 'Force the operation without confirmation'),
+                new InputOption('transport', null, InputOption::VALUE_OPTIONAL, 'Use a specific failure transport'),
+                new InputOption('show-messages', null, InputOption::VALUE_NONE, 'Display messages before removing it (if multiple ids are given)'),
             ])
-            ->setDescription('Remove a message from the failure transport.')
+            ->setDescription(self::$defaultDescription)
             ->setHelp(<<<'EOF'
-The <info>%command.name%</info> removes a message that is pending in the failure transport.
+The <info>%command.name%</info> removes given messages that are pending in the failure transport.
 
-    <info>php %command.full_name% {id}</info>
+    <info>php %command.full_name% {id1} [{id2} ...]</info>
 
-The specific id can be found via the messenger:failed:show command.
+The specific ids can be found via the messenger:failed:show command.
 EOF
             )
         ;
@@ -57,32 +60,45 @@ EOF
     {
         $io = new SymfonyStyle($input, $output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output);
 
-        $receiver = $this->getReceiver();
+        $failureTransportName = $input->getOption('transport');
+        if (null === $failureTransportName) {
+            $failureTransportName = $this->getGlobalFailureReceiverName();
+        }
+
+        $receiver = $this->getReceiver($failureTransportName);
 
         $shouldForce = $input->getOption('force');
-        $this->removeSingleMessage($input->getArgument('id'), $receiver, $io, $shouldForce);
+        $ids = (array) $input->getArgument('id');
+        $shouldDisplayMessages = $input->getOption('show-messages') || 1 === \count($ids);
+        $this->removeMessages($failureTransportName, $ids, $receiver, $io, $shouldForce, $shouldDisplayMessages);
 
         return 0;
     }
 
-    private function removeSingleMessage(string $id, ReceiverInterface $receiver, SymfonyStyle $io, bool $shouldForce)
+    private function removeMessages(string $failureTransportName, array $ids, ReceiverInterface $receiver, SymfonyStyle $io, bool $shouldForce, bool $shouldDisplayMessages): void
     {
         if (!$receiver instanceof ListableReceiverInterface) {
-            throw new RuntimeException(sprintf('The "%s" receiver does not support removing specific messages.', $this->getReceiverName()));
+            throw new RuntimeException(sprintf('The "%s" receiver does not support removing specific messages.', $failureTransportName));
         }
 
-        $envelope = $receiver->find($id);
-        if (null === $envelope) {
-            throw new RuntimeException(sprintf('The message with id "%s" was not found.', $id));
-        }
-        $this->displaySingleMessage($envelope, $io);
+        foreach ($ids as $id) {
+            $envelope = $receiver->find($id);
+            if (null === $envelope) {
+                $io->error(sprintf('The message with id "%s" was not found.', $id));
+                continue;
+            }
 
-        if ($shouldForce || $io->confirm('Do you want to permanently remove this message?', false)) {
-            $receiver->reject($envelope);
+            if ($shouldDisplayMessages) {
+                $this->displaySingleMessage($envelope, $io);
+            }
 
-            $io->success('Message removed.');
-        } else {
-            $io->note('Message not removed.');
+            if ($shouldForce || $io->confirm('Do you want to permanently remove this message?', false)) {
+                $receiver->reject($envelope);
+
+                $io->success(sprintf('Message with id %s removed.', $id));
+            } else {
+                $io->note(sprintf('Message with id %s not removed.', $id));
+            }
         }
     }
 }

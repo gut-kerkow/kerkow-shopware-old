@@ -72,6 +72,14 @@ class CheckoutFinishPageLoader
             new CheckoutFinishPageLoadedEvent($page, $salesChannelContext, $request)
         );
 
+        if ($page->getOrder()->getItemRounding()) {
+            $salesChannelContext->setItemRounding($page->getOrder()->getItemRounding());
+            $salesChannelContext->getContext()->setRounding($page->getOrder()->getItemRounding());
+        }
+        if ($page->getOrder()->getTotalRounding()) {
+            $salesChannelContext->setTotalRounding($page->getOrder()->getTotalRounding());
+        }
+
         return $page;
     }
 
@@ -97,7 +105,9 @@ class CheckoutFinishPageLoader
             ->addFilter(new EqualsFilter('order.orderCustomer.customerId', $customer->getId()))
             ->addAssociation('lineItems.cover')
             ->addAssociation('transactions.paymentMethod')
-            ->addAssociation('deliveries.shippingMethod');
+            ->addAssociation('deliveries.shippingMethod')
+            ->addAssociation('billingAddress.country')
+            ->addAssociation('deliveries.shippingOrderAddress.country');
 
         $criteria->getAssociation('transactions')->addSorting(new FieldSorting('createdAt'));
 

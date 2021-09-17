@@ -22,6 +22,7 @@ use Shopware\Core\Checkout\Document\DocumentGenerator\DeliveryNoteGenerator;
 use Shopware\Core\Checkout\Document\DocumentGenerator\InvoiceGenerator;
 use Shopware\Core\Checkout\Document\DocumentGenerator\StornoGenerator;
 use Shopware\Core\Checkout\Document\DocumentService;
+use Shopware\Core\Checkout\Document\Exception\DocumentNumberAlreadyExistsException;
 use Shopware\Core\Checkout\Document\FileGenerator\FileTypes;
 use Shopware\Core\Content\Media\MediaType\BinaryType;
 use Shopware\Core\Content\Media\Pathname\UrlGenerator;
@@ -33,6 +34,7 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Test\TestCaseBase\CountryAddToSalesChannelTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\RuleTestBehaviour;
@@ -166,6 +168,57 @@ class DocumentServiceTest extends TestCase
     }
 
     /**
+     * The generation of a document with a live version set, will generate a new version and persist it.
+     * This is because a document should never rely on a live version, but due to prior errors it can happen
+     * that a document will be tagged to a live version order.
+     */
+    public function testRepairLiveVersionDocument(): void
+    {
+        $documentService = $this->getContainer()->get(DocumentService::class);
+
+        // create an invoice
+        $cart = $this->generateDemoCart(2);
+        $orderId = $this->persistCart($cart);
+
+        $invoiceStruct = $documentService->create(
+            $orderId,
+            InvoiceGenerator::INVOICE,
+            FileTypes::PDF,
+            new DocumentConfiguration(),
+            $this->context
+        );
+        static::assertTrue(Uuid::isValid($invoiceStruct->getId()));
+
+        $documentRepository = $this->getContainer()->get('document.repository');
+
+        $documentRepository->update(
+            [
+                [
+                    'id' => $invoiceStruct->getId(),
+                    'orderVersionId' => Defaults::LIVE_VERSION,
+                ],
+            ],
+            $this->context
+        );
+
+        $criteria = new Criteria([$invoiceStruct->getId()]);
+        $criteria->addAssociation('documentMediaFile');
+        $criteria->addAssociation('documentType');
+        /** @var DocumentEntity $document */
+        $document = $documentRepository->search($criteria, $this->context)->first();
+
+        static::assertEquals(Defaults::LIVE_VERSION, $document->getOrderVersionId());
+        $documentService->getDocument($document, $this->context);
+
+        if (!Feature::isActive('FEATURE_NEXT_15053')) {
+            static::assertTrue($this->context->hasState(DocumentService::GENERATING_PDF_STATE));
+        }
+
+        $document = $documentRepository->search($criteria, $this->context)->first();
+        static::assertNotEquals(Defaults::LIVE_VERSION, $document->getOrderVersionId());
+    }
+
+    /**
      * @group slow
      */
     public function testCreateFileIsWrittenInFs(): void
@@ -186,7 +239,6 @@ class DocumentServiceTest extends TestCase
 
     public function testGetStaticDocumentFile(): void
     {
-        /** @var DocumentService $documentService */
         $documentService = $this->getContainer()->get(DocumentService::class);
 
         $cart = $this->generateDemoCart(2);
@@ -259,7 +311,6 @@ class DocumentServiceTest extends TestCase
 
     public function testConfigurationWithSalesChannelOverride(): void
     {
-        /** @var DocumentService $documentService */
         $documentService = $this->getContainer()->get(DocumentService::class);
 
         $cart = $this->generateDemoCart(2);
@@ -301,7 +352,6 @@ class DocumentServiceTest extends TestCase
 
     public function testConfigurationWithOverrides(): void
     {
-        /** @var DocumentService $documentService */
         $documentService = $this->getContainer()->get(DocumentService::class);
 
         $cart = $this->generateDemoCart(2);
@@ -346,6 +396,86 @@ class DocumentServiceTest extends TestCase
             static::assertArrayHasKey($key, $actualConfig);
             static::assertSame($actualConfig[$key], $value);
         }
+    }
+
+    public function testCreateInvoicePdf(): void
+    {
+        $documentService = $this->getContainer()->get(DocumentService::class);
+
+        $cart = $this->generateDemoCart(2);
+        $orderId = $this->persistCart($cart);
+
+        $documentConfiguration = new DocumentConfiguration();
+        $documentConfiguration->setDocumentNumber('1001');
+
+        $documentInvoice = $documentService->create(
+            $orderId,
+            InvoiceGenerator::INVOICE,
+            FileTypes::PDF,
+            $documentConfiguration,
+            $this->context
+        );
+
+        static::assertTrue(Uuid::isValid($documentInvoice->getId()));
+
+        $documentRepository = $this->getContainer()->get('document.repository');
+
+        $criteria = new Criteria([$documentInvoice->getId()]);
+        $criteria->addAssociation('documentType');
+
+        $document = $documentRepository
+            ->search($criteria, $this->context)
+            ->get($documentInvoice->getId());
+
+        static::assertNotNull($document);
+        static::assertSame($orderId, $document->getOrderId());
+        static::assertNotSame(Defaults::LIVE_VERSION, $document->getOrderVersionId());
+        static::assertSame(InvoiceGenerator::INVOICE, $document->getDocumentType()->getTechnicalName());
+        static::assertSame(FileTypes::PDF, $document->getFileType());
+    }
+
+    public function testCreateInvoiceIsExistingNumberPdf(): void
+    {
+        $this->expectException(DocumentNumberAlreadyExistsException::class);
+
+        $documentService = $this->getContainer()->get(DocumentService::class);
+
+        $cart = $this->generateDemoCart(2);
+        $orderId = $this->persistCart($cart);
+
+        $documentInvoiceConfiguration = new DocumentConfiguration();
+        $documentInvoiceConfiguration->setDocumentNumber('1002');
+        $documentInvoice = $documentService->create(
+            $orderId,
+            InvoiceGenerator::INVOICE,
+            FileTypes::PDF,
+            $documentInvoiceConfiguration,
+            $this->context
+        );
+
+        static::assertTrue(Uuid::isValid($documentInvoice->getId()));
+
+        $documentRepository = $this->getContainer()->get('document.repository');
+
+        $criteria = new Criteria([$documentInvoice->getId()]);
+        $criteria->addAssociation('documentType');
+
+        $document = $documentRepository
+            ->search($criteria, $this->context)
+            ->get($documentInvoice->getId());
+
+        static::assertNotNull($document);
+        static::assertSame($orderId, $document->getOrderId());
+
+        $documentInvoiceConfiguration = new DocumentConfiguration();
+        $documentInvoiceConfiguration->setDocumentNumber('1002');
+        $documentService->create(
+            $orderId,
+            InvoiceGenerator::INVOICE,
+            FileTypes::PDF,
+            $documentInvoiceConfiguration,
+            $this->context
+        );
     }
 
     private function getBaseConfig(string $documentType, ?string $salesChannelId = null): ?DocumentBaseConfigEntity
@@ -525,7 +655,6 @@ class DocumentServiceTest extends TestCase
 
     private function createDocumentWithFile(): DocumentEntity
     {
-        /** @var DocumentService $documentService */
         $documentService = $this->getContainer()->get(DocumentService::class);
 
         $cart = $this->generateDemoCart(2);
@@ -550,6 +679,10 @@ class DocumentServiceTest extends TestCase
         $document = $documentRepository->search($criteria, $this->context)->get($documentStruct->getId());
 
         $documentService->getDocument($document, $this->context);
+
+        if (!Feature::isActive('FEATURE_NEXT_15053')) {
+            static::assertTrue($this->context->hasState(DocumentService::GENERATING_PDF_STATE));
+        }
 
         /** @var DocumentEntity $document */
         $document = $documentRepository->search($criteria, $this->context)->get($documentStruct->getId());

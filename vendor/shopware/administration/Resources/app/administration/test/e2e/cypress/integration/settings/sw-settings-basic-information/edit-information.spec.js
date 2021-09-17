@@ -1,4 +1,4 @@
-/// <reference types="Cypress" />delete country
+// / <reference types="Cypress" />delete country
 
 import SalesChannelPageObject from '../../../support/pages/module/sw-sales-channel.page-object';
 
@@ -24,15 +24,16 @@ describe('Basic Informaion: Edit assignments', () => {
         }).as('saveData');
 
         // Assign 404 layout to all sales channels
+        cy.get('.sw-card.sw-system-config__card--1').scrollIntoView();
         cy.get('.sw-card.sw-system-config__card--1').should('be.visible');
         cy.get('.sw-card.sw-system-config__card--1 .sw-card__title').contains('Shop pages');
-        cy.get('.sw-cms-page-select[name="core.basicInformation.404Page"]').scrollIntoView();
-        cy.get('.sw-cms-page-select[name="core.basicInformation.404Page"]').should('be.visible');
+        cy.get('.sw-cms-page-select[name="core.basicInformation.http404Page"]').scrollIntoView();
+        cy.get('.sw-cms-page-select[name="core.basicInformation.http404Page"]').should('be.visible');
 
-        cy.get('.sw-cms-page-select[name="core.basicInformation.404Page"]')
+        cy.get('.sw-cms-page-select[name="core.basicInformation.http404Page"]')
             .typeSingleSelectAndCheck(
                 '404 Layout',
-                '.sw-cms-page-select[name="core.basicInformation.404Page"] .sw-entity-single-select'
+                '.sw-cms-page-select[name="core.basicInformation.http404Page"] .sw-entity-single-select'
             );
 
         cy.get('.smart-bar__content .sw-button--primary').click();
@@ -40,7 +41,7 @@ describe('Basic Informaion: Edit assignments', () => {
             expect(xhr).to.have.property('status', 204);
 
             cy.get(
-                '.sw-cms-page-select[name="core.basicInformation.404Page"] ' +
+                '.sw-cms-page-select[name="core.basicInformation.http404Page"] ' +
                         '.sw-entity-single-select__selection-text'
             ).contains('404 Layout');
         });
@@ -73,6 +74,7 @@ describe('Basic Informaion: Edit assignments', () => {
         }).as('saveSalesChannel');
 
         // Assign Maintenance layout to all sales channels
+        cy.get('.sw-card.sw-system-config__card--1').scrollIntoView();
         cy.get('.sw-card.sw-system-config__card--1').should('be.visible');
         cy.get('.sw-card.sw-system-config__card--1 .sw-card__title').contains('Shop pages');
         cy.get('.sw-cms-page-select[name="core.basicInformation.maintenancePage"]').scrollIntoView();
@@ -130,5 +132,41 @@ describe('Basic Informaion: Edit assignments', () => {
         cy.visit('/', { failOnStatusCode: false });
 
         cy.get('.content-main h1').contains('Maintenance mode');
+    });
+
+    // NEXT-16105 - Flaky, looks like the test does not wait for the clear of the multi select
+    it.skip('@settings: change active captcha and test input field show when google recaptcha selected', () => {
+        // Request we want to wait for later
+        cy.server();
+        cy.route({
+            url: `${Cypress.env('apiPath')}/_action/system-config/batch`,
+            method: 'post'
+        }).as('saveData');
+
+        cy.get('.sw-card.sw-system-config__card--3').should('be.visible');
+        cy.get('.sw-card.sw-system-config__card--3 .sw-card__title').contains('CAPTCHA');
+        cy.get('.sw-settings-captcha-select-v2').scrollIntoView();
+        cy.get('.sw-settings-captcha-select-v2').should('be.visible');
+
+        cy.get('.sw-settings-captcha-select-v2 .sw-multi-select input').scrollIntoView();
+        cy.get('.sw-settings-captcha-select-v2 .sw-multi-select input').clear();
+        cy.get('.sw-settings-captcha-select-v2 .sw-multi-select input').clear();
+        cy.get('.sw-settings-captcha-select-v2 .sw-multi-select input').should('be.empty');
+
+        cy.get('.sw-settings-captcha-select-v2 .sw-multi-select')
+            .typeMultiSelectAndCheck('Google reCAPTCHA v3');
+
+        cy.get('.sw-settings-captcha-select-v2__google-recaptcha-v3 input[name="googleReCaptchaV3ThresholdScore"]').clear().type('0.5');
+
+        cy.get('.smart-bar__content .sw-button--primary').click();
+        cy.wait('@saveData').then((xhr) => {
+            expect(xhr).to.have.property('status', 204);
+        });
+        cy.get('.sw-settings-captcha-select-v2').scrollIntoView();
+        cy.get('.sw-settings-captcha-select-v2 .sw-settings-captcha-select-v2__google-recaptcha-v3')
+            .should('be.visible');
+        cy.get('.sw-settings-captcha-select-v2__google-recaptcha-v3-description').should('be.visible');
+        cy.get('.sw-settings-captcha-select-v2__google-recaptcha-v3 input[name="googleReCaptchaV3ThresholdScore"]')
+            .should('have.value', '0.5');
     });
 });

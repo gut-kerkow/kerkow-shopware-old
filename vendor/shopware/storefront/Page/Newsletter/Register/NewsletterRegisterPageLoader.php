@@ -13,6 +13,9 @@ use Shopware\Storefront\Page\GenericPageLoaderInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
 
+/**
+ * @deprecated tag:v6.5.0 - Will be removed
+ */
 class NewsletterRegisterPageLoader
 {
     /**
@@ -49,6 +52,7 @@ class NewsletterRegisterPageLoader
     {
         $page = $this->genericLoader->load($request, $salesChannelContext);
 
+        /** @var NewsletterRegisterPage $page */
         $page = NewsletterRegisterPage::createFrom($page);
 
         /** @var SalutationCollection $salutationCollection */

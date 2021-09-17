@@ -34,7 +34,7 @@
           }
           .filter-property-item-image {
             svg {
-              height: 2.25rem;
+              height: 2.5rem;
               width: initial;
             }
             &:hover,
@@ -66,14 +66,14 @@
 }
 @media only screen and (max-width: 374px) {
   .cms-block-sidebar-filter {
-    margin: 1rem 0 -0.5rem 0;
+    margin: 0 0 -1rem 0;
     .filter-panel {
       .filter-panel-items-container {
         .filter-multi-select {
           .filter-property-select-list-item {
             .filter-property-item-image {
               svg {
-                height: 1.75rem;
+                height: 1.65rem;
               }
             }
             .filter-property-item-label {
@@ -88,7 +88,7 @@
 
 @include media-breakpoint-up(sm) {
   .cms-block-sidebar-filter {
-    margin: 3rem 0 -0.5rem 0;
+    margin: 0 0 -1.5rem 0;
     .filter-panel {
       .filter-panel-items-container {
         .filter-multi-select {
@@ -96,11 +96,34 @@
             padding-left: 1.25rem;
             .filter-property-item-image {
               svg {
-                height: 3.5rem;
+                height: 3rem;
               }
             }
             .filter-property-item-label {
-              font-size: 1rem;
+              font-size: 15px;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+@include media-breakpoint-only(lg) {
+  .cms-block-sidebar-filter {
+    margin: 1rem 0 -1.5rem 0;
+    .filter-panel {
+      .filter-panel-items-container {
+        .filter-multi-select {
+          .filter-property-select-list-item {
+            padding-left: 1rem;
+            .filter-property-item-image {
+              svg {
+                height: 2rem;
+              }
+            }
+            .filter-property-item-label {
+              font-size: 14px;
             }
           }
         }

@@ -1,7 +1,7 @@
 {
   "sw-cms": {
     "general": {
-      "placeholderSearchBar": "Search for layouts...",
+      "placeholderSearchBar": "Search layouts...",
       "mainMenuItemGeneral": "Shopping Experiences",
       "moduleTitle": "Shopping Experiences",
       "greeting": "Layouts",
@@ -129,8 +129,8 @@
         "messageMissingFields": "Configuration required. Please fill in all required fields.",
         "messageMissingBlockFields": "Configuration required. Please fill in data in all elements.",
         "messageMissingProductListing": "Unable to save. Please add at least one product listing block or change this layout's type.",
-        "messageMissingSections": "You can not save an empty page. Please add a section first.",
-        "messageMissingBlocks": "You can not save an empty page. Please add some blocks first.",
+        "messageMissingSections": "You cannot save an empty page. Please add a section first.",
+        "messageMissingBlocks": "You cannot save an empty page. Please add at least one block first.",
         "messageMissingElements": "Configuration required. Please configure all elements of your layout.",
         "messageRedundantElements": "Layouts must not contain more than one {name} element."
       },
@@ -146,7 +146,9 @@
         "titleNavigator": "Navigator",
         "titleSectionSettings": "Section settings",
         "titleLayoutAssignment": "Layout assignment",
-        "mobile": "Mobile sidebar behavior",
+        "confirmTextNavigator": "When entering the block navigator, your current page will be saved. Are you sure you want to proceed?",
+        "confirmReminderNavigator": "Don't ask me again",
+        "mobile": "Mobile sidebar behaviour",
         "mobileOptionHidden": "Hidden",
         "mobileOptionWrap": "Wrap"
       },
@@ -157,7 +159,7 @@
       "tooltip": {
         "blockNameField": "Name each block individually to keep track of your work.",
         "sectionNameField": "Name each section individually to keep track of your work.",
-        "cannotSelectProductPageLayout": "You cannot change a layout of type product page to another layout type."
+        "cannotSelectProductPageLayout": "You cannot change a product page's layout type."
       }
     },
     "elements": {
@@ -502,6 +504,9 @@
             "productDetailElement": "This element's product data is automatically loaded by the product associated with this layout. The content just shows a sample preview."
           }
         }
+      },
+      "productName": {
+        "label": "Product Name"
       }
     },
     "blocks": {
@@ -649,8 +654,10 @@
       "cmsLayoutAssignmentModal": {
         "infoText": "The layout will be displayed in your shop, as soon as you assign it to an active category.",
         "infoTextShopPages": "You can use this layout for categories and for shop pages such as TOS, imprint, error pages etc.",
+        "infoTextProductDetailPages": "The layout can only be seen in your shop when you assign it to an active product.",
         "labelCategories": "Categories",
         "placeholderCategories": "Choose categories...",
+        "placeholderLandingPages": "Choose landing pages...",
         "labelSalesChannel": "Sales Channel",
         "placeholderSalesChannel": "Choose a Sales Channel...",
         "resetOptionSalesChannel": "All Sales Channels",
@@ -661,14 +668,18 @@
         "confirmChangesRestorePrev": "Discard",
         "confirmChangesTextCategories": "You have removed layout assignments from categories. If you confirm these changes, those categories will no longer have a layout assigned.",
         "confirmChangesTextCategoriesAssignedLayouts": "Some of the selected categories already have a layout assigned. If you proceed those previous assignments will be replaced with the current layout.",
+        "confirmChangesTextLandingPages": "You have removed layout assignments from landing pages. If you confirm these changes, those landing pages will no longer have a layout assigned.",
+        "confirmChangesTextLandingPagesAssignedLayouts": "Some of the selected landing pages already have a layout assigned. If you proceed those previous assignments will be replaced with the current layout.",
+        "confirmChangesTextProducts": "You have removed layout assignments from products. If you confirm these changes, those products will no longer have a layout assigned.",
+        "confirmChangesTextProductsAssignedLayouts": "Some of the selected products already have a layout assigned. If you proceed the previous assignments will be replaced with the current layout.",
         "confirmChangesTextShopPages": "You have removed layout assignments from shop pages. If you confirm these changes, those shop pages will no longer have a layout assigned",
-        "confirmChangesTextGeneral": "Select \"Apply\" if you want to overwrite the previous layout assignments.<br>Select \"Discard\" if you want to restore the previous layout assignments.<br>Select \"Cancel\" if you want to continue editing the layout assignments.",
         "confirmChangesText": "Do you want to apply your changes?",
         "confirmChangesTitle": "Confirm assignment",
         "shopPagesLoadError": "Unable to load shop pages",
         "shopPagesSaveError": "Unable to save shop pages",
         "tabCategories": "Categories",
         "tabShopPages": "Shop pages",
+        "tabLandingPages": "Landing pages",
         "shopPages": {
           "tosPage": "TOS pages",
           "revocationPage": "Revocation notices",
@@ -679,6 +690,15 @@
           "maintenancePage": "Maintenance pages",
           "contactPage": "Contact forms",
           "newsletterPage": "Newsletter pages"
+        },
+        "products": {
+          "productAssignmentHeadline": "Product assignment",
+          "productAssignmentPlaceholder": "Search and assign products...",
+          "productAssignmentLabel": "Products",
+          "productAssignmentEmptyStateDescription": "No products assigned",
+          "productStreamAssignmentEmptyStateDescription": "No dynamic product group assigned",
+          "columnNameLabel": "Name",
+          "columnManufacturerLabel": "Manufacturer"
         }
       },
       "cmsMissingElementModal": {

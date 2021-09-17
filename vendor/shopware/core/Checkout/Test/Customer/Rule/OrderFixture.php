@@ -31,13 +31,16 @@ trait OrderFixture
         $orderLineItemId = Uuid::randomHex();
         $countryStateId = Uuid::randomHex();
         $customerId = Uuid::randomHex();
+        $orderNumber = Uuid::randomHex();
 
         $order = [
             [
                 'id' => $orderId,
+                'orderNumber' => $orderNumber,
                 'price' => new CartPrice(10, 10, 10, new CalculatedTaxCollection(), new TaxRuleCollection(), CartPrice::TAX_STATE_NET),
                 'shippingCosts' => new CalculatedPrice(10, 10, new CalculatedTaxCollection(), new TaxRuleCollection()),
                 'stateId' => $stateMachineRegistry->getInitialState(OrderStates::STATE_MACHINE, $context)->getId(),
+                'versionId' => Defaults::LIVE_VERSION,
                 'paymentMethodId' => $this->getValidPaymentMethodId(),
                 'currencyId' => Defaults::CURRENCY,
                 'currencyFactor' => 1,
@@ -78,7 +81,7 @@ trait OrderFixture
                         'type' => 'test',
                         'label' => 'test',
                         'price' => new CalculatedPrice(10, 10, new CalculatedTaxCollection(), new TaxRuleCollection()),
-                        'priceDefinition' => new QuantityPriceDefinition(10, new TaxRuleCollection(), 2),
+                        'priceDefinition' => new QuantityPriceDefinition(10, new TaxRuleCollection()),
                         'priority' => 100,
                         'good' => true,
                     ],
@@ -93,6 +96,7 @@ trait OrderFixture
                     'salutationId' => $this->getValidSalutationId(),
                     'title' => 'Doc',
                     'customerNumber' => 'Test',
+                    'orderVersionId' => Defaults::LIVE_VERSION,
                     'customer' => [
                         'id' => $customerId,
                         'email' => 'test@example.com',

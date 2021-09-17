@@ -40,33 +40,38 @@ class DeleteAddressRoute extends AbstractDeleteAddressRoute
      * @Since("6.3.2.0")
      * @OA\Delete(
      *      path="/account/address/{addressId}",
-     *      summary="Deletes a customer address",
+     *      summary="Delete an address of a customer",
+     *      description="Delete an address of customer.
+
+Only addresses which are not set as default addresses for shipping or billing can be deleted. You can check the current default addresses of your customer using the profile information endpoint and change them using the default address endpoint.
+
+     **A customer must have at least one address (which can be used for shipping and billing).**
+
+An automatic fallback is not applied.",
      *      operationId="deleteCustomerAddress",
-     *      tags={"Store API", "Account", "Address"},
+     *      tags={"Store API", "Address"},
      *      @OA\Parameter(
      *        name="addressId",
      *        in="path",
-     *        description="Address ID",
+     *        description="ID of the address to be deleted.",
      *        @OA\Schema(type="string"),
      *        required=true
      *      ),
      *      @OA\Response(
      *          response="204",
-     *          description=""
+     *          description="No Content response, when the address has been deleted"
+     *     ),
+     *      @OA\Response(
+     *          response="400",
+     *          description="Response containing a list of errors, most likely due to the address being in use"
      *     )
      * )
-     * @LoginRequired()
-     * @Route(path="/store-api/v{version}/account/address/{addressId}", name="store-api.account.address.delete", methods={"DELETE"})
+     * @LoginRequired(allowGuest=true)
+     * @Route(path="/store-api/account/address/{addressId}", name="store-api.account.address.delete", methods={"DELETE"})
      */
-    public function delete(string $addressId, SalesChannelContext $context, ?CustomerEntity $customer = null): NoContentResponse
+    public function delete(string $addressId, SalesChannelContext $context, CustomerEntity $customer): NoContentResponse
     {
-        /* @deprecated tag:v6.4.0 - Parameter $customer will be mandatory when using with @LoginRequired() */
-        if (!$customer) {
-            /** @var CustomerEntity $customer */
-            $customer = $context->getCustomer();
-        }
-
-        $this->validateAddress($addressId, $context);
+        $this->validateAddress($addressId, $context, $customer);
 
         if ($addressId === $customer->getDefaultBillingAddressId()
             || $addressId === $customer->getDefaultShippingAddressId()) {

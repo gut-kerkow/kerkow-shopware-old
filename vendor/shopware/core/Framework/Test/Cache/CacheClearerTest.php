@@ -4,29 +4,24 @@ namespace Shopware\Core\Framework\Test\Cache;
 
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
-use Psr\Cache\CacheItemPoolInterface;
 use Shopware\Core\Framework\Adapter\Cache\CacheClearer;
-use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Plugin\KernelPluginLoader\StaticKernelPluginLoader;
 use Shopware\Core\Framework\Test\TestCaseBase\DatabaseTransactionBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\KernelLifecycleManager;
 use Shopware\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\System\Tax\TaxEntity;
-use Shopware\Development\Kernel;
+use Shopware\Core\Kernel;
 use Symfony\Component\Finder\Finder;
 
+/**
+ * @group skip-paratest
+ * @group slow
+ */
 class CacheClearerTest extends TestCase
 {
     use KernelTestBehaviour;
     use DatabaseTransactionBehaviour;
 
-    /**
-     * @group slow
-     */
     public function testCleanupOldKernelDirectories(): void
     {
         $classLoader = clone KernelLifecycleManager::getClassLoader();
@@ -67,13 +62,10 @@ class CacheClearerTest extends TestCase
         $this->getContainer()->get(CacheClearer::class)->clear();
 
         foreach ($oldCacheDirs as $oldCacheDir) {
-            static::assertFileNotExists($oldCacheDir);
+            static::assertFileDoesNotExist($oldCacheDir);
         }
     }
 
-    /**
-     * @group slow
-     */
     public function testClearContainerCache(): void
     {
         $kernelClass = KernelLifecycleManager::getKernelClass();
@@ -107,51 +99,16 @@ class CacheClearerTest extends TestCase
             $filesystem,
             $cacheDir,
             'test',
-            $this->getContainer()->get(EntityCacheKeyGenerator::class),
             $this->getContainer()->get('messenger.bus.shopware')
         );
 
         $cacheClearer->clearContainerCache();
 
         foreach ($containerCaches as $containerCache) {
-            static::assertFileNotExists($containerCache);
+            static::assertFileDoesNotExist($containerCache);
         }
 
         $filesystem->remove($cacheDir);
-    }
-
-    public function testInvalidateByTag(): void
-    {
-        /** @var EntityRepositoryInterface $repo */
-        $repo = $this->getContainer()->get('tax.repository');
-        $generator = $this->getContainer()->get(EntityCacheKeyGenerator::class);
-
-        $id = Uuid::randomHex();
-        $criteria = new Criteria([$id]);
-
-        $data = $repo->search($criteria, Context::createDefaultContext());
-        static::assertFalse($data->has($id));
-
-        $key = $generator->getEntityContextCacheKey($id, $repo->getDefinition(), Context::createDefaultContext(), $criteria);
-
-        /** @var CacheItemPoolInterface $objectCache */
-        $objectCache = $this->getContainer()->get('cache.object');
-        static::assertTrue($objectCache->hasItem($key));
-        static::assertEquals($id, $objectCache->getItem($key)->get());
-
-        $repo->create([
-            ['id' => $id, 'name' => 'test tax', 'taxRate' => 1],
-        ], Context::createDefaultContext());
-
-        static::assertFalse($objectCache->hasItem($key));
-
-        $data = $repo->search($criteria, Context::createDefaultContext());
-        static::assertTrue($data->has($id));
-        static::assertTrue($objectCache->hasItem($key));
-
-        $cacheItem = $objectCache->getItem($key)->get();
-        static::assertNotEquals($id, $cacheItem);
-        static::assertInstanceOf(TaxEntity::class, $cacheItem);
     }
 
     public function testUrlGeneratorCacheGetsCleared(): void
@@ -168,7 +125,7 @@ class CacheClearerTest extends TestCase
         $cacheClearer->clear();
 
         foreach ($urlGeneratorCacheFileFinder->getIterator() as $generatorFile) {
-            static::assertFileNotExists($generatorFile);
+            static::assertFileDoesNotExist($generatorFile);
         }
     }
 }

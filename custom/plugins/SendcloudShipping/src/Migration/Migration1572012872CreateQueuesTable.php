@@ -57,7 +57,7 @@ class Migration1572012872CreateQueuesTable extends MigrationStep
         DEFAULT CHARSET = utf8
         COLLATE = utf8_general_ci;';
 
-        $connection->executeQuery($sql);
+        $connection->executeUpdate($sql);
     }
 
     /**
@@ -70,6 +70,6 @@ class Migration1572012872CreateQueuesTable extends MigrationStep
     public function updateDestructive(Connection $connection): void
     {
         $sql = 'DROP TABLE IF EXISTS `' . self::QUEUES_TABLE . '`';
-        $connection->executeQuery($sql);
+        $connection->executeUpdate($sql);
     }
 }

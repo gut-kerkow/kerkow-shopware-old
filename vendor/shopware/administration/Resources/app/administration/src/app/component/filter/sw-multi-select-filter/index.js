@@ -1,9 +1,11 @@
 import template from './sw-multi-select-filter.html.twig';
-import './sw-multi-select-filter.scss';
 
 const { Component } = Shopware;
-const { Criteria } = Shopware.Data;
+const { Criteria, EntityCollection } = Shopware.Data;
 
+/**
+ * @private
+ */
 Component.register('sw-multi-select-filter', {
     template,
 
@@ -12,36 +14,73 @@ Component.register('sw-multi-select-filter', {
     props: {
         filter: {
             type: Object,
-            required: true
-        }
+            required: true,
+        },
+        active: {
+            type: Boolean,
+            required: true,
+        },
     },
 
-    data() {
-        return {
-            values: []
-        };
+    computed: {
+        isEntityMultiSelect() {
+            return !this.filter.options;
+        },
+
+        labelProperty() {
+            return this.filter.labelProperty || 'name';
+        },
+
+        values() {
+            if (!this.isEntityMultiSelect) {
+                return this.filter.value || [];
+            }
+
+            const entities = new EntityCollection(
+                '',
+                this.filter.schema.entity,
+                Shopware.Context.api,
+            );
+
+            if (Array.isArray(this.filter.value)) {
+                this.filter.value.forEach(value => {
+                    entities.push({
+                        id: value.id,
+                        [this.labelProperty]: value[this.labelProperty],
+                    });
+                });
+            }
+
+            return entities;
+        },
     },
 
     methods: {
         changeValue(newValues) {
-            this.values = newValues;
-
-            if (this.values.length <= 0) {
+            if (newValues.length <= 0) {
                 this.resetFilter();
                 return;
             }
 
-            const filterCriteria = [Criteria.equalsAny(
-                `${this.filter.property}.${this.filter.schema.referenceField}`,
-                newValues.map(newValue => newValue[this.filter.schema.referenceField])
-            )];
+            const filterCriteria = [
+                this.filter.schema
+                    ? Criteria.equalsAny(
+                        `${this.filter.property}.${this.filter.schema.referenceField}`,
+                        newValues.map(newValue => newValue[this.filter.schema.referenceField]),
+                    )
+                    : Criteria.equalsAny(this.filter.property, newValues),
+            ];
 
-            this.$emit('updateFilter', this.filter.name, filterCriteria);
+            const values = !this.isEntityMultiSelect ? newValues : newValues.map(value => ({
+                id: value.id,
+                [this.labelProperty]: value[this.labelProperty],
+            }));
+
+            this.$emit('filter-update', this.filter.name, filterCriteria, values);
         },
 
         resetFilter() {
-            this.values = [];
-            this.$emit('resetFilter', this.filter.name);
-        }
-    }
+            this.$emit('filter-reset', this.filter.name);
+        },
+    },
 });

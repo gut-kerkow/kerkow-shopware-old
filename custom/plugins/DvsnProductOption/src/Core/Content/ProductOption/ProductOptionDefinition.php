@@ -65,6 +65,8 @@ class ProductOptionDefinition extends EntityDefinition
             // default fields
             (new IdField('id', 'id'))->addFlags(new PrimaryKey(), new Required()),
             (new BoolField('active', 'active'))->addFlags(new Required()),
+            (new BoolField('hidden', 'hidden'))->addFlags(new Required()),
+            (new BoolField('mandatory', 'mandatory'))->addFlags(new Required()),
             (new StringField('number', 'number'))->addFlags(new Required()),
             (new TranslatedField('name')),
             (new TranslatedField('description')),

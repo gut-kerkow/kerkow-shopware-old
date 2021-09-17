@@ -8,10 +8,8 @@ function createWrapper(privileges = []) {
         localVue,
         stubs: {
             'sw-alert': true,
-            'sw-users-permissions-detailed-permissions-grid': true
-        },
-        mocks: {
-            $tc: t => t
+            'sw-users-permissions-detailed-permissions-grid': true,
+            'sw-users-permissions-detailed-additional-permissions': true
         },
         propsData: {
             role: {},

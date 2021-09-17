@@ -10,6 +10,14 @@
             type: "info",
             content: "checkout.cartEmpty"|trans|sw_sanitize
         } %}
+
+        {% set messages = app.flashes %}
+
+        {% if messages.danger|length > 0 %}
+            <div class="flashbags">
+                {% sw_include '@Storefront/storefront/utilities/alert.html.twig' with { type: 'danger', list: messages.danger } %}
+            </div>
+        {% endif %}
     {% else %}
         {{ parent() }}
     {% endif %}
@@ -21,12 +29,6 @@
             <h1 class="cart-main-header">
                 {{ "checkout.cartHeader"|trans|sw_sanitize }}
             </h1>
-        {% endblock %}
-
-        {% block page_checkout_cart_messages %}
-            {% block page_checkout_confirm_errors %}
-                {%  sw_include '@Storefront/storefront/component/checkout/cart-alerts.html.twig' %}
-            {% endblock %}
         {% endblock %}
 
         {% block page_checkout_cart_product_table %}
@@ -51,6 +53,7 @@
 
         {% block page_checkout_cart_hidden_line_items_information %}
             {% sw_include '@Storefront/storefront/component/checkout/hidden-line-items-information.html.twig' with {
+                cart: page.cart,
                 lineItems: page.cart.lineItems
             } %}
         {% endblock %}
@@ -203,7 +206,7 @@
 
                 {% block page_checkout_cart_add_promotion_forward %}
                     <input type="hidden"
-                           name="forwardTo"
+                           name="redirectTo"
                            value="frontend.checkout.cart.page">
                 {% endblock %}
 

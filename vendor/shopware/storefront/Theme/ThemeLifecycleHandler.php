@@ -2,6 +2,7 @@
 
 namespace Shopware\Storefront\Theme;
 
+use Doctrine\DBAL\Connection;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
@@ -14,43 +15,28 @@ use Shopware\Storefront\Theme\StorefrontPluginConfiguration\StorefrontPluginConf
 
 class ThemeLifecycleHandler
 {
-    /**
-     * @var ThemeLifecycleService
-     */
-    private $themeLifecycleService;
+    private ThemeLifecycleService $themeLifecycleService;
 
-    /**
-     * @var ThemeService
-     */
-    private $themeService;
+    private ThemeService $themeService;
 
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $salesChannelRepository;
+    private EntityRepositoryInterface $themeRepository;
 
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $themeRepository;
+    private StorefrontPluginRegistryInterface $storefrontPluginRegistry;
 
-    /**
-     * @var StorefrontPluginRegistryInterface
-     */
-    private $storefrontPluginRegistry;
+    private Connection $connection;
 
     public function __construct(
         ThemeLifecycleService $themeLifecycleService,
         ThemeService $themeService,
-        EntityRepositoryInterface $salesChannelRepository,
         EntityRepositoryInterface $themeRepository,
-        StorefrontPluginRegistryInterface $storefrontPluginRegistry
+        StorefrontPluginRegistryInterface $storefrontPluginRegistry,
+        Connection $connection
     ) {
         $this->themeLifecycleService = $themeLifecycleService;
         $this->themeService = $themeService;
-        $this->salesChannelRepository = $salesChannelRepository;
         $this->themeRepository = $themeRepository;
         $this->storefrontPluginRegistry = $storefrontPluginRegistry;
+        $this->connection = $connection;
     }
 
     public function handleThemeInstallOrUpdate(
@@ -101,23 +87,26 @@ class ThemeLifecycleHandler
         }
 
         $themeSalesChannel = [];
-        if ($theme->getSalesChannels() && $theme->getSalesChannels()->count() > 0) {
-            $themeSalesChannel[$technicalName] = $this->getSalesChannelNames($theme->getSalesChannels());
+        $salesChannels = $theme->getSalesChannels() ?? new SalesChannelCollection();
+        if ($salesChannels->count() > 0) {
+            $themeSalesChannel[$technicalName] = array_values($salesChannels->getIds());
         }
 
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('parentThemeId', $theme->getId()));
         $criteria->addAssociation('salesChannels');
-        /** @var ThemeCollection|null $childThemes */
-        $childThemes = $this->themeRepository->search($criteria, $context);
+        /** @var ThemeCollection $childThemes */
+        $childThemes = $this->themeRepository->search($criteria, $context)->getEntities();
 
         $childThemeSalesChannel = [];
-        if ($childThemes && $childThemes->count() > 0) {
+        if ($childThemes->count() > 0) {
             foreach ($childThemes as $childTheme) {
-                if (!$childTheme->getSalesChannels() || $childTheme->getSalesChannels()->count() === 0) {
+                $childThemeSalesChannels = $childTheme->getSalesChannels();
+                if ($childThemeSalesChannels === null || $childThemeSalesChannels->count() === 0) {
                     continue;
                 }
-                $childThemeSalesChannel[$childTheme->getName()] = $this->getSalesChannelNames($childTheme->getSalesChannels());
+                $salesChannels->merge($childThemeSalesChannels);
+                $childThemeSalesChannel[$childTheme->getName()] = array_values($childThemeSalesChannels->getIds());
             }
         }
 
@@ -125,17 +114,7 @@ class ThemeLifecycleHandler
             return;
         }
 
-        throw new ThemeAssignmentException($technicalName, $themeSalesChannel, $childThemeSalesChannel);
-    }
-
-    private function getSalesChannelNames(SalesChannelCollection $salesChannels): array
-    {
-        $names = [];
-        foreach ($salesChannels as $salesChannel) {
-            $names[] = $salesChannel->getName();
-        }
-
-        return $names;
+        throw new ThemeAssignmentException($technicalName, $themeSalesChannel, $childThemeSalesChannel, $salesChannels);
     }
 
     private function changeThemeActive(string $technicalName, bool $active, Context $context): void
@@ -152,8 +131,9 @@ class ThemeLifecycleHandler
 
         $data = [];
         $data[] = ['id' => $theme->getId(), 'active' => $active];
-        if ($theme->getChildThemes()) {
-            foreach ($theme->getChildThemes()->getIds() as $id) {
+        $childThemes = $theme->getChildThemes();
+        if ($childThemes) {
+            foreach ($childThemes->getIds() as $id) {
                 $data[] = ['id' => $id, 'active' => $active];
             }
         }
@@ -163,35 +143,18 @@ class ThemeLifecycleHandler
         }
     }
 
-    private function getSalesChannels(Context $context): SalesChannelCollection
-    {
-        $criteria = new Criteria();
-        $criteria->addAssociation('themes');
-
-        /** @var SalesChannelCollection $result */
-        $result = $this->salesChannelRepository->search($criteria, $context)->getEntities();
-
-        return $result;
-    }
-
     private function recompileThemesIfNecessary(StorefrontPluginConfiguration $config, Context $context, StorefrontPluginConfigurationCollection $configurationCollection): void
     {
         if (!$config->hasFilesToCompile()) {
             return;
         }
 
-        $salesChannels = $this->getSalesChannels($context);
+        $mappings = $this->connection->fetchAllAssociative('SELECT LOWER(HEX(sales_channel_id)) as sales_channel_id, LOWER(HEX(theme_id)) as theme_id FROM theme_sales_channel');
 
-        foreach ($salesChannels as $salesChannel) {
-            /** @var ThemeCollection|null $themes */
-            $themes = $salesChannel->getExtensionOfType('themes', ThemeCollection::class);
-            if (!$themes || !$theme = $themes->first()) {
-                continue;
-            }
-
+        foreach ($mappings as $mapping) {
             $this->themeService->compileTheme(
-                $salesChannel->getId(),
-                $theme->getId(),
+                $mapping['sales_channel_id'],
+                $mapping['theme_id'],
                 $context,
                 $configurationCollection
             );

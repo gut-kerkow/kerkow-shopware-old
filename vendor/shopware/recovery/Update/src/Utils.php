@@ -150,7 +150,9 @@ class Utils
     public static function getConnection($shopPath)
     {
         if (file_exists($shopPath . '/.env')) {
-            (new Dotenv())->load($shopPath . '/.env');
+            (new Dotenv())
+                ->usePutenv(true)
+                ->load($shopPath . '/.env');
         }
 
         if (getenv('DATABASE_URL') && $db = parse_url(getenv('DATABASE_URL'))) {
@@ -180,12 +182,30 @@ class Utils
 
         $dsn = 'mysql:' . implode(';', $dsn);
 
+        $parameters = [\PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'UTF8MB4'"];
+
+        if (isset($_ENV['DATABASE_SSL_CA'])) {
+            $parameters[\PDO::MYSQL_ATTR_SSL_CA] = $_ENV['DATABASE_SSL_CA'];
+        }
+
+        if (isset($_ENV['DATABASE_SSL_CERT'])) {
+            $parameters[\PDO::MYSQL_ATTR_SSL_CERT] = $_ENV['DATABASE_SSL_CERT'];
+        }
+
+        if (isset($_ENV['DATABASE_SSL_KEY'])) {
+            $parameters[\PDO::MYSQL_ATTR_SSL_KEY] = $_ENV['DATABASE_SSL_KEY'];
+        }
+
+        if (isset($_ENV['DATABASE_SSL_DONT_VERIFY_SERVER_CERT'])) {
+            $parameters[\PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
+        }
+
         try {
             $conn = new \PDO(
                 $dsn,
                 $db['user'],
                 $db['pass'],
-                [\PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'UTF8MB4'"]
+                $parameters
             );
             $conn->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
             $conn->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_ASSOC);

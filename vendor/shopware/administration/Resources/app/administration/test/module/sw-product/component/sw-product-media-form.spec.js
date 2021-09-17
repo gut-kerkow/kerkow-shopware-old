@@ -11,7 +11,6 @@ function createWrapper(privileges = []) {
     return shallowMount(Shopware.Component.build('sw-product-media-form'), {
         localVue,
         mocks: {
-            $tc: () => {},
             $store: new Vuex.Store({
                 modules: {
                     swProductDetail: {
@@ -32,6 +31,7 @@ function createWrapper(privileges = []) {
                     return privileges.includes(identifier);
                 }
             }
+
         },
         stubs: {
             'sw-upload-listener': true,
@@ -116,5 +116,14 @@ describe('module/sw-product/component/sw-product-media-form', () => {
         });
 
         expect(coverCount).toBe(1);
+    });
+
+    it('should emit an event when onOpenMedia() function is called', () => {
+        const wrapper = createWrapper();
+
+        wrapper.vm.onOpenMedia();
+
+        const pageChangeEvents = wrapper.emitted()['media-open'];
+        expect(pageChangeEvents.length).toBe(1);
     });
 });

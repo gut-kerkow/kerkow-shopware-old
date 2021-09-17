@@ -5,6 +5,7 @@ namespace Shopware\Core\Checkout\Test\Customer\SalesChannel;
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Checkout\Customer\Event\CustomerAccountRecoverRequestEvent;
+use Shopware\Core\Checkout\Customer\Event\PasswordRecoveryUrlEvent;
 use Shopware\Core\Checkout\Test\Payment\Handler\V630\SyncTestPaymentHandler;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
@@ -13,8 +14,12 @@ use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour;
 use Shopware\Core\Framework\Test\TestDataCollection;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\PlatformRequest;
+use Shopware\Core\System\SystemConfig\SystemConfigService;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
+/**
+ * @group store-api
+ */
 class SendPasswordRecoveryMailRouteTest extends TestCase
 {
     use IntegrationTestBehaviour;
@@ -51,7 +56,7 @@ class SendPasswordRecoveryMailRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/account/recovery-password',
+                '/store-api/account/recovery-password',
                 [
                     'email' => 'lol@lol.de',
                     'storefrontUrl' => 'http://localhost',
@@ -69,7 +74,7 @@ class SendPasswordRecoveryMailRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/account/recovery-password',
+                '/store-api/account/recovery-password',
                 [
                     'email' => 'lol@lol.de',
                     'storefrontUrl' => 'http://aaaa.de',
@@ -89,7 +94,7 @@ class SendPasswordRecoveryMailRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/account/recovery-password?validateStorefrontUrl=false',
+                '/store-api/account/recovery-password?validateStorefrontUrl=false',
                 [
                     'email' => 'foo-test@test.de',
                     'storefrontUrl' => 'http://my-evil-page',
@@ -102,6 +107,30 @@ class SendPasswordRecoveryMailRouteTest extends TestCase
         $response = json_decode($this->browser->getResponse()->getContent(), true);
 
         static::assertSame('VIOLATION::NO_SUCH_CHOICE_ERROR', $response['errors'][0]['code']);
+    }
+
+    public function testResetWithDisabledAccount(): void
+    {
+        $email = 'test-disabled@test.de';
+
+        $this->createCustomer('shopware1234', $email, false);
+
+        $this->browser
+            ->request(
+                'POST',
+                '/store-api/account/recovery-password?validateStorefrontUrl=false',
+                [
+                    'email' => $email,
+                    'storefrontUrl' => 'http://localhost',
+                    'validateStorefrontUrl' => false,
+                ]
+            );
+
+        static::assertSame(404, $this->browser->getResponse()->getStatusCode());
+
+        $response = json_decode($this->browser->getResponse()->getContent(), true);
+
+        static::assertSame('CHECKOUT__CUSTOMER_NOT_FOUND', $response['errors'][0]['code']);
     }
 
     /**
@@ -124,7 +153,7 @@ class SendPasswordRecoveryMailRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/account/recovery-password',
+                '/store-api/account/recovery-password',
                 [
                     'email' => 'foo-test@test.de',
                     'storefrontUrl' => $domainUrlTest['expectDomain'],
@@ -136,6 +165,49 @@ class SendPasswordRecoveryMailRouteTest extends TestCase
         /** @var CustomerAccountRecoverRequestEvent $caughtEvent */
         static::assertInstanceOf(CustomerAccountRecoverRequestEvent::class, $caughtEvent);
         static::assertStringStartsWith('http://my-evil-page/account/', $caughtEvent->getResetUrl());
+    }
+
+    public function testSendMailWithChangedUrl(): void
+    {
+        $this->createCustomer('shopware1234', 'foo-test@test.de');
+
+        $systemConfigService = $this->getContainer()->get(SystemConfigService::class);
+        $systemConfigService->set('core.loginRegistration.pwdRecoverUrl', '/test/rec/password/%%RECOVERHASH%%"');
+
+        /** @var EventDispatcherInterface $dispatcher */
+        $dispatcher = $this->getContainer()->get('event_dispatcher');
+
+        $caughtEvent = null;
+        $dispatcher->addListener(
+            CustomerAccountRecoverRequestEvent::EVENT_NAME,
+            static function (CustomerAccountRecoverRequestEvent $event) use (&$caughtEvent): void {
+                $caughtEvent = $event;
+            }
+        );
+
+        $dispatcher->addListener(
+            PasswordRecoveryUrlEvent::class,
+            static function (PasswordRecoveryUrlEvent $event): void {
+                $event->setRecoveryUrl($event->getRecoveryUrl() . '/?somethingSpecial=1');
+            }
+        );
+
+        $this->browser
+            ->request(
+                'POST',
+                '/store-api/account/recovery-password',
+                [
+                    'email' => 'foo-test@test.de',
+                    'storefrontUrl' => 'http://localhost',
+                ]
+            );
+
+        static::assertEquals(200, $this->browser->getResponse()->getStatusCode(), $this->browser->getResponse()->getContent());
+
+        /** @var CustomerAccountRecoverRequestEvent $caughtEvent */
+        static::assertInstanceOf(CustomerAccountRecoverRequestEvent::class, $caughtEvent);
+        static::assertStringStartsWith('http://localhost/test/rec/password/', $caughtEvent->getResetUrl());
+        static::assertStringEndsWith('/?somethingSpecial=1', $caughtEvent->getResetUrl());
     }
 
     public function sendMailWithDomainAndLeadingSlashProvider()
@@ -173,7 +245,7 @@ class SendPasswordRecoveryMailRouteTest extends TestCase
             ->create([$domain], Context::createDefaultContext());
     }
 
-    private function createCustomer(string $password, ?string $email = null): string
+    private function createCustomer(string $password, ?string $email = null, bool $active = true): string
     {
         $customerId = Uuid::randomHex();
         $addressId = Uuid::randomHex();
@@ -181,6 +253,7 @@ class SendPasswordRecoveryMailRouteTest extends TestCase
         $this->customerRepository->create([
             [
                 'id' => $customerId,
+                'active' => $active,
                 'salesChannelId' => Defaults::SALES_CHANNEL,
                 'defaultShippingAddress' => [
                     'id' => $addressId,

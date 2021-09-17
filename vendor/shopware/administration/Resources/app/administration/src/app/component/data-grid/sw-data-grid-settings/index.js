@@ -15,50 +15,58 @@ Component.register('sw-data-grid-settings', {
             default() {
                 return [];
             },
-            required: true
+            required: true,
         },
         compact: {
             type: Boolean,
             required: true,
-            default: false
+            default: false,
         },
         previews: {
             type: Boolean,
             required: true,
-            default: false
+            default: false,
         },
         enablePreviews: {
             type: Boolean,
             required: true,
-            default: false
+            default: false,
         },
         disabled: {
             type: Boolean,
             required: true,
-            default: false
-        }
+            default: false,
+        },
     },
 
     data() {
         return {
             currentCompact: this.compact,
             currentPreviews: this.previews,
-            currentColumns: this.columns
+            currentColumns: this.columns,
         };
     },
 
     computed: {
         contextMenuClasses() {
             return {
-                'sw-data-grid-settings': true
+                'sw-data-grid-settings': true,
             };
-        }
+        },
     },
 
     watch: {
         columns() {
             this.currentColumns = this.columns;
-        }
+        },
+
+        compact() {
+            this.currentCompact = this.compact;
+        },
+
+        previews() {
+            this.currentPreviews = this.previews;
+        },
     },
 
     methods: {
@@ -80,6 +88,6 @@ Component.register('sw-data-grid-settings', {
 
         onClickChangeColumnOrderDown(columnIndex) {
             this.$emit('change-column-order', columnIndex, columnIndex + 1);
-        }
-    }
+        },
+    },
 });

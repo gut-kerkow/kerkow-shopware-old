@@ -3,6 +3,9 @@ import template from './sw-promotion-sales-channel-select.html.twig';
 const { Component } = Shopware;
 const { Criteria } = Shopware.Data;
 
+/**
+ * @deprecated tag:v6.5.0 - will be removed, use `sw-promotion-v2` instead
+ */
 Component.register('sw-promotion-sales-channel-select', {
     template,
 
@@ -12,19 +15,19 @@ Component.register('sw-promotion-sales-channel-select', {
         promotion: {
             type: Object,
             required: false,
-            default: null
+            default: null,
         },
 
         fileAccept: {
             type: String,
             required: false,
-            default: 'image/*'
-        }
+            default: 'image/*',
+        },
     },
 
     data() {
         return {
-            salesChannels: []
+            salesChannels: [],
         };
     },
 
@@ -37,7 +40,7 @@ Component.register('sw-promotion-sales-channel-select', {
             if (this.promotion) {
                 return this.repositoryFactory.create(
                     this.promotion.salesChannels.entity,
-                    this.promotion.salesChannels.source
+                    this.promotion.salesChannels.source,
                 );
             }
 
@@ -65,8 +68,8 @@ Component.register('sw-promotion-sales-channel-select', {
                 }
 
                 this.handleWithRepository(deleted, added);
-            }
-        }
+            },
+        },
     },
 
     created() {
@@ -75,7 +78,7 @@ Component.register('sw-promotion-sales-channel-select', {
 
     methods: {
         createdComponent() {
-            this.salesChannelRepository.search(new Criteria(), Shopware.Context.api).then((searchresult) => {
+            this.salesChannelRepository.search(new Criteria()).then((searchresult) => {
                 this.salesChannels = searchresult;
             });
         },
@@ -138,6 +141,6 @@ Component.register('sw-promotion-sales-channel-select', {
                 newAssociation.priority = 1;
                 this.promotion.salesChannels.add(newAssociation);
             });
-        }
-    }
+        },
+    },
 });

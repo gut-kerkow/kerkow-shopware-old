@@ -4,7 +4,6 @@ namespace Shopware\Core\System\Currency\SalesChannel;
 
 use OpenApi\Annotations as OA;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\RequestCriteriaBuilder;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopware\Core\Framework\Routing\Annotation\Entity;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
@@ -25,24 +24,9 @@ class CurrencyRoute extends AbstractCurrencyRoute
      */
     private $currencyRepository;
 
-    /**
-     * @var RequestCriteriaBuilder
-     */
-    private $criteriaBuilder;
-
-    /**
-     * @var SalesChannelCurrencyDefinition
-     */
-    private $currencyDefinition;
-
-    public function __construct(
-        SalesChannelRepositoryInterface $currencyRepository,
-        RequestCriteriaBuilder $criteriaBuilder,
-        SalesChannelCurrencyDefinition $currencyDefinition
-    ) {
+    public function __construct(SalesChannelRepositoryInterface $currencyRepository)
+    {
         $this->currencyRepository = $currencyRepository;
-        $this->criteriaBuilder = $criteriaBuilder;
-        $this->currencyDefinition = $currencyDefinition;
     }
 
     public function getDecorated(): AbstractCurrencyRoute
@@ -55,25 +39,33 @@ class CurrencyRoute extends AbstractCurrencyRoute
      * @Entity("currency")
      * @OA\Post(
      *      path="/currency",
-     *      summary="Loads all available currency",
+     *      summary="Fetch currencies",
+     *      description="Perform a filtered search for currencies.",
      *      operationId="readCurrency",
-     *      tags={"Store API", "Currency"},
+     *      tags={"Store API", "System & Context"},
      *      @OA\Parameter(name="Api-Basic-Parameters"),
      *      @OA\Response(
      *          response="200",
-     *          description="All available currency",
-     *          @OA\JsonContent(ref="#/components/schemas/currency_flat")
+     *          description="Entity search result containing currencies.",
+     *          @OA\JsonContent(
+     *              type="object",
+     *              allOf={
+     *                  @OA\Schema(ref="#/components/schemas/EntitySearchResult"),
+     *                  @OA\Schema(type="object",
+     *                      @OA\Property(
+     *                          type="array",
+     *                          property="elements",
+     *                          @OA\Items(ref="#/components/schemas/Currency")
+     *                      )
+     *                  )
+     *              }
+     *          )
      *     )
      * )
-     * @Route("/store-api/v{version}/currency", name="store-api.currency", methods={"GET", "POST"})
+     * @Route("/store-api/currency", name="store-api.currency", methods={"GET", "POST"})
      */
-    public function load(Request $request, SalesChannelContext $context, ?Criteria $criteria = null): CurrencyRouteResponse
+    public function load(Request $request, SalesChannelContext $context, Criteria $criteria): CurrencyRouteResponse
     {
-        // @deprecated tag:v6.4.0 - Criteria will be required
-        if (!$criteria) {
-            $criteria = $this->criteriaBuilder->handleRequest($request, new Criteria(), $this->currencyDefinition, $context->getContext());
-        }
-
         /** @var CurrencyCollection $currencyCollection */
         $currencyCollection = $this->currencyRepository->search($criteria, $context)->getEntities();
 

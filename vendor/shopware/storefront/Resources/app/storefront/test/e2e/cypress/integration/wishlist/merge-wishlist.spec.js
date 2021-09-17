@@ -34,7 +34,7 @@ describe('Wishlist: for wishlist', () => {
                     Authorization: `Bearer ${result.access}`
                 },
                 method: 'post',
-                url: `api/${Cypress.env('apiVersion')}/_action/system-config/batch`,
+                url: `api/_action/system-config/batch`,
                 body: {
                     null: {
                         'core.cart.wishlistEnabled': true // enable wishlist
@@ -54,8 +54,6 @@ describe('Wishlist: for wishlist', () => {
 
     it('@wishlist: Wishlist can be merge from anonymous user to registered users', () => {
         cy.visit('/');
-
-        cy.onlyOnFeature('FEATURE_NEXT_10549');
 
         cy.server();
         cy.route({
@@ -100,8 +98,6 @@ describe('Wishlist: for wishlist', () => {
 
     it('@wishlist: Wishlist can be merge from anonymous user to registered users with same product', () => {
         cy.visit('/');
-
-        cy.onlyOnFeature('FEATURE_NEXT_10549');
 
         cy.server();
         cy.route({
@@ -180,8 +176,6 @@ describe('Wishlist: for wishlist', () => {
 
         cy.visit('/');
 
-        cy.onlyOnFeature('FEATURE_NEXT_10549');
-
         cy.server();
         cy.route({
             url: '/wishlist/add/**',
@@ -258,8 +252,6 @@ describe('Wishlist: for wishlist', () => {
 
         cy.visit('/');
 
-        cy.onlyOnFeature('FEATURE_NEXT_10549');
-
         cy.server();
         cy.route({
             url: '/wishlist/add/**',
@@ -285,7 +277,7 @@ describe('Wishlist: for wishlist', () => {
 
         heartIcon.click();
 
-        cy.wait('@wishlistAdd').then( () => {
+        cy.wait('@wishlistAdd').then(() => {
             cy.get('#wishlist-basket').contains('1');
 
             cy.visit('/account/logout');
@@ -308,8 +300,10 @@ describe('Wishlist: for wishlist', () => {
 
         cy.visit('/wishlist');
 
-        cy.wait('@wishlistMerge').then( () => {
+        cy.wait('@wishlistMerge').then(() => {
             cy.get('#wishlist-basket').contains('2');
+
+            cy.visit('/wishlist');
             cy.get('.cms-listing-col').eq(0).contains('Test product 2');
             cy.get('.cms-listing-col').eq(1).contains('Test product 1');
         });

@@ -2,49 +2,32 @@
 
 namespace Shopware\Core\Framework\Store\Authentication;
 
-use Shopware\Core\Framework\Api\Context\Exception\InvalidContextSourceUserException;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\Store\Exception\StoreTokenMissingException;
-use Shopware\Core\System\User\UserEntity;
 
 /**
  * @internal
  */
 class AuthenticationProvider extends AbstractAuthenticationProvider
 {
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $userRepository;
+    private const SHOPWARE_PLATFORM_TOKEN_HEADER = 'X-Shopware-Platform-Token';
 
-    public function __construct(EntityRepositoryInterface $userRepository)
-    {
-        $this->userRepository = $userRepository;
+    private AbstractStoreRequestOptionsProvider $optionProvider;
+
+    public function __construct(
+        AbstractStoreRequestOptionsProvider $storeRequestOptionsProvider
+    ) {
+        $this->optionProvider = $storeRequestOptionsProvider;
     }
 
-    public function getUserStoreToken(Context $context): string
+    public function getAuthenticationHeader(Context $context): array
     {
-        $contextSource = $this->ensureAdminApiSource($context);
+        return $this->optionProvider->getAuthenticationHeader($context);
+    }
 
-        $userId = $contextSource->getUserId();
-        if ($userId === null) {
-            throw new InvalidContextSourceUserException(\get_class($contextSource));
-        }
+    public function getUserStoreToken(Context $context): ?string
+    {
+        $headers = $this->optionProvider->getAuthenticationHeader($context);
 
-        /** @var UserEntity|null $user */
-        $user = $this->userRepository->search(new Criteria([$userId]), $context)->first();
-
-        if ($user === null) {
-            throw new StoreTokenMissingException();
-        }
-
-        $storeToken = $user->getStoreToken();
-        if ($storeToken === null) {
-            throw new StoreTokenMissingException();
-        }
-
-        return $storeToken;
+        return $headers[self::SHOPWARE_PLATFORM_TOKEN_HEADER] ?? null;
     }
 }

@@ -36,8 +36,6 @@
     },
     "detail": {
       "buttonCancel": "Discard changes",
-      "buttonSave": "Save",
-      "buttonEdit": "Edit",
       "tabOrderDetails": "Order details",
       "tabDeliveries": "Deliveries",
       "textHeadline": "Order",
@@ -92,7 +90,7 @@
       "columnQuantity": "Quantity",
       "columnPriceNet": "Price (net)",
       "columnPriceGross": "Price (gross)",
-      "columnPriceTaxFree": "Price (tax free)",
+      "columnPriceTaxFree": "Price (tax-free)",
       "columnTotalPriceNet": "Total",
       "columnPrice": "Price",
       "columnTotalPrice": "Total",
@@ -109,6 +107,7 @@
       "summaryLabelAmountGrandTotal": "Grand total",
       "summaryLabelAmountWithoutTaxes": "Total excluding VAT",
       "summaryLabelAmountTotal": "Total including VAT",
+      "summaryLabelAmountTotalRounded": "Rounded total including VAT",
       "summaryLabelShippingCosts": "plus shipping costs",
       "discountLabelShippingCosts": "discount shipping costs",
       "summaryLabelTaxes": "plus {taxRate}% VAT",
@@ -147,11 +146,11 @@
     "detailBase": {
       "cardTitleDetails": "Details",
       "cardTitleLineItems": "Items",
-      "columnProductName": "Item",
+      "columnProductName": "Name",
       "columnQuantity": "Quantity",
       "columnPriceNet": "Price (net)",
       "columnPriceGross": "Price (gross)",
-      "columnPriceTaxFree": "Price (tax free)",
+      "columnPriceTaxFree": "Price (tax-free)",
       "columnTotalPriceNet": "Total",
       "columnPrice": "Price",
       "columnTotalPrice": "Total",
@@ -162,12 +161,13 @@
       "summaryLabelAmountGrandTotal": "Grand total",
       "summaryLabelAmountWithoutTaxes": "Total excluding VAT",
       "summaryLabelAmountTotal": "Total including VAT",
+      "summaryLabelAmountTotalRounded": "Rounded total including VAT",
       "summaryLabelShippingCosts": "plus shipping costs",
       "discountLabelShippingCosts": "discount shipping costs",
       "summaryLabelTaxes": "plus {taxRate}% VAT",
       "labelOrderStatus": "Order status",
       "labelPaymentStatus": "Payment status",
-      "labelSalesChannel": "Sales channel",
+      "labelSalesChannel": "Sales Channel",
       "labelOrderDate": "Order date",
       "headlineBillingAddress": "Billing address",
       "headlineDeliveryAddress": "Shipping address",
@@ -179,6 +179,7 @@
       "buttonAddBlankProduct": "Add custom item",
       "buttonAddCredit": "Add credit",
       "buttonEditAddress": "Edit",
+      "tooltipNestedLineItemsButton": "This line item contains sub-items.",
       "labelNoPhoneNumber": "No phone number yet",
       "labelNoEmail": "No emails yet",
       "labelCustomerPhoneNumber": "Phone number",
@@ -204,7 +205,16 @@
       "addTrackingCode": "Click here to add code",
       "enterValidTrackingCode": "Enter tracking code",
       "textCreditTax": "auto",
-      "taxDetail": "{taxRate}%: {tax}"
+      "taxDetail": "{taxRate}%: {tax}",
+      "textPromotionRemoved": "Discount {promotion} has been removed"
+    },
+    "nestedLineItemsModal": {
+      "titlePrefix": "Item: {lineItemLabel} - {price}",
+      "headerLabel": "Name",
+      "headerUnitPrice": "Price (gross)",
+      "headerQuantity": "Quantity",
+      "headerTotalPrice": "Subtotal",
+      "headerTax": "VAT"
     },
     "detailDeliveries": {
       "cardTitleItems": "Shipment {count}",
@@ -278,7 +288,13 @@
       "labelDownloadPdf": "Download PDF",
       "labelCreateNew": "Create new",
       "messageEmptyTitle": "No documents yet",
-      "messageEmptySubline": "Manage documents here."
+      "messageEmptySubline": "Manage documents here.",
+      "error": {
+        "DOCUMENT__NUMBER_ALREADY_EXISTS": "Document number {number} has already been allocated."
+      },
+      "info": {
+        "DOCUMENT__NUMBER_WAS_CHANGED": "Duplicate document number. A consecutive number has automatically been drawn from the respective number range."
+      }
     },
     "documentModal": {
       "modalTitle": "Create document",
@@ -317,6 +333,71 @@
       "message": "The following automatic promotions will be disabled:",
       "messageNoItems": "No automatic promotions active.",
       "buttonDisable": "Disable"
+    },
+    "filters": {
+      "documentFilter": {
+        "label": "Documents",
+        "placeholder": "Select document status...",
+        "textHasCriteria": "At least one document assigned",
+        "textNoCriteria": "No documents assigned"
+      },
+      "orderDateFilter": {
+        "label": "Order date"
+      },
+      "statusFilter": {
+        "label": "Order status",
+        "placeholder": "Select order status..."
+      },
+      "paymentStatusFilter": {
+        "label": "Payment status",
+        "placeholder": "Select payment status..."
+      },
+      "deliveryStatusFilter": {
+        "label": "Delivery status",
+        "placeholder": "Select delivery status..."
+      },
+      "paymentMethodFilter": {
+        "label": "Payment method",
+        "placeholder": "Select payment method..."
+      },
+      "shippingMethodFilter": {
+        "label": "Shipping method",
+        "placeholder": "Select shipping method..."
+      },
+      "salesChannelFilter": {
+        "label": "Sales Channels",
+        "placeholder": "Select Sales Channels..."
+      },
+      "billingCountryFilter": {
+        "label": "Billing country",
+        "placeholder": "Select billing countries..."
+      },
+      "shippingCountryFilter": {
+        "label": "Shipping country",
+        "placeholder": "Select shipping countries..."
+      },
+      "customerGroupFilter": {
+        "label": "Customer group",
+        "placeholder": "Select customer group..."
+      },
+      "tagFilter": {
+        "label": "Tags",
+        "placeholder": "Select tags..."
+      },
+      "productFilter": {
+        "label": "Products",
+        "placeholder": "Select products..."
+      },
+      "affiliateCodeFilter": {
+        "label": "Affiliate code",
+        "placeholder": "Select affiliate code..."
+      },
+      "campaignCodeFilter": {
+        "label": "Campaign code",
+        "placeholder": "Select campaign code..."
+      },
+      "messageEmptyTitle": "Nothing found",
+      "messageEmptySubline": "Edit your filters to find results."
     }
   },
   "sw-privileges": {
@@ -327,7 +408,7 @@
     },
     "additional_permissions": {
       "orders": {
-        "create_discounts": "Create discounts"
+        "create_discounts": "Create credit items"
       }
     }
   }

@@ -13,6 +13,15 @@ const store = new Vuex.Store({
             state: {
                 product: product
             }
+        },
+        context: {
+            namespaced: true,
+
+            getters: {
+                isSystemDefaultLanguage() {
+                    return true;
+                }
+            }
         }
     }
 });
@@ -31,10 +40,10 @@ function createWrapper() {
         stubs: {
             'sw-card': true,
             'sw-button': true,
-            'sw-product-cross-selling-form': true
+            'sw-product-cross-selling-form': true,
+            'sw-empty-state': true
         },
         mocks: {
-            $tc: () => {},
             $store: store
         },
         provide: {

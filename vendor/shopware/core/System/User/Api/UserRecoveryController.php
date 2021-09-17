@@ -3,6 +3,8 @@
 namespace Shopware\Core\System\User\Api;
 
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\Feature;
+use Shopware\Core\Framework\RateLimiter\RateLimiter;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Core\Framework\Routing\Annotation\Since;
 use Shopware\Core\System\User\Recovery\UserRecoveryService;
@@ -16,23 +18,33 @@ use Symfony\Component\Routing\Annotation\Route;
  */
 class UserRecoveryController extends AbstractController
 {
-    /**
-     * @var UserRecoveryService
-     */
-    private $userRecoveryService;
+    private UserRecoveryService $userRecoveryService;
 
-    public function __construct(UserRecoveryService $userRecoveryService)
-    {
+    private RateLimiter $rateLimiter;
+
+    public function __construct(
+        UserRecoveryService $userRecoveryService,
+        RateLimiter $rateLimiter
+    ) {
         $this->userRecoveryService = $userRecoveryService;
+        $this->rateLimiter = $rateLimiter;
     }
 
     /**
      * @Since("6.0.0.0")
-     * @Route("/api/v{version}/_action/user/user-recovery", defaults={"auth_required"=false}, name="api.action.user.user-recovery", methods={"POST"})
+     * @Route("/api/_action/user/user-recovery", defaults={"auth_required"=false}, name="api.action.user.user-recovery", methods={"POST"})
      */
     public function createUserRecovery(Request $request, Context $context): Response
     {
-        $email = $request->request->get('email');
+        $email = (string) $request->request->get('email');
+
+        if (Feature::isActive('FEATURE_NEXT_13795')) {
+            $this->rateLimiter->ensureAccepted(
+                RateLimiter::USER_RECOVERY,
+                strtolower($email) . '-' . $request->getClientIp()
+            );
+        }
+
         $this->userRecoveryService->generateUserRecovery($email, $context);
 
         return new Response();
@@ -40,13 +52,13 @@ class UserRecoveryController extends AbstractController
 
     /**
      * @Since("6.0.0.0")
-     * @Route("/api/v{version}/_action/user/user-recovery/hash", defaults={"auth_required"=false}, name="api.action.user.user-recovery.hash", methods={"GET"})
+     * @Route("/api/_action/user/user-recovery/hash", defaults={"auth_required"=false}, name="api.action.user.user-recovery.hash", methods={"GET"})
      */
     public function checkUserRecovery(Request $request, Context $context): Response
     {
-        $hash = $request->query->get('hash');
+        $hash = (string) $request->query->get('hash');
 
-        if ($this->userRecoveryService->checkHash($hash, $context)) {
+        if ($hash !== '' && $this->userRecoveryService->checkHash($hash, $context)) {
             return new Response();
         }
 
@@ -55,23 +67,33 @@ class UserRecoveryController extends AbstractController
 
     /**
      * @Since("6.0.0.0")
-     * @Route("/api/v{version}/_action/user/user-recovery/password", defaults={"auth_required"=false}, name="api.action.user.user-recovery.password", methods={"PATCH"})
+     * @Route("/api/_action/user/user-recovery/password", defaults={"auth_required"=false}, name="api.action.user.user-recovery.password", methods={"PATCH"})
      */
     public function updateUserPassword(Request $request, Context $context): Response
     {
-        $hash = $request->request->get('hash');
-        $password = $request->request->get('password');
-        $passwordConfirm = $request->request->get('passwordConfirm');
+        $hash = (string) $request->request->get('hash');
+        $password = (string) $request->request->get('password');
+        $passwordConfirm = (string) $request->request->get('passwordConfirm');
 
         if ($passwordConfirm !== $password) {
             return $this->getErrorResponse();
         }
 
-        if ($this->userRecoveryService->updatePassword($hash, $password, $context)) {
-            return new Response();
+        $user = $this->userRecoveryService->getUserByHash($hash, $context);
+        if ($user === null) {
+            return $this->getErrorResponse();
         }
 
-        return $this->getErrorResponse();
+        if (!$this->userRecoveryService->updatePassword($hash, $password, $context)) {
+            return $this->getErrorResponse();
+        }
+
+        if (Feature::isActive('FEATURE_NEXT_13795')) {
+            $this->rateLimiter->reset(RateLimiter::OAUTH, strtolower($user->getUsername()) . '-' . $request->getClientIp());
+            $this->rateLimiter->reset(RateLimiter::USER_RECOVERY, strtolower($user->getEmail()) . '-' . $request->getClientIp());
+        }
+
+        return new Response();
     }
 
     private function getErrorResponse(): Response

@@ -9,6 +9,7 @@ use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Api\Context\AdminApiSource;
 use Shopware\Core\Framework\Api\Util\AccessKeyHelper;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\Test\TestCaseHelper\TestBrowser;
 use Shopware\Core\Framework\Uuid\Exception\InvalidUuidException;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\PlatformRequest;
@@ -29,7 +30,7 @@ trait AdminApiTestBehaviour
     protected $apiIntegrations = [];
 
     /**
-     * @var KernelBrowser|null
+     * @var TestBrowser|null
      */
     private $kernelBrowser;
 
@@ -97,7 +98,7 @@ trait AdminApiTestBehaviour
 
     public function assertEntityExists(KernelBrowser $browser, ...$params): void
     {
-        $url = '/api/v' . PlatformRequest::API_VERSION . '/' . implode('/', $params);
+        $url = '/api/' . implode('/', $params);
 
         $browser->request('GET', $url);
 
@@ -110,7 +111,7 @@ trait AdminApiTestBehaviour
 
     public function assertEntityNotExists(KernelBrowser $browser, ...$params): void
     {
-        $url = '/api/v' . PlatformRequest::API_VERSION . '/' . implode('/', $params);
+        $url = '/api/' . implode('/', $params);
 
         $browser->request('GET', $url);
 
@@ -131,7 +132,6 @@ trait AdminApiTestBehaviour
         $username = Uuid::randomHex();
         $password = Uuid::randomHex();
 
-        /** @var Connection $connection */
         $connection = $browser->getContainer()->get(Connection::class);
         $userId = Uuid::randomBytes();
 
@@ -140,7 +140,7 @@ trait AdminApiTestBehaviour
             'first_name' => $username,
             'last_name' => '',
             'username' => $username,
-            'password' => password_hash($password, PASSWORD_BCRYPT),
+            'password' => password_hash($password, \PASSWORD_BCRYPT),
             'locale_id' => $this->getLocaleOfSystemLanguage($connection),
             'active' => 1,
             'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
@@ -220,14 +220,13 @@ trait AdminApiTestBehaviour
             $id = Uuid::fromHexToBytes($id);
         }
 
-        /** @var Connection $connection */
         $connection = $browser->getContainer()->get(Connection::class);
 
         $connection->insert('integration', [
             'id' => $id,
             'write_access' => true,
             'access_key' => $accessKey,
-            'secret_access_key' => password_hash($secretAccessKey, PASSWORD_BCRYPT),
+            'secret_access_key' => password_hash($secretAccessKey, \PASSWORD_BCRYPT),
             'label' => 'test integration',
             'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ]);

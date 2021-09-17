@@ -5,15 +5,14 @@ describe('Account: Edit profile', () => {
         return cy.createCustomerFixtureStorefront();
     });
 
-    // TODO need to implement API first
-    it.skip('@base @customer: Update profile', () => {
+    it('@base @customer: Update profile', () => {
         cy.authenticate().then((result) => {
             const requestConfig = {
                 headers: {
                     Authorization: `Bearer ${result.access}`
                 },
                 method: 'post',
-                url: `api/${Cypress.env('apiVersion')}/_action/system-config/batch`,
+                url: `api/_action/system-config/batch`,
                 body: {
                     null: {
                         'core.loginRegistration.showAccountTypeSelection': true

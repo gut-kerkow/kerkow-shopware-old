@@ -2,7 +2,6 @@
 
 namespace Shopware\Core\System\SalesChannel\DataAbstractionLayer;
 
-use Shopware\Core\Framework\Adapter\Cache\CacheClearer;
 use Shopware\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
@@ -15,6 +14,8 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 class SalesChannelIndexer extends EntityIndexer
 {
+    public const MANY_TO_MANY_UPDATER = 'sales_channel.many-to-many';
+
     /**
      * @var IteratorFactory
      */
@@ -24,11 +25,6 @@ class SalesChannelIndexer extends EntityIndexer
      * @var EntityRepositoryInterface
      */
     private $repository;
-
-    /**
-     * @var CacheClearer
-     */
-    private $cacheClearer;
 
     /**
      * @var EventDispatcherInterface
@@ -43,13 +39,11 @@ class SalesChannelIndexer extends EntityIndexer
     public function __construct(
         IteratorFactory $iteratorFactory,
         EntityRepositoryInterface $repository,
-        CacheClearer $cacheClearer,
         EventDispatcherInterface $eventDispatcher,
         ManyToManyIdFieldUpdater $manyToManyUpdater
     ) {
         $this->iteratorFactory = $iteratorFactory;
         $this->repository = $repository;
-        $this->cacheClearer = $cacheClearer;
         $this->eventDispatcher = $eventDispatcher;
         $this->manyToManyUpdater = $manyToManyUpdater;
     }
@@ -59,7 +53,12 @@ class SalesChannelIndexer extends EntityIndexer
         return 'sales_channel.indexer';
     }
 
-    public function iterate($offset): ?EntityIndexingMessage
+    /**
+     * @param array|null $offset
+     *
+     * @deprecated tag:v6.5.0 The parameter $offset will be native typed
+     */
+    public function iterate(/*?array */$offset): ?EntityIndexingMessage
     {
         $iterator = $this->iteratorFactory->createIterator($this->repository->getDefinition(), $offset);
 
@@ -92,10 +91,10 @@ class SalesChannelIndexer extends EntityIndexer
             return;
         }
 
-        $this->manyToManyUpdater->update(SalesChannelDefinition::ENTITY_NAME, $ids, $message->getContext());
+        if ($message->allow(self::MANY_TO_MANY_UPDATER)) {
+            $this->manyToManyUpdater->update(SalesChannelDefinition::ENTITY_NAME, $ids, $message->getContext());
+        }
 
-        $this->eventDispatcher->dispatch(new SalesChannelIndexerEvent($ids, $message->getContext()));
-
-        $this->cacheClearer->invalidateIds($ids, SalesChannelDefinition::ENTITY_NAME);
+        $this->eventDispatcher->dispatch(new SalesChannelIndexerEvent($ids, $message->getContext(), $message->getSkip()));
     }
 }

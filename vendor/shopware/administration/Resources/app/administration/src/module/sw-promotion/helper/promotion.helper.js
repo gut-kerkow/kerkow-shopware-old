@@ -1,21 +1,24 @@
+/**
+ * @deprecated tag:v6.5.0 - will be removed, use `sw-promotion-v2` instead
+ */
 import { hasOwnProperty } from 'src/core/service/utils/object.utils';
 
 export const DiscountTypes = {
     PERCENTAGE: 'percentage',
     ABSOLUTE: 'absolute',
     FIXED: 'fixed',
-    FIXED_UNIT: 'fixed_unit'
+    FIXED_UNIT: 'fixed_unit',
 };
 
 export const DiscountScopes = {
     CART: 'cart',
     DELIVERY: 'delivery',
     SET: 'set',
-    SETGROUP: 'setgroup'
+    SETGROUP: 'setgroup',
 };
 
 export const PromotionPermissions = {
-    isEditingAllowed
+    isEditingAllowed,
 };
 
 

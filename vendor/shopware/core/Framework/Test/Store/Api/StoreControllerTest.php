@@ -9,8 +9,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\RequestCriteriaBuilder;
-use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Plugin\PluginEntity;
 use Shopware\Core\Framework\Plugin\PluginLifecycleService;
 use Shopware\Core\Framework\Plugin\PluginManagementService;
@@ -19,8 +17,6 @@ use Shopware\Core\Framework\Store\Services\StoreClient;
 use Shopware\Core\Framework\Store\Struct\PluginDownloadDataStruct;
 use Shopware\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
 use Shopware\Core\Framework\Validation\DataBag\QueryDataBag;
-use Shopware\Core\System\SystemConfig\SystemConfigService;
-use Symfony\Component\HttpFoundation\Response;
 
 class StoreControllerTest extends TestCase
 {
@@ -30,19 +26,14 @@ class StoreControllerTest extends TestCase
      * This is a regression test for NEXT-12957. It ensures, that the downloadPlugin method of the StoreController does
      * not dispatch a call to the PluginLifecycleService::updatePlugin method.
      *
-     * This call to skipTestIfInActive should be removed, when the flag is removed:
-     * Feature::skipTestIfInActive('FEATURE_NEXT_12957', $this);
-     *
      * @see https://issues.shopware.com/issues/NEXT-12957
      */
     public function testDownloadPluginUpdateBehaviour(): void
     {
-        Feature::skipTestIfInActive('FEATURE_NEXT_12957', $this);
-
         $pluginLifecycleService = $this->getPluginLifecycleServiceMock();
         $pluginLifecycleService->expects(static::never())->method('updatePlugin');
 
-        $storeController = $this->getStoreController(null, null, null, $pluginLifecycleService);
+        $storeController = $this->getStoreController();
 
         $storeController->downloadPlugin(
             new QueryDataBag([
@@ -57,17 +48,14 @@ class StoreControllerTest extends TestCase
     private function getStoreController(
         ?StoreClient $storeClient = null,
         ?EntityRepositoryInterface $pluginRepo = null,
-        ?PluginManagementService $pluginManagementService = null,
-        ?PluginLifecycleService $pluginLifecycleService = null
+        ?PluginManagementService $pluginManagementService = null
     ): StoreController {
         return new StoreController(
             $storeClient ?? $this->getStoreClientMock(),
             $pluginRepo ?? $this->getPluginRepositoryMock(),
             $pluginManagementService ?? $this->getPluginManagementServiceMock(),
-            $pluginLifecycleService ?? $this->getPluginLifecycleServiceMock(),
             $this->getContainer()->get('user.repository'),
-            $this->getContainer()->get(SystemConfigService::class),
-            $this->getContainer()->get(RequestCriteriaBuilder::class)
+            null
         );
     }
 
@@ -94,6 +82,7 @@ class StoreControllerTest extends TestCase
         $pluginRepository->method('search')
             ->willReturn(
                 new EntitySearchResult(
+                    'plugin',
                     1,
                     new EntityCollection([
                         $this->getPluginStub(),
@@ -114,8 +103,8 @@ class StoreControllerTest extends TestCase
             ->onlyMethods(['downloadStorePlugin'])
             ->getMock();
 
-        $pluginManagementService->method('downloadStorePlugin')
-            ->willReturn(Response::HTTP_OK);
+        $pluginManagementService->expects(static::once())
+            ->method('downloadStorePlugin');
 
         return $pluginManagementService;
     }

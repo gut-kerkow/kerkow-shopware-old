@@ -1,8 +1,8 @@
 import template from './sw-order-detail-base.html.twig';
 
-const { Component, Utils } = Shopware;
+const { Component, Utils, Mixin } = Shopware;
 const { Criteria } = Shopware.Data;
-const { format, array } = Utils;
+const { get, format, array } = Utils;
 
 Component.register('sw-order-detail-base', {
     template,
@@ -11,29 +11,34 @@ Component.register('sw-order-detail-base', {
         'repositoryFactory',
         'orderService',
         'stateStyleDataProviderService',
-        'acl'
+        'acl',
+        'feature',
+    ],
+
+    mixins: [
+        Mixin.getByName('notification'),
     ],
 
     props: {
         orderId: {
             type: String,
-            required: true
+            required: true,
         },
 
         isLoading: {
             type: Boolean,
-            required: true
+            required: true,
         },
 
         isEditing: {
             type: Boolean,
-            required: true
+            required: true,
         },
 
         isSaveSuccessful: {
             type: Boolean,
-            required: true
-        }
+            required: true,
+        },
     },
 
     data() {
@@ -45,7 +50,9 @@ Component.register('sw-order-detail-base', {
             orderOptions: [],
             deliveryOptions: [],
             versionContext: null,
-            customFieldSets: []
+            customFieldSets: [],
+            promotions: [],
+            promotionError: null,
         };
     },
 
@@ -61,6 +68,10 @@ Component.register('sw-order-detail-base', {
     computed: {
         orderRepository() {
             return this.repositoryFactory.create('order');
+        },
+
+        orderLineItemRepository() {
+            return this.repositoryFactory.create('order_line_item');
         },
 
         delivery() {
@@ -85,8 +96,8 @@ Component.register('sw-order-detail-base', {
             const formattedTaxes = `${calcTaxes.map(
                 calcTax => `${this.$tc('sw-order.detailBase.shippingCostsTax', 0, {
                     taxRate: calcTax.taxRate,
-                    tax: format.currency(calcTax.tax, this.order.currency.shortName)
-                })}`
+                    tax: format.currency(calcTax.tax, this.order.currency.shortName),
+                })}`,
             ).join('<br>')}`;
 
             return `${this.$tc('sw-order.detailBase.tax')}<br>${formattedTaxes}`;
@@ -152,19 +163,25 @@ Component.register('sw-order-detail-base', {
             const criteria = new Criteria(this.page, this.limit);
 
             criteria
-                .addAssociation('lineItems')
                 .addAssociation('currency')
                 .addAssociation('orderCustomer')
                 .addAssociation('language');
+
+            criteria
+                .getAssociation('lineItems')
+                .addFilter(Criteria.equals('parentId', null))
+                .addSorting(Criteria.sort('position', 'ASC'));
+
+            criteria
+                .getAssociation('lineItems.children')
+                .addSorting(Criteria.naturalSorting('label'));
 
             criteria
                 .getAssociation('deliveries')
                 .addSorting(Criteria.sort('shippingCosts.unitPrice', 'DESC'));
 
             criteria
-                .getAssociation('salesChannel')
-                .getAssociation('mailTemplates')
-                .addAssociation('mailTemplateType');
+                .addAssociation('salesChannel');
 
             criteria
                 .addAssociation('addresses.country')
@@ -195,9 +212,59 @@ Component.register('sw-order-detail-base', {
             return criteria;
         },
 
+        disabledAutoPromotionVisibility: {
+            get() {
+                return !this.hasAutomaticPromotions;
+            },
+            set(state) {
+                this.toggleAutomaticPromotions(state);
+            },
+        },
+
         taxStatus() {
             return this.order.price.taxStatus;
-        }
+        },
+
+        displayRounded() {
+            return this.order.totalRounding.interval !== 0.01
+                || this.order.totalRounding.decimals !== this.order.itemRounding.decimals;
+        },
+
+        orderTotal() {
+            if (this.displayRounded) {
+                return this.order.price.rawTotal;
+            }
+
+            return this.order.price.totalPrice;
+        },
+
+        hasLineItem() {
+            return this.order.lineItems.filter(item => item.hasOwnProperty('id')).length > 0;
+        },
+
+        currency() {
+            return this.order.currency;
+        },
+
+        promotionCodeLineItems() {
+            return this.order.lineItems.filter(item => item.type === 'promotion' && get(item, 'payload.code'));
+        },
+
+        hasAutomaticPromotions() {
+            return this.order.lineItems.filter(item => item.type === 'promotion' && item.referencedId === null).length > 0;
+        },
+
+        promotionCodeTags: {
+            get() {
+                return this.promotionCodeLineItems.map(p => p.payload);
+            },
+
+            set(promotionCodeTags) {
+                const old = this.promotionCodeLineItems.map(p => p.payload);
+
+                this.handlePromotionCodeTags(promotionCodeTags, old);
+            },
+        },
     },
 
     watch: {
@@ -211,7 +278,12 @@ Component.register('sw-order-detail-base', {
 
         'order.createdById'() {
             this.emitCreatedById();
-        }
+        },
+
+        'order.lineItems': {
+            deep: true,
+            handler: 'updatePromotionList',
+        },
     },
 
     created() {
@@ -232,7 +304,7 @@ Component.register('sw-order-detail-base', {
             this.$root.$on('order-edit-save', this.onSaveEdits);
             this.$root.$on('order-edit-cancel', this.onCancelEditing);
 
-            this.customFieldSetRepository.search(this.customFieldSetCriteria, Shopware.Context.api).then((result) => {
+            this.customFieldSetRepository.search(this.customFieldSetCriteria).then((result) => {
                 this.customFieldSets = result;
             });
         },
@@ -341,7 +413,7 @@ Component.register('sw-order-detail-base', {
             this.orderRepository.deleteVersion(
                 this.orderId,
                 this.versionContext.versionId,
-                this.versionContext
+                this.versionContext,
             ).catch((error) => {
                 // This error has no consequences, because we revert to the live version anyways
                 this.$emit('error', error);
@@ -399,6 +471,152 @@ Component.register('sw-order-detail-base', {
             this.$nextTick(() => {
                 this.nextRoute();
             });
-        }
-    }
+        },
+
+        async deleteAutomaticPromotion(promotion) {
+            await this.orderLineItemRepository
+                .delete(promotion.id, this.versionContext)
+                .then(() => {
+                    this.createNotificationSuccess({
+                        message: this.$tc('sw-order.detailBase.textPromotionRemoved', 0, {
+                            promotion: promotion.label,
+                        }),
+                    });
+                })
+                .catch((error) => {
+                    this.$emit('error', error);
+                });
+        },
+
+        async toggleAutomaticPromotions(state) {
+            this.$emit('loading-change', true);
+
+            const automaticPromotion = this.order.lineItems
+                .find(item => item.type === 'promotion' && item.referencedId === null);
+
+            if (automaticPromotion) {
+                await this.deleteAutomaticPromotion(automaticPromotion);
+            }
+
+            this.orderService.toggleAutomaticPromotions(
+                this.order.id,
+                this.order.versionId,
+                state,
+            ).then((response) => {
+                this.handlePromotionResponse(response);
+
+                return this.reloadEntityData();
+            }).catch((error) => {
+                this.$emit('error', error);
+            });
+        },
+
+        handlePromotionCodeTags(newValue, oldValue) {
+            this.promotionError = null;
+
+            if (newValue.length < oldValue.length) {
+                return;
+            }
+
+            const promotionCodeLength = newValue.length;
+            const latestTag = newValue[promotionCodeLength - 1];
+
+            if (newValue.length > oldValue.length) {
+                this.onSubmitCode(latestTag.code);
+            }
+
+            if (promotionCodeLength > 0 && latestTag.isInvalid) {
+                this.promotionError = { detail: this.$tc('sw-order.createBase.textInvalidPromotionCode') };
+            }
+        },
+
+        onSubmitCode(code) {
+            this.orderService.addPromotionToOrder(
+                this.order.id,
+                this.order.versionId,
+                code,
+            ).then((response) => {
+                this.$emit('loading-change', true);
+
+                this.handlePromotionResponse(response);
+
+                return this.reloadEntityData();
+            }).catch((error) => {
+                this.$emit('error', error);
+            });
+        },
+
+        handlePromotionResponse(response) {
+            Object.values(response.data.errors).forEach((value) => {
+                switch (value.level) {
+                    case 0: {
+                        this.createNotificationSuccess({
+                            message: value.message,
+                        });
+                        break;
+                    }
+
+                    case 10: {
+                        this.createNotificationWarning({
+                            message: value.message,
+                        });
+                        break;
+                    }
+
+                    default: {
+                        this.createNotificationError({
+                            message: value.message,
+                        });
+                        break;
+                    }
+                }
+            });
+        },
+
+        onRemoveExistingCode(item) {
+            this.$emit('loading-change', true);
+
+            const lineItem = this.getLineItemByPromotionCode(item.code);
+
+            this.orderLineItemRepository
+                .delete(lineItem.id, this.versionContext)
+                .then(() => {
+                    this.reloadEntityData().then(() => {
+                        this.$emit('loading-change', false);
+                    });
+                })
+                .catch((error) => {
+                    this.$emit('error', error);
+                });
+        },
+
+        getLineItemByPromotionCode(code) {
+            return this.order.lineItems.find(item => {
+                const c = get(item, 'payload.code');
+                return item.type === 'promotion' && c === code;
+            });
+        },
+
+        updatePromotionList() {
+            // Update data and isInvalid flag for each item in promotionCodeTags
+            this.promotionCodeTags = this.promotionCodeTags.map(tag => {
+                const matchedItem = this.promotionCodeLineItems.find(lineItem => lineItem.payload.code === tag.code);
+
+                if (matchedItem) {
+                    return { ...matchedItem.payload, isInvalid: false };
+                }
+
+                return { ...tag, isInvalid: true };
+            });
+
+            // Add new items from promotionCodeLineItems which promotionCodeTags doesn't contain
+            this.promotionCodeLineItems.forEach(lineItem => {
+                const matchedItem = this.promotionCodeTags.find(tag => tag.code === lineItem.payload.code);
+
+                if (!matchedItem) {
+                    this.promotionCodeTags = [...this.promotionCodeTags, { ...lineItem.payload, isInvalid: false }];
+                }
+            });
+        },
+    },
 });

@@ -1,0 +1,15 @@
+/**
+ * digitvision
+ *
+ * @category  digitvision
+ * @package   Shopware\Plugins\DvsnProductOption
+ * @copyright (c) 2020 digitvision
+ */
+
+.is-ctl-checkout {
+    .cart-item-child-label {
+        .dvsn-product-option-quantity {
+            font-weight: bold;
+        }
+    }
+}

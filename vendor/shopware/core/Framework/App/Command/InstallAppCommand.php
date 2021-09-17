@@ -57,7 +57,7 @@ class InstallAppCommand extends Command
         $manifest = $this->getManifest($input, $io);
 
         if (!$manifest) {
-            return 1;
+            return self::FAILURE;
         }
 
         if (!$input->getOption('force')) {
@@ -66,7 +66,7 @@ class InstallAppCommand extends Command
             } catch (UserAbortedCommandException $e) {
                 $io->error('Aborting due to user input.');
 
-                return 1;
+                return self::FAILURE;
             }
         }
 
@@ -77,23 +77,23 @@ class InstallAppCommand extends Command
                 // as only one app is validated - only one exception can occur
                 $io->error($invalids[0]);
 
-                return 1;
+                return self::FAILURE;
             }
 
             $io->success('app is valid');
         }
 
         try {
-            $this->appLifecycle->install($manifest, (bool) $input->getOption('activate'), Context::createDefaultContext());
+            $this->appLifecycle->install($manifest, $input->getOption('activate'), Context::createDefaultContext());
         } catch (AppAlreadyInstalledException $e) {
             $io->error($e->getMessage());
 
-            return 1;
+            return self::FAILURE;
         }
 
         $io->success('App installed successfully.');
 
-        return 0;
+        return self::SUCCESS;
     }
 
     protected function configure(): void
@@ -124,7 +124,6 @@ class InstallAppCommand extends Command
 
     private function getManifest(InputInterface $input, ShopwareStyle $io): ?Manifest
     {
-        /** @var string $name */
         $name = $input->getArgument('name');
         $manifestPath = sprintf('%s/%s/manifest.xml', $this->appDir, $name);
         if (!is_file($manifestPath)) {

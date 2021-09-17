@@ -32,7 +32,7 @@ class Migration1602017170UpdateQueuesTable extends MigrationStep
         $sql = 'ALTER TABLE `' . self::QUEUES_TABLE . '` 
             CHANGE COLUMN `serializedTask` `serializedTask` MEDIUMBLOB NOT NULL;';
 
-        $connection->executeQuery($sql);
+        $connection->executeUpdate($sql);
     }
 
     /**

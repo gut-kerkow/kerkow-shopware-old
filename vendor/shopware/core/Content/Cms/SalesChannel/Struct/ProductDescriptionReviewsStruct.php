@@ -6,9 +6,6 @@ use Shopware\Core\Content\Product\SalesChannel\Review\ProductReviewResult;
 use Shopware\Core\Content\Product\SalesChannel\SalesChannelProductEntity;
 use Shopware\Core\Framework\Struct\Struct;
 
-/**
- * @internal (flag:FEATURE_NEXT_10078)
- */
 class ProductDescriptionReviewsStruct extends Struct
 {
     /**
@@ -27,7 +24,7 @@ class ProductDescriptionReviewsStruct extends Struct
     protected $ratingSuccess;
 
     /**
-     * @var ProductReviewResult
+     * @var ProductReviewResult|null
      */
     protected $reviews;
 
@@ -51,7 +48,7 @@ class ProductDescriptionReviewsStruct extends Struct
         $this->productId = $productId;
     }
 
-    public function getReviews(): ProductReviewResult
+    public function getReviews(): ?ProductReviewResult
     {
         return $this->reviews;
     }

@@ -4,9 +4,7 @@ namespace Shopware\Core\Framework\Adapter\Cache;
 
 use Psr\Cache\CacheItemPoolInterface;
 use Shopware\Core\Framework\Adapter\Cache\Message\CleanupOldCacheFolders;
-use Shopware\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator;
 use Shopware\Core\Framework\MessageQueue\Handler\AbstractMessageHandler;
-use Symfony\Component\Cache\Adapter\TagAwareAdapterInterface;
 use Symfony\Component\Cache\PruneableInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Finder\Finder;
@@ -41,11 +39,6 @@ class CacheClearer extends AbstractMessageHandler
     protected $environment;
 
     /**
-     * @var EntityCacheKeyGenerator
-     */
-    private $cacheKeyGenerator;
-
-    /**
      * @var MessageBusInterface
      */
     private $messageBus;
@@ -56,7 +49,6 @@ class CacheClearer extends AbstractMessageHandler
         Filesystem $filesystem,
         string $cacheDir,
         string $environment,
-        EntityCacheKeyGenerator $cacheKeyGenerator,
         MessageBusInterface $messageBus
     ) {
         $this->adapters = $adapters;
@@ -64,31 +56,7 @@ class CacheClearer extends AbstractMessageHandler
         $this->cacheDir = $cacheDir;
         $this->filesystem = $filesystem;
         $this->environment = $environment;
-        $this->cacheKeyGenerator = $cacheKeyGenerator;
         $this->messageBus = $messageBus;
-    }
-
-    public function invalidateTags(array $tags): void
-    {
-        foreach ($this->adapters as $adapter) {
-            if ($adapter instanceof TagAwareAdapterInterface) {
-                $adapter->invalidateTags($tags);
-            }
-        }
-    }
-
-    public function invalidateIds(array $ids, string $entity): void
-    {
-        $ids = array_filter($ids);
-        if (empty($ids)) {
-            return;
-        }
-
-        $tags = array_map(function ($id) use ($entity) {
-            return $this->cacheKeyGenerator->getEntityTag($id, $entity);
-        }, $ids);
-
-        $this->invalidateTags($tags);
     }
 
     public function clear(): void

@@ -32,14 +32,14 @@ export default class ErrorResolver {
 
             Shopware.State.dispatch('error/addApiError', {
                 expression: `${entityName}.${id}`,
-                error: shopwareError
+                error: shopwareError,
             });
         });
     }
 
     reduceErrorsByWriteIndex(errors) {
         let writeErrors = {
-            system: []
+            system: [],
         };
 
         errors.forEach((current) => {
@@ -135,7 +135,7 @@ export default class ErrorResolver {
         if (definition.isToOneAssociation(field)) {
             this.resolveOneToOneFieldError(
                 `${entity.getEntityName()}.${entity.id}.${fieldName}`,
-                error
+                error,
             );
             return;
         }
@@ -143,18 +143,25 @@ export default class ErrorResolver {
         if (definition.isJsonField(field)) {
             this.resolveJsonFieldError(
                 `${entity.getEntityName()}.${entity.id}.${fieldName}`,
-                error
+                error,
             );
             return;
         }
 
         Shopware.State.dispatch('error/addApiError', {
             expression: this.getErrorPath(entity, fieldName),
-            error: new this.ShopwareError(error)
+            error: new this.ShopwareError(error),
         });
     }
 
     buildAssociationChangeset(entity, changeset, error, associationName) {
+        if (!Shopware.Utils.object.hasOwnProperty(changeset, associationName)) {
+            Shopware.State.dispatch('error/addApiError', {
+                expression: this.getErrorPath(entity, associationName),
+                error: new this.ShopwareError(error),
+            });
+        }
+
         return changeset[associationName].map((associationChange) => {
             const association = entity[associationName].find((a) => {
                 return a.id === associationChange.id;
@@ -171,7 +178,7 @@ export default class ErrorResolver {
             if (error[fieldName] instanceof this.ShopwareError) {
                 Shopware.State.dispatch('error/addApiError', {
                     expression: path,
-                    error: error[fieldName]
+                    error: error[fieldName],
                 });
                 return;
             }
@@ -187,7 +194,7 @@ export default class ErrorResolver {
             if (error[fieldName] instanceof this.ShopwareError) {
                 Shopware.State.dispatch('error/addApiError', {
                     expression: path,
-                    error: error[fieldName]
+                    error: error[fieldName],
                 });
             }
         });

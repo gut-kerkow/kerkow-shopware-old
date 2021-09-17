@@ -5,7 +5,7 @@ Mixin.register('sw-settings-list', {
 
     mixins: [
         Mixin.getByName('listing'),
-        Mixin.getByName('notification')
+        Mixin.getByName('notification'),
     ],
 
     inject: ['repositoryFactory'],
@@ -17,7 +17,7 @@ Mixin.register('sw-settings-list', {
             isLoading: false,
             showDeleteModal: false,
             deleteEntity: null,
-            steps: [10, 25, 50]
+            steps: [10, 25, 50],
         };
     },
 
@@ -52,18 +52,18 @@ Mixin.register('sw-settings-list', {
                     return this.$tc(
                         `sw-settings-${this.entityName.replace(/[_]/g, '-')}.list.messageDeleteSuccess`,
                         0,
-                        { name: name }
+                        { name: name },
                     );
                 }
 
                 return this.$tc(
                     'global.notification.messageDeleteSuccess',
                     0,
-                    { name: name }
+                    { name: name },
                 );
             }
             return '';
-        }
+        },
     },
 
     created() {
@@ -76,9 +76,10 @@ Mixin.register('sw-settings-list', {
         getList() {
             this.isLoading = true;
 
-            this.entityRepository.search(this.listingCriteria, Shopware.Context.api)
+            this.entityRepository.search(this.listingCriteria)
                 .then((items) => {
                     this.items = items;
+                    this.total = items.total;
 
                     return this.items;
                 })
@@ -103,11 +104,11 @@ Mixin.register('sw-settings-list', {
             this.deleteEntity = this.items.find((item) => item.id === id);
 
             this.onCloseDeleteModal();
-            return this.entityRepository.delete(id, Shopware.Context.api)
+            return this.entityRepository.delete(id)
                 .then(() => {
                     this.createNotificationSuccess({
                         title: this.titleSaveSuccess,
-                        message: this.messageSaveSuccess
+                        message: this.messageSaveSuccess,
                     });
                 })
                 .finally(() => {
@@ -119,7 +120,7 @@ Mixin.register('sw-settings-list', {
         onInlineEditSave(item) {
             this.isLoading = true;
 
-            return this.entityRepository.save(item, Shopware.Context.api)
+            return this.entityRepository.save(item)
                 .finally(() => {
                     this.isLoading = false;
                 });
@@ -127,6 +128,6 @@ Mixin.register('sw-settings-list', {
 
         onInlineEditCancel() {
             this.getList();
-        }
-    }
+        },
+    },
 });

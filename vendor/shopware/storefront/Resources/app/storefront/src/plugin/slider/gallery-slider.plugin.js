@@ -23,14 +23,15 @@ export default class GallerySliderPlugin extends BaseSliderPlugin {
       navDotDataAttr: 'data-nav-dot',
       loadingCls: 'is-loading',
       slider: {
+          preventScrollOnTouch: 'auto',
           startIndex: 1,
           responsive: {
               xs: {},
               sm: {},
               md: {},
               lg: {},
-              xl: {}
-          }
+              xl: {},
+          },
       },
       thumbnailSlider: {
           enabled: true,
@@ -39,14 +40,15 @@ export default class GallerySliderPlugin extends BaseSliderPlugin {
           items: 5,
           gutter: 10,
           startIndex: 1,
+          preventScrollOnTouch: 'force',
           responsive: {
               xs: {},
               sm: {},
               md: {},
               lg: {},
-              xl: {}
-          }
-      }
+              xl: {},
+          },
+      },
   });
 
   init() {
@@ -225,7 +227,7 @@ export default class GallerySliderPlugin extends BaseSliderPlugin {
                   controlsContainer,
                   navContainer,
                   onInit,
-                  ...this._sliderSettings
+                  ...this._sliderSettings,
               });
 
               this._initDots();
@@ -251,13 +253,37 @@ export default class GallerySliderPlugin extends BaseSliderPlugin {
                   container: navContainer,
                   controlsContainer: thumbnailControls,
                   onInit: onInitThumbnails,
-                  ...this._thumbnailSliderSettings
+                  ...this._thumbnailSliderSettings,
               });
           } else {
               navContainer.style.display = 'none';
+              this.el.classList.remove(this.options.loadingCls);
           }
       }
 
+      this._navigateThumbnailSlider();
+
       this.$emitter.publish('afterInitSlider');
+  }
+
+  /**
+     * navigate thumbnail slider automatically if the selected slider image is hidden
+     *
+     * @private
+     * */
+  _navigateThumbnailSlider() {
+      const thumbnailSlideInfo = this._thumbnailSlider && this._thumbnailSlider.getInfo();
+
+      if (!(this._slider && thumbnailSlideInfo)) {
+          return;
+      }
+
+      this._slider.events.on('indexChanged', () => {
+          const currentIndex = this.getCurrentSliderIndex();
+
+          if (thumbnailSlideInfo.slideItems[currentIndex].getAttribute('aria-hidden')) {
+              this._thumbnailSlider.goTo(currentIndex - 1);
+          }
+      });
   }
 }

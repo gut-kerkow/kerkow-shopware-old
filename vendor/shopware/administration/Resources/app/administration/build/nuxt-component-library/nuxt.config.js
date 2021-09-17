@@ -23,9 +23,6 @@ module.exports = {
     modules: [
         '~/modules/parser/index'
     ],
-    babel: {
-        compact: false
-    },
     head: {
         titleTemplate: '%s - Shopware Component library',
         meta: [
@@ -71,7 +68,13 @@ module.exports = {
             });
         },
         babel: {
-            plugins: ['@babel/plugin-transform-modules-commonjs']
+            compact: false,
+            plugins: [
+                '@babel/plugin-transform-modules-commonjs',
+                '@babel/plugin-proposal-optional-chaining',
+                '@babel/plugin-proposal-nullish-coalescing-operator',
+                '@babel/plugin-proposal-logical-assignment-operators',
+            ]
         }
     },
     generate: {

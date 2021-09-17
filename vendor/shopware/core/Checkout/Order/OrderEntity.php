@@ -12,7 +12,9 @@ use Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryCollection
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
+use Shopware\Core\Framework\DataAbstractionLayer\Pricing\CashRoundingConfig;
 use Shopware\Core\System\Currency\CurrencyEntity;
 use Shopware\Core\System\Language\LanguageEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
@@ -23,6 +25,7 @@ use Shopware\Core\System\User\UserEntity;
 class OrderEntity extends Entity
 {
     use EntityIdTrait;
+    use EntityCustomFieldsTrait;
 
     /**
      * @var string
@@ -165,11 +168,6 @@ class OrderEntity extends Entity
     protected $stateId;
 
     /**
-     * @var array|null
-     */
-    protected $customFields;
-
-    /**
      * @var DocumentCollection|null
      */
     protected $documents;
@@ -218,6 +216,16 @@ class OrderEntity extends Entity
      * @var UserEntity|null
      */
     protected $updatedBy;
+
+    /**
+     * @var CashRoundingConfig|null
+     */
+    protected $itemRounding;
+
+    /**
+     * @var CashRoundingConfig|null
+     */
+    protected $totalRounding;
 
     public function getCurrencyId(): string
     {
@@ -454,16 +462,6 @@ class OrderEntity extends Entity
         $this->stateId = $stateId;
     }
 
-    public function getCustomFields(): ?array
-    {
-        return $this->customFields;
-    }
-
-    public function setCustomFields(?array $customFields): void
-    {
-        $this->customFields = $customFields;
-    }
-
     public function setAmountTotal(float $amountTotal): void
     {
         $this->amountTotal = $amountTotal;
@@ -623,6 +621,26 @@ class OrderEntity extends Entity
     public function setUpdatedBy(UserEntity $updatedBy): void
     {
         $this->updatedBy = $updatedBy;
+    }
+
+    public function getItemRounding(): ?CashRoundingConfig
+    {
+        return $this->itemRounding;
+    }
+
+    public function setItemRounding(?CashRoundingConfig $itemRounding): void
+    {
+        $this->itemRounding = $itemRounding;
+    }
+
+    public function getTotalRounding(): ?CashRoundingConfig
+    {
+        return $this->totalRounding;
+    }
+
+    public function setTotalRounding(?CashRoundingConfig $totalRounding): void
+    {
+        $this->totalRounding = $totalRounding;
     }
 
     private function addChildren(OrderLineItemCollection $lineItems, OrderLineItemCollection $parents): void

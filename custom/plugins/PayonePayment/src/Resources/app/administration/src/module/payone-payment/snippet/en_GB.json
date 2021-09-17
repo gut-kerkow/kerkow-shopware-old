@@ -57,11 +57,14 @@
             "test": "Test API Credentials",
             "titleSuccess": "Success",
             "titleError": "Error",
+            "labelShowSpecificStatusMapping": "Display state mapping configuration",
+            "helpTextShowSpecificStatusMapping": "If not configured the general status mapping config will be applied.",
             "messageTestSuccess": "The API credentials were verified successfully.",
             "messageTestNoTestedPayments": "No payment methods were tested during the check because none of the PAYONE payment methods are activated. Please activate at least one PAYONE payment method under Settings --> Shop --> Payment.",
             "messageTestError": {
                 "general": "The API credentials could not be verified successfully.",
                 "creditCard": "The API credentials for Credit Card are not valid.",
+                "prepayment": "The API credentials for Prepayment are not valid.",
                 "debit": "The API credentials for Debit are not valid.",
                 "paypalExpress": "The API credentials for PayPal Express are not valid.",
                 "paypal": "The API credentials for PayPal are not valid.",
@@ -71,7 +74,9 @@
                 "sofort": "The API credentials for SOFORT are not valid.",
                 "eps": "The API credentials for EPS are not valid.",
                 "iDeal": "The API credentials for iDEAL are not valid.",
-                "secureInvoice": "The API credentials for secure invoice payment are not valid."
+                "secureInvoice": "The API credentials for secure invoice payment are not valid.",
+                "paydirekt": "The API credentials for Paydirekt payment are not valid.",
+                "trustly": "The API credentials for Trustly payment are not valid."
             }
         },
         "supportModal": {
@@ -117,6 +122,14 @@
             "transaction": {
                 "notFound": "No matching transaction could be found",
                 "orderNotFound": "No matching order could be found"
+            }
+        }
+    },
+    "sw-privileges": {
+        "additional_permissions": {
+            "Payone": {
+                "label": "PAYONE",
+                "payone_order_management": "PAYONE transaction management"
             }
         }
     }

@@ -14,18 +14,29 @@ class ProductExportLoggingEvent extends Event implements BusinessEventInterface,
 {
     public const NAME = 'product_export.log';
 
-    /** @var Context */
+    /**
+     * @var Context
+     */
     private $context;
 
-    /** @var int */
-    private $logLevel = Logger::DEBUG;
+    /**
+     * @var 100|200|250|300|400|500|550|600
+     */
+    private $logLevel;
 
-    /** @var \Throwable */
+    /**
+     * @var \Throwable
+     */
     private $throwable;
 
-    /** @var string */
+    /**
+     * @var string
+     */
     private $name = self::NAME;
 
+    /**
+     * @param 100|200|250|300|400|500|550|600|null $logLevel
+     */
     public function __construct(
         Context $context,
         ?string $name,
@@ -34,7 +45,7 @@ class ProductExportLoggingEvent extends Event implements BusinessEventInterface,
     ) {
         $this->context = $context;
         $this->name = $name;
-        $this->logLevel = $logLevel;
+        $this->logLevel = $logLevel ?? Logger::DEBUG;
         $this->throwable = $throwable;
     }
 
@@ -48,6 +59,9 @@ class ProductExportLoggingEvent extends Event implements BusinessEventInterface,
         return $this->context;
     }
 
+    /**
+     * @return 100|200|250|300|400|500|550|600
+     */
     public function getLogLevel(): int
     {
         return $this->logLevel;

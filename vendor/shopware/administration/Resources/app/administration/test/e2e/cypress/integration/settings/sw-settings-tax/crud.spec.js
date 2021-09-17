@@ -1,4 +1,4 @@
-/// <reference types="Cypress" />
+// / <reference types="Cypress" />
 
 import SettingsPageObject from '../../../support/pages/module/sw-settings.page-object';
 
@@ -22,7 +22,7 @@ describe('Tax: Test crud operations', () => {
         // Request we want to wait for later
         cy.server();
         cy.route({
-            url: '/api/v*/tax',
+            url: `${Cypress.env('apiPath')}/tax`,
             method: 'post'
         }).as('saveData');
 
@@ -41,7 +41,7 @@ describe('Tax: Test crud operations', () => {
         });
 
         cy.get(page.elements.smartBarBack).click();
-        cy.get(`${page.elements.dataGridRow}--4 ${page.elements.taxColumnName}`).should('be.visible')
+        cy.get(`${page.elements.dataGridRow}--1 ${page.elements.taxColumnName}`).should('be.visible')
             .contains('Very high tax');
     });
 
@@ -51,7 +51,7 @@ describe('Tax: Test crud operations', () => {
         // Request we want to wait for later
         cy.server();
         cy.route({
-            url: '/api/v*/tax/*',
+            url: `${Cypress.env('apiPath')}/tax/*`,
             method: 'patch'
         }).as('saveData');
 
@@ -71,7 +71,7 @@ describe('Tax: Test crud operations', () => {
         });
 
         cy.get(page.elements.smartBarBack).click();
-        cy.get(`${page.elements.dataGridRow}--3 ${page.elements.taxColumnName}`).should('be.visible')
+        cy.get(`${page.elements.dataGridRow}--0 ${page.elements.taxColumnName}`).should('be.visible')
             .contains('Still high tax');
     });
 
@@ -81,7 +81,7 @@ describe('Tax: Test crud operations', () => {
         // Request we want to wait for later
         cy.server();
         cy.route({
-            url: '/api/v*/tax/*',
+            url: `${Cypress.env('apiPath')}/tax/*`,
             method: 'delete'
         }).as('deleteData');
 

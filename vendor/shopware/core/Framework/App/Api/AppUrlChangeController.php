@@ -2,6 +2,7 @@
 
 namespace Shopware\Core\Framework\App\Api;
 
+use Shopware\Core\DevOps\Environment\EnvironmentHelper;
 use Shopware\Core\Framework\App\AppUrlChangeResolver\Resolver;
 use Shopware\Core\Framework\App\Exception\AppUrlChangeStrategyNotFoundException;
 use Shopware\Core\Framework\App\Exception\AppUrlChangeStrategyNotFoundHttpException;
@@ -44,7 +45,7 @@ class AppUrlChangeController extends AbstractController
 
     /**
      * @Since("6.3.3.0")
-     * @Route("api/v{version}/app-system/app-url-change/strategies", name="api.app_system.app-url-change-strategies", methods={"GET"})
+     * @Route("api/app-system/app-url-change/strategies", name="api.app_system.app-url-change-strategies", methods={"GET"})
      */
     public function getAvailableStrategies(): JsonResponse
     {
@@ -55,7 +56,7 @@ class AppUrlChangeController extends AbstractController
 
     /**
      * @Since("6.3.3.0")
-     * @Route("api/v{version}/app-system/app-url-change/resolve", name="api.app_system.app-url-change-resolve", methods={"POST"})
+     * @Route("api/app-system/app-url-change/resolve", name="api.app_system.app-url-change-resolve", methods={"POST"})
      */
     public function resolve(Request $request, Context $context): Response
     {
@@ -76,7 +77,7 @@ class AppUrlChangeController extends AbstractController
 
     /**
      * @Since("6.3.3.0")
-     * @Route("api/v{version}/app-system/app-url-change/url-difference", name="api.app_system.app-url-difference", methods={"GET"})
+     * @Route("api/app-system/app-url-change/url-difference", name="api.app_system.app-url-difference", methods={"GET"})
      */
     public function getUrlDifference(): Response
     {
@@ -85,11 +86,18 @@ class AppUrlChangeController extends AbstractController
         }
         $shopIdConfig = (array) $this->systemConfigService->get(ShopIdProvider::SHOP_ID_SYSTEM_CONFIG_KEY);
         $oldUrl = $shopIdConfig['app_url'];
+        $newUrl = EnvironmentHelper::getVariable('APP_URL');
+
+        if ($oldUrl === $newUrl) {
+            $this->systemConfigService->delete(ShopIdProvider::SHOP_DOMAIN_CHANGE_CONFIG_KEY);
+
+            return new Response(null, Response::HTTP_NO_CONTENT);
+        }
 
         return new JsonResponse(
             [
                 'oldUrl' => $oldUrl,
-                'newUrl' => $_SERVER['APP_URL'],
+                'newUrl' => $newUrl,
             ]
         );
     }

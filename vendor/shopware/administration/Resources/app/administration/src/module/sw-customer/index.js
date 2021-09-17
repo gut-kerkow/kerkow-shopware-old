@@ -29,15 +29,15 @@ Module.register('sw-customer', {
     routes: {
         index: {
             components: {
-                default: 'sw-customer-list'
+                default: 'sw-customer-list',
             },
             path: 'index',
             meta: {
                 privilege: 'customer.viewer',
                 appSystem: {
-                    view: 'list'
-                }
-            }
+                    view: 'list',
+                },
+            },
         },
 
         create: {
@@ -45,15 +45,15 @@ Module.register('sw-customer', {
             path: 'create',
             meta: {
                 parentPath: 'sw.customer.index',
-                privilege: 'customer.creator'
-            }
+                privilege: 'customer.creator',
+            },
         },
 
         detail: {
             component: 'sw-customer-detail',
             path: 'detail/:id',
             redirect: {
-                name: 'sw.customer.detail.base'
+                name: 'sw.customer.detail.base',
             },
             children: {
                 base: {
@@ -61,57 +61,56 @@ Module.register('sw-customer', {
                     path: 'base',
                     meta: {
                         parentPath: 'sw.customer.index',
-                        privilege: 'customer.viewer'
-                    }
+                        privilege: 'customer.viewer',
+                    },
                 },
                 addresses: {
                     component: 'sw-customer-detail-addresses',
                     path: 'addresses',
                     meta: {
                         parentPath: 'sw.customer.index',
-                        privilege: 'customer.viewer'
-                    }
+                        privilege: 'customer.viewer',
+                    },
                 },
                 order: {
                     component: 'sw-customer-detail-order',
                     path: 'order',
                     meta: {
                         parentPath: 'sw.customer.index',
-                        privilege: 'customer.viewer'
-                    }
-                }
+                        privilege: 'customer.viewer',
+                    },
+                },
             },
             meta: {
                 privilege: 'customer.viewer',
                 appSystem: {
-                    view: 'detail'
-                }
+                    view: 'detail',
+                },
             },
 
             props: {
                 default(route) {
                     return {
-                        customerId: route.params.id
+                        customerId: route.params.id,
                     };
-                }
-            }
-        }
+                },
+            },
+        },
     },
 
     navigation: [{
         id: 'sw-customer',
         label: 'sw-customer.general.mainMenuItemGeneral',
         color: '#F88962',
-        path: 'sw.customer.index',
         icon: 'default-avatar-multiple',
         position: 40,
-        privilege: 'customer.viewer'
+        privilege: 'customer.viewer',
     }, {
         path: 'sw.customer.index',
         label: 'sw-customer.general.mainMenuItemList',
         color: '#F88962',
         icon: 'default-avatar-multiple',
         parent: 'sw-customer',
-        privilege: 'customer.viewer'
-    }]
+        privilege: 'customer.viewer',
+    }],
 });

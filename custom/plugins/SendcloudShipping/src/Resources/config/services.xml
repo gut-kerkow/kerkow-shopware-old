@@ -126,6 +126,7 @@
             <argument type="service" id="Sendcloud\Shipping\Core\Infrastructure\Interfaces\Required\HttpClient"/>
             <argument type="service" id="Sendcloud\Shipping\Entity\Process\ProcessEntityRepository"/>
             <argument type="service" id="Symfony\Component\Routing\Generator\UrlGeneratorInterface"/>
+            <argument type="service" id="parameter_bag"/>
         </service>
 
         <service id="Sendcloud\Shipping\Core\Infrastructure\Interfaces\Required\ShopLoggerAdapter"
@@ -171,10 +172,13 @@
             <argument type="service" id="Sendcloud\Shipping\Entity\Shipment\ShipmentEntityRepository"/>
             <argument type="service" id="Sendcloud\Shipping\Entity\Order\OrderDeliveryRepository"/>
             <argument type="service" id="Sendcloud\Shipping\Service\Utility\DeliveryStateMapper"/>
+            <argument type="service" id="Sendcloud\Shipping\Core\Infrastructure\Interfaces\Required\Configuration"/>
+            <argument type="service" id="service_container"/>
+
         </service>
 
         <service id="Sendcloud\Shipping\Core\BusinessLogic\Webhook\WebhookEventHandler"
-        	  class="Sendcloud\Shipping\Handlers\WebhookHandler"
+                 class="Sendcloud\Shipping\Handlers\WebhookHandler"
                  public="true">
         </service>
 
@@ -211,12 +215,20 @@
                  public="true">
             <argument type="service" id="Sendcloud\Shipping\Service\Utility\Initializer"/>
             <argument type="service" id="Sendcloud\Shipping\Entity\Process\ProcessEntityRepository"/>
+
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
         </service>
 
         <service id="Sendcloud\Shipping\Controller\API\Frontend\WebhookController"
                  public="true">
             <argument type="service" id="Sendcloud\Shipping\Service\Utility\Initializer"/>
             <argument type="service" id="Sendcloud\Shipping\Core\BusinessLogic\Webhook\WebhookEventHandler"/>
+
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
         </service>
 
         <service id="Sendcloud\Shipping\Controller\API\Frontend\TestController"
@@ -268,6 +280,7 @@
             <argument type="service" id="Sendcloud\Shipping\Core\Infrastructure\Interfaces\Required\Configuration"/>
             <argument type="service" id="Sendcloud\Shipping\Core\Infrastructure\Interfaces\Exposed\TaskRunnerWakeup"/>
             <argument type="service" id="Sendcloud\Shipping\Entity\Config\SystemConfigurationRepository"/>
+            <argument type="service" id="parameter_bag"/>
 
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
@@ -281,6 +294,7 @@
             <argument type="service" id="Symfony\Component\Routing\Generator\UrlGeneratorInterface"/>
             <argument type="service" id="Sendcloud\Shipping\Entity\ShippingMethod\ShippingMethodRepository"/>
             <argument type="service" id="Sendcloud\Shipping\Core\Infrastructure\Interfaces\Required\TaskQueueStorage"/>
+            <argument type="service" id="parameter_bag"/>
 
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
@@ -302,6 +316,15 @@
         <service id="Sendcloud\Shipping\Controller\API\Frontend\ServicePointController"
                  public="true">
             <argument type="service" id="Sendcloud\Shipping\Entity\ServicePoint\ServicePointEntityRepository"/>
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
+        </service>
+
+        <service id="Sendcloud\Shipping\Controller\API\Backend\CustomsInformationController"
+                 public="true">
+            <argument type="service" id="Sendcloud\Shipping\Core\Infrastructure\TaskExecution\Queue"/>
+            <argument type="service" id="Sendcloud\Shipping\Core\Infrastructure\Interfaces\Required\Configuration"/>
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
             </call>
@@ -331,6 +354,7 @@
             <argument type="service" id="Sendcloud\Shipping\Entity\Customer\CustomerRepository"/>
             <argument type="service" id="Sendcloud\Shipping\Core\BusinessLogic\Interfaces\OrderService"/>
             <argument type="service" id="request_stack"/>
+            <argument type="service" id="parameter_bag"/>
         </service>
     </services>
 </container>

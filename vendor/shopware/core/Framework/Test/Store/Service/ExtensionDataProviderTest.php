@@ -2,26 +2,25 @@
 
 namespace Shopware\Core\Framework\Test\Store\Service;
 
-use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestCase;
-use Shopware\Core\Framework\Api\Context\AdminApiSource;
+use Psr\Http\Message\ResponseInterface;
 use Shopware\Core\Framework\App\AppEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Store\Exception\ExtensionNotFoundException;
-use Shopware\Core\Framework\Store\Search\ExtensionCriteria;
 use Shopware\Core\Framework\Store\Services\AbstractExtensionDataProvider;
-use Shopware\Core\Framework\Store\Services\ExtensionDataProvider;
-use Shopware\Core\Framework\Store\Struct\ExtensionCollection;
+use Shopware\Core\Framework\Store\Services\StoreService;
 use Shopware\Core\Framework\Store\Struct\ExtensionStruct;
-use Shopware\Core\Framework\Store\Struct\ReviewCollection;
-use Shopware\Core\Framework\Store\Struct\ReviewSummaryStruct;
 use Shopware\Core\Framework\Test\Store\ExtensionBehaviour;
 use Shopware\Core\Framework\Test\Store\StoreClientBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Shopware\Core\System\SystemConfig\SystemConfigService;
 
+/**
+ * @group skip-paratest
+ */
 class ExtensionDataProviderTest extends TestCase
 {
     use IntegrationTestBehaviour;
@@ -42,7 +41,7 @@ class ExtensionDataProviderTest extends TestCase
     {
         Feature::skipTestIfInActive('FEATURE_NEXT_12608', $this);
         $this->extensionDataProvider = $this->getContainer()->get(AbstractExtensionDataProvider::class);
-        $this->context = Context::createDefaultContext(new AdminApiSource(Uuid::randomHex()));
+        $this->context = $this->createAdminStoreContext();
 
         $this->installApp(__DIR__ . '/../_fixtures/TestApp');
     }
@@ -52,65 +51,18 @@ class ExtensionDataProviderTest extends TestCase
         $this->removeApp(__DIR__ . '/../_fixtures/TestApp');
     }
 
-    public function testGetListingFilters(): void
-    {
-        $requestHandler = $this->getRequestHandler();
-        $requestHandler->reset();
-        $requestHandler->append(new Response(200, [], file_get_contents(__DIR__ . '/../_fixtures/responses/filter.json')));
-
-        $filters = $this->extensionDataProvider->getListingFilters(Context::createDefaultContext());
-
-        static::assertSame(json_decode(file_get_contents(__DIR__ . '/../_fixtures/responses/filter.json'), true), $filters);
-    }
-
-    public function testItReturnsAListing(): void
-    {
-        $this->setListingResponse();
-
-        $criteria = ExtensionCriteria::fromArray([
-            'limit' => 10,
-            'page' => 1,
-        ]);
-
-        $listing = $this->extensionDataProvider->getListing($criteria, $this->context);
-
-        static::assertInstanceOf(ExtensionCollection::class, $listing);
-        static::assertEquals(2, $listing->count());
-    }
-
     public function testItReturnsInstalledAppsAsExtensionCollection(): void
     {
-        $installedExtensions = $this->extensionDataProvider->getInstalledExtensions($this->context);
+        $this->setLicenseDomain('localhost');
+        $this->getRequestHandler()->reset();
+        $this->getRequestHandler()->append(new Response(200, [], '[]'));
+
+        $installedExtensions = $this->extensionDataProvider->getInstalledExtensions($this->context, true);
         $installedExtension = $installedExtensions->get('TestApp');
 
         static::assertInstanceOf(ExtensionStruct::class, $installedExtension);
         static::assertNull($installedExtension->getId());
         static::assertEquals('Swag App Test', $installedExtension->getLabel());
-    }
-
-    public function testItReturnsAnExtensionDetail(): void
-    {
-        $extensionId = 12161;
-
-        $this->setDetailResponse($extensionId);
-        $extensionDetail = $this->extensionDataProvider->getExtensionDetails($extensionId, $this->context);
-
-        static::assertNotNull($extensionDetail);
-        static::assertEquals($extensionId, $extensionDetail->getId());
-        static::assertEquals('Change your privacy policy!', $extensionDetail->getPrivacyPolicyExtensions());
-    }
-
-    public function testItReturnsReviewsForExtension(): void
-    {
-        $extensionId = 12161;
-
-        $this->setReviewsResponse($extensionId);
-        $extensionReviews = $this->extensionDataProvider->getReviews($extensionId, new ExtensionCriteria(), $this->context);
-
-        static::assertInstanceOf(ReviewCollection::class, $extensionReviews['reviews']);
-        static::assertInstanceOf(ReviewSummaryStruct::class, $extensionReviews['summary']);
-        static::assertCount(3, $extensionReviews['reviews']);
-        static::assertEquals(7, $extensionReviews['summary']->getNumberOfRatings());
     }
 
     public function testGetAppEntityFromTechnicalName(): void
@@ -141,60 +93,57 @@ class ExtensionDataProviderTest extends TestCase
         $this->extensionDataProvider->getAppEntityFromId(Uuid::randomHex(), $this->context);
     }
 
-    private function setReviewsResponse($extensionId): void
+    public function testItLoadsRemoteExtensions(): void
     {
-        $requestHandler = $this->getRequestHandler();
-        $requestHandler->reset();
-        $requestHandler->append(
-            function (Request $request) use ($extensionId): Response {
-                $matches = [];
-                preg_match('/\/swplatform\/extensionstore\/extensions\/(.*)\/reviews/', $request->getUri()->getPath(), $matches);
+        $this->getContainer()->get(SystemConfigService::class)->set(StoreService::CONFIG_KEY_STORE_LICENSE_DOMAIN, 'localhost');
+        $this->getRequestHandler()->reset();
+        $this->getRequestHandler()->append(new Response(200, [], '{"data":[]}'));
+        $this->getRequestHandler()->append(new Response(200, [], file_get_contents(__DIR__ . '/../_fixtures/responses/my-licenses.json')));
 
-                static::assertEquals(
-                    $extensionId,
-                    $matches[1]
-                );
-
-                return new Response(
-                    200,
-                    [],
-                    \file_get_contents(__DIR__ . '/../_fixtures/responses/extension-reviews.json')
-                );
-            }
-        );
+        $installedExtensions = $this->extensionDataProvider->getInstalledExtensions($this->context, true);
+        static::assertCount(7, $installedExtensions);
     }
 
-    private function setListingResponse(): void
+    public function testItReturnsLocalExtensionsIfUserIsNotLoggedIn(): void
     {
-        $requestHandler = $this->getRequestHandler();
-        $requestHandler->reset();
-        $requestHandler->append(new Response(
-            200,
-            [ExtensionDataProvider::HEADER_NAME_TOTAL_COUNT => '2'],
-            \file_get_contents(__DIR__ . '/../_fixtures/responses/extension-listing.json')
-        ));
+        $this->getUserRepository()->update([
+            [
+                'id' => $this->context->getSource()->getUserId(),
+                'storeToken' => null,
+            ],
+        ], Context::createDefaultContext());
+
+        $this->getRequestHandler()->append(new Response(200, [], file_get_contents(__DIR__ . '/../_fixtures/responses/my-licenses.json')));
+
+        $installedExtensions = $this->extensionDataProvider->getInstalledExtensions($this->context, true);
+        static::assertCount(1, $installedExtensions);
     }
 
-    private function setDetailResponse($extensionId): void
+    public function testItReturnsLocalExtensionsIfDomainIsNotSet(): void
     {
-        $requestHandler = $this->getRequestHandler();
-        $requestHandler->reset();
-        $requestHandler->append(
-            function (Request $request) use ($extensionId): Response {
-                $matches = [];
-                preg_match('/\/swplatform\/extensionstore\/extensions\/(.*)/', $request->getUri()->getPath(), $matches);
+        $this->setLicenseDomain(null);
 
-                static::assertEquals(
-                    $extensionId,
-                    $matches[1]
-                );
-
-                return new Response(
-                    200,
-                    [],
-                    \file_get_contents(__DIR__ . '/../_fixtures/responses/extension-detail.json')
-                );
-            }
+        $this->getRequestHandler()->append(
+            $this->getDomainMissingResponse(),
+            $this->getDomainMissingResponse()
         );
+
+        $installedExtensions = $this->extensionDataProvider->getInstalledExtensions($this->context, true);
+
+        static::assertCount(1, $installedExtensions);
+
+        $installedExtension = $installedExtensions->get('TestApp');
+
+        static::assertInstanceOf(ExtensionStruct::class, $installedExtension);
+        static::assertNull($installedExtension->getId());
+        static::assertEquals('Swag App Test', $installedExtension->getLabel());
+    }
+
+    private function getDomainMissingResponse(): ResponseInterface
+    {
+        return new Response(400, [], \json_encode([
+            'code' => 'ShopwarePlatformException-3',
+            'detail' => 'REQUEST_PARAMETER_DOMAIN_NOT_GIVEN',
+        ]));
     }
 }

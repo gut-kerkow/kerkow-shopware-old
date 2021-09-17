@@ -16,8 +16,10 @@
             {% endblock %}
 
             {% block buy_widget_rich_snippets_mpn %}
-                <meta itemprop="mpn"
-                      content="{{ product.productNumber }}"/>
+                {% if product.manufacturerNumber %}
+                    <meta itemprop="mpn"
+                          content="{{ product.manufacturerNumber }}"/>
+                {% endif %}
             {% endblock %}
 
             {% block buy_widget_rich_snippets_weight %}
@@ -110,10 +112,10 @@
                             <p class="product-detail-tax">
                                 {% block buy_widget_tax_link %}
                                     <a class="product-detail-tax-link"
-                                       href="{{ path('frontend.cms.page',{ id: shopware.config.core.basicInformation.shippingPaymentInfoPage }) }}"
+                                       href="{{ path('frontend.cms.page',{ id: config('core.basicInformation.shippingPaymentInfoPage') }) }}"
                                        title="{{ taxText }}"
                                        data-toggle="modal"
-                                       data-url="{{ path('frontend.cms.page',{ id: shopware.config.core.basicInformation.shippingPaymentInfoPage }) }}">
+                                       data-url="{{ path('frontend.cms.page',{ id: config('core.basicInformation.shippingPaymentInfoPage') }) }}">
                                         {{ taxText }}
                                     </a>
                                 {% endblock %}
@@ -122,12 +124,14 @@
                     {% endblock %}
 
                     {% set remoteClickOptions = {
-                        selector: "#review-tab",
+                        selector: "#review-tab-" ~ product.id,
                         scrollToElement: true
                     } %}
 
+                    {% set reviewTabHref = "#review-tab-" ~ product.id ~ "-pane" %}
+
                     {% block buy_widget_reviews %}
-                        {% if product.ratingAverage > 0 and totalReviews > 0 and shopware.config.core.listing.showReview %}
+                        {% if product.ratingAverage > 0 and totalReviews > 0 and config('core.listing.showReview') %}
                             <div class="product-detail-reviews">
 
                                 {% sw_include '@Storefront/storefront/component/review/rating.html.twig' with {
@@ -139,7 +143,7 @@
                                    data-offcanvas-tabs="true"
                                    data-remote-click="true"
                                    data-remote-click-options='{{ remoteClickOptions|json_encode }}'
-                                   href="#review-tab-pane"
+                                   href="{{ reviewTabHref }}"
                                    aria-controls="review-tab-pane">
                                     {{ totalReviews }}
                                     {{ "detail.reviewLinkText"|trans({'%count%': totalReviews})|sw_sanitize }}
@@ -173,7 +177,7 @@
             </div>
         {% endblock %}
 
-        {% if shopware.config.core.cart.wishlistEnabled %}
+        {% if config('core.cart.wishlistEnabled') %}
             {% block buy_widget_wishlist %}
                 {% sw_include '@Storefront/storefront/component/product/card/wishlist.html.twig' with {
                     showText: true,

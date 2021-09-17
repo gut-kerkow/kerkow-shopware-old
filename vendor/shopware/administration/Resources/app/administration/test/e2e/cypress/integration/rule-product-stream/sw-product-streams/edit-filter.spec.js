@@ -1,4 +1,4 @@
-/// <reference types="Cypress" />
+// / <reference types="Cypress" />
 
 import ProductStreamObject from '../../../support/pages/module/sw-product-stream.page-object';
 
@@ -29,6 +29,26 @@ const resultCases = [
     }
 ];
 
+const productManufacture = {
+    name: 'Product Manufacturer',
+    stock: 1,
+    productNumber: 'TEST-123',
+    descriptionLong: 'Product description',
+    price: [
+        {
+            currencyId: 'b7d2554b0ce847cd82f3ac9bd1c0dfca',
+            net: 42,
+            linked: false,
+            gross: 64
+        }
+    ],
+    manufacturer: {
+        id: 'b7d2554b0ce847cd82f3ac9bd1c0dfca',
+        name: 'Test Product Manufacturer'
+    },
+    manufacturerId: 'b7d2554b0ce847cd82f3ac9bd1c0dfca'
+};
+
 describe('Dynamic product group: Test various filters', () => {
     beforeEach(() => {
         cy.setToInitialState()
@@ -42,6 +62,9 @@ describe('Dynamic product group: Test various filters', () => {
                 return cy.createProductFixture();
             })
             .then(() => {
+                return cy.createProductFixture(productManufacture);
+            })
+            .then(() => {
                 return cy.createPropertyFixture({
                     options: [
                         {
@@ -49,7 +72,7 @@ describe('Dynamic product group: Test various filters', () => {
                         },
                         {
                             name: 'Green'
-                        },
+                        }
                     ]
                 });
             })
@@ -62,7 +85,7 @@ describe('Dynamic product group: Test various filters', () => {
                         },
                         {
                             name: 'Test 2'
-                        },
+                        }
                     ]
                 });
             })
@@ -110,6 +133,49 @@ describe('Dynamic product group: Test various filters', () => {
         cy.get('.sw-product-stream-filter').should(($productStreamFilter) => {
             expect($productStreamFilter).to.have.length(1);
         });
+        cy.get('button.sw-button').contains('Save').click();
+        cy.get('button.sw-button .icon--small-default-checkmark-line-medium').should('be.visible');
+    });
+
+    it('@base @rule: Should be able to filter with Manufacture', () => {
+        const page = new ProductStreamObject();
+
+        // Verify product stream details
+        cy.clickContextMenuItem(
+            '.sw-entity-listing__context-menu-edit-action',
+            page.elements.contextMenuButton,
+            `${page.elements.dataGridRow}--0`
+        );
+        cy.get(page.elements.loader).should('not.exist');
+        cy.get(page.elements.smartBarHeader).contains('1st Productstream');
+
+        cy.get('.sw-product-stream-filter').as('productStreamFilterWithMultiSelect');
+        page.fillFilterWithEntityMultiSelect(
+            '@productStreamFilterWithMultiSelect',
+            {
+                field: 'Manufacturer.Manufacturer',
+                operator: 'Is equal to any of',
+                value: ['Test Product Manufacturer']
+            }
+        );
+
+        cy.get('.sw-product-stream-filter').should(($productStreamFilter) => {
+            expect($productStreamFilter).to.have.length(1);
+        });
+
+        cy.get('.sw-product-stream-detail__open_modal_preview')
+            .should('be.visible')
+            .click();
+
+        cy.get('.sw-modal').should('be.visible');
+
+        cy.get('.sw-product-stream-modal-preview .sw-data-grid__body .sw-data-grid__row')
+            .children()
+            .get('.sw-product-variant-info__product-name')
+            .contains('Product Manufacturer');
+
+        cy.get('.sw-product-stream-modal-preview .sw-button--primary').click();
+        cy.get('.sw-product-stream-modal-preview').should('not.exist');
 
         cy.get('button.sw-button').contains('Save').click();
         cy.get('button.sw-button .icon--small-default-checkmark-line-medium').should('be.visible');
@@ -118,11 +184,7 @@ describe('Dynamic product group: Test various filters', () => {
     resultCases.forEach(resultCase => {
         context(`Search property with term ${resultCase.value}`, () => {
             it('@rule: search product property with operator "Is equal to"', () => {
-                cy.window().then((win) => {
-                    if (!win.Shopware.Feature.isActive('FEATURE_NEXT_12108')) {
-                        return;
-                    }
-
+                cy.window().then(() => {
                     const page = new ProductStreamObject();
 
                     // Verify product stream details
@@ -156,11 +218,7 @@ describe('Dynamic product group: Test various filters', () => {
             });
 
             it('@rule: search product property with operator "Is equal to any of"', () => {
-                cy.window().then((win) => {
-                    if (!win.Shopware.Feature.isActive('FEATURE_NEXT_12108')) {
-                        return;
-                    }
-
+                cy.window().then(() => {
                     const page = new ProductStreamObject();
 
                     // Verify product stream details
@@ -174,7 +232,11 @@ describe('Dynamic product group: Test various filters', () => {
 
                     cy.get('.sw-product-stream-filter').as('currentProductStreamFilter');
 
-                    page.selectFieldAndOperator('@currentProductStreamFilter', 'Properties.Property value', 'Is equal to any of');
+                    page.selectFieldAndOperator(
+                        '@currentProductStreamFilter',
+                        'Properties.Property value',
+                        'Is equal to any of'
+                    );
 
                     cy.get('@currentProductStreamFilter').within(() => {
                         cy.get('.sw-select input').last().clearTypeAndCheck(resultCase.value);

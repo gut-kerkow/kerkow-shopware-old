@@ -3,8 +3,6 @@ import './sw-manufacturer-detail.scss';
 
 const { Component, Mixin, Data: { Criteria } } = Shopware;
 
-/* @deprecated tag:v6.4.0 */
-const { StateDeprecated } = Shopware;
 const { mapPropertyErrors } = Shopware.Component.getComponentHelper();
 
 Component.register('sw-manufacturer-detail', {
@@ -15,20 +13,20 @@ Component.register('sw-manufacturer-detail', {
     mixins: [
         Mixin.getByName('placeholder'),
         Mixin.getByName('notification'),
-        Mixin.getByName('discard-detail-page-changes')('manufacturer')
+        Mixin.getByName('discard-detail-page-changes')('manufacturer'),
     ],
 
     shortcuts: {
         'SYSTEMKEY+S': 'onSave',
-        ESCAPE: 'onCancel'
+        ESCAPE: 'onCancel',
     },
 
     props: {
         manufacturerId: {
             type: String,
             required: false,
-            default: null
-        }
+            default: null,
+        },
     },
 
 
@@ -37,13 +35,13 @@ Component.register('sw-manufacturer-detail', {
             manufacturer: null,
             customFieldSets: [],
             isLoading: false,
-            isSaveSuccessful: false
+            isSaveSuccessful: false,
         };
     },
 
     metaInfo() {
         return {
-            title: this.$createTitle(this.identifier)
+            title: this.$createTitle(this.identifier),
         };
     },
 
@@ -60,18 +58,8 @@ Component.register('sw-manufacturer-detail', {
             return this.repositoryFactory.create('product_manufacturer');
         },
 
-        /* @deprecated tag:v6.4.0 */
-        mediaStore() {
-            return StateDeprecated.getStore('media');
-        },
-
         mediaRepository() {
             return this.repositoryFactory.create('media');
-        },
-
-        /* @deprecated tag:v6.4.0 */
-        customFieldSetStore() {
-            return StateDeprecated.getStore('custom_field_set');
         },
 
         customFieldSetRepository() {
@@ -83,7 +71,7 @@ Component.register('sw-manufacturer-detail', {
             criteria.setPage(1);
             criteria.setLimit(100);
             criteria.addFilter(
-                Criteria.equals('relations.entityName', 'product_manufacturer')
+                Criteria.equals('relations.entityName', 'product_manufacturer'),
             );
 
             criteria.getAssociation('customFields')
@@ -103,7 +91,7 @@ Component.register('sw-manufacturer-detail', {
 
                 return {
                     message: `${systemKey} + S`,
-                    appearance: 'light'
+                    appearance: 'light',
                 };
             }
 
@@ -111,24 +99,24 @@ Component.register('sw-manufacturer-detail', {
                 showDelay: 300,
                 message: this.$tc('sw-privileges.tooltip.warning'),
                 disabled: this.acl.can('order.editor'),
-                showOnDisabledElements: true
+                showOnDisabledElements: true,
             };
         },
 
         tooltipCancel() {
             return {
                 message: 'ESC',
-                appearance: 'light'
+                appearance: 'light',
             };
         },
 
-        ...mapPropertyErrors('manufacturer', ['name'])
+        ...mapPropertyErrors('manufacturer', ['name']),
     },
 
     watch: {
         manufacturerId() {
             this.createdComponent();
-        }
+        },
     },
 
     created() {
@@ -143,19 +131,19 @@ Component.register('sw-manufacturer-detail', {
             }
 
             Shopware.State.commit('context/resetLanguageToDefault');
-            this.manufacturer = this.manufacturerRepository.create(Shopware.Context.api);
+            this.manufacturer = this.manufacturerRepository.create();
         },
 
         loadEntityData() {
             this.isLoading = true;
 
-            this.manufacturerRepository.get(this.manufacturerId, Shopware.Context.api).then((manufacturer) => {
+            this.manufacturerRepository.get(this.manufacturerId).then((manufacturer) => {
                 this.isLoading = false;
                 this.manufacturer = manufacturer;
             });
 
             this.customFieldSetRepository
-                .search(this.customFieldSetCriteria, Shopware.Context.api)
+                .search(this.customFieldSetCriteria)
                 .then((result) => {
                     this.customFieldSets = result.filter((set) => set.customFields.length > 0);
                 });
@@ -200,7 +188,7 @@ Component.register('sw-manufacturer-detail', {
 
             this.isLoading = true;
 
-            this.manufacturerRepository.save(this.manufacturer, Shopware.Context.api).then(() => {
+            this.manufacturerRepository.save(this.manufacturer).then(() => {
                 this.isLoading = false;
                 this.isSaveSuccessful = true;
                 if (this.manufacturerId === null) {
@@ -213,8 +201,8 @@ Component.register('sw-manufacturer-detail', {
                 this.isLoading = false;
                 this.createNotificationError({
                     message: this.$tc(
-                        'global.notification.notificationSaveErrorMessageRequiredFieldsInvalid'
-                    )
+                        'global.notification.notificationSaveErrorMessageRequiredFieldsInvalid',
+                    ),
                 });
                 throw exception;
             });
@@ -222,6 +210,6 @@ Component.register('sw-manufacturer-detail', {
 
         onCancel() {
             this.$router.push({ name: 'sw.manufacturer.index' });
-        }
-    }
+        },
+    },
 });

@@ -38,6 +38,7 @@ body {
   color: $kerkow-grey;
   background-color: $kerkow-light-grey;
   font-size: 1rem;
+  display: block;
 }
 .page-container {
   min-height: 100vh;
@@ -49,6 +50,7 @@ body {
 .container-main {
   padding: 0.625rem 0;
 }
+
 h2 {
   @include alright-medium;
   color: $kerkow-grey;
@@ -136,6 +138,11 @@ a {
 @include media-breakpoint-up(xl) {
   .page-container {
     margin: 10px auto;
+  }
+  .is-ctl-product {
+    .content-main {
+      margin: 0 5rem;
+    }
   }
 }
 .legal-page {

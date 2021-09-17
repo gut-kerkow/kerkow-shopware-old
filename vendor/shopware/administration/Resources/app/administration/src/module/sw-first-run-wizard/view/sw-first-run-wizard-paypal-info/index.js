@@ -6,7 +6,7 @@ const { Component } = Shopware;
 Component.register('sw-first-run-wizard-paypal-info', {
     template,
 
-    inject: ['storeService', 'pluginService'],
+    inject: ['storeService', 'extensionStoreActionService'],
 
     data() {
         return {
@@ -14,7 +14,7 @@ Component.register('sw-first-run-wizard-paypal-info', {
             pluginInstallationFailed: false,
             pluginError: null,
             pluginName: 'SwagPayPal',
-            installPromise: Promise.resolve()
+            installPromise: Promise.resolve(),
         };
     },
 
@@ -41,15 +41,15 @@ Component.register('sw-first-run-wizard-paypal-info', {
                     position: 'left',
                     variant: null,
                     action: 'sw.first.run.wizard.index.mailer.selection',
-                    disabled: false
+                    disabled: false,
                 },
                 {
                     key: 'skip',
                     label: this.$tc('sw-first-run-wizard.general.buttonSkip'),
                     position: 'right',
                     variant: null,
-                    action: 'sw.first.run.wizard.index.plugins',
-                    disabled: false
+                    action: 'sw.first.run.wizard.index.markets',
+                    disabled: false,
                 },
                 {
                     key: 'configure',
@@ -57,24 +57,24 @@ Component.register('sw-first-run-wizard-paypal-info', {
                     position: 'right',
                     variant: 'primary',
                     action: this.activatePayPalAndRedirect.bind(this),
-                    disabled: false
-                }
+                    disabled: false,
+                },
             ];
 
             this.$emit('buttons-update', buttonConfig);
         },
 
         installPayPal() {
-            return this.storeService.downloadPlugin(this.pluginName, true)
+            return this.storeService.downloadPlugin(this.pluginName, true, true)
                 .then(() => {
-                    return this.pluginService.install(this.pluginName);
+                    return this.extensionStoreActionService.installExtension(this.pluginName, 'plugin');
                 });
         },
 
         activatePayPalAndRedirect() {
             this.isInstallingPlugin = true;
             this.installPromise.then(() => {
-                return this.pluginService.activate(this.pluginName);
+                return this.extensionStoreActionService.activateExtension(this.pluginName, 'plugin');
             }).then(() => {
                 // need a force reload, after plugin was activated
                 const { origin, pathname } = document.location;
@@ -87,12 +87,12 @@ Component.register('sw-first-run-wizard-paypal-info', {
                 this.isInstallingPlugin = false;
                 this.pluginInstallationFailed = true;
 
-                if (error.response && error.response.data && error.response.data.errors) {
+                if (error.response?.data?.errors) {
                     this.pluginError = error.response.data.errors.pop();
                 }
 
                 return true;
             });
-        }
-    }
+        },
+    },
 });

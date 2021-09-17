@@ -1,37 +1,45 @@
 import template from './sw-boolean-filter.html.twig';
-import './sw-boolean-filter.scss';
 
 const { Component } = Shopware;
 const { Criteria } = Shopware.Data;
 
+/**
+ * @private
+ */
 Component.register('sw-boolean-filter', {
     template,
 
     props: {
         filter: {
             type: Object,
-            required: true
-        }
+            required: true,
+        },
+        active: {
+            type: Boolean,
+            required: true,
+        },
     },
 
-    data() {
-        return {
-            value: null
-        };
+    computed: {
+        value() {
+            return this.filter.value;
+        },
     },
 
     methods: {
         changeValue(newValue) {
-            this.value = newValue;
+            if (!newValue) {
+                this.resetFilter();
+                return;
+            }
 
-            const filterCriteria = [Criteria.equals(this.filter.property, newValue)];
+            const filterCriteria = [Criteria.equals(this.filter.property, newValue === 'true')];
 
-            this.$emit('updateFilter', this.filter.name, filterCriteria);
+            this.$emit('filter-update', this.filter.name, filterCriteria, newValue);
         },
 
         resetFilter() {
-            this.value = null;
-            this.$emit('resetFilter', this.filter.name);
-        }
-    }
+            this.$emit('filter-reset', this.filter.name);
+        },
+    },
 });

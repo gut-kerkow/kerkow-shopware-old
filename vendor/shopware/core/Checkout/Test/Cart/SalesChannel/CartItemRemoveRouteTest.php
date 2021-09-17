@@ -10,10 +10,13 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour;
 use Shopware\Core\Framework\Test\TestDataCollection;
-use Shopware\Core\PlatformRequest;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextPersister;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
 
+/**
+ * @group store-api
+ * @group cart
+ */
 class CartItemRemoveRouteTest extends TestCase
 {
     use IntegrationTestBehaviour;
@@ -55,8 +58,11 @@ class CartItemRemoveRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/checkout/cart/line-item',
-                [
+                '/store-api/checkout/cart/line-item',
+                [],
+                [],
+                ['CONTENT_TYPE' => 'application/json'],
+                json_encode([
                     'items' => [
                         [
                             'id' => $this->ids->get('p1'),
@@ -77,7 +83,7 @@ class CartItemRemoveRouteTest extends TestCase
                             'removable' => false,
                         ],
                     ],
-                ]
+                ])
             );
 
         static::assertSame(200, $this->browser->getResponse()->getStatusCode());
@@ -92,12 +98,15 @@ class CartItemRemoveRouteTest extends TestCase
         $this->browser
             ->request(
                 'DELETE',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/checkout/cart/line-item',
-                [
+                '/store-api/checkout/cart/line-item',
+                [],
+                [],
+                ['CONTENT_TYPE' => 'application/json'],
+                json_encode([
                     'ids' => [
                         $this->ids->get('p1'),
                     ],
-                ]
+                ])
             );
 
         $response = json_decode($this->browser->getResponse()->getContent(), true);
@@ -110,8 +119,11 @@ class CartItemRemoveRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/checkout/cart/line-item',
-                [
+                '/store-api/checkout/cart/line-item',
+                [],
+                [],
+                ['CONTENT_TYPE' => 'application/json'],
+                json_encode([
                     'items' => [
                         [
                             'id' => $this->ids->get('p1'),
@@ -119,7 +131,7 @@ class CartItemRemoveRouteTest extends TestCase
                             'referencedId' => $this->ids->get('p1'),
                         ],
                     ],
-                ]
+                ])
             );
 
         static::assertSame(200, $this->browser->getResponse()->getStatusCode());
@@ -134,12 +146,15 @@ class CartItemRemoveRouteTest extends TestCase
         $this->browser
             ->request(
                 'DELETE',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/checkout/cart/line-item',
-                [
+                '/store-api/checkout/cart/line-item',
+                [],
+                [],
+                ['CONTENT_TYPE' => 'application/json'],
+                json_encode([
                     'ids' => [
                         $this->ids->get('p1'),
                     ],
-                ]
+                ])
             );
 
         $response = json_decode($this->browser->getResponse()->getContent(), true);
@@ -154,8 +169,11 @@ class CartItemRemoveRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/checkout/cart/line-item',
-                [
+                '/store-api/checkout/cart/line-item',
+                [],
+                [],
+                ['CONTENT_TYPE' => 'application/json'],
+                json_encode([
                     'items' => [
                         [
                             'id' => $this->ids->get('p1'),
@@ -170,7 +188,7 @@ class CartItemRemoveRouteTest extends TestCase
                             'removable' => true,
                         ],
                     ],
-                ]
+                ])
             );
 
         static::assertSame(200, $this->browser->getResponse()->getStatusCode());
@@ -179,12 +197,15 @@ class CartItemRemoveRouteTest extends TestCase
         $this->browser
             ->request(
                 'DELETE',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/checkout/cart/line-item',
-                [
+                '/store-api/checkout/cart/line-item',
+                [],
+                [],
+                ['CONTENT_TYPE' => 'application/json'],
+                json_encode([
                     'ids' => [
                         $this->ids->get('p1'),
                     ],
-                ]
+                ])
             );
 
         $response = json_decode($this->browser->getResponse()->getContent(), true);

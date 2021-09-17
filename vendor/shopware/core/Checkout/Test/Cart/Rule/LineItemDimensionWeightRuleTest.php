@@ -3,16 +3,14 @@
 namespace Shopware\Core\Checkout\Test\Cart\Rule;
 
 use PHPUnit\Framework\TestCase;
-use Shopware\Core\Checkout\Cart\Cart;
-use Shopware\Core\Checkout\Cart\Delivery\Struct\DeliveryInformation;
 use Shopware\Core\Checkout\Cart\Exception\InvalidQuantityException;
 use Shopware\Core\Checkout\Cart\LineItem\LineItem;
 use Shopware\Core\Checkout\Cart\LineItem\LineItemCollection;
 use Shopware\Core\Checkout\Cart\Rule\CartRuleScope;
 use Shopware\Core\Checkout\Cart\Rule\LineItemDimensionWeightRule;
 use Shopware\Core\Checkout\Cart\Rule\LineItemScope;
+use Shopware\Core\Checkout\Test\Cart\Rule\Helper\CartRuleHelperTrait;
 use Shopware\Core\Framework\Rule\Rule;
-use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 /**
@@ -20,10 +18,9 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
  */
 class LineItemDimensionWeightRuleTest extends TestCase
 {
-    /**
-     * @var LineItemDimensionWeightRule
-     */
-    private $rule;
+    use CartRuleHelperTrait;
+
+    private LineItemDimensionWeightRule $rule;
 
     protected function setUp(): void
     {
@@ -32,7 +29,7 @@ class LineItemDimensionWeightRuleTest extends TestCase
 
     public function testGetName(): void
     {
-        static::assertEquals('cartLineItemDimensionWeight', $this->rule->getName());
+        static::assertSame('cartLineItemDimensionWeight', $this->rule->getName());
     }
 
     public function testGetConstraints(): void
@@ -46,19 +43,23 @@ class LineItemDimensionWeightRuleTest extends TestCase
     /**
      * @dataProvider getMatchingRuleTestData
      */
-    public function testIfMatchesCorrectWithLineItem(string $operator, float $weight, float $lineItemWeight, bool $expected): void
-    {
+    public function testIfMatchesCorrectWithLineItem(
+        string $operator,
+        float $weight,
+        float $lineItemWeight,
+        bool $expected
+    ): void {
         $this->rule->assign([
             'amount' => $weight,
             'operator' => $operator,
         ]);
 
         $match = $this->rule->match(new LineItemScope(
-            $this->createLineItem($lineItemWeight),
+            $this->createLineItemWithWeight($lineItemWeight),
             $this->createMock(SalesChannelContext::class)
         ));
 
-        static::assertEquals($expected, $match);
+        static::assertSame($expected, $match);
     }
 
     public function getMatchingRuleTestData(): array
@@ -86,33 +87,69 @@ class LineItemDimensionWeightRuleTest extends TestCase
             'match / operator lower than equals / lower weight' => [Rule::OPERATOR_LTE, 100, 50, true],
             'match / operator lower than equals / same weight' => [Rule::OPERATOR_LTE, 100, 100, true],
             'no match / operator lower than equals / higher weight' => [Rule::OPERATOR_LTE, 100, 200, false],
+            // OPERATOR_EMPTY
+            'match / operator empty / null weight' => [Rule::OPERATOR_EMPTY, 100, 0, true],
+            'no match / operator empty / weight' => [Rule::OPERATOR_EMPTY, 100, 200, false],
         ];
     }
 
     /**
      * @dataProvider getCartRuleScopeTestData
      */
-    public function testIfMatchesCorrectWithCartRuleScope(string $operator, float $weight, float $lineItemWeight1, float $lineItemWeight2, bool $expected): void
-    {
+    public function testIfMatchesCorrectWithCartRuleScope(
+        string $operator,
+        float $weight,
+        float $lineItemWeight1,
+        float $lineItemWeight2,
+        bool $expected
+    ): void {
         $this->rule->assign([
             'amount' => $weight,
             'operator' => $operator,
         ]);
 
-        $cart = new Cart('test', Uuid::randomHex());
-
-        $lineItemCollection = new LineItemCollection();
-        $lineItemCollection->add($this->createLineItem($lineItemWeight1));
-        $lineItemCollection->add($this->createLineItem($lineItemWeight2));
-
-        $cart->setLineItems($lineItemCollection);
+        $lineItemCollection = new LineItemCollection([
+            $this->createLineItemWithWeight($lineItemWeight1),
+            $this->createLineItemWithWeight($lineItemWeight2),
+        ]);
+        $cart = $this->createCart($lineItemCollection);
 
         $match = $this->rule->match(new CartRuleScope(
             $cart,
             $this->createMock(SalesChannelContext::class)
         ));
 
-        static::assertEquals($expected, $match);
+        static::assertSame($expected, $match);
+    }
+
+    /**
+     * @dataProvider getCartRuleScopeTestData
+     */
+    public function testIfMatchesCorrectWithCartRuleScopeNested(
+        string $operator,
+        float $weight,
+        float $lineItemWeight1,
+        float $lineItemWeight2,
+        bool $expected
+    ): void {
+        $this->rule->assign([
+            'amount' => $weight,
+            'operator' => $operator,
+        ]);
+
+        $lineItemCollection = new LineItemCollection([
+            $this->createLineItemWithWeight($lineItemWeight1),
+            $this->createLineItemWithWeight($lineItemWeight2),
+        ]);
+        $containerLineItem = $this->createContainerLineItem($lineItemCollection);
+        $cart = $this->createCart(new LineItemCollection([$containerLineItem]));
+
+        $match = $this->rule->match(new CartRuleScope(
+            $cart,
+            $this->createMock(SalesChannelContext::class)
+        ));
+
+        static::assertSame($expected, $match);
     }
 
     public function getCartRuleScopeTestData(): array
@@ -141,6 +178,10 @@ class LineItemDimensionWeightRuleTest extends TestCase
             'match / operator lower than equals / lower weight' => [Rule::OPERATOR_LTE, 100, 50, 120, true],
             'match / operator lower than equals / same weight' => [Rule::OPERATOR_LTE, 100, 100, 120, true],
             'no match / operator lower than equals / higher weight' => [Rule::OPERATOR_LTE, 100, 200, 120, false],
+            // OPERATOR_EMPTY
+            'match / operator empty / null weight 1' => [Rule::OPERATOR_EMPTY, 100, 0, 120, true],
+            'match / operator empty / null weight 2' => [Rule::OPERATOR_EMPTY, 100, 100, 0, true],
+            'no match / operator empty / weight' => [Rule::OPERATOR_EMPTY, 100, 200, 120, false],
         ];
     }
 
@@ -152,21 +193,15 @@ class LineItemDimensionWeightRuleTest extends TestCase
         $this->rule->assign(['amount' => 100, 'operator' => Rule::OPERATOR_EQ]);
 
         $match = $this->rule->match(new LineItemScope(
-            new LineItem('dummy-article', 'product', null, 3),
+            $this->createLineItem(),
             $this->createMock(SalesChannelContext::class)
         ));
 
         static::assertFalse($match);
     }
 
-    /**
-     * @throws InvalidQuantityException
-     */
-    private function createLineItem(float $weight): LineItem
+    private function createLineItemWithWeight(float $weight): LineItem
     {
-        $deliveryInformation = new DeliveryInformation(1, $weight, false);
-
-        return (new LineItem(Uuid::randomHex(), 'product', null, 3))
-            ->setDeliveryInformation($deliveryInformation);
+        return $this->createLineItemWithDeliveryInfo(false, 1, $weight);
     }
 }

@@ -7,33 +7,34 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\System\Salutation\SalutationDefinition;
 use Shopware\Core\System\Salutation\SalutationEntity;
 
 class SalutationSerializer extends EntitySerializer
 {
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $salutationRepository;
+    private EntityRepositoryInterface $salutationRepository;
 
     /**
-     * @var string[]
+     * @var string[]|null[]
      */
-    private $salutations = [];
+    private array $cacheSalutations = [];
 
     public function __construct(EntityRepositoryInterface $salutationRepository)
     {
         $this->salutationRepository = $salutationRepository;
     }
 
-    public function deserialize(Config $config, EntityDefinition $definition, $record)
+    /**
+     * @param array|\Traversable $entity
+     *
+     * @return array|\Traversable
+     */
+    public function deserialize(Config $config, EntityDefinition $definition, $entity)
     {
-        $deserialized = parent::deserialize($config, $definition, $record);
+        $deserialized = parent::deserialize($config, $definition, $entity);
 
-        if (is_iterable($deserialized)) {
-            $deserialized = iterator_to_array($deserialized);
-        }
+        $deserialized = \is_array($deserialized) ? $deserialized : iterator_to_array($deserialized);
 
         if (!isset($deserialized['id']) && isset($deserialized['salutationKey'])) {
             $id = $this->getSalutationId($deserialized['salutationKey']);
@@ -41,6 +42,7 @@ class SalutationSerializer extends EntitySerializer
             // if we dont find it by salutationKey, only set the id to the fallback if we dont have any other data
             if (!$id && \count($deserialized) === 1) {
                 $id = $this->getSalutationId('not_specified');
+                unset($deserialized['salutationKey']);
             }
 
             if ($id) {
@@ -58,15 +60,19 @@ class SalutationSerializer extends EntitySerializer
 
     private function getSalutationId(string $salutationKey): ?string
     {
-        if (empty($this->salutations)) {
-            $salutations = $this->salutationRepository->search(new Criteria(), Context::createDefaultContext());
-
-            /** @var SalutationEntity $salutation */
-            foreach ($salutations as $salutation) {
-                $this->salutations[$salutation->getSalutationKey()] = $salutation->getId();
-            }
+        if (\array_key_exists($salutationKey, $this->cacheSalutations)) {
+            return $this->cacheSalutations[$salutationKey];
         }
 
-        return $this->salutations[$salutationKey] ?? null;
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('salutationKey', $salutationKey));
+        $salutation = $this->salutationRepository->search($criteria, Context::createDefaultContext())->first();
+
+        $this->cacheSalutations[$salutationKey] = null;
+        if ($salutation instanceof SalutationEntity) {
+            $this->cacheSalutations[$salutationKey] = $salutation->getId();
+        }
+
+        return $this->cacheSalutations[$salutationKey];
     }
 }

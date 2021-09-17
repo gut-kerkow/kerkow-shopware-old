@@ -61,35 +61,35 @@ class AddWishlistProductRoute extends AbstractAddWishlistProductRoute
      * @Since("6.3.4.0")
      * @OA\Post(
      *      path="/customer/wishlist/add/{productId}",
-     *      summary="Add a product into customer wishlist",
+     *      summary="Add a product to a wishlist",
+     *      description="Adds a product to a customers wishlist.
+
+**Important constraints**
+
+* Anonymous (not logged-in) customers can not have wishlists.
+* The wishlist feature has to be activated.",
      *      operationId="addProductOnWishlist",
      *      tags={"Store API", "Wishlist"},
      *      @OA\Parameter(
      *        name="productId",
      *        in="path",
-     *        description="Product Id",
-     *        @OA\Schema(type="string"),
+     *        description="Identifier of the product to be added.",
+     *        @OA\Schema(type="string", pattern="^[0-9a-f]{32}$"),
      *        required=true
      *      ),
      *      @OA\Response(
      *          response="200",
-     *          description="Success",
+     *          description="Returns a success response.",
      *          @OA\JsonContent(ref="#/components/schemas/SuccessResponse")
      *     )
      * )
      * @LoginRequired()
-     * @Route("/store-api/v{version}/customer/wishlist/add/{productId}", name="store-api.customer.wishlist.add", methods={"POST"})
+     * @Route("/store-api/customer/wishlist/add/{productId}", name="store-api.customer.wishlist.add", methods={"POST"})
      */
-    public function add(string $productId, SalesChannelContext $context, ?CustomerEntity $customer = null): SuccessResponse
+    public function add(string $productId, SalesChannelContext $context, CustomerEntity $customer): SuccessResponse
     {
         if (!$this->systemConfigService->get('core.cart.wishlistEnabled', $context->getSalesChannel()->getId())) {
             throw new CustomerWishlistNotActivatedException();
-        }
-
-        /* @deprecated tag:v6.4.0 - Parameter $customer will be mandatory when using with @LoginRequired() */
-        if (!$customer) {
-            /** @var CustomerEntity $customer */
-            $customer = $context->getCustomer();
         }
 
         $this->validateProduct($productId, $context);

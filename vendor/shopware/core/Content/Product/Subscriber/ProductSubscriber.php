@@ -2,6 +2,7 @@
 
 namespace Shopware\Core\Content\Product\Subscriber;
 
+use Shopware\Core\Content\Product\DataAbstractionLayer\CheapestPrice\CheapestPriceContainer;
 use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Content\Product\ProductEvents;
 use Shopware\Core\Content\Product\SalesChannel\SalesChannelProductEntity;
@@ -9,6 +10,7 @@ use Shopware\Core\Content\Property\Aggregate\PropertyGroupOption\PropertyGroupOp
 use Shopware\Core\Content\Property\Aggregate\PropertyGroupOption\PropertyGroupOptionEntity;
 use Shopware\Core\Content\Property\PropertyGroupCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityLoadedEvent;
+use Shopware\Core\Framework\Feature;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class ProductSubscriber implements EventSubscriberInterface
@@ -27,11 +29,31 @@ class ProductSubscriber implements EventSubscriberInterface
     {
         /** @var ProductEntity $product */
         foreach ($event->getEntities() as $product) {
+            // CheapestPrice will only be added to SalesChannelProductEntities in the Future
+            if (!Feature::isActive('FEATURE_NEXT_16151')) {
+                $price = $product->getCheapestPrice();
+
+                if ($price instanceof CheapestPriceContainer) {
+                    $resolved = $price->resolve($event->getContext());
+                    $product->setCheapestPriceContainer($price);
+                    $product->setCheapestPrice($resolved);
+                }
+            }
+
             $product->setVariation(
                 $this->buildVariation($product)
             );
 
             if ($product instanceof SalesChannelProductEntity) {
+                if (Feature::isActive('FEATURE_NEXT_16151')) {
+                    $price = $product->getCheapestPrice();
+
+                    if ($price instanceof CheapestPriceContainer) {
+                        $resolved = $price->resolve($event->getContext());
+                        $product->setCheapestPriceContainer($price);
+                        $product->setCheapestPrice($resolved);
+                    }
+                }
                 $product->setSortedProperties(
                     $this->sortProperties($product)
                 );
@@ -50,22 +72,24 @@ class ProductSubscriber implements EventSubscriberInterface
         foreach ($properties as $option) {
             $origin = $option->getGroup();
 
-            if (!$origin) {
+            if (!$origin || !$origin->getVisibleOnProductDetailPage()) {
                 continue;
             }
             $group = clone $origin;
 
             $groupId = $group->getId();
             if (\array_key_exists($groupId, $sorted)) {
+                \assert($sorted[$groupId]->getOptions() !== null);
                 $sorted[$groupId]->getOptions()->add($option);
 
                 continue;
             }
 
-            if (!$group->getOptions()) {
+            if ($group->getOptions() === null) {
                 $group->setOptions(new PropertyGroupOptionCollection());
             }
 
+            \assert($group->getOptions() !== null);
             $group->getOptions()->add($option);
 
             $sorted[$groupId] = $group;
@@ -80,46 +104,34 @@ class ProductSubscriber implements EventSubscriberInterface
 
     private function buildVariation(ProductEntity $product): array
     {
-        if (!$product->getOptions()) {
+        if ($product->getOptions() === null) {
             return [];
         }
 
-        $parts = [];
-
-        if (!$product->getConfiguratorGroupConfig()) {
-            // fallback - simply take all option names unordered
-            $names = $product->getOptions()->map(function (PropertyGroupOptionEntity $option) {
-                if (!$option->getGroup()) {
-                    return [];
-                }
-
-                return [
-                    'group' => $option->getGroup()->getTranslation('name'),
-                    'option' => $option->getTranslation('name'),
-                ];
-            });
-
-            return array_values($names);
-        }
-
-        // collect option names in order of the configuration
-        foreach ($product->getConfiguratorGroupConfig() as $groupConfig) {
-            $option = $product->getOptions()
-                ->filterByGroupId($groupConfig['id'])
-                ->first();
-
-            if (!$option) {
-                continue;
+        $product->getOptions()->sort(function (PropertyGroupOptionEntity $a, PropertyGroupOptionEntity $b) {
+            if ($a->getGroup() === null || $b->getGroup() === null) {
+                return $a->getGroupId() <=> $b->getGroupId();
             }
 
-            if ($option->getGroup()) {
-                $parts[] = [
-                    'group' => $option->getGroup()->getTranslation('name'),
-                    'option' => $option->getTranslation('name'),
-                ];
+            if ($a->getGroup()->getPosition() === $b->getGroup()->getPosition()) {
+                return $a->getGroup()->getTranslation('name') <=> $b->getGroup()->getTranslation('name');
             }
-        }
 
-        return $parts;
+            return $a->getGroup()->getPosition() <=> $b->getGroup()->getPosition();
+        });
+
+        // fallback - simply take all option names unordered
+        $names = $product->getOptions()->map(function (PropertyGroupOptionEntity $option) {
+            if (!$option->getGroup()) {
+                return [];
+            }
+
+            return [
+                'group' => $option->getGroup()->getTranslation('name'),
+                'option' => $option->getTranslation('name'),
+            ];
+        });
+
+        return array_values($names);
     }
 }

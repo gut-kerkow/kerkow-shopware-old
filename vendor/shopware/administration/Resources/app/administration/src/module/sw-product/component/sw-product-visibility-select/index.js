@@ -9,19 +9,22 @@ Component.extend('sw-product-visibility-select', 'sw-entity-multi-select', {
 
     data() {
         return {
+            defaultVisibility: 30,
         };
     },
 
     computed: {
         ...mapState('swProductDetail', [
-            'product'
+            'product',
         ]),
+
         repository() {
             return this.repositoryFactory.create('sales_channel');
         },
+
         associationRepository() {
             return this.repositoryFactory.create('product_visibility');
-        }
+        },
     },
 
     methods: {
@@ -38,6 +41,7 @@ Component.extend('sw-product-visibility-select', 'sw-entity-multi-select', {
                     return entity.salesChannelId === item.id;
                 });
                 this.remove(associationEntity);
+
                 return;
             }
 
@@ -46,7 +50,7 @@ Component.extend('sw-product-visibility-select', 'sw-entity-multi-select', {
             newSalesChannelAssociation.productId = this.product.id;
             newSalesChannelAssociation.productVersionId = this.product.versionId;
             newSalesChannelAssociation.salesChannelId = item.id;
-            newSalesChannelAssociation.visibility = 30;
+            newSalesChannelAssociation.visibility = this.defaultVisibility;
             newSalesChannelAssociation.salesChannel = item;
 
             this.$emit('item-add', item);
@@ -56,6 +60,6 @@ Component.extend('sw-product-visibility-select', 'sw-entity-multi-select', {
 
             this.emitChanges(changedCollection);
             this.onSelectExpanded();
-        }
-    }
+        },
+    },
 });

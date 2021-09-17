@@ -8,61 +8,68 @@ Component.register('sw-product-stream-field-select', {
 
     inject: [
         'conditionDataProviderService',
-        'productCustomFields'
+        'productCustomFields',
     ],
 
     props: {
         definition: {
             type: Object,
-            required: true
+            required: true,
         },
 
         field: {
             type: String,
             required: false,
-            default: null
+            default: null,
         },
 
         index: {
             type: Number,
-            required: true
+            required: true,
         },
 
         disabled: {
             type: Boolean,
             required: false,
-            default: false
-        }
+            default: false,
+        },
     },
 
     computed: {
         options() {
             const entityFields = Object.keys(this.definition.properties).map((property) => {
-                if (this.conditionDataProviderService.isPropertyInBlacklist(this.definition.entity, property)) {
+                if (!this.conditionDataProviderService.isPropertyInAllowList(this.definition.entity, property)) {
                     return null;
                 }
 
                 if (property === 'id') {
                     return {
                         label: this.getPropertyTranslation(this.definition.entity),
-                        value: property
+                        value: property,
                     };
                 }
 
                 return {
                     label: this.getPropertyTranslation(property),
-                    value: property
+                    value: property,
                 };
             }).filter((option) => option !== null);
 
             if (this.definition.entity === 'product') {
+                Object.values(this.conditionDataProviderService.allowedJsonAccessors).forEach((field) => {
+                    entityFields.push({
+                        label: this.getPropertyTranslation(field.trans),
+                        value: field.value,
+                    });
+                });
+
                 Object.keys(this.productCustomFields).forEach((customField) => {
                     entityFields.push(this.productCustomFields[customField]);
                 });
             }
 
             return entityFields;
-        }
+        },
     },
 
     methods: {
@@ -75,6 +82,6 @@ Component.register('sw-product-stream-field-select', {
             const translated = this.$tc(translationKey);
 
             return translated === translationKey ? property : translated;
-        }
-    }
+        },
+    },
 });

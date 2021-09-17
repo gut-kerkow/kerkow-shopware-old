@@ -21,7 +21,7 @@ class CorsListener implements EventSubscriberInterface
 
     public function onKernelRequest(RequestEvent $event): void
     {
-        if (!$event->isMasterRequest()) {
+        if (!$event->isMainRequest()) {
             return;
         }
 
@@ -35,7 +35,7 @@ class CorsListener implements EventSubscriberInterface
 
     public function onKernelResponse(ResponseEvent $event): void
     {
-        if (!$event->isMasterRequest()) {
+        if (!$event->isMainRequest()) {
             return;
         }
 
@@ -57,5 +57,6 @@ class CorsListener implements EventSubscriberInterface
         $response->headers->set('Access-Control-Allow-Origin', '*');
         $response->headers->set('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE');
         $response->headers->set('Access-Control-Allow-Headers', implode(',', $corsHeaders));
+        $response->headers->set('Access-Control-Expose-Headers', implode(',', $corsHeaders));
     }
 }

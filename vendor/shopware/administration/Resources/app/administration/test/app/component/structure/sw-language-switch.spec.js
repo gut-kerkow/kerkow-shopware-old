@@ -29,12 +29,12 @@ describe('src/app/component/structure/sw-language-switch', () => {
                     `
                 },
                 'sw-button': true
-            },
-            mocks: {
-                $store: Shopware.State._store,
-                $tc: v => v
             }
         });
+    });
+
+    afterEach(() => {
+        wrapper.destroy();
     });
 
     it('should be a Vue.js component', async () => {

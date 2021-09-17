@@ -3,6 +3,7 @@
  */
 import Axios from 'axios';
 import RefreshTokenHelper from 'src/core/helper/refresh-token.helper';
+import cacheAdapterFactory from 'src/core/factory/cache-adapter.factory';
 
 /**
  * Initializes the HTTP client with the provided context. The context provides the API end point and will be used as
@@ -32,82 +33,42 @@ export const { CancelToken, isCancel, Cancel } = Axios;
  */
 function createClient() {
     const client = Axios.create({
-        baseURL: getBasePath(Shopware.Context.api.apiVersion - 1)
+        baseURL: Shopware.Context.api.apiPath,
     });
 
     refreshTokenInterceptor(client);
     globalErrorHandlingInterceptor(client);
 
-    wrapMethod(client, 'request', (args) => changeVersion(args[0]));
-    wrapMethod(client, 'get', (args) => changeVersion(args[1]));
-    wrapMethod(client, 'delete', (args) => changeVersion(args[1]));
-    wrapMethod(client, 'head', (args) => changeVersion(args[1]));
-    wrapMethod(client, 'options', (args) => changeVersion(args[1]));
-    wrapMethod(client, 'post', (args) => changeVersion(args[2]));
-    wrapMethod(client, 'put', (args) => changeVersion(args[2]));
-    wrapMethod(client, 'patch', (args) => changeVersion(args[2]));
+    /**
+     * Don´t use cache in unit tests because it is possible
+     * that the test uses the same route with different responses
+     * (e.g. error, success) in a short amount of time.
+     * So in test cases we are using the originalAdapter directly
+     * and skipping the caching mechanism.
+     */
+    if (process?.env?.NODE_ENV !== 'test') {
+        requestCacheAdapterInterceptor(client);
+    }
 
     return client;
 }
 
 /**
- * Creates a wrapper around a method
+ * Sets up an interceptor to handle automatic cache of same requests in short time amount
  *
- * @param original
- * @param functionName
- * @param cb {function}
+ * @param {AxiosInstance} client
+ * @returns {AxiosInstance}
  */
-function wrapMethod(original, functionName, cb) {
-    (function wrap() {
-        const _original = original[functionName];
+function requestCacheAdapterInterceptor(client) {
+    const requestCaches = {};
 
-        original[functionName] = function wrappedFunction(...args) {
-            cb(args);
+    client.interceptors.request.use((config) => {
+        const originalAdapter = config.adapter;
 
-            return _original.apply(this, args);
-        };
-    }());
-}
+        config.adapter = cacheAdapterFactory(originalAdapter, requestCaches);
 
-/**
- * change the request url with the given version in the configuration
- * @param config
- */
-function changeVersion(config) {
-    if (!config || !config.version) {
-        checkVersionDeprecation(Shopware.Context.api.apiVersion - 1);
-        return;
-    }
-
-    config.baseURL = getBasePath(config.version);
-
-    checkVersionDeprecation(config.version);
-
-    delete config.version;
-}
-
-function checkVersionDeprecation(version) {
-    if (version >= Shopware.Context.api.apiVersion) {
-        return;
-    }
-
-    Shopware.Utils.debug.warn(
-        'httpClient',
-        `The request uses a deprecated api version: ${version}. You should upgrade the request to the latest api version.`
-    );
-}
-
-/**
- * Returns the base path of the version
- * @param {number} version
- * @returns {string}
- */
-function getBasePath(version = Shopware.Context.api.apiVersion) {
-    if (version <= 0) {
-        version = Shopware.Context.api.apiVersion;
-    }
-
-    return `${Shopware.Context.api.apiPath}/v${version}`;
+        return config;
+    });
 }
 
 /**
@@ -117,119 +78,20 @@ function getBasePath(version = Shopware.Context.api.apiVersion) {
  */
 function globalErrorHandlingInterceptor(client) {
     client.interceptors.response.use(response => response, error => {
-        // Get $tc for translations and bind the Vue component scope to make it working
-        const viewRoot = Shopware.Application.view.root;
-        const $tc = viewRoot.$tc.bind(viewRoot);
+        const { response: { status, data: { errors, data } } } = error;
 
-        const { response: { status, data: { errors } } } = error;
+        try {
+            handleErrorStates({ status, errors, error, data });
+        } catch (e) {
+            Shopware.Utils.debug.error(e);
 
-        if (status === 403) {
-            // create a fallback if the backend structure does not match the convention
-            try {
-                const missingPrivilegeErrors = errors.filter(e => e.code === 'FRAMEWORK__MISSING_PRIVILEGE_ERROR');
-                missingPrivilegeErrors.forEach(missingPrivilegeError => {
-                    const detail = JSON.parse(missingPrivilegeError.detail);
-                    let missingPrivileges = detail.missingPrivileges;
-
-                    // check if response is an object and not an array. If yes, then convert it
-                    if (!Array.isArray(missingPrivileges) && typeof missingPrivileges === 'object') {
-                        missingPrivileges = Object.values(missingPrivileges);
-                    }
-
-                    const missingPrivilegesMessage = missingPrivileges.reduce((message, privilege) => {
-                        return `${message}<br>"${privilege}"`;
-                    }, '');
-
-                    Shopware.State.dispatch('notification/createNotification', {
-                        variant: 'error',
-                        system: true,
-                        autoClose: false,
-                        growl: true,
-                        title: $tc('global.error-codes.FRAMEWORK__MISSING_PRIVILEGE_ERROR'),
-                        message: `${$tc('sw-privileges.error.description')} <br> ${missingPrivilegesMessage}`
-                    });
-                });
-            } catch (e) {
-                Shopware.Utils.debug.error(e);
-
-                errors.forEach(singleError => {
-                    Shopware.State.dispatch('notification/createNotification', {
-                        variant: 'error',
-                        system: true,
-                        autoClose: false,
-                        growl: true,
-                        title: singleError.title,
-                        message: singleError.detail
-                    });
-                });
-            }
-        }
-
-        if (status === 409) {
-            try {
-                if (errors[0].code === 'FRAMEWORK__DELETE_RESTRICTED') {
-                    const parameters = errors[0].meta.parameters;
-
-                    const entityName = parameters.entity;
-                    let blockingEntities = '';
-                    if (Shopware.Feature.isActive('FEATURE_NEXT_10539')) {
-                        blockingEntities = parameters.usages.reduce((message, usageObject) => {
-                            const times = usageObject.count;
-                            const timesSnippet = $tc('global.default.xTimesIn', times);
-                            const blockingEntitiesSnippet = $tc(`global.entities.${usageObject.entityName}`, times[1]);
-                            return `${message}<br>${timesSnippet} <b>${blockingEntitiesSnippet}</b>`;
-                        }, '');
-                    } else {
-                        blockingEntities = parameters.usages.reduce((message, entity) => {
-                            const times = entity.match(/ \(([0-9]*)?\)/, '');
-                            const timesSnippet = $tc('global.default.xTimesIn', times[1]);
-                            const blockingEntitiesSnippet = $tc(`global.entities.${entity.replace(/ \([0-9]*?\)/, '')}`, times[1]);
-                            return `${message}<br>${timesSnippet} <b>${blockingEntitiesSnippet}</b>`;
-                        }, '');
-                    }
-                    Shopware.State.dispatch('notification/createNotification', {
-                        variant: 'error',
-                        title: $tc('global.default.error'),
-                        message: `${$tc(
-                            'global.notification.messageDeleteFailed',
-                            3,
-                            { entityName: $tc(`global.entities.${entityName}`) }
-                        )
-                        }${blockingEntities}`
-                    });
-                }
-            } catch (e) {
-                Shopware.Utils.debug.error(e);
-
+            if (errors) {
                 errors.forEach(singleError => {
                     Shopware.State.dispatch('notification/createNotification', {
                         variant: 'error',
                         title: singleError.title,
-                        message: singleError.detail
+                        message: singleError.detail,
                     });
-                });
-            }
-        }
-
-        if (status === 412) {
-            const frameworkLanguageNotFound = errors.find((e) => e.code === 'FRAMEWORK__LANGUAGE_NOT_FOUND');
-
-            if (frameworkLanguageNotFound) {
-                localStorage.removeItem('sw-admin-current-language');
-
-                Shopware.State.dispatch('notification/createNotification', {
-                    variant: 'error',
-                    system: true,
-                    autoClose: false,
-                    growl: true,
-                    title: frameworkLanguageNotFound.title,
-                    message: `${frameworkLanguageNotFound.detail} Please reload the administration.`,
-                    actions: [
-                        {
-                            label: 'Reload administration',
-                            method: () => window.location.reload()
-                        }
-                    ]
                 });
             }
         }
@@ -238,6 +100,116 @@ function globalErrorHandlingInterceptor(client) {
     });
 
     return client;
+}
+
+/**
+ * Determines the different status codes and creates a matching error via Shopware.State
+ * @param {Number} status
+ * @param {Array} errors
+ * @param {Object} error
+ * @param {Object} data
+ */
+function handleErrorStates({ status, errors, error = null, data }) {
+    // Get $tc for translations and bind the Vue component scope to make it working
+    const viewRoot = Shopware.Application.view.root;
+    const $tc = viewRoot.$tc.bind(viewRoot);
+
+    // Handle sync-api errors
+    if (status === 400 &&
+        (error?.response?.config?.url ?? '').includes('_action/sync')) {
+        if (!data) {
+            return;
+        }
+
+        // Get data for each entity
+        Object.values(data).forEach((item) => {
+            // Get error for each result
+            item.result.forEach((resultItem) => {
+                if (!resultItem.errors.length) {
+                    return;
+                }
+
+                const statusCode = parseInt(resultItem.errors[0].status, 10);
+                handleErrorStates({ status: statusCode, errors: resultItem.errors, data });
+            });
+        });
+    }
+
+    if (status === 403) {
+        const missingPrivilegeErrors = errors.filter(e => e.code === 'FRAMEWORK__MISSING_PRIVILEGE_ERROR');
+        missingPrivilegeErrors.forEach(missingPrivilegeError => {
+            const detail = JSON.parse(missingPrivilegeError.detail);
+            let missingPrivileges = detail.missingPrivileges;
+
+            // check if response is an object and not an array. If yes, then convert it
+            if (!Array.isArray(missingPrivileges) && typeof missingPrivileges === 'object') {
+                missingPrivileges = Object.values(missingPrivileges);
+            }
+
+            const missingPrivilegesMessage = missingPrivileges.reduce((message, privilege) => {
+                return `${message}<br>"${privilege}"`;
+            }, '');
+
+            Shopware.State.dispatch('notification/createNotification', {
+                variant: 'error',
+                system: true,
+                autoClose: false,
+                growl: true,
+                title: $tc('global.error-codes.FRAMEWORK__MISSING_PRIVILEGE_ERROR'),
+                message: `${$tc('sw-privileges.error.description')} <br> ${missingPrivilegesMessage}`,
+            });
+        });
+    }
+
+    if (status === 409) {
+        if (errors[0].code === 'FRAMEWORK__DELETE_RESTRICTED') {
+            const parameters = errors[0].meta.parameters;
+
+            const entityName = parameters.entity;
+            let blockingEntities = '';
+
+            blockingEntities = parameters.usages.reduce((message, usageObject) => {
+                const times = usageObject.count;
+                const timesSnippet = $tc('global.default.xTimesIn', times);
+                const blockingEntitiesSnippet = $tc(`global.entities.${usageObject.entityName}`, times[1]);
+                return `${message}<br>${timesSnippet} <b>${blockingEntitiesSnippet}</b>`;
+            }, '');
+
+            Shopware.State.dispatch('notification/createNotification', {
+                variant: 'error',
+                title: $tc('global.default.error'),
+                message: `${$tc(
+                    'global.notification.messageDeleteFailed',
+                    3,
+                    { entityName: $tc(`global.entities.${entityName}`) },
+                )
+                }${blockingEntities}`,
+            });
+        }
+    }
+
+    if (status === 412) {
+        const frameworkLanguageNotFound = errors.find((e) => e.code === 'FRAMEWORK__LANGUAGE_NOT_FOUND');
+
+        if (frameworkLanguageNotFound) {
+            localStorage.removeItem('sw-admin-current-language');
+
+            Shopware.State.dispatch('notification/createNotification', {
+                variant: 'error',
+                system: true,
+                autoClose: false,
+                growl: true,
+                title: frameworkLanguageNotFound.title,
+                message: `${frameworkLanguageNotFound.detail} Please reload the administration.`,
+                actions: [
+                    {
+                        label: 'Reload administration',
+                        method: () => window.location.reload(),
+                    },
+                ],
+            });
+        }
+    }
 }
 
 /**
@@ -256,6 +228,7 @@ function refreshTokenInterceptor(client) {
         const originalRequest = config;
         const resource = originalRequest.url.replace(originalRequest.baseURL, '');
 
+        // eslint-disable-next-line inclusive-language/use-inclusive-words
         if (tokenHandler.whitelist.includes(resource)) {
             return Promise.reject(error);
         }

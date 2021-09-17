@@ -3,10 +3,11 @@
 namespace Shopware\Core\Framework\App\Lifecycle;
 
 use Shopware\Core\Framework\App\AppEntity;
+use Shopware\Core\Framework\App\Cms\CmsExtensions;
 use Shopware\Core\Framework\App\Manifest\Manifest;
 
 /**
- * @internal only for use by the app-system, will be considered internal from v6.4.0 onward
+ * @internal
  */
 abstract class AbstractAppLoader
 {
@@ -19,13 +20,9 @@ abstract class AbstractAppLoader
 
     abstract public function getIcon(Manifest $app): ?string;
 
-    /**
-     * @deprecated tag:v6.4.0 will be made abstract and extending classes will need to provide an implementation
-     */
-    public function getConfiguration(AppEntity $app): ?array
-    {
-        $decorated = $this->getDecorated();
+    abstract public function getConfiguration(AppEntity $app): ?array;
 
-        return $decorated->getConfiguration($app);
-    }
+    abstract public function deleteApp(string $technicalName): void;
+
+    abstract public function getCmsExtensions(AppEntity $app): ?CmsExtensions;
 }

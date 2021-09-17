@@ -2,8 +2,6 @@ import template from './sw-integration-list.html.twig';
 import './sw-integration-list.scss';
 
 const { Component, Mixin, Data: { Criteria } } = Shopware;
-/** @deprecated tag:v6.4.0 */
-const { StateDeprecated } = Shopware;
 
 Component.register('sw-integration-list', {
     template,
@@ -11,7 +9,7 @@ Component.register('sw-integration-list', {
     inject: ['integrationService', 'repositoryFactory', 'acl'],
 
     mixins: [
-        Mixin.getByName('notification')
+        Mixin.getByName('notification'),
     ],
 
     data() {
@@ -21,27 +19,17 @@ Component.register('sw-integration-list', {
             isModalLoading: false,
             showDeleteModal: null,
             currentIntegration: null,
-            showSecretAccessKey: false
+            showSecretAccessKey: false,
         };
     },
 
     metaInfo() {
         return {
-            title: this.$createTitle()
+            title: this.$createTitle(),
         };
     },
 
     computed: {
-        /** @deprecated tag:v6.4.0 */
-        id() {
-            return this.$vnode.tag;
-        },
-
-        /** @deprecated tag:v6.4.0 */
-        integrationStore() {
-            return StateDeprecated.getStore('integration');
-        },
-
         integrationRepository() {
             return this.repositoryFactory.create('integration');
         },
@@ -49,6 +37,7 @@ Component.register('sw-integration-list', {
         integrationCriteria() {
             const criteria = new Criteria(1, 25);
 
+            criteria.addFilter(Criteria.equals('deletedAt', null));
             criteria.addSorting(Criteria.sort('label', 'ASC'));
             criteria.addAssociation('aclRoles');
 
@@ -64,13 +53,13 @@ Component.register('sw-integration-list', {
                 {
                     property: 'label',
                     label: this.$tc('sw-integration.list.integrationName'),
-                    primary: true
+                    primary: true,
                 }, {
                     property: 'writeAccess',
-                    label: this.$tc('sw-integration.list.permissions')
-                }
+                    label: this.$tc('sw-integration.list.permissions'),
+                },
             ];
-        }
+        },
     },
 
     created() {
@@ -85,7 +74,7 @@ Component.register('sw-integration-list', {
         getList() {
             this.isLoading = true;
 
-            this.integrationRepository.search(this.integrationCriteria, Shopware.Context.api)
+            this.integrationRepository.search(this.integrationCriteria)
                 .then((integrations) => {
                     this.integrations = integrations;
                 })
@@ -111,7 +100,7 @@ Component.register('sw-integration-list', {
         updateIntegration(integration) {
             this.isModalLoading = true;
 
-            this.integrationRepository.save(integration, Shopware.Context.api)
+            this.integrationRepository.save(integration)
                 .then(() => {
                     this.createSavedSuccessNotification();
                     this.onCloseDetailModal();
@@ -130,7 +119,7 @@ Component.register('sw-integration-list', {
 
             this.isModalLoading = true;
 
-            this.integrationRepository.save(this.currentIntegration, Shopware.Context.api)
+            this.integrationRepository.save(this.currentIntegration)
                 .then(() => {
                     this.createSavedSuccessNotification();
                     this.getList();
@@ -147,13 +136,13 @@ Component.register('sw-integration-list', {
 
         createSavedSuccessNotification() {
             this.createNotificationSuccess({
-                message: this.$tc('sw-integration.detail.messageSaveSuccess')
+                message: this.$tc('sw-integration.detail.messageSaveSuccess'),
             });
         },
 
         createSavedErrorNotification() {
             this.createNotificationError({
-                message: this.$tc('sw-integration.detail.messageSaveError')
+                message: this.$tc('sw-integration.detail.messageSaveError'),
             });
         },
 
@@ -172,7 +161,7 @@ Component.register('sw-integration-list', {
                 this.isModalLoading = false;
             }).catch(() => {
                 this.createNotificationError({
-                    message: this.$tc('sw-integration.detail.messageCreateNewError')
+                    message: this.$tc('sw-integration.detail.messageCreateNewError'),
                 });
             });
         },
@@ -204,10 +193,10 @@ Component.register('sw-integration-list', {
 
             this.onCloseDeleteModal();
 
-            this.integrationRepository.delete(id, Shopware.Context.api)
+            this.integrationRepository.delete(id)
                 .then(() => {
                     this.getList();
                 });
-        }
-    }
+        },
+    },
 });

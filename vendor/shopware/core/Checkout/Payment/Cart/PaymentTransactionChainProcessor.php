@@ -2,7 +2,6 @@
 
 namespace Shopware\Core\Checkout\Payment\Cart;
 
-use Shopware\Core\Checkout\Order\Aggregate\OrderCustomer\OrderCustomerEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PaymentHandlerRegistry;
@@ -13,56 +12,40 @@ use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
 use Shopware\Core\Checkout\Payment\Exception\InvalidOrderException;
 use Shopware\Core\Checkout\Payment\Exception\SyncPaymentProcessException;
 use Shopware\Core\Checkout\Payment\Exception\UnknownPaymentMethodException;
-use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Shopware\Core\System\StateMachine\StateMachineRegistry;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RouterInterface;
 
 class PaymentTransactionChainProcessor
 {
-    /**
-     * @var TokenFactoryInterfaceV2
-     */
-    private $tokenFactory;
+    private TokenFactoryInterfaceV2 $tokenFactory;
 
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $orderRepository;
+    private EntityRepositoryInterface $orderRepository;
 
-    /**
-     * @var RouterInterface
-     */
-    private $router;
+    private RouterInterface $router;
 
-    /**
-     * @var PaymentHandlerRegistry
-     */
-    private $paymentHandlerRegistry;
+    private PaymentHandlerRegistry $paymentHandlerRegistry;
 
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $orderCustomerRepository;
+    private StateMachineRegistry $stateMachineRegistry;
 
     public function __construct(
         TokenFactoryInterfaceV2 $tokenFactory,
         EntityRepositoryInterface $orderRepository,
         RouterInterface $router,
         PaymentHandlerRegistry $paymentHandlerRegistry,
-        EntityRepositoryInterface $orderCustomerRepository
+        StateMachineRegistry $stateMachineRegistry
     ) {
         $this->tokenFactory = $tokenFactory;
         $this->orderRepository = $orderRepository;
         $this->router = $router;
         $this->paymentHandlerRegistry = $paymentHandlerRegistry;
-        $this->orderCustomerRepository = $orderCustomerRepository;
+        $this->stateMachineRegistry = $stateMachineRegistry;
     }
 
     /**
@@ -81,6 +64,13 @@ class PaymentTransactionChainProcessor
         $criteria = new Criteria([$orderId]);
         $criteria->addAssociation('transactions.stateMachineState');
         $criteria->addAssociation('transactions.paymentMethod');
+        $criteria->addAssociation('orderCustomer.customer');
+        $criteria->addAssociation('orderCustomer.salutation');
+        $criteria->addAssociation('transactions.paymentMethod.appPaymentMethod.app');
+        $criteria->addAssociation('language');
+        $criteria->addAssociation('currency');
+        $criteria->addAssociation('deliveries.shippingOrderAddress.country');
+        $criteria->addAssociation('billingAddress.country');
         $criteria->addAssociation('lineItems');
         $criteria->getAssociation('transactions')->addSorting(new FieldSorting('createdAt'));
 
@@ -96,50 +86,52 @@ class PaymentTransactionChainProcessor
             throw new InvalidOrderException($orderId);
         }
 
-        $order->setOrderCustomer(
-            $this->fetchCustomer($order->getId(), $salesChannelContext->getContext())
+        $transactions = $transactions->filterByStateId(
+            $this->stateMachineRegistry->getInitialState(
+                OrderTransactionStates::STATE_MACHINE,
+                $salesChannelContext->getContext()
+            )->getId()
         );
 
-        $transactions = $transactions->filterByState(OrderTransactionStates::STATE_OPEN);
         $transaction = $transactions->last();
-        if ($transaction !== null) {
-            $paymentMethod = $transaction->getPaymentMethod();
-            if ($paymentMethod === null) {
-                throw new UnknownPaymentMethodException($transaction->getPaymentMethodId());
-            }
-
-            $paymentHandler = $this->paymentHandlerRegistry->getHandler($paymentMethod->getHandlerIdentifier());
-
-            if (!$paymentHandler) {
-                throw new UnknownPaymentMethodException($paymentMethod->getHandlerIdentifier());
-            }
-
-            if ($paymentHandler instanceof SynchronousPaymentHandlerInterface) {
-                $paymentTransaction = new SyncPaymentTransactionStruct($transaction, $order);
-                $paymentHandler->pay($paymentTransaction, $dataBag, $salesChannelContext);
-
-                return null;
-            }
-
-            $tokenStruct = new TokenStruct(
-                null,
-                null,
-                $transaction->getPaymentMethodId(),
-                $transaction->getId(),
-                $finishUrl,
-                null,
-                $errorUrl
-            );
-
-            $token = $this->tokenFactory->generateToken($tokenStruct);
-
-            $returnUrl = $this->assembleReturnUrl($token);
-            $paymentTransaction = new AsyncPaymentTransactionStruct($transaction, $order, $returnUrl);
-
-            return $paymentHandler->pay($paymentTransaction, $dataBag, $salesChannelContext);
+        if ($transaction === null) {
+            return null;
         }
 
-        return null;
+        $paymentMethod = $transaction->getPaymentMethod();
+        if ($paymentMethod === null) {
+            throw new UnknownPaymentMethodException($transaction->getPaymentMethodId());
+        }
+
+        $paymentHandler = $this->paymentHandlerRegistry->getHandlerForPaymentMethod($paymentMethod);
+
+        if (!$paymentHandler) {
+            throw new UnknownPaymentMethodException($paymentMethod->getHandlerIdentifier());
+        }
+
+        if ($paymentHandler instanceof SynchronousPaymentHandlerInterface) {
+            $paymentTransaction = new SyncPaymentTransactionStruct($transaction, $order);
+            $paymentHandler->pay($paymentTransaction, $dataBag, $salesChannelContext);
+
+            return null;
+        }
+
+        $tokenStruct = new TokenStruct(
+            null,
+            null,
+            $transaction->getPaymentMethodId(),
+            $transaction->getId(),
+            $finishUrl,
+            null,
+            $errorUrl
+        );
+
+        $token = $this->tokenFactory->generateToken($tokenStruct);
+
+        $returnUrl = $this->assembleReturnUrl($token);
+        $paymentTransaction = new AsyncPaymentTransactionStruct($transaction, $order, $returnUrl);
+
+        return $paymentHandler->pay($paymentTransaction, $dataBag, $salesChannelContext);
     }
 
     private function assembleReturnUrl(string $token): string
@@ -147,17 +139,5 @@ class PaymentTransactionChainProcessor
         $parameter = ['_sw_payment_token' => $token];
 
         return $this->router->generate('payment.finalize.transaction', $parameter, UrlGeneratorInterface::ABSOLUTE_URL);
-    }
-
-    private function fetchCustomer(string $orderId, Context $context): OrderCustomerEntity
-    {
-        $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('orderId', $orderId));
-        $criteria->addAssociation('customer');
-        $criteria->addAssociation('salutation');
-
-        return $this->orderCustomerRepository
-            ->search($criteria, $context)
-            ->first();
     }
 }

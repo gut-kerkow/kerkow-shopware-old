@@ -6,11 +6,13 @@ use Shopware\Core\Content\Media\MediaEntity;
 use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Content\Property\Aggregate\PropertyGroupOption\PropertyGroupOptionEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 
 class ProductConfiguratorSettingEntity extends Entity
 {
     use EntityIdTrait;
+    use EntityCustomFieldsTrait;
 
     /**
      * @var string
@@ -23,7 +25,7 @@ class ProductConfiguratorSettingEntity extends Entity
     protected $optionId;
 
     /**
-     * @var string
+     * @var string|null
      */
     protected $mediaId;
 
@@ -56,11 +58,6 @@ class ProductConfiguratorSettingEntity extends Entity
      * @var ProductEntity|null
      */
     protected $product;
-
-    /**
-     * @var array|null
-     */
-    protected $customFields;
 
     public function getProductId(): string
     {
@@ -102,12 +99,12 @@ class ProductConfiguratorSettingEntity extends Entity
         $this->option = $option;
     }
 
-    public function getMediaId(): string
+    public function getMediaId(): ?string
     {
         return $this->mediaId;
     }
 
-    public function setMediaId(string $mediaId): void
+    public function setMediaId(?string $mediaId): void
     {
         $this->mediaId = $mediaId;
     }
@@ -150,15 +147,5 @@ class ProductConfiguratorSettingEntity extends Entity
     public function setProduct(ProductEntity $product): void
     {
         $this->product = $product;
-    }
-
-    public function getCustomFields(): ?array
-    {
-        return $this->customFields;
-    }
-
-    public function setCustomFields(?array $customFields): void
-    {
-        $this->customFields = $customFields;
     }
 }

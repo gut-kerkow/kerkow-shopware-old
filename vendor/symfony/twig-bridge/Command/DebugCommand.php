@@ -33,20 +33,16 @@ use Twig\Loader\FilesystemLoader;
 class DebugCommand extends Command
 {
     protected static $defaultName = 'debug:twig';
+    protected static $defaultDescription = 'Show a list of twig functions, filters, globals and tests';
 
     private $twig;
     private $projectDir;
     private $bundlesMetadata;
     private $twigDefaultPath;
-    private $rootDir;
     private $filesystemLoaders;
     private $fileLinkFormatter;
 
-    /**
-     * @param FileLinkFormatter|null $fileLinkFormatter
-     * @param string|null            $rootDir
-     */
-    public function __construct(Environment $twig, string $projectDir = null, array $bundlesMetadata = [], string $twigDefaultPath = null, $fileLinkFormatter = null, $rootDir = null)
+    public function __construct(Environment $twig, string $projectDir = null, array $bundlesMetadata = [], string $twigDefaultPath = null, FileLinkFormatter $fileLinkFormatter = null)
     {
         parent::__construct();
 
@@ -54,16 +50,7 @@ class DebugCommand extends Command
         $this->projectDir = $projectDir;
         $this->bundlesMetadata = $bundlesMetadata;
         $this->twigDefaultPath = $twigDefaultPath;
-
-        if (\is_string($fileLinkFormatter) || $rootDir instanceof FileLinkFormatter) {
-            @trigger_error(sprintf('Passing a string as "$fileLinkFormatter" 5th argument or an instance of FileLinkFormatter as "$rootDir" 6th argument of the "%s()" method is deprecated since Symfony 4.4, swap the variables position.', __METHOD__), \E_USER_DEPRECATED);
-
-            $this->rootDir = $fileLinkFormatter;
-            $this->fileLinkFormatter = $rootDir;
-        } else {
-            $this->fileLinkFormatter = $fileLinkFormatter;
-            $this->rootDir = $rootDir;
-        }
+        $this->fileLinkFormatter = $fileLinkFormatter;
     }
 
     protected function configure()
@@ -74,7 +61,7 @@ class DebugCommand extends Command
                 new InputOption('filter', null, InputOption::VALUE_REQUIRED, 'Show details for all entries matching this filter'),
                 new InputOption('format', null, InputOption::VALUE_REQUIRED, 'The output format (text or json)', 'text'),
             ])
-            ->setDescription('Shows a list of twig functions, filters, globals and tests')
+            ->setDescription(self::$defaultDescription)
             ->setHelp(<<<'EOF'
 The <info>%command.name%</info> command outputs a list of twig functions,
 filters, globals and tests.
@@ -225,7 +212,7 @@ EOF
         foreach ($types as $index => $type) {
             $items = [];
             foreach ($this->twig->{'get'.ucfirst($type)}() as $name => $entity) {
-                if (!$filter || false !== strpos($name, $filter)) {
+                if (!$filter || str_contains($name, $filter)) {
                     $items[$name] = $name.$this->getPrettyMetadata($type, $entity, $decorated);
                 }
             }
@@ -259,7 +246,7 @@ EOF
         $data = [];
         foreach ($types as $type) {
             foreach ($this->twig->{'get'.ucfirst($type)}() as $name => $entity) {
-                if (!$filter || false !== strpos($name, $filter)) {
+                if (!$filter || str_contains($name, $filter)) {
                     $data[$type][$name] = $this->getMetadata($type, $entity);
                 }
             }
@@ -405,27 +392,11 @@ EOF
         $alternatives = [];
         $bundleNames = [];
 
-        if ($this->rootDir && $this->projectDir) {
-            $folders = glob($this->rootDir.'/Resources/*/views', \GLOB_ONLYDIR);
-            $relativePath = ltrim(substr($this->rootDir.\DIRECTORY_SEPARATOR.'Resources/', \strlen($this->projectDir)), \DIRECTORY_SEPARATOR);
-            $bundleNames = array_reduce($folders, function ($carry, $absolutePath) use ($relativePath) {
-                if (0 === strpos($absolutePath, $this->projectDir)) {
-                    $name = basename(\dirname($absolutePath));
-                    $path = ltrim($relativePath.$name, \DIRECTORY_SEPARATOR);
-                    $carry[$name] = $path;
-
-                    @trigger_error(sprintf('Loading Twig templates from the "%s" directory is deprecated since Symfony 4.2, use "%s" instead.', $absolutePath, $this->twigDefaultPath.'/bundles/'.$name), \E_USER_DEPRECATED);
-                }
-
-                return $carry;
-            }, $bundleNames);
-        }
-
         if ($this->twigDefaultPath && $this->projectDir) {
             $folders = glob($this->twigDefaultPath.'/bundles/*', \GLOB_ONLYDIR);
             $relativePath = ltrim(substr($this->twigDefaultPath.'/bundles/', \strlen($this->projectDir)), \DIRECTORY_SEPARATOR);
             $bundleNames = array_reduce($folders, function ($carry, $absolutePath) use ($relativePath) {
-                if (0 === strpos($absolutePath, $this->projectDir)) {
+                if (str_starts_with($absolutePath, $this->projectDir)) {
                     $name = basename($absolutePath);
                     $path = ltrim($relativePath.$name, \DIRECTORY_SEPARATOR);
                     $carry[$name] = $path;
@@ -555,7 +526,7 @@ EOF
         $alternatives = [];
         foreach ($collection as $item) {
             $lev = levenshtein($name, $item);
-            if ($lev <= \strlen($name) / 3 || false !== strpos($item, $name)) {
+            if ($lev <= \strlen($name) / 3 || str_contains($item, $name)) {
                 $alternatives[$item] = isset($alternatives[$item]) ? $alternatives[$item] - $lev : $lev;
             }
         }
@@ -569,7 +540,7 @@ EOF
 
     private function getRelativePath(string $path): string
     {
-        if (null !== $this->projectDir && 0 === strpos($path, $this->projectDir)) {
+        if (null !== $this->projectDir && str_starts_with($path, $this->projectDir)) {
             return ltrim(substr($path, \strlen($this->projectDir)), \DIRECTORY_SEPARATOR);
         }
 

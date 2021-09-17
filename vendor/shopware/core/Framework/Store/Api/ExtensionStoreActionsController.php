@@ -7,10 +7,12 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Plugin\Exception\PluginNotAZipFileException;
 use Shopware\Core\Framework\Plugin\PluginManagementService;
 use Shopware\Core\Framework\Plugin\PluginService;
+use Shopware\Core\Framework\Routing\Annotation\Acl;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Core\Framework\Routing\Annotation\Since;
+use Shopware\Core\Framework\Routing\Exception\MissingRequestParameterException;
+use Shopware\Core\Framework\Store\Services\AbstractExtensionLifecycle;
 use Shopware\Core\Framework\Store\Services\ExtensionDownloader;
-use Shopware\Core\Framework\Store\Services\ExtensionLifecycleService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
@@ -20,31 +22,20 @@ use Symfony\Component\Routing\Annotation\Route;
 /**
  * @internal
  * @RouteScope(scopes={"api"})
+ * @Acl({"system.plugin_maintain"})
  */
 class ExtensionStoreActionsController extends AbstractController
 {
-    /**
-     * @var ExtensionLifecycleService
-     */
-    private $extensionLifecycleService;
+    private AbstractExtensionLifecycle $extensionLifecycleService;
 
-    /**
-     * @var ExtensionDownloader
-     */
-    private $extensionDownloader;
+    private ExtensionDownloader $extensionDownloader;
 
-    /**
-     * @var PluginService
-     */
-    private $pluginService;
+    private PluginService $pluginService;
 
-    /**
-     * @var PluginManagementService
-     */
-    private $pluginManagementService;
+    private PluginManagementService $pluginManagementService;
 
     public function __construct(
-        ExtensionLifecycleService $extensionLifecycleService,
+        AbstractExtensionLifecycle $extensionLifecycleService,
         ExtensionDownloader $extensionDownloader,
         PluginService $pluginService,
         PluginManagementService $pluginManagementService
@@ -57,7 +48,7 @@ class ExtensionStoreActionsController extends AbstractController
 
     /**
      * @Since("6.4.0.0")
-     * @Route("/api/v{version}/_action/extension/refresh", name="api.extension.refresh", methods={"POST"})
+     * @Route("/api/_action/extension/refresh", name="api.extension.refresh", methods={"POST"})
      */
     public function refreshExtensions(Context $context): Response
     {
@@ -68,12 +59,17 @@ class ExtensionStoreActionsController extends AbstractController
 
     /**
      * @Since("6.4.0.0")
-     * @Route("/api/v{version}/_action/extension/upload", name="api.extension.upload", methods={"POST"})
+     * @Route("/api/_action/extension/upload", name="api.extension.upload", methods={"POST"})
+     * @Acl({"system.plugin_upload"})
      */
     public function uploadExtensions(Request $request, Context $context): Response
     {
-        /** @var UploadedFile $file */
+        /** @var UploadedFile|null $file */
         $file = $request->files->get('file');
+
+        if (!$file) {
+            throw new MissingRequestParameterException('file');
+        }
 
         if ($file->getMimeType() !== 'application/zip') {
             unlink($file->getPathname());
@@ -94,7 +90,7 @@ class ExtensionStoreActionsController extends AbstractController
 
     /**
      * @Since("6.4.0.0")
-     * @Route("/api/v{version}/_action/extension/download/{technicalName}", name="api.extension.download", methods={"POST"})
+     * @Route("/api/_action/extension/download/{technicalName}", name="api.extension.download", methods={"POST"})
      */
     public function downloadExtension(string $technicalName, Context $context): Response
     {
@@ -105,7 +101,7 @@ class ExtensionStoreActionsController extends AbstractController
 
     /**
      * @Since("6.4.0.0")
-     * @Route("/api/v{version}/_action/extension/install/{type}/{technicalName}", name="api.extension.install", methods={"POST"})
+     * @Route("/api/_action/extension/install/{type}/{technicalName}", name="api.extension.install", methods={"POST"})
      */
     public function installExtension(string $type, string $technicalName, Context $context): Response
     {
@@ -116,7 +112,7 @@ class ExtensionStoreActionsController extends AbstractController
 
     /**
      * @Since("6.4.0.0")
-     * @Route("/api/v{version}/_action/extension/uninstall/{type}/{technicalName}", name="api.extension.uninstall", methods={"POST"})
+     * @Route("/api/_action/extension/uninstall/{type}/{technicalName}", name="api.extension.uninstall", methods={"POST"})
      */
     public function uninstallExtension(string $type, string $technicalName, Request $request, Context $context): Response
     {
@@ -132,7 +128,7 @@ class ExtensionStoreActionsController extends AbstractController
 
     /**
      * @Since("6.4.0.0")
-     * @Route("/api/v{version}/_action/extension/remove/{type}/{technicalName}", name="api.extension.remove", methods={"DELETE"})
+     * @Route("/api/_action/extension/remove/{type}/{technicalName}", name="api.extension.remove", methods={"DELETE"})
      */
     public function removeExtension(string $type, string $technicalName, Context $context): Response
     {
@@ -143,7 +139,7 @@ class ExtensionStoreActionsController extends AbstractController
 
     /**
      * @Since("6.4.0.0")
-     * @Route("/api/v{version}/_action/extension/activate/{type}/{technicalName}", name="api.extension.activate", methods={"PUT"})
+     * @Route("/api/_action/extension/activate/{type}/{technicalName}", name="api.extension.activate", methods={"PUT"})
      */
     public function activateExtension(string $type, string $technicalName, Context $context): Response
     {
@@ -154,7 +150,7 @@ class ExtensionStoreActionsController extends AbstractController
 
     /**
      * @Since("6.4.0.0")
-     * @Route("/api/v{version}/_action/extension/deactivate/{type}/{technicalName}", name="api.extension.deacctivate", methods={"PUT"})
+     * @Route("/api/_action/extension/deactivate/{type}/{technicalName}", name="api.extension.deactivate", methods={"PUT"})
      */
     public function deactivateExtension(string $type, string $technicalName, Context $context): Response
     {
@@ -165,7 +161,7 @@ class ExtensionStoreActionsController extends AbstractController
 
     /**
      * @Since("6.4.0.0")
-     * @Route("/api/v{version}/_action/extension/update/{type}/{technicalName}", name="api.extension.update", methods={"POST"})
+     * @Route("/api/_action/extension/update/{type}/{technicalName}", name="api.extension.update", methods={"POST"})
      */
     public function updateExtension(string $type, string $technicalName, Context $context): Response
     {

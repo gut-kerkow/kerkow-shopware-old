@@ -1,22 +1,14 @@
-import { createLocalVue, shallowMount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import 'src/module/sw-property/page/sw-property-list';
 
 function createWrapper(privileges = []) {
-    const localVue = createLocalVue();
-    localVue.directive('tooltip', {});
-
     return shallowMount(Shopware.Component.build('sw-property-list'), {
-        localVue,
         mocks: {
-            $tc: () => {},
             $route: {
                 query: {
                     page: 1,
                     limit: 25
                 }
-            },
-            $router: {
-                replace: () => {}
             }
         },
         provide: {
@@ -104,7 +96,7 @@ describe('module/sw-property/page/sw-property-list', () => {
         const entityListing = wrapper.find('.sw-property-list-grid');
 
         expect(entityListing.exists()).toBeTruthy();
-        expect(entityListing.attributes().allowinlineedit).toBeFalsy();
+        expect(entityListing.attributes()['allow-inline-edit']).toBeFalsy();
     });
 
     it('should be able to inline edit', async () => {
@@ -115,7 +107,7 @@ describe('module/sw-property/page/sw-property-list', () => {
 
         const entityListing = wrapper.find('.sw-property-list-grid');
         expect(entityListing.exists()).toBeTruthy();
-        expect(entityListing.attributes().allowinlineedit).toBeTruthy();
+        expect(entityListing.attributes()['allow-inline-edit']).toBeTruthy();
     });
 
     it('should not be able to delete', async () => {

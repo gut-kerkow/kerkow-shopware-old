@@ -6,7 +6,9 @@ import context from './context.store';
 import licenseViolation from './license-violation.store';
 import error from './error.store';
 import settingsItems from './settings-item.store';
-import shopwareApps from './shopware-apps.state';
+import shopwareApps from './shopware-apps.store';
+import extensionEntryRoutes from './extension-entry-routes';
+import marketing from './marketing.store';
 
 export default {
     notification,
@@ -17,5 +19,7 @@ export default {
     context,
     error,
     settingsItems,
-    shopwareApps
+    shopwareApps,
+    extensionEntryRoutes,
+    marketing,
 };

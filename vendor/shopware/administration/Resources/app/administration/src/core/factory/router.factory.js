@@ -23,7 +23,7 @@ export default function createRouter(Router, View, moduleFactory, LoginService) 
         createRouterInstance,
         getViewComponent,
         getRouterInstance,
-        _setModuleFavicon: setModuleFavicon
+        _setModuleFavicon: setModuleFavicon,
     };
 
     /**
@@ -49,7 +49,7 @@ export default function createRouter(Router, View, moduleFactory, LoginService) 
 
         // assign to view router options
         const options = Object.assign({}, opts, {
-            routes: mergedRoutes
+            routes: mergedRoutes,
         });
 
         // create router
@@ -85,8 +85,8 @@ export default function createRouter(Router, View, moduleFactory, LoginService) 
             setModuleFavicon(to, assetPath);
             const loggedIn = LoginService.isLoggedIn();
             const tokenHandler = new Shopware.Helper.RefreshTokenHelper();
-            const loginWhitelist = [
-                '/login', '/login/info', '/login/recovery'
+            const loginAllowlist = [
+                '/login', '/login/info', '/login/recovery',
             ];
 
             if (to.meta && to.meta.forceRoute === true) {
@@ -95,7 +95,7 @@ export default function createRouter(Router, View, moduleFactory, LoginService) 
 
             // The login route will be called and the user is not logged in, let him see the login.
             if ((to.name === 'login' ||
-                loginWhitelist.includes(to.path) ||
+                loginAllowlist.includes(to.path) ||
                 to.path.startsWith('/login/user-recovery/'))
                 && !loggedIn
             ) {
@@ -104,7 +104,7 @@ export default function createRouter(Router, View, moduleFactory, LoginService) 
 
             // The login route will be called and the user is logged in, redirect to the dashboard.
             if ((to.name === 'login' ||
-                loginWhitelist.includes(to.path) ||
+                loginAllowlist.includes(to.path) ||
                 to.path.startsWith('/login/user-recovery/'))
                 && loggedIn
             ) {
@@ -116,7 +116,7 @@ export default function createRouter(Router, View, moduleFactory, LoginService) 
                 // Save the last route in case the user gets logged out in the mean time.
                 sessionStorage.setItem('sw-admin-previous-route', JSON.stringify({
                     fullPath: to.fullPath,
-                    name: to.name
+                    name: to.name,
                 }));
 
                 if (!tokenHandler.isRefreshing) {
@@ -124,7 +124,7 @@ export default function createRouter(Router, View, moduleFactory, LoginService) 
                         return resolveRoute(to, from, next);
                     }).catch(() => {
                         return next({
-                            name: 'sw.login.index'
+                            name: 'sw.login.index',
                         });
                     });
                 }
@@ -133,6 +133,11 @@ export default function createRouter(Router, View, moduleFactory, LoginService) 
             // User tries to access a route which needs a special privilege
             if (to.meta.privilege && !Shopware.Service('acl').can(to.meta.privilege)) {
                 return next({ name: 'sw.privilege.error.index' });
+            }
+
+            // User tries to access store page when store is not installed. Then redirect to landing page.
+            if (to.name && to.name.includes('sw.extension.store') && to.matched.length <= 0) {
+                return next({ name: 'sw.extension.store.landing-page' });
             }
 
             return resolveRoute(to, from, next);
@@ -186,7 +191,7 @@ export default function createRouter(Router, View, moduleFactory, LoginService) 
                 return;
             }
 
-            const parentPath = to.meta && to.meta.parentPath ? to.meta.parentPath : undefined;
+            const parentPath = to.meta?.parentPath ? to.meta.parentPath : undefined;
 
             if (parentPath && module.routes.has(to.meta.parentPath)) {
                 foundModule = module;
@@ -329,7 +334,7 @@ export default function createRouter(Router, View, moduleFactory, LoginService) 
      * @returns {Object}
      */
     function iterateChildRoutes(route) {
-        if (route.children && route.children.length) {
+        if (route.children?.length) {
             route.children = route.children.map((child) => {
                 let component = child.component;
 

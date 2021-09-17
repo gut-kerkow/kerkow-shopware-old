@@ -212,16 +212,7 @@ function createWrapper(defaultValues = {}) {
                 })
             },
             validationService: {},
-            mediaService: {},
-            feature: {
-                isActive: () => false
-            }
-        },
-        mocks: {
-            $tc: key => key,
-            $device: {
-                onResize: () => {}
-            }
+            mediaService: {}
         }
     });
 }
@@ -295,6 +286,7 @@ function createConfig() {
                         changeValueFunction: async (field, afterValue) => {
                             // change input value
                             await field.find('input').setValue(afterValue);
+                            await field.find('input').trigger('blur');
                         }
                     }
                 },

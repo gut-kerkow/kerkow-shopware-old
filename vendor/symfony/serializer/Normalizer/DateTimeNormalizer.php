@@ -25,7 +25,10 @@ class DateTimeNormalizer implements NormalizerInterface, DenormalizerInterface, 
     public const FORMAT_KEY = 'datetime_format';
     public const TIMEZONE_KEY = 'datetime_timezone';
 
-    private $defaultContext;
+    private $defaultContext = [
+        self::FORMAT_KEY => \DateTime::RFC3339,
+        self::TIMEZONE_KEY => null,
+    ];
 
     private const SUPPORTED_TYPES = [
         \DateTimeInterface::class => true,
@@ -33,23 +36,8 @@ class DateTimeNormalizer implements NormalizerInterface, DenormalizerInterface, 
         \DateTime::class => true,
     ];
 
-    /**
-     * @param array $defaultContext
-     */
-    public function __construct($defaultContext = [], \DateTimeZone $timezone = null)
+    public function __construct(array $defaultContext = [])
     {
-        $this->defaultContext = [
-            self::FORMAT_KEY => \DateTime::RFC3339,
-            self::TIMEZONE_KEY => null,
-        ];
-
-        if (!\is_array($defaultContext)) {
-            @trigger_error('Passing configuration options directly to the constructor is deprecated since Symfony 4.2, use the default context instead.', \E_USER_DEPRECATED);
-
-            $defaultContext = [self::FORMAT_KEY => (string) $defaultContext];
-            $defaultContext[self::TIMEZONE_KEY] = $timezone;
-        }
-
         $this->defaultContext = array_merge($this->defaultContext, $defaultContext);
     }
 
@@ -60,7 +48,7 @@ class DateTimeNormalizer implements NormalizerInterface, DenormalizerInterface, 
      *
      * @return string
      */
-    public function normalize($object, $format = null, array $context = [])
+    public function normalize($object, string $format = null, array $context = [])
     {
         if (!$object instanceof \DateTimeInterface) {
             throw new InvalidArgumentException('The object must implement the "\DateTimeInterface".');
@@ -80,7 +68,7 @@ class DateTimeNormalizer implements NormalizerInterface, DenormalizerInterface, 
     /**
      * {@inheritdoc}
      */
-    public function supportsNormalization($data, $format = null)
+    public function supportsNormalization($data, string $format = null)
     {
         return $data instanceof \DateTimeInterface;
     }
@@ -92,12 +80,12 @@ class DateTimeNormalizer implements NormalizerInterface, DenormalizerInterface, 
      *
      * @return \DateTimeInterface
      */
-    public function denormalize($data, $type, $format = null, array $context = [])
+    public function denormalize($data, string $type, string $format = null, array $context = [])
     {
         $dateTimeFormat = $context[self::FORMAT_KEY] ?? null;
         $timezone = $this->getTimezone($context);
 
-        if ('' === $data || null === $data) {
+        if (null === $data || (\is_string($data) && '' === trim($data))) {
             throw new NotNormalizableValueException('The data is either an empty string or null, you should pass a string that can be parsed with the passed format or a valid DateTime string.');
         }
 
@@ -123,7 +111,7 @@ class DateTimeNormalizer implements NormalizerInterface, DenormalizerInterface, 
     /**
      * {@inheritdoc}
      */
-    public function supportsDenormalization($data, $type, $format = null)
+    public function supportsDenormalization($data, string $type, string $format = null)
     {
         return isset(self::SUPPORTED_TYPES[$type]);
     }

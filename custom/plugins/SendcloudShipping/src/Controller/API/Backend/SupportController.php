@@ -14,6 +14,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaI
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Core\PlatformRequest;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -41,6 +42,10 @@ class SupportController extends AbstractController
      * @var TaskQueueStorage
      */
     private $taskQueueStorage;
+    /**
+     * @var ParameterBagInterface
+     */
+    private $params;
 
     /**
      * SupportController constructor.
@@ -50,19 +55,22 @@ class SupportController extends AbstractController
      * @param UrlGeneratorInterface $urlGenerator
      * @param ShippingMethodRepository $shippingMethodRepository
      * @param TaskQueueStorage $taskQueueStorage
+     * @param ParameterBagInterface $params
      */
     public function __construct(
         Initializer $initializer,
         Configuration $configService,
         UrlGeneratorInterface $urlGenerator,
         ShippingMethodRepository $shippingMethodRepository,
-        TaskQueueStorage $taskQueueStorage
+        TaskQueueStorage $taskQueueStorage,
+        ParameterBagInterface $params
     ) {
         $initializer->registerServices();
         $this->configService = $configService;
         $this->urlGenerator = $urlGenerator;
         $this->shippingMethodRepository = $shippingMethodRepository;
         $this->taskQueueStorage = $taskQueueStorage;
+        $this->params = $params;
     }
 
     /**
@@ -70,6 +78,7 @@ class SupportController extends AbstractController
      *
      * @RouteScope(scopes={"api"})
      * @Route(path="/api/v{version}/sendcloud/support", name="api.sendcloud.support", methods={"GET"})
+     * @Route(path="/api/sendcloud/support", name="api.sendcloud.support.new", methods={"GET"})
      */
     public function getConfigParameters(): JsonApiResponse
     {
@@ -77,6 +86,8 @@ class SupportController extends AbstractController
         try {
             $data = [
                 'SENDCLOUD_INTEGRATION_ID' => $this->configService->getIntegrationId(),
+                'SENDCLOUD_PUBLIC_KEY' => $this->configService->getPublicKey(),
+                'SENDCLOUD_SECRET_KEY' => $this->configService->getSecretKey(),
                 'SENDCLOUD_INTEGRATION_NAME' => $this->configService->getIntegrationName(),
                 'SENDCLOUD_DEFAULT_SHOP_NAME' => $this->configService->getShopName(),
                 'SENDCLOUD_MIN_LOG_LEVEL' => $this->configService->getMinLogLevel(),
@@ -95,18 +106,15 @@ class SupportController extends AbstractController
                 'SENDCLOUD_COMPLETED_TASKS_RETENTION_PERIOD' => $this->configService->getCompletedTasksRetentionPeriod(),
                 'SENDCLOUD_FAILED_TASKS_RETENTION_PERIOD' => $this->configService->getFailedTasksRetentionPeriod(),
                 'SENDCLOUD_OLD_TASKS_CLEANUP_THRESHOLD' => $this->configService->getOldTaskCleanupTimeThreshold(),
-                'SENDCLOUD_ASYNC_PROCESS_STARTER_URL' => $this->urlGenerator->generate(
-                    'api.sendcloud.async',
-                    [
-                        'version' => PlatformRequest::API_VERSION,
-                        'guid' => 'guid',
-                    ],
-                    UrlGeneratorInterface::ABSOLUTE_URL
-                ),
+                'SENDCLOUD_ASYNC_PROCESS_STARTER_URL' => $this->getAsyncProcessStartUrl(),
                 'SERVER_SOFTWARE' => $_SERVER['SERVER_SOFTWARE'],
                 'PHP_VERSION' => PHP_VERSION,
                 'PHP_TIME_LIMIT' => ini_get('max_execution_time'),
                 'PHP_CURL_LIBRARY' => function_exists('curl_version'),
+                'TOTAL_FAILED_TASKS' => $this->taskQueueStorage->countAll(['status' => 'failed']),
+                'TOTAL_QUEUED_TASKS' => $this->taskQueueStorage->countAll(['status' => 'queued']),
+                'ORDER_SYNC_QUEUED_TASKS' => $this->taskQueueStorage->countAll(['status' => 'queued', 'type' => 'OrderSyncTask']),
+                'PARCEL_UPDATE_QUEUED_TASKS' => $this->taskQueueStorage->countAll(['status' => 'queued', 'type' => 'ParcelUpdateTask']),
                 'QUEUE_ITEMS' => $this->getQueueItems(),
             ];
         } catch (\Exception $exception) {
@@ -223,5 +231,24 @@ class SupportController extends AbstractController
         }
 
         return $queueItemsMap;
+    }
+
+    /**
+     * Returns async process controller url
+     *
+     * @param string $guid
+     *
+     * @return string
+     */
+    private function getAsyncProcessStartUrl(): string
+    {
+        $routeName = 'api.sendcloud.async.new';
+        $params = ['guid' => 'guid'];
+        if (version_compare($this->params->get('kernel.shopware_version'), '6.4.0', 'lt')) {
+            $routeName = 'api.sendcloud.async';
+            $params['version'] = PlatformRequest::API_VERSION;
+        }
+
+        return $this->urlGenerator->generate($routeName, $params, UrlGeneratorInterface::ABSOLUTE_URL);
     }
 }

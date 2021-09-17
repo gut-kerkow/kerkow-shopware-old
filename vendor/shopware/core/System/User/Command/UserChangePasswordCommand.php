@@ -42,22 +42,13 @@ class UserChangePasswordCommand extends Command
         $context = Context::createDefaultContext();
 
         $username = $input->getArgument('username');
-        if ($username === null) {
-            $io->error('No user name given.');
-
-            return 1;
-        }
-        if (\is_array($username)) {
-            $username = implode(' ', $username);
-        }
-
         $password = $input->getOption('password');
 
         $userId = $this->getUserId($username, $context);
         if ($userId === null) {
             $io->error(sprintf('The user "%s" does not exist.', $username));
 
-            return 1;
+            return self::FAILURE;
         }
 
         if (empty($password)) {
@@ -77,7 +68,7 @@ class UserChangePasswordCommand extends Command
 
         $io->success(sprintf('The password of user "%s" has been changed successfully.', $username));
 
-        return 0;
+        return self::SUCCESS;
     }
 
     private function getUserId(string $username, Context $context): ?string

@@ -2,6 +2,7 @@
 
 namespace Shopware\Core\Framework\Test;
 
+use Shopware\Core\Checkout\Payment\Controller\PaymentController;
 use Shopware\Core\Framework\Test\TestCaseBase\KernelTestBehaviourTest;
 use Symfony\Component\Routing\Router;
 
@@ -18,7 +19,17 @@ class RouteScopeTest extends KernelTestBehaviourTest
         $errorMessage = 'No RouteScope defined for following Methods';
 
         foreach ($routeCollection as $route) {
-            $controllerMethod = explode('::', $route->getDefault('_controller'));
+            if (!$controllerMethod = $route->getDefault('_controller')) {
+                continue;
+            }
+
+            $controllerMethod = explode('::', $controllerMethod);
+
+            // The payment controller must work also without scopes due headless
+            if ($controllerMethod[0] === PaymentController::class) {
+                continue;
+            }
+
             $routeMethodReflection = new \ReflectionMethod($controllerMethod[0], $controllerMethod[1]);
             $docBlock = $routeMethodReflection->getDocComment() ?: '';
             $pattern = "#@([a-zA-Z]+\s*)#";

@@ -11,6 +11,7 @@ final class StateMachineTransitionActions
     public const ACTION_PAID = 'paid';
     public const ACTION_PAID_PARTIALLY = 'paid_partially';
     public const ACTION_PROCESS = 'process';
+    public const ACTION_PROCESS_UNCONFIRMED = 'process_unconfirmed';
     public const ACTION_REFUND = 'refund';
     public const ACTION_REFUND_PARTIALLY = 'refund_partially';
     public const ACTION_REMIND = 'remind';
@@ -21,9 +22,4 @@ final class StateMachineTransitionActions
     public const ACTION_SHIP_PARTIALLY = 'ship_partially';
     public const ACTION_AUTHORIZE = 'authorize';
     public const ACTION_CHARGEBACK = 'chargeback';
-
-    /** @deprecated tag:v6.4.0 Use ACTION_DO_PAY */
-    public const ACTION_PAY = 'pay';
-    /** @deprecated tag:v6.4.0 Use ACTION_PAID_PARTIALLY */
-    public const ACTION_PAY_PARTIALLY = 'pay_partially';
 }

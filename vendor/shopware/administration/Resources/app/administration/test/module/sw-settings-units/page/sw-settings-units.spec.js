@@ -9,7 +9,6 @@ function createWrapper(privileges = []) {
     return shallowMount(Shopware.Component.build('sw-settings-units'), {
         localVue,
         mocks: {
-            $tc: key => key,
             $route: {
                 query: {
                     page: 1,
@@ -123,7 +122,7 @@ describe('module/sw-settings-units/page/sw-settings-units', () => {
         const dataGrid = wrapper.find('.sw-settings-units-grid');
 
         expect(dataGrid.exists()).toBeTruthy();
-        expect(dataGrid.attributes().allowinlineedit).toBeTruthy();
+        expect(dataGrid.attributes()['allow-inline-edit']).toBeTruthy();
     });
 
     it('should not be able to edit a unit', async () => {
@@ -133,7 +132,7 @@ describe('module/sw-settings-units/page/sw-settings-units', () => {
         const dataGrid = wrapper.find('.sw-settings-units-grid');
 
         expect(dataGrid.exists()).toBeTruthy();
-        expect(dataGrid.attributes().allowinlineedit).toBeFalsy();
+        expect(dataGrid.attributes()['allow-inline-edit']).toBeFalsy();
     });
 
     it('should be able to delete a units', async () => {

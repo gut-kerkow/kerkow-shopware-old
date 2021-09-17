@@ -1,12 +1,12 @@
-import { createLocalVue, shallowMount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import 'src/module/sw-promotion/page/sw-promotion-list';
 
+/**
+ * @deprecated tag:v6.5.0 - will be removed, use `sw-promotion-v2` instead
+ * @feature-deprecated (flag:FEATURE_NEXT_13810)
+ */
 function createWrapper(privileges = []) {
-    const localVue = createLocalVue();
-    localVue.directive('tooltip', {});
-
     return shallowMount(Shopware.Component.build('sw-promotion-list'), {
-        localVue,
         stubs: {
             'sw-page': {
                 template: '<div class="sw-page"><slot name="smart-bar-actions"></slot><slot name="content"></slot></div>'
@@ -32,12 +32,8 @@ function createWrapper(privileges = []) {
             }
         },
         mocks: {
-            $tc: v => v,
             $route: {
                 query: ''
-            },
-            $router: {
-                replace: () => {}
             }
         }
     });
@@ -80,10 +76,10 @@ describe('src/module/sw-promotion/page/sw-promotion-list', () => {
         const element = wrapper.find('sw-entity-listing-stub');
 
         expect(element.exists()).toBeTruthy();
-        expect(element.attributes().allowedit).toBeUndefined();
-        expect(element.attributes().allowview).toBeUndefined();
-        expect(element.attributes().showselection).toBeUndefined();
-        expect(element.attributes().allowinlineedit).toBeUndefined();
+        expect(element.attributes()['allow-edit']).toBeUndefined();
+        expect(element.attributes()['allow-view']).toBeUndefined();
+        expect(element.attributes()['show-selection']).toBeUndefined();
+        expect(element.attributes()['allow-inline-edit']).toBeUndefined();
     });
 
     it('should enable editing of entries when privilege is set', async () => {
@@ -99,10 +95,10 @@ describe('src/module/sw-promotion/page/sw-promotion-list', () => {
         const element = wrapper.find('sw-entity-listing-stub');
 
         expect(element.exists()).toBeTruthy();
-        expect(element.attributes().allowedit).toBeTruthy();
-        expect(element.attributes().allowview).toBeTruthy();
-        expect(element.attributes().showselection).toBeUndefined();
-        expect(element.attributes().allowinlineedit).toBeTruthy();
+        expect(element.attributes()['allow-edit']).toBeTruthy();
+        expect(element.attributes()['allow-view']).toBeTruthy();
+        expect(element.attributes()['show-selection']).toBeUndefined();
+        expect(element.attributes()['allow-inline-edit']).toBeTruthy();
     });
 
     it('should enable deletion of entries when privilege is set', async () => {
@@ -119,9 +115,9 @@ describe('src/module/sw-promotion/page/sw-promotion-list', () => {
         const element = wrapper.find('sw-entity-listing-stub');
 
         expect(element.exists()).toBeTruthy();
-        expect(element.attributes().allowedit).toBeTruthy();
-        expect(element.attributes().allowview).toBeTruthy();
-        expect(element.attributes().showselection).toBeTruthy();
-        expect(element.attributes().allowinlineedit).toBeTruthy();
+        expect(element.attributes()['allow-edit']).toBeTruthy();
+        expect(element.attributes()['allow-view']).toBeTruthy();
+        expect(element.attributes()['show-selection']).toBeTruthy();
+        expect(element.attributes()['allow-inline-edit']).toBeTruthy();
     });
 });

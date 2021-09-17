@@ -24,6 +24,9 @@ import CookieStorage from 'src/helper/storage/cookie-storage.helper';
 import AjaxOffCanvas from 'src/plugin/offcanvas/ajax-offcanvas.plugin';
 import OffCanvas from 'src/plugin/offcanvas/offcanvas.plugin';
 import AjaxModalExtension from 'src/utility/modal-extension/ajax-modal-extension.util';
+import ViewportDetection from 'src/helper/viewport-detection.helper';
+import HttpClient from 'src/service/http-client.service';
+import ElementLoadingIndicatorUtil from 'src/utility/loading-indicator/element-loading-indicator.util';
 
 // this event will be published via a global (document) EventEmitter
 export const COOKIE_CONFIGURATION_UPDATE = 'CookieConfiguration_Update';
@@ -45,16 +48,18 @@ export default class CookieConfiguration extends Plugin {
         entriesActiveClass: 'offcanvas-cookie-entries--active',
         entriesClass: 'offcanvas-cookie-entries',
         groupClass: 'offcanvas-cookie-group',
-        parentInputClass: 'offcanvas-cookie-parent-input'
+        parentInputClass: 'offcanvas-cookie-parent-input',
     };
 
     init() {
         this.lastState = {
             active: [],
-            inactive: []
+            inactive: [],
         };
 
         this.ajaxModalExtension = null;
+
+        this._httpClient = new HttpClient();
 
         this._registerEvents();
     }
@@ -77,7 +82,7 @@ export default class CookieConfiguration extends Plugin {
         });
 
         Array.from(document.querySelectorAll(globalButtonAcceptAllSelector)).forEach(customLink => {
-            customLink.addEventListener(submitEvent, this.acceptAllCookies.bind(this));
+            customLink.addEventListener(submitEvent, this._acceptAllCookiesFromCookieBar.bind(this));
         });
     }
 
@@ -101,7 +106,7 @@ export default class CookieConfiguration extends Plugin {
             }
 
             if (buttonAcceptAll) {
-                buttonAcceptAll.addEventListener(submitEvent, this._handleAcceptAll.bind(this, CookieStorage));
+                buttonAcceptAll.addEventListener(submitEvent, this._acceptAllCookiesFromOffCanvas.bind(this, CookieStorage));
             }
 
             checkboxes.forEach(checkbox => {
@@ -166,10 +171,11 @@ export default class CookieConfiguration extends Plugin {
     openOffCanvas(callback) {
         const { offCanvasPosition } = this.options;
         const url = window.router['frontend.cookie.offcanvas'];
+        const isFullwidth = ViewportDetection.isXS();
 
         this._hideCookieBar();
 
-        AjaxOffCanvas.open(url, false, this._onOffCanvasOpened.bind(this, callback), offCanvasPosition);
+        AjaxOffCanvas.open(url, false, this._onOffCanvasOpened.bind(this, callback), offCanvasPosition, undefined, undefined, isFullwidth);
     }
 
     /**
@@ -237,7 +243,7 @@ export default class CookieConfiguration extends Plugin {
 
         this.lastState = {
             active: activeCookies,
-            inactive: inactiveCookies
+            inactive: inactiveCookies,
         };
 
         activeCookies.forEach(activeCookie => {
@@ -423,21 +429,63 @@ export default class CookieConfiguration extends Plugin {
         this.closeOffCanvas();
     }
 
-    acceptAllCookies() {
-        this.openOffCanvas(() => {
+    /**
+     * Accepts all cookies. Pass `true` to the loadIntoMemory parameter to load the DOM into memory instead of
+     * opening the OffCanvas menu.
+     *
+     * @param loadIntoMemory
+     */
+    acceptAllCookies(loadIntoMemory = false) {
+        if (!loadIntoMemory) {
             this._handleAcceptAll();
+            this.closeOffCanvas();
+                
+            return;
+        }
+
+
+        ElementLoadingIndicatorUtil.create(this.el);
+
+        const url = window.router['frontend.cookie.offcanvas'];
+
+        this._httpClient.get(url, (response) => {
+            const dom = new DOMParser().parseFromString(response, 'text/html');
+
+            this._handleAcceptAll(dom);
+
+            ElementLoadingIndicatorUtil.remove(this.el);
+            this._hideCookieBar();
         });
     }
 
     /**
-     * Event handler for the 'Allow all'-button in the off canvas view.
+     * Event handler for the 'Allow all'-button in the cookie bar.
+     * It loads the DOM into memory before searching for, and accepting the cookies.
      *
+     * @private
+     */
+    _acceptAllCookiesFromCookieBar() {
+        return this.acceptAllCookies(true);
+    }
+
+    /**
+     * Event handler for the 'Allow all'-button in the off canvas view.
+     * It uses the DOM from the Off Canvas container to search for, and accept the cookies.
+     * After accepting, it closes the OffCanvas sidebar.
+     *
+     * @private
+     */
+    _acceptAllCookiesFromOffCanvas() {
+        return this.acceptAllCookies();
+    }
+
+    /**
      * This will set and refresh all registered cookies.
      *
      * @private
      */
-    _handleAcceptAll() {
-        const allCookies = this._getCookies('all');
+    _handleAcceptAll(offCanvas = null) {
+        const allCookies = this._getCookies('all', offCanvas);
         const { cookiePreference } = this.options;
 
         allCookies.forEach(({ cookie, value, expiration }) => {
@@ -449,7 +497,6 @@ export default class CookieConfiguration extends Plugin {
         CookieStorage.setItem(cookiePreference, '1', '30');
 
         this._handleUpdateListener(allCookies.map(({ cookie }) => cookie), []);
-        this.closeOffCanvas();
     }
 
     /**
@@ -459,12 +506,15 @@ export default class CookieConfiguration extends Plugin {
      * Always excludes "required" cookies, since they are assumed to be set separately.
      *
      * @param type
+     * @param offCanvas
      * @returns {Array}
      * @private
      */
-    _getCookies(type = 'all') {
+    _getCookies(type = 'all', offCanvas = null) {
         const { cookieSelector } = this.options;
-        const offCanvas = this._getOffCanvas();
+        if (!offCanvas) {
+            offCanvas = this._getOffCanvas();
+        }
 
         return Array.from(offCanvas.querySelectorAll(cookieSelector)).filter(cookieInput => {
             switch (type) {

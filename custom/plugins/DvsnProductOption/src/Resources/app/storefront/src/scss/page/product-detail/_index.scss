@@ -11,7 +11,7 @@
         margin: 20px 0;
 
         .option-container {
-            padding: 10px;
+            padding: 10px 10px 0 10px;
 
             .option {
                 margin-bottom: 10px;
@@ -40,9 +40,13 @@
                 }
             }
 
-            .option:last-child {
-                margin-bottom: 0;
+            .option.is--hidden {
+                display: none !important;
             }
         }
+    }
+
+    .dvsn-product-option.is--hidden {
+        display: none !important;
     }
 }

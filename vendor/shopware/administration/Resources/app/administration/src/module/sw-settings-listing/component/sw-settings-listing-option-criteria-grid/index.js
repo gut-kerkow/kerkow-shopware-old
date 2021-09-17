@@ -11,21 +11,21 @@ Shopware.Component.register('sw-settings-listing-option-criteria-grid', {
 
     mixins: [
         Mixin.getByName('notification'),
-        Mixin.getByName('sw-inline-snippet')
+        Mixin.getByName('sw-inline-snippet'),
     ],
 
     props: {
         productSortingEntity: {
             type: Object,
-            required: true
-        }
+            required: true,
+        },
     },
 
     data() {
         return {
             customFields: [],
             selectedCriteria: null,
-            customFieldSetIDs: null
+            customFieldSetIDs: null,
         };
     },
 
@@ -45,9 +45,17 @@ Shopware.Component.register('sw-settings-listing-option-criteria-grid', {
         customFieldCriteria() {
             const criteria = new Criteria();
 
-            criteria.addFilter(
-                Criteria.equalsAny('customFieldSetId', this.customFieldSetIDs)
-            );
+            if (this.customFieldSetIDs) {
+                criteria.addFilter(
+                    Criteria.equalsAny('customFieldSetId', this.customFieldSetIDs),
+                );
+            }
+
+            if (this.getProductSortingFieldsByName().length) {
+                criteria.addFilter(
+                    Criteria.equalsAny('id', this.getProductSortingFieldsByName()),
+                );
+            }
 
             return criteria;
         },
@@ -65,6 +73,7 @@ Shopware.Component.register('sw-settings-listing-option-criteria-grid', {
          * @returns {[]}
          */
         sortedProductSortingFields() {
+            // eslint-disable-next-line vue/no-side-effects-in-computed-properties
             return this.productSortingEntity.fields.sort((a, b) => {
                 if (a.priority === b.priority) {
                     return 0;
@@ -74,6 +83,10 @@ Shopware.Component.register('sw-settings-listing-option-criteria-grid', {
             });
         },
 
+        /**
+         * @deprecated tag:v6.5.0 - Can be removed completely. The computed prop was used
+         * to provide the options prop of an sw-single-select which has been replaced with sw-entity-single-select.
+         */
         unusedCustomFields() {
             return this.customFields.filter(customField => {
                 return !this.productSortingEntity.fields.some(field => {
@@ -88,18 +101,18 @@ Shopware.Component.register('sw-settings-listing-option-criteria-grid', {
                 {
                     property: 'field',
                     label: this.$tc('sw-settings-listing.general.productSortingCriteriaGrid.header.name'),
-                    inlineEdit: 'string'
+                    inlineEdit: 'string',
                 },
                 {
                     property: 'order',
                     label: this.$tc('sw-settings-listing.general.productSortingCriteriaGrid.header.order'),
-                    inlineEdit: 'string'
+                    inlineEdit: 'string',
                 },
                 {
                     property: 'priority',
                     label: this.$tc('sw-settings-listing.general.productSortingCriteriaGrid.header.priority'),
-                    inlineEdit: 'number'
-                }
+                    inlineEdit: 'number',
+                },
             ];
         },
 
@@ -108,49 +121,53 @@ Shopware.Component.register('sw-settings-listing-option-criteria-grid', {
                 {
                     value: 'product.name',
                     label: this.$tc(
-                        'sw-settings-listing.general.productSortingCriteriaGrid.options.label.product.name'
-                    )
+                        'sw-settings-listing.general.productSortingCriteriaGrid.options.label.product.name',
+                    ),
                 },
                 {
                     value: 'product.ratingAverage',
                     label: this.$tc(
-                        'sw-settings-listing.general.productSortingCriteriaGrid.options.label.product.ratingAverage'
-                    )
+                        'sw-settings-listing.general.productSortingCriteriaGrid.options.label.product.ratingAverage',
+                    ),
                 },
                 {
                     value: 'product.productNumber',
                     label: this.$tc(
-                        'sw-settings-listing.general.productSortingCriteriaGrid.options.label.product.productNumber'
-                    )
+                        'sw-settings-listing.general.productSortingCriteriaGrid.options.label.product.productNumber',
+                    ),
                 },
                 {
                     value: 'product.releaseDate',
                     label: this.$tc(
-                        'sw-settings-listing.general.productSortingCriteriaGrid.options.label.product.releaseDate'
-                    )
+                        'sw-settings-listing.general.productSortingCriteriaGrid.options.label.product.releaseDate',
+                    ),
                 },
                 {
                     value: 'product.stock',
                     label: this.$tc(
-                        'sw-settings-listing.general.productSortingCriteriaGrid.options.label.product.stock'
-                    )
-                },
-                {
-                    value: 'product.listingPrices',
-                    label: this.$tc(
-                        'sw-settings-listing.general.productSortingCriteriaGrid.options.label.product.listingPrices'
-                    )
+                        'sw-settings-listing.general.productSortingCriteriaGrid.options.label.product.stock',
+                    ),
                 },
                 {
                     value: 'product.sales',
                     label: this.$tc(
-                        'sw-settings-listing.general.productSortingCriteriaGrid.options.label.product.sales'
-                    )
+                        'sw-settings-listing.general.productSortingCriteriaGrid.options.label.product.sales',
+                    ),
                 },
                 {
                     value: 'customField',
-                    label: this.$tc('sw-settings-listing.general.productSortingCriteriaGrid.options.label.customField')
-                }
+                    label: this.$tc('sw-settings-listing.general.productSortingCriteriaGrid.options.label.customField'),
+                },
+                {
+                    value: 'product.cheapestPrice',
+                    label: this.$tc(
+                        'sw-settings-listing.general.productSortingCriteriaGrid.options.label.product.cheapestPrice',
+                    ),
+                },
+                {
+                    value: 'product.price',
+                    label: this.$tc('sw-settings-listing.general.productSortingCriteriaGrid.options.label.product.price'),
+                },
             ];
 
             return criteriaOptions.sort((a, b) => {
@@ -162,14 +179,14 @@ Shopware.Component.register('sw-settings-listing-option-criteria-grid', {
             return [
                 {
                     label: this.$tc('global.default.ascending'),
-                    value: 'asc'
+                    value: 'asc',
                 },
                 {
                     label: this.$tc('global.default.descending'),
-                    value: 'desc'
-                }
+                    value: 'desc',
+                },
             ];
-        }
+        },
     },
 
     watch: {
@@ -185,8 +202,8 @@ Shopware.Component.register('sw-settings-listing-option-criteria-grid', {
                     }
                 });
             },
-            deep: true
-        }
+            deep: true,
+        },
     },
 
     created() {
@@ -201,10 +218,7 @@ Shopware.Component.register('sw-settings-listing-option-criteria-grid', {
         },
 
         fetchCustomFieldSetIds() {
-            return this.customFieldSetRelationsRepository.search(
-                this.customFieldsRelationsCriteria,
-                Shopware.Context.api
-            ).then(response => {
+            return this.customFieldSetRelationsRepository.search(this.customFieldsRelationsCriteria).then(response => {
                 this.customFieldSetIDs = response.map(currentField => {
                     return currentField.customFieldSetId;
                 });
@@ -212,7 +226,7 @@ Shopware.Component.register('sw-settings-listing-option-criteria-grid', {
         },
 
         fetchCustomFields() {
-            this.customFieldRepository.search(this.customFieldCriteria, Shopware.Context.api).then(response => {
+            this.customFieldRepository.search(this.customFieldCriteria).then(response => {
                 this.customFields = response;
             });
         },
@@ -246,9 +260,11 @@ Shopware.Component.register('sw-settings-listing-option-criteria-grid', {
                 this.$emit('criteria-add', fieldName);
 
                 const record = this.productSortingEntity.fields.find(field => field.field === fieldName);
-                if (record) {
-                    this.$refs.dataGrid.onDbClickCell(record);
-                }
+                this.$nextTick().then(() => {
+                    if (record && this.$refs.dataGrid) {
+                        this.$refs.dataGrid.onDbClickCell(record);
+                    }
+                });
 
                 return;
             }
@@ -258,8 +274,8 @@ Shopware.Component.register('sw-settings-listing-option-criteria-grid', {
             this.createNotificationError({
                 message: this.$t(
                     'sw-settings-listing.general.productSortingCriteriaGrid.options.criteriaAlreadyUsed',
-                    { criteriaName }
-                )
+                    { criteriaName },
+                ),
             });
         },
 
@@ -283,8 +299,8 @@ Shopware.Component.register('sw-settings-listing-option-criteria-grid', {
             if (item.field === null) {
                 this.createNotificationError({
                     message: this.$t(
-                        'sw-settings-listing.general.productSortingCriteriaGrid.options.customFieldCriteriaNotNull'
-                    )
+                        'sw-settings-listing.general.productSortingCriteriaGrid.options.customFieldCriteriaNotNull',
+                    ),
                 });
 
                 return;
@@ -297,8 +313,8 @@ Shopware.Component.register('sw-settings-listing-option-criteria-grid', {
             if (item.field === 'customField') {
                 this.createNotificationError({
                     message: this.$t(
-                        'sw-settings-listing.general.productSortingCriteriaGrid.options.customFieldCriteriaNotNull'
-                    )
+                        'sw-settings-listing.general.productSortingCriteriaGrid.options.customFieldCriteriaNotNull',
+                    ),
                 });
 
                 this.filterEmptyCustomFields(item);
@@ -311,6 +327,8 @@ Shopware.Component.register('sw-settings-listing-option-criteria-grid', {
         onCancelInlineEdit(item) {
             if (item && item.field === 'customField') {
                 this.filterEmptyCustomFields(item);
+            } else {
+                this.$emit('inline-edit-cancel', item);
             }
         },
 
@@ -352,13 +370,56 @@ Shopware.Component.register('sw-settings-listing-option-criteria-grid', {
         },
 
         getCustomFieldName(customField) {
-            const inlineSnippet = this.getInlineSnippet(customField.config.label);
+            const inlineSnippet = customField && this.getInlineSnippet(customField.config.label);
 
             if (!inlineSnippet) {
-                return customField.name;
+                return customField?.name;
             }
 
             return inlineSnippet;
-        }
-    }
+        },
+
+        customFieldCriteriaSingleSelect(customField) {
+            const criteria = new Criteria();
+
+            if (this.customFieldSetIDs) {
+                criteria.addFilter(
+                    Criteria.equalsAny('customFieldSetId', this.customFieldSetIDs),
+                );
+            }
+
+            if (this.getProductSortingFieldsByName(customField).length) {
+                criteria.addFilter(Criteria.not(
+                    'AND',
+                    [
+                        Criteria.equalsAny('id', this.getProductSortingFieldsByName(customField)),
+                    ],
+                ));
+            }
+
+            return criteria;
+        },
+
+        async changeCustomField(key, field) {
+            const customField = this.sortedProductSortingFields.find((item) => {
+                return item.field === 'customField' || item.name === key;
+            });
+
+            customField.field = `customFields.${field.name}`;
+
+            await this.fetchCustomFields();
+
+            this.onSaveInlineEdit(customField.field);
+        },
+
+        getProductSortingFieldsByName(customField = null) {
+            return this.sortedProductSortingFields.filter((item) => {
+                if (customField) {
+                    return /^customFields\./.test(item.field) && item.field !== customField.field;
+                }
+
+                return /^customFields\./.test(item.field);
+            }).map(item => item.name) || {};
+        },
+    },
 });

@@ -8,8 +8,6 @@ criteria.addAssociation('crossSellings.assignedProducts.product');
 
 Shopware.Service('cmsService').registerCmsElement({
     name: 'cross-selling',
-    flag: Shopware.Service('feature').isActive('FEATURE_NEXT_10078'),
-    hidden: !Shopware.Service('feature').isActive('FEATURE_NEXT_10078'),
     label: 'sw-cms.elements.crossSelling.label',
     component: 'sw-cms-el-cross-selling',
     configComponent: 'sw-cms-el-config-cross-selling',
@@ -21,26 +19,26 @@ Shopware.Service('cmsService').registerCmsElement({
             required: true,
             entity: {
                 name: 'product',
-                criteria: criteria
-            }
+                criteria: criteria,
+            },
         },
         displayMode: {
             source: 'static',
-            value: 'standard'
+            value: 'standard',
         },
         boxLayout: {
             source: 'static',
-            value: 'standard'
+            value: 'standard',
         },
         elMinWidth: {
             source: 'static',
-            value: '200px'
-        }
+            value: '300px',
+        },
     },
     collect: function collect(elem) {
         const context = {
             ...Shopware.Context.api,
-            inheritance: true
+            inheritance: true,
         };
 
         const criteriaList = {};
@@ -58,7 +56,7 @@ Shopware.Service('cmsService').registerCmsElement({
                     value: [elem.config[configKey].value],
                     key: configKey,
                     searchCriteria: entity.criteria ? entity.criteria : new Criteria(),
-                    ...entity
+                    ...entity,
                 };
 
                 entityData.searchCriteria.setIds(entityData.value);
@@ -69,5 +67,5 @@ Shopware.Service('cmsService').registerCmsElement({
         });
 
         return criteriaList;
-    }
+    },
 });

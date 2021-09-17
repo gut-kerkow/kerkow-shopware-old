@@ -28,6 +28,7 @@ use Shopware\Core\System\StateMachine\StateMachineRegistry;
 
 /**
  * @group slow
+ * @group skip-paratest
  */
 class MediaRepositoryDecoratorTest extends TestCase
 {
@@ -331,6 +332,40 @@ class MediaRepositoryDecoratorTest extends TestCase
         static::assertNull($event->getEventByEntityName(MediaDefinition::ENTITY_NAME));
     }
 
+    public function testDeleteForEmptyIds(): void
+    {
+        $secondId = Uuid::randomHex();
+
+        $this->mediaRepository->create(
+            [
+                [
+                    'id' => $secondId,
+                    'name' => 'test media',
+                    'mimeType' => 'image/png',
+                    'fileExtension' => 'png',
+                    'fileName' => $secondId . '-' . (new \DateTime())->getTimestamp(),
+                ],
+            ],
+            $this->context
+        );
+
+        $read = $this->mediaRepository->search(new Criteria([$secondId]), $this->context);
+        $secondMedia = $read->get($secondId);
+
+        $urlGenerator = $this->getContainer()->get(UrlGeneratorInterface::class);
+        $secondPath = $urlGenerator->getRelativeMediaUrl($secondMedia);
+
+        $this->getPublicFilesystem()->putStream($secondPath, fopen(self::FIXTURE_FILE, 'rb'));
+
+        static::assertTrue($this->getPublicFilesystem()->has($secondPath));
+
+        $event = $this->mediaRepository->delete([], $this->context);
+        $this->runWorker();
+
+        static::assertTrue($this->getPublicFilesystem()->has($secondPath));
+        static::assertNull($event->getEventByEntityName(MediaDefinition::ENTITY_NAME));
+    }
+
     public function testDeleteForMediaWithoutFile(): void
     {
         $firstId = Uuid::randomHex();
@@ -500,7 +535,7 @@ class MediaRepositoryDecoratorTest extends TestCase
                         'type' => 'test',
                         'label' => 'test',
                         'price' => new CalculatedPrice(10, 10, new CalculatedTaxCollection(), new TaxRuleCollection()),
-                        'priceDefinition' => new QuantityPriceDefinition(10, new TaxRuleCollection(), 2),
+                        'priceDefinition' => new QuantityPriceDefinition(10, new TaxRuleCollection()),
                         'good' => true,
                         'coverId' => $mediaId,
                     ],

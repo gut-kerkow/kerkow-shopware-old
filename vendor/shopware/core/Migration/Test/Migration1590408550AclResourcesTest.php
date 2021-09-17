@@ -31,15 +31,8 @@ class Migration1590408550AclResourcesTest extends TestCase
     public function restoreNewDatabase(): void
     {
         $connection = $this->getContainer()->get(Connection::class);
-
-        $connection->executeUpdate('DROP TABLE IF EXISTS `acl_resource`;');
-
-        try {
-            $connection->executeUpdate('ALTER TABLE `acl_role` ADD `privileges` json NOT NULL AFTER `name`;');
-        } catch (DBALException $e) {
-        }
-
-        $connection->executeUpdate('DELETE FROM acl_role');
+        $connection->rollBack();
+        $connection->beginTransaction();
     }
 
     /**
@@ -48,6 +41,7 @@ class Migration1590408550AclResourcesTest extends TestCase
     public function restoreOldDatabase(): void
     {
         $connection = $this->getContainer()->get(Connection::class);
+        $connection->rollBack();
 
         $connection->executeUpdate('DELETE FROM acl_user_role');
 
@@ -76,6 +70,8 @@ CREATE TABLE `acl_resource` (
         $this->getContainer()
             ->get(Connection::class)
             ->executeUpdate($sql);
+
+        $connection->beginTransaction();
     }
 
     /**
@@ -83,10 +79,14 @@ CREATE TABLE `acl_resource` (
      */
     public function testMigration(array $roles): void
     {
+        $this->connection->rollBack();
+
         $this->insert($roles);
 
         $migration = new Migration1590408550AclResources();
         $migration->update($this->connection);
+
+        $this->connection->beginTransaction();
 
         $actual = $this->fetchRoles();
 

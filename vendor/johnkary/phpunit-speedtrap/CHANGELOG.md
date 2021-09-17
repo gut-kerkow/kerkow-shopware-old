@@ -5,7 +5,26 @@ View diff for a specific commit:
 https://github.com/johnkary/phpunit-speedtrap/commit/XXX where XXX is the commit hash
 
 View diff between two versions:  
-https://github.com/johnkary/phpunit-speedtrap/compare/v2.0.0...v3.0.0
+https://github.com/johnkary/phpunit-speedtrap/compare/v3.2.0...v3.3.0
+
+## 3.3.0 (2020-12-18)
+
+Version 3.3 adds supports for PHPUnit 9.5+, and a way to enable or disable the SpeedTrap listener using environment variables.
+
+* [PR #73](https://github.com/johnkary/phpunit-speedtrap/pull/73) Compatibility with PHPUnit 9.5
+* [PR #66](https://github.com/johnkary/phpunit-speedtrap/pull/66) Environment variable PHPUNIT_SPEEDTRAP="disabled" can disable profiling
+
+## 3.2.0 (2020-02-12)
+
+Version 3.2 introduces supports for PHPUnit 9.0+.
+If your use of SpeedTrap depends on specific text output from SpeedTrap slowness
+report, see below wording changes that may require updating your implementation.
+
+* [PR #57](https://github.com/johnkary/phpunit-speedtrap/pull/57) Wording change to slowness report in renderHeader()
+
+## 3.1.0 (2019-02-23)
+
+Version 3.1 introduces support for PHPUnit 8.0+.
 
 ## 3.0.0 (2018-02-24)
 

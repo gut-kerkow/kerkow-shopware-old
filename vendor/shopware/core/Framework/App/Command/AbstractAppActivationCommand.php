@@ -42,7 +42,6 @@ abstract class AbstractAppActivationCommand extends Command
         $io = new ShopwareStyle($input, $output);
         $context = Context::createDefaultContext();
 
-        /** @var string $appName */
         $appName = $input->getArgument('name');
 
         $criteria = new Criteria();
@@ -53,14 +52,14 @@ abstract class AbstractAppActivationCommand extends Command
         if (!$id) {
             $io->error("No app found for \"${appName}\".");
 
-            return 1;
+            return self::FAILURE;
         }
 
         $this->runAction($id, $context);
 
         $io->success(sprintf('App %sd successfully.', $this->action));
 
-        return 0;
+        return self::SUCCESS;
     }
 
     protected function configure(): void

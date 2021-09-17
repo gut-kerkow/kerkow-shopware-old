@@ -10,14 +10,14 @@ Component.register('sw-cms-layout-modal', {
     inject: ['repositoryFactory'],
 
     mixins: [
-        Mixin.getByName('listing')
+        Mixin.getByName('listing'),
     ],
 
     props: {
         headline: {
             type: String,
             required: false,
-            default: ''
+            default: '',
         },
 
         cmsPageTypes: {
@@ -25,19 +25,20 @@ Component.register('sw-cms-layout-modal', {
             required: false,
             default() {
                 return [];
-            }
-        }
+            },
+        },
     },
 
     data() {
         return {
             selected: null,
+            selectedPageObject: null,
             isLoading: false,
             sortBy: 'createdAt',
             sortDirection: 'DESC',
             term: null,
             total: null,
-            pages: []
+            pages: [],
         };
     },
 
@@ -51,8 +52,6 @@ Component.register('sw-cms-layout-modal', {
 
             criteria
                 .addAssociation('previewMedia')
-                .addAssociation('sections')
-                .addAssociation('categories')
                 .addSorting(Criteria.sort(this.sortBy, this.sortDirection));
 
             if (this.cmsPageTypes.length) {
@@ -64,14 +63,14 @@ Component.register('sw-cms-layout-modal', {
             }
 
             return criteria;
-        }
+        },
     },
 
     methods: {
         getList() {
             this.isLoading = true;
 
-            return this.pageRepository.search(this.cmsPageCriteria, Shopware.Context.api).then((searchResult) => {
+            return this.pageRepository.search(this.cmsPageCriteria).then((searchResult) => {
                 this.total = searchResult.total;
                 this.pages = searchResult;
                 this.isLoading = false;
@@ -82,12 +81,14 @@ Component.register('sw-cms-layout-modal', {
         },
 
         selectLayout() {
-            this.$emit('modal-layout-select', this.selected);
+            this.$emit('modal-layout-select', this.selected, this.selectedPageObject);
             this.closeModal();
         },
 
-        selectItem(layoutId) {
-            this.selected = layoutId;
+        /* @deprecated tag:v6.5.0 layoutId is redundant and should be removed as an argument */
+        selectItem(layoutId, page) {
+            this.selected = layoutId; // replace with page.id
+            this.selectedPageObject = page;
         },
 
         onSearch(value) {
@@ -101,14 +102,17 @@ Component.register('sw-cms-layout-modal', {
             this.getList();
         },
 
-        onSelection(layoutId) {
-            this.selected = layoutId;
+        /* @deprecated tag:v6.5.0 layoutId is redundant and should be removed as an argument */
+        onSelection(layoutId, page) {
+            this.selected = layoutId; // replace with page.id
+            this.selectedPageObject = page;
         },
 
         closeModal() {
             this.$emit('modal-close');
             this.selected = null;
+            this.selectedPageObject = null;
             this.term = null;
-        }
-    }
+        },
+    },
 });

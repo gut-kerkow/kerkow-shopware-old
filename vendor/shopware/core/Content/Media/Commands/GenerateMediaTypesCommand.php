@@ -75,13 +75,13 @@ class GenerateMediaTypesCommand extends Command
 
         $this->io->progressFinish();
 
-        return 0;
+        return self::SUCCESS;
     }
 
     private function validateBatchSize(InputInterface $input): int
     {
         $batchSize = $input->getOption('batch-size');
-        if (!$batchSize || \is_array($batchSize)) {
+        if ($batchSize === null) {
             return 100;
         }
 

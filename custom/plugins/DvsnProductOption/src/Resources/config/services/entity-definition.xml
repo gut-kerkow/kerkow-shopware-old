@@ -5,11 +5,11 @@
     <services>
 
         <service id="Dvsn\ProductOption\Core\Content\ProductOption\ProductOptionDefinition">
-            <tag name="shopware.entity.definition" entity="dvsn_product_option" />
+            <tag name="shopware.entity.definition" />
         </service>
 
         <service id="Dvsn\ProductOption\Core\Content\ProductOption\Aggregate\ProductOptionTranslation\ProductOptionTranslationDefinition">
-            <tag name="shopware.entity.definition" entity="dvsn_product_option_translation" />
+            <tag name="shopware.entity.definition" />
         </service>
 
     </services>

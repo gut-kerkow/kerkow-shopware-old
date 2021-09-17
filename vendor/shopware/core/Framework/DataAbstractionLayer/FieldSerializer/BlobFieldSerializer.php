@@ -12,6 +12,11 @@ use Shopware\Core\Framework\DataAbstractionLayer\Write\WriteParameterBag;
 
 class BlobFieldSerializer implements FieldSerializerInterface
 {
+    public function normalize(Field $field, array $data, WriteParameterBag $parameters): array
+    {
+        return $data;
+    }
+
     public function encode(
         Field $field,
         EntityExistence $existence,
@@ -25,7 +30,12 @@ class BlobFieldSerializer implements FieldSerializerInterface
         yield $field->getStorageName() => $data->getValue();
     }
 
-    public function decode(Field $field, $value)
+    /**
+     * @return string|null
+     *
+     * @deprecated tag:v6.5.0 The parameter $value and return type will be native typed
+     */
+    public function decode(Field $field, /*?string */$value)/*: ?string*/
     {
         return $value;
     }

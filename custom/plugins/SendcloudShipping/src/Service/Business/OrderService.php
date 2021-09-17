@@ -2,9 +2,11 @@
 
 namespace Sendcloud\Shipping\Service\Business;
 
+use Psr\Container\ContainerInterface;
 use Sendcloud\Shipping\Core\BusinessLogic\Entity\Order;
 use Sendcloud\Shipping\Core\BusinessLogic\Entity\OrderItem;
 use Sendcloud\Shipping\Core\BusinessLogic\Interfaces\OrderService as OrderServiceInterface;
+use Sendcloud\Shipping\Core\Infrastructure\Interfaces\Required\Configuration;
 use Sendcloud\Shipping\Core\Infrastructure\Logger\Logger;
 use Sendcloud\Shipping\Entity\Currency\CurrencyRepository;
 use Sendcloud\Shipping\Entity\Order\OrderDeliveryRepository;
@@ -22,6 +24,9 @@ use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopware\Core\System\Currency\CurrencyEntity;
 
 /**
@@ -56,6 +61,14 @@ class OrderService implements OrderServiceInterface
      * @var DeliveryStateMapper
      */
     private $deliveryStateMapper;
+    /**
+     * @var Configuration
+     */
+    private $configService;
+    /**
+     * @var ContainerInterface
+     */
+    private $container;
 
     /**
      * OrderService constructor.
@@ -66,6 +79,8 @@ class OrderService implements OrderServiceInterface
      * @param ShipmentEntityRepository $shipmentRepository
      * @param OrderDeliveryRepository $orderDeliveryRepository
      * @param DeliveryStateMapper $deliveryStateMapper
+     * @param Configuration $configService
+     * @param ContainerInterface $container
      */
     public function __construct(
         OrderRepository $orderRepository,
@@ -73,14 +88,19 @@ class OrderService implements OrderServiceInterface
         CurrencyRepository $currencyRepository,
         ShipmentEntityRepository $shipmentRepository,
         OrderDeliveryRepository $orderDeliveryRepository,
-        DeliveryStateMapper $deliveryStateMapper
-    ) {
+        DeliveryStateMapper $deliveryStateMapper,
+        Configuration $configService,
+        ContainerInterface $container
+    )
+    {
         $this->orderRepository = $orderRepository;
         $this->productRepository = $productRepository;
         $this->currencyRepository = $currencyRepository;
         $this->shipmentRepository = $shipmentRepository;
         $this->orderDeliveryRepository = $orderDeliveryRepository;
         $this->deliveryStateMapper = $deliveryStateMapper;
+        $this->configService = $configService;
+        $this->container = $container;
     }
 
     /**
@@ -97,7 +117,7 @@ class OrderService implements OrderServiceInterface
             Logger::logError("An error occurred when fetching order ids from database: {$exception->getMessage()}", 'Integration');
         }
 
-        return  $orderIds;
+        return $orderIds;
     }
 
     /**
@@ -120,7 +140,7 @@ class OrderService implements OrderServiceInterface
             $orders[] = $order;
         }
 
-        return  $orders;
+        return $orders;
     }
 
     /**
@@ -276,7 +296,49 @@ class OrderService implements OrderServiceInterface
             $this->setFallbackPhone($sourceOrder, $order);
         }
 
+        if ($invoiceNumber = $this->getInvoiceNumber($sourceOrder->getId())) {
+            $order->setCustomsInvoiceNr($invoiceNumber);
+        }
+        $defaultShipmentType = $this->configService->getDefaultShipmentType();
+        if ($defaultShipmentType !== null && $defaultShipmentType !== '') {
+            $order->setCustomsShipmentType($defaultShipmentType);
+        }
+
         return $order;
+    }
+
+    /**
+     * Get invoice number for order id
+     *
+     * @param string $orderId
+     *
+     * @return string|null
+     */
+    private function getInvoiceNumber(string $orderId): ?string
+    {
+        $documentRepository = $this->container->get('document.repository');
+
+        $criteria = new Criteria();
+        $criteria->addSorting(new FieldSorting('document.createdAt', FieldSorting::DESCENDING));
+        $criteria->addFilter(new EqualsFilter('document.orderId', $orderId));
+        $criteria->addFilter(new EqualsFilter('document.documentTypeId', $this->getInvoiceTypeId()));
+        $document = $documentRepository->search($criteria, Context::createDefaultContext())->first();
+
+        return $document ? $document->getConfig()['documentNumber'] : null;
+    }
+
+    /**
+     * Retrieves invoice type ID
+     *
+     * @return string
+     */
+    private function getInvoiceTypeId(): string
+    {
+        $documentTypeRepository = $this->container->get('document_type.repository');
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('technicalName', 'invoice'));
+
+        return $documentTypeRepository->search($criteria, Context::createDefaultContext())->first()->getId();
     }
 
     /**
@@ -314,12 +376,22 @@ class OrderService implements OrderServiceInterface
             $totalValue += $quantity * $value;
             $orderItem->setValue(round($factor * $value, 2));
             $productEntity = $sourceItem->getProduct();
+
+            if ($this->configService->getDefaultHsCode()) {
+                $orderItem->setHsCode($this->configService->getDefaultHsCode());
+            }
+
+            if ($this->configService->getDefaultOriginCountry()) {
+                $orderItem->setOriginCountry($this->configService->getDefaultOriginCountry());
+            }
+
             if ($productEntity) {
-                $weight = $productEntity->getWeight();
+                $weight = $this->getProductWeight($productEntity);
                 $orderItem->setSku($productEntity->getProductNumber());
                 $totalWeight += $quantity * $weight;
                 $orderItem->setWeight(round($weight, 2));
-                
+                $this->setProductLevelInternationalShippingData($orderItem, $productEntity);
+
                 $orderItemProperties = [];
                 foreach ($productEntity->getOptions() as $option) {
                     $group = $option->getGroup();
@@ -341,6 +413,68 @@ class OrderService implements OrderServiceInterface
     }
 
     /**
+     * @param ProductEntity $productEntity
+     *
+     * @return float|null
+     */
+    private function getProductWeight(ProductEntity $productEntity): ?float
+    {
+        if ($weight = $productEntity->getWeight()) {
+            return $weight;
+        }
+
+        $parentId = $productEntity->getParentId();
+
+        if ($parentId && $parent = $this->productRepository->getProducts([$parentId])->first()) {
+            return $parent->getWeight();
+        }
+
+        return null;
+    }
+
+    /**
+     * Set HS Code and Origin Country from product configuration
+     *
+     * @param OrderItem $orderItem
+     * @param ProductEntity $productEntity
+     */
+    private function setProductLevelInternationalShippingData(OrderItem $orderItem, ProductEntity $productEntity): void
+    {
+        if ($customFields = $this->getCustomFields($productEntity)) {
+            if ($this->configService->getMappedHsCode() && !empty($customFields[$this->configService->getMappedHsCode()])) {
+                $orderItem->setHsCode($customFields[$this->configService->getMappedHsCode()]);
+            }
+
+            if ($this->configService->getMappedOriginCountry() && !empty($customFields[$this->configService->getMappedOriginCountry()])) {
+                $orderItem->setOriginCountry($customFields[$this->configService->getMappedOriginCountry()]);
+            }
+        }
+    }
+
+    /**
+     * Returns custom fields array
+     *
+     * @param ProductEntity $productEntity
+     *
+     * @return array|null
+     */
+    private function getCustomFields(ProductEntity $productEntity): ?array
+    {
+        $customFields = $productEntity->getCustomFields();
+        if ($customFields) {
+            return $customFields;
+        }
+
+        $parentId = $productEntity->getParentId();
+
+        if ($parentId && $parent = $this->productRepository->getProducts([$parentId])->first()) {
+            return $parent->getCustomFields();
+        }
+
+        return null;
+    }
+
+    /**
      * Set shipping method and shipping address information
      *
      * @param OrderDeliveryEntity $delivery
@@ -352,7 +486,6 @@ class OrderService implements OrderServiceInterface
         if ($shippingMethod) {
             $order->setCheckoutShippingName($shippingMethod->getTranslation('name'));
         }
-
 
         $shippingAddress = $delivery->getShippingOrderAddress();
         if ($shippingAddress) {
@@ -383,13 +516,19 @@ class OrderService implements OrderServiceInterface
             $order->setToState($toState);
         }
 
-        $address = $shippingAddress->getStreet();
+        $order->setAddress($shippingAddress->getStreet());
+
+        $address2 = '';
         if (!empty($shippingAddress->getAdditionalAddressLine1())) {
-            $address .= ' ' . $shippingAddress->getAdditionalAddressLine1();
+            $address2 .= $shippingAddress->getAdditionalAddressLine1();
         }
 
         if (!empty($shippingAddress->getAdditionalAddressLine2())) {
-            $address .= ' ' . $shippingAddress->getAdditionalAddressLine2();
+            $address2 .= ' ' . $shippingAddress->getAdditionalAddressLine2();
+        }
+
+        if (!empty($address2)) {
+            $order->setAddress2($address2);
         }
 
         $name = $shippingAddress->getFirstName();
@@ -398,7 +537,6 @@ class OrderService implements OrderServiceInterface
         }
 
         $order->setCustomerName($name);
-        $order->setAddress($address);
         $order->setPostalCode($shippingAddress->getZipcode());
         $order->setCity($shippingAddress->getCity());
         $order->setCompanyName((string)$shippingAddress->getCompany());
@@ -482,7 +620,7 @@ class OrderService implements OrderServiceInterface
      */
     private function setDates(OrderEntity $sourceOrder, Order $order): void
     {
-        $createdAt = $sourceOrder->getCreatedAt() ?: new \DateTime();
+        $createdAt = $sourceOrder->getOrderDate() ?: new \DateTime();
         $order->setCreatedAt(new \DateTime("@{$createdAt->getTimestamp()}"));
         $updatedAt = $sourceOrder->getUpdatedAt() ?: $createdAt;
         $order->setUpdatedAt(new \DateTime("@{$updatedAt->getTimestamp()}"));

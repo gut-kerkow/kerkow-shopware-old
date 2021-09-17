@@ -17,15 +17,9 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class ProductConfiguratorLoader
 {
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $configuratorRepository;
+    private EntityRepositoryInterface $configuratorRepository;
 
-    /**
-     * @var AvailableCombinationLoader
-     */
-    private $combinationLoader;
+    private AvailableCombinationLoader $combinationLoader;
 
     public function __construct(
         EntityRepositoryInterface $configuratorRepository,
@@ -59,14 +53,14 @@ class ProductConfiguratorLoader
 
         foreach ($groups as $group) {
             $options = $group->getOptions();
-            if ($group->getOptions() === null) {
+            if ($options === null) {
                 continue;
             }
 
             foreach ($options as $option) {
                 $combinable = $this->isCombinable($option, $current, $combinations);
                 if ($combinable === null) {
-                    $group->getOptions()->remove($option->getId());
+                    $options->remove($option->getId());
 
                     continue;
                 }
@@ -121,7 +115,7 @@ class ProductConfiguratorLoader
 
             $groups[$groupId] = $group;
 
-            if (!$group->getOptions()) {
+            if ($group->getOptions() === null) {
                 $group->setOptions(new PropertyGroupOptionCollection());
             }
 
@@ -162,11 +156,6 @@ class ProductConfiguratorLoader
 
                     if ($group->getSortingType() === PropertyGroupDefinition::SORTING_TYPE_ALPHANUMERIC) {
                         return strnatcmp($a->getTranslation('name'), $b->getTranslation('name'));
-                    }
-
-                    /* @deprecated tag:v6.4.0 - SORTING_TYPE_NUMERIC will be removed in 6.4.0 */
-                    if ($group->getSortingType() === PropertyGroupDefinition::SORTING_TYPE_NUMERIC) {
-                        return $a->getTranslation('name') <=> $b->getTranslation('name');
                     }
 
                     return ($a->getTranslation('position') ?? $a->getPosition() ?? 0) <=> ($b->getTranslation('position') ?? $b->getPosition() ?? 0);

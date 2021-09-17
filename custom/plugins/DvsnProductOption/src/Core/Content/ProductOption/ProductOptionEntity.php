@@ -37,6 +37,20 @@ class ProductOptionEntity extends Entity
     /**
      * ...
      *
+     * @var bool
+     */
+    protected $hidden;
+
+    /**
+     * ...
+     *
+     * @var bool
+     */
+    protected $mandatory;
+
+    /**
+     * ...
+     *
      * @var string
      */
     protected $number;
@@ -147,6 +161,61 @@ class ProductOptionEntity extends Entity
     {
         $this->active = $active;
     }
+
+
+
+    /**
+     * Getter method for the property.
+     *
+     * @return bool
+     */
+    public function getHidden()
+    {
+        return $this->hidden;
+    }
+
+
+
+    /**
+     * Setter method for the property.
+     *
+     * @param bool $hidden
+     *
+     * @return void
+     */
+    public function setHidden(bool $hidden): void
+    {
+        $this->hidden = $hidden;
+    }
+
+
+
+    /**
+     * Getter method for the property.
+     *
+     * @return bool
+     */
+    public function getMandatory()
+    {
+        return $this->mandatory;
+    }
+
+
+
+    /**
+     * Setter method for the property.
+     *
+     * @param bool $mandatory
+     *
+     * @return void
+     */
+    public function setMandatory(bool $mandatory): void
+    {
+        $this->mandatory = $mandatory;
+    }
+
+
+
 
     /**
      * Getter method for the property.

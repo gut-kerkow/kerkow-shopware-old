@@ -7,6 +7,7 @@ use Shopware\Core\Framework\App\ActionButton\AppActionLoader;
 use Shopware\Core\Framework\App\ActionButton\Executor;
 use Shopware\Core\Framework\App\Manifest\ModuleLoader;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\Routing\Annotation\Acl;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Core\Framework\Routing\Annotation\Since;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -22,25 +23,13 @@ use Symfony\Component\Routing\Annotation\Route;
  */
 class AppActionController extends AbstractController
 {
-    /**
-     * @var ActionButtonLoader
-     */
-    private $actionButtonLoader;
+    private ActionButtonLoader $actionButtonLoader;
 
-    /**
-     * @var Executor
-     */
-    private $executor;
+    private Executor $executor;
 
-    /**
-     * @var AppActionLoader
-     */
-    private $appActionFactory;
+    private AppActionLoader $appActionFactory;
 
-    /**
-     * @var ModuleLoader
-     */
-    private $moduleLoader;
+    private ModuleLoader $moduleLoader;
 
     public function __construct(
         ActionButtonLoader $actionButtonLoader,
@@ -56,7 +45,7 @@ class AppActionController extends AbstractController
 
     /**
      * @Since("6.3.3.0")
-     * @Route("api/v{version}/app-system/action-button/{entity}/{view}", name="api.app_system.action_buttons", methods={"GET"})
+     * @Route("api/app-system/action-button/{entity}/{view}", name="api.app_system.action_buttons", methods={"GET"})
      */
     public function getActionsPerView(string $entity, string $view, Context $context): Response
     {
@@ -67,7 +56,8 @@ class AppActionController extends AbstractController
 
     /**
      * @Since("6.3.3.0")
-     * @Route("api/v{version}/app-system/action-button/run/{id}", name="api.app_system.action_button.run", methods={"POST"})
+     * @Route("api/app-system/action-button/run/{id}", name="api.app_system.action_button.run", methods={"POST"})
+     * @Acl({"app"})
      */
     public function runAction(string $id, Request $request, Context $context): Response
     {
@@ -75,14 +65,12 @@ class AppActionController extends AbstractController
 
         $action = $this->appActionFactory->loadAppAction($id, $entityIds, $context);
 
-        $this->executor->execute($action, $context);
-
-        return new JsonResponse();
+        return $this->executor->execute($action, $context);
     }
 
     /**
      * @Since("6.3.3.0")
-     * @Route("api/v{version}/app-system/modules", name="api.app_system.modules", methods={"GET"})
+     * @Route("api/app-system/modules", name="api.app_system.modules", methods={"GET"})
      */
     public function getModules(Context $context): Response
     {

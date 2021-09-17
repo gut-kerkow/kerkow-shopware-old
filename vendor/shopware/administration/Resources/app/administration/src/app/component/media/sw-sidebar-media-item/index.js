@@ -8,11 +8,9 @@ const { Criteria } = Shopware.Data;
  * @status ready
  * @description The <u>sw-sidebar-media-item</u> component is used everywhere you need media objects outside of the media
  * manager. Use the additional properties to filter the shown media.
- * Just pass a object created by the CriteriaFactory.
  * @example-type code-only
  * @component-example
- * <sw-sidebar-media-item :useAdditionalSearchCriteria="true"
- *                        :additionalSearchCriteria="getCriteria">
+ * <sw-sidebar-media-item>
  *    <template slot="context-menu-items" slot-scope="media">
  *       <sw-context-menu-item @click="onAddItemToProduct(media.mediaItem)">
  *          Lorem ipsum dolor sit amet
@@ -29,23 +27,18 @@ Component.register('sw-sidebar-media-item', {
         initialFolderId: {
             type: String,
             required: false,
-            default: null
+            default: null,
         },
         isParentLoading: {
             type: Boolean,
             required: false,
-            default: false
+            default: false,
         },
         disabled: {
             type: Boolean,
             required: false,
-            default: false
+            default: false,
         },
-        additionalSearchCriteria: {
-            type: Object,
-            required: false,
-            default: null
-        }
     },
 
     data() {
@@ -57,7 +50,7 @@ Component.register('sw-sidebar-media-item', {
             page: 1,
             limit: 25,
             total: 0,
-            term: ''
+            term: '',
         };
     },
 
@@ -80,7 +73,7 @@ Component.register('sw-sidebar-media-item', {
 
         additionalEventListeners() {
             return this.$listeners;
-        }
+        },
     },
 
     watch: {
@@ -99,7 +92,7 @@ Component.register('sw-sidebar-media-item', {
 
         isParentLoading() {
             this.getList();
-        }
+        },
     },
 
     created() {
@@ -183,10 +176,6 @@ Component.register('sw-sidebar-media-item', {
                 criteria.addFilter(Criteria.equals('mediaFolderId', this.mediaFolderId));
             }
 
-            if (this.additionalSearchCriteria) {
-                criteria.addFilter(this.additionalSearchCriteria.getQuery());
-            }
-
             if (this.term) {
                 criteria.term = this.term;
             }
@@ -200,6 +189,6 @@ Component.register('sw-sidebar-media-item', {
 
         onNavigateToFolder(folderId) {
             this.mediaFolderId = folderId;
-        }
-    }
+        },
+    },
 });

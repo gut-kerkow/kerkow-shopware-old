@@ -14,16 +14,8 @@ function createWrapper(privileges = []) {
     return shallowMount(Shopware.Component.build('sw-settings-shipping-list'), {
         localVue,
         mocks: {
-            $store: Shopware.State._store,
-            $tc: () => {},
-            $device: {
-                getSystemKey: () => {}
-            },
             $route: {
                 query: ''
-            },
-            $router: {
-                replace: () => {}
             }
         },
         provide: {
@@ -36,10 +28,8 @@ function createWrapper(privileges = []) {
 
                     return privileges.includes(identifier);
                 }
-            },
-            feature: {
-                isActive: () => true
             }
+
         },
         stubs: {
             'sw-page': {
@@ -65,9 +55,9 @@ describe('module/sw-settings-shipping/page/sw-settings-shipping-list', () => {
         const entityListing = wrapper.find('sw-entity-listing-stub');
         const button = wrapper.find('sw-button-stub');
 
-        expect(entityListing.attributes().allowedit).toBeFalsy();
-        expect(entityListing.attributes().allowdelete).toBeFalsy();
-        expect(entityListing.attributes().showselection).toBeFalsy();
+        expect(entityListing.attributes()['allow-edit']).toBeFalsy();
+        expect(entityListing.attributes()['allow-delete']).toBeFalsy();
+        expect(entityListing.attributes()['show-selection']).toBeFalsy();
         expect(button.attributes().disabled).toBe('true');
     });
 
@@ -79,9 +69,9 @@ describe('module/sw-settings-shipping/page/sw-settings-shipping-list', () => {
         const entityListing = wrapper.find('sw-entity-listing-stub');
         const button = wrapper.find('sw-button-stub');
 
-        expect(entityListing.attributes().allowedit).toBe('true');
-        expect(entityListing.attributes().allowdelete).toBeFalsy();
-        expect(entityListing.attributes().showselection).toBeFalsy();
+        expect(entityListing.attributes()['allow-edit']).toBe('true');
+        expect(entityListing.attributes()['allow-delete']).toBeFalsy();
+        expect(entityListing.attributes()['show-selection']).toBeFalsy();
 
         expect(button.attributes().disabled).toBe('true');
     });
@@ -95,8 +85,8 @@ describe('module/sw-settings-shipping/page/sw-settings-shipping-list', () => {
         const entityListing = wrapper.find('sw-entity-listing-stub');
         const button = wrapper.find('sw-button-stub');
 
-        expect(entityListing.attributes().allowedit).toBe('true');
-        expect(entityListing.attributes().allowdelete).toBe('true');
+        expect(entityListing.attributes()['allow-edit']).toBe('true');
+        expect(entityListing.attributes()['allow-delete']).toBe('true');
 
         expect(button.attributes().disabled).toBe('true');
     });
@@ -111,8 +101,8 @@ describe('module/sw-settings-shipping/page/sw-settings-shipping-list', () => {
         const entityListing = wrapper.find('sw-entity-listing-stub');
         const button = wrapper.find('sw-button-stub');
 
-        expect(entityListing.attributes().allowedit).toBe('true');
-        expect(entityListing.attributes().allowdelete).toBe('true');
+        expect(entityListing.attributes()['allow-edit']).toBe('true');
+        expect(entityListing.attributes()['allow-delete']).toBe('true');
 
         expect(button.attributes().disabled).toBeUndefined();
     });

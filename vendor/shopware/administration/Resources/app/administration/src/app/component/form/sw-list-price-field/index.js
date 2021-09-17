@@ -14,7 +14,14 @@ Component.register('sw-list-price-field', {
             required: true,
             default() {
                 return [];
-            }
+            },
+        },
+
+        purchasePrices: {
+            type: Array,
+            default() {
+                return [];
+            },
         },
 
         defaultPrice: {
@@ -22,12 +29,14 @@ Component.register('sw-list-price-field', {
             required: false,
             default() {
                 return {};
-            }
+            },
         },
 
+        // FIXME: add property type
+        // eslint-disable-next-line vue/require-prop-types
         label: {
             required: false,
-            default: true
+            default: true,
         },
 
         taxRate: {
@@ -35,7 +44,7 @@ Component.register('sw-list-price-field', {
             required: true,
             default() {
                 return {};
-            }
+            },
         },
 
         currency: {
@@ -43,47 +52,59 @@ Component.register('sw-list-price-field', {
             required: true,
             default() {
                 return {};
-            }
+            },
         },
 
+        // FIXME: add property type
+        // eslint-disable-next-line vue/require-prop-types
         compact: {
             required: false,
-            default: false
+            default: false,
         },
 
         error: {
             type: Object,
             required: false,
-            default: null
+            default: null,
         },
 
+        // FIXME: add property type
+        // eslint-disable-next-line vue/require-prop-types
         disabled: {
             required: false,
-            default: false
+            default: false,
         },
 
         enableInheritance: {
             type: Boolean,
             required: false,
-            default: false
+            default: false,
         },
 
         disableSuffix: {
             type: Boolean,
             required: false,
-            default: false
+            default: false,
         },
 
         vertical: {
             type: Boolean,
             required: false,
-            default: false
+            default: false,
         },
 
+        // FIXME: add property type
+        // eslint-disable-next-line vue/require-prop-types
         hideListPrices: {
             required: false,
-            default: false
-        }
+            default: false,
+        },
+
+        showSettingPrice: {
+            type: Boolean,
+            required: false,
+            default: true,
+        },
     },
 
     computed: {
@@ -103,14 +124,14 @@ Component.register('sw-list-price-field', {
                     gross: this.convertPrice(this.defaultPrice.gross),
                     linked: this.defaultPrice.linked,
                     net: this.convertPrice(this.defaultPrice.net),
-                    listPrice: this.defaultPrice.listPrice
+                    listPrice: this.defaultPrice.listPrice,
                 };
             },
             set(newValue) {
                 this.priceForCurrency.gross = newValue.gross;
                 this.priceForCurrency.linked = newValue.linked;
                 this.priceForCurrency.net = newValue.net;
-            }
+            },
         },
 
         listPrice: {
@@ -125,7 +146,7 @@ Component.register('sw-list-price-field', {
                     gross: null,
                     currencyId: this.defaultPrice.currencyId ? this.defaultPrice.currencyId : this.currency.id,
                     linked: true,
-                    net: null
+                    net: null,
                 }];
             },
 
@@ -135,7 +156,7 @@ Component.register('sw-list-price-field', {
                 if (price) {
                     this.$set(price, 'listPrice', newValue);
                 }
-            }
+            },
         },
 
         defaultListPrice() {
@@ -149,7 +170,7 @@ Component.register('sw-list-price-field', {
                 currencyId: this.defaultPrice.currencyId ? this.defaultPrice.currencyId : this.currency.id,
                 gross: null,
                 net: null,
-                linked: true
+                linked: true,
             };
         },
 
@@ -159,7 +180,15 @@ Component.register('sw-list-price-field', {
             });
 
             return !priceForCurrency;
-        }
+        },
+
+        listPriceHelpText() {
+            if (!this.vertical || this.compact) {
+                return null;
+            }
+
+            return this.$tc('global.sw-list-price-field.helpTextListPriceGross');
+        },
     },
 
     methods: {
@@ -175,6 +204,6 @@ Component.register('sw-list-price-field', {
             const calculatedPrice = value * this.currency.factor;
             const priceRounded = calculatedPrice.toFixed(this.currency.decimalPrecision);
             return Number(priceRounded);
-        }
-    }
+        },
+    },
 });

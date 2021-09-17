@@ -20,6 +20,9 @@ trait ConsoleProgressTrait
      */
     protected $progress;
 
+    /**
+     * @return array<string, string>
+     */
     public static function getSubscribedEvents(): array
     {
         return [
@@ -51,12 +54,18 @@ trait ConsoleProgressTrait
 
     public function finishProgress(ProgressFinishedEvent $event): void
     {
+        if (!$this->io) {
+            return;
+        }
+
         if (!$this->progress) {
             return;
         }
+
         if (!$this->progress->getMaxSteps()) {
             return;
         }
+
         $this->progress->setMessage($event->getMessage());
         $this->progress->finish();
         $this->io->newLine(2);

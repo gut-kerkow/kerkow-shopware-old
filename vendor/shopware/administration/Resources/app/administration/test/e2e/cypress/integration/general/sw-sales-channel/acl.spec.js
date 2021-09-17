@@ -25,9 +25,12 @@ describe('Sales Channel: Test acl', () => {
         cy.get('#sw-field--salesChannel-name').should('have.value', 'Storefront');
 
         cy.get('.sw-tabs-item').eq(1).click();
-        cy.get('.sw-sales-channel-detail-theme__info-name').contains('Shopware default theme');
+        cy.get('.sw-sales-channel-detail-products').should('be.visible');
 
         cy.get('.sw-tabs-item').eq(2).click();
+        cy.get('.sw-sales-channel-detail-theme__info-name').contains('Shopware default theme');
+
+        cy.get('.sw-tabs-item').eq(3).click();
         cy.get('#trackingId').should('be.visible');
     });
 

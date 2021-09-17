@@ -2,12 +2,10 @@
 
 namespace Shopware\Core\Content\MailTemplate\Aggregate\MailTemplateType;
 
-use Shopware\Core\Content\MailTemplate\Aggregate\MailTemplateSalesChannel\MailTemplateSalesChannelDefinition;
 use Shopware\Core\Content\MailTemplate\Aggregate\MailTemplateTypeTranslation\MailTemplateTypeTranslationDefinition;
 use Shopware\Core\Content\MailTemplate\MailTemplateDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
-use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\CascadeDelete;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\SearchRanking;
@@ -58,10 +56,9 @@ class MailTemplateTypeDefinition extends EntityDefinition
             (new StringField('technical_name', 'technicalName'))->addFlags(new ApiAware(), new Required()),
             new JsonField('available_entities', 'availableEntities'),
             (new TranslatedField('customFields'))->addFlags(new ApiAware()),
-
             (new TranslationsAssociationField(MailTemplateTypeTranslationDefinition::class, 'mail_template_type_id'))->addFlags(new ApiAware(), new Required()),
             (new OneToManyAssociationField('mailTemplates', MailTemplateDefinition::class, 'mail_template_type_id'))->addFlags(new SetNullOnDelete()),
-            (new OneToManyAssociationField('salesChannels', MailTemplateSalesChannelDefinition::class, 'mail_template_type_id'))->addFlags(new CascadeDelete()),
+            (new JsonField('template_data', 'templateData')),
         ]);
     }
 }

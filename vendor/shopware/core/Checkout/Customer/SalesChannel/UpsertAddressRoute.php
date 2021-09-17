@@ -15,6 +15,7 @@ use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Core\Framework\Routing\Annotation\Since;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\Framework\Validation\BuildValidationEvent;
+use Shopware\Core\Framework\Validation\DataBag\DataBag;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\Framework\Validation\DataValidationDefinition;
 use Shopware\Core\Framework\Validation\DataValidationFactoryInterface;
@@ -80,22 +81,24 @@ class UpsertAddressRoute extends AbstractUpsertAddressRoute
      * @Since("6.3.2.0")
      * @OA\Post(
      *      path="/account/address",
-     *      summary="Create a new address",
+     *      summary="Create a new address for a customer",
+     *      description="Creates a new address for a customer.",
      *      operationId="createCustomerAddress",
-     *      tags={"Store API", "Account", "Address"},
-     *      @OA\RequestBody(@OA\JsonContent(ref="#/components/schemas/customer_address_flat")),
+     *      tags={"Store API", "Address"},
+     *      @OA\RequestBody(@OA\JsonContent(ref="#/components/schemas/CustomerAddress")),
      *      @OA\Response(
      *          response="200",
      *          description="",
-     *          @OA\JsonContent(ref="#/components/schemas/customer_address_flat")
+     *          @OA\JsonContent(ref="#/components/schemas/CustomerAddress")
      *     )
      * )
      * @OA\Patch(
      *      path="/account/address/{addressId}",
-     *      summary="Update address",
+     *      summary="Modify an address of a customer",
+     *      description="Modifies an existing address of a customer.",
      *      operationId="updateCustomerAddress",
-     *      tags={"Store API", "Account", "Address"},
-     *      @OA\RequestBody(@OA\JsonContent(ref="#/components/schemas/customer_address_flat")),
+     *      tags={"Store API", "Address"},
+     *      @OA\RequestBody(@OA\JsonContent(ref="#/components/schemas/CustomerAddress")),
      *      @OA\Parameter(
      *        name="addressId",
      *        in="path",
@@ -106,30 +109,25 @@ class UpsertAddressRoute extends AbstractUpsertAddressRoute
      *      @OA\Response(
      *          response="200",
      *          description="",
-     *          @OA\JsonContent(ref="#/components/schemas/customer_address_flat")
+     *          @OA\JsonContent(ref="#/components/schemas/CustomerAddress")
      *     )
      * )
-     * @LoginRequired()
-     * @Route(path="/store-api/v{version}/account/address", name="store-api.account.address.create", methods={"POST"}, defaults={"addressId": null})
-     * @Route(path="/store-api/v{version}/account/address/{addressId}", name="store-api.account.address.update", methods={"PATCH"})
+     * @LoginRequired(allowGuest=true)
+     * @Route(path="/store-api/account/address", name="store-api.account.address.create", methods={"POST"}, defaults={"addressId": null})
+     * @Route(path="/store-api/account/address/{addressId}", name="store-api.account.address.update", methods={"PATCH"})
      */
-    public function upsert(?string $addressId, RequestDataBag $data, SalesChannelContext $context, ?CustomerEntity $customer = null): UpsertAddressRouteResponse
+    public function upsert(?string $addressId, RequestDataBag $data, SalesChannelContext $context, CustomerEntity $customer): UpsertAddressRouteResponse
     {
-        /* @deprecated tag:v6.4.0 - Parameter $customer will be mandatory when using with @LoginRequired() */
-        if (!$customer) {
-            $customer = $context->getCustomer();
-        }
-
         if (!$addressId) {
             $isCreate = true;
             $addressId = Uuid::randomHex();
         } else {
-            $this->validateAddress($addressId, $context);
+            $this->validateAddress($addressId, $context, $customer);
             $isCreate = false;
         }
 
         $accountType = $data->get('accountType', CustomerEntity::ACCOUNT_TYPE_PRIVATE);
-        $definition = $this->getValidationDefinition($accountType, $isCreate, $context);
+        $definition = $this->getValidationDefinition($data, $accountType, $isCreate, $context);
         $this->validator->validate(array_merge(['id' => $addressId], $data->all()), $definition);
 
         $addressData = [
@@ -144,7 +142,6 @@ class UpsertAddressRoute extends AbstractUpsertAddressRoute
             'company' => $data->get('company'),
             'department' => $data->get('department'),
             'title' => $data->get('title'),
-            'vatId' => $data->get('vatId'),
             'phoneNumber' => $data->get('phoneNumber'),
             'additionalAddressLine1' => $data->get('additionalAddressLine1'),
             'additionalAddressLine2' => $data->get('additionalAddressLine2'),
@@ -167,7 +164,7 @@ class UpsertAddressRoute extends AbstractUpsertAddressRoute
         return new UpsertAddressRouteResponse($address);
     }
 
-    private function getValidationDefinition(string $accountType, bool $isCreate, SalesChannelContext $context): DataValidationDefinition
+    private function getValidationDefinition(DataBag $data, string $accountType, bool $isCreate, SalesChannelContext $context): DataValidationDefinition
     {
         if ($isCreate) {
             $validation = $this->addressValidationFactory->create($context);
@@ -179,7 +176,7 @@ class UpsertAddressRoute extends AbstractUpsertAddressRoute
             $validation->add('company', new NotBlank());
         }
 
-        $validationEvent = new BuildValidationEvent($validation, $context->getContext());
+        $validationEvent = new BuildValidationEvent($validation, $data, $context->getContext());
         $this->eventDispatcher->dispatch($validationEvent, $validationEvent->getName());
 
         return $validation;

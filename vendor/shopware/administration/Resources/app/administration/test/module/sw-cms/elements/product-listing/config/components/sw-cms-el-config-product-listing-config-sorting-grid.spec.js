@@ -1,14 +1,10 @@
 import { shallowMount } from '@vue/test-utils';
 import 'src/module/sw-cms/elements/product-listing/config/components/sw-cms-el-config-product-listing-config-sorting-grid';
-import EntityCollection from 'src/core/data-new/entity-collection.data';
+import EntityCollection from 'src/core/data/entity-collection.data';
 import Vue from 'vue';
 
 function createWrapper(productSortings = []) {
     return shallowMount(Shopware.Component.build('sw-cms-el-config-product-listing-config-sorting-grid'), {
-        sync: false,
-        mocks: {
-            $tc: v => v
-        },
         provide: {
             validationService: {}
         },

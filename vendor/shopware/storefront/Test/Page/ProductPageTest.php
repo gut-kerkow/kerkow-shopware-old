@@ -3,17 +3,17 @@
 namespace Shopware\Storefront\Test\Page;
 
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\Content\Cms\DataResolver\FieldConfig;
+use Shopware\Core\Content\Cms\DataResolver\FieldConfigCollection;
 use Shopware\Core\Content\Product\Aggregate\ProductReview\ProductReviewEntity;
 use Shopware\Core\Content\Product\Exception\ProductNotFoundException;
 use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Shopware\Storefront\Page\Product\ProductPage;
-use Shopware\Storefront\Page\Product\ProductPageCriteriaEvent;
 use Shopware\Storefront\Page\Product\ProductPageLoadedEvent;
 use Shopware\Storefront\Page\Product\ProductPageLoader;
 use Shopware\Storefront\Page\Product\Review\RatingMatrix;
@@ -53,7 +53,7 @@ class ProductPageTest extends TestCase
         $this->catchEvent(ProductPageLoadedEvent::class, $event);
 
         $this->expectException(ProductNotFoundException::class);
-        $this->getPageLoader()->load($request, $context);
+        $this->getPageLoader()->load($request, $context, $this->createCustomer());
     }
 
     public function testItDoesLoadATestProduct(): void
@@ -81,14 +81,9 @@ class ProductPageTest extends TestCase
 
         $request = new Request([], [], ['productId' => $product->getId()]);
 
-        /** @var ProductPageLoadedEvent $event */
-        $event = null;
-        $this->catchEvent(ProductPageCriteriaEvent::class, $event);
-
         $page = $this->getPageLoader()->load($request, $context);
 
         static::assertInstanceOf(ProductPage::class, $page);
-        static::assertInstanceOf(ProductPageCriteriaEvent::class, $event);
     }
 
     public function testItDoesLoadACloseProductWithHideCloseEnabled(): void
@@ -176,10 +171,39 @@ class ProductPageTest extends TestCase
         static::assertEquals(7, $matrix->getTotalReviewCount());
     }
 
+    public function testItLoadsPageWithProductCategoryAsActiveNavigation(): void
+    {
+        $context = $this->createSalesChannelContextWithLoggedInCustomerAndWithNavigation();
+
+        $seoCategoryName = 'Fancy Category';
+
+        $catRepository = $this->getContainer()->get('category.repository');
+
+        $seoCategoryId = Uuid::randomHex();
+
+        $catRepository->create([[
+            'id' => $seoCategoryId,
+            'name' => $seoCategoryName,
+            'active' => true,
+            'parentId' => $context->getSalesChannel()->getNavigationCategoryId(),
+        ]], Context::createDefaultContext());
+
+        $product = $this->getRandomProduct($context, 1, false, [
+            'categories' => [
+                ['id' => $seoCategoryId],
+            ],
+        ]);
+
+        $request = new Request([], [], ['productId' => $product->getId()]);
+
+        $page = $this->getPageLoader()->load($request, $context);
+
+        static::assertEquals($seoCategoryName, $page->getHeader()->getNavigation()->getActive()->getName());
+        static::assertEquals($seoCategoryId, $page->getHeader()->getNavigation()->getActive()->getId());
+    }
+
     public function testItDoesLoadACmsProductDetailPage(): void
     {
-        Feature::skipTestIfInActive('FEATURE_NEXT_10078', $this);
-
         $context = $this->createSalesChannelContextWithNavigation();
         $cmsPageId = Uuid::randomHex();
         $productCmsPageData = [
@@ -206,6 +230,92 @@ class ProductPageTest extends TestCase
 
         static::assertSame(StorefrontPageTestConstants::PRODUCT_NAME, $page->getProduct()->getName());
         self::assertPageEvent(ProductPageLoadedEvent::class, $event, $context, $request, $page);
+    }
+
+    public function testSlotOverwrite(): void
+    {
+        $context = $this->createSalesChannelContextWithNavigation();
+        $cmsPageId = Uuid::randomHex();
+        $firstSlotId = Uuid::randomHex();
+        $secondSlotId = Uuid::randomHex();
+        $productCmsPageData = [
+            'cmsPage' => [
+                'id' => $cmsPageId,
+                'type' => 'product_detail',
+                'sections' => [
+                    [
+                        'id' => Uuid::randomHex(),
+                        'type' => 'default',
+                        'position' => 0,
+                        'blocks' => [
+                            [
+                                'type' => 'text',
+                                'position' => 0,
+                                'slots' => [
+                                    [
+                                        'id' => $firstSlotId,
+                                        'type' => 'text',
+                                        'slot' => 'content',
+                                        'config' => [
+                                            'content' => [
+                                                'source' => 'static',
+                                                'value' => 'initial',
+                                            ],
+                                        ],
+                                    ],
+                                    [
+                                        'id' => $secondSlotId,
+                                        'type' => 'text',
+                                        'slot' => 'content',
+                                        'config' => null,
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            'slotConfig' => [
+                $firstSlotId => [
+                    'content' => [
+                        'source' => 'static',
+                        'value' => 'overwrittenByProduct',
+                    ],
+                ],
+                $secondSlotId => [
+                    'content' => [
+                        'source' => 'static',
+                        'value' => 'overwrittenByProduct',
+                    ],
+                ],
+            ],
+        ];
+
+        $product = $this->getRandomProduct($context, 10, false, $productCmsPageData);
+        $request = new Request([], [], ['productId' => $product->getId()]);
+
+        /** @var ProductPageLoadedEvent $event */
+        $event = null;
+        $this->catchEvent(ProductPageLoadedEvent::class, $event);
+
+        $page = $this->getPageLoader()->load($request, $context);
+        $cmsPage = $page->getCmsPage();
+        $fieldConfigCollection = new FieldConfigCollection([new FieldConfig('content', 'static', 'overwrittenByProduct')]);
+
+        static::assertEquals(
+            $productCmsPageData['slotConfig'][$firstSlotId],
+            $cmsPage->getSections()->first()->getBlocks()->getSlots()->get($firstSlotId)->getConfig()
+        );
+
+        static::assertEquals(
+            $fieldConfigCollection,
+            $cmsPage->getSections()->first()->getBlocks()->getSlots()->get($firstSlotId)->getFieldConfig()
+        );
+
+        static::assertEquals(
+            $productCmsPageData['slotConfig'][$secondSlotId],
+            $cmsPage->getSections()->first()->getBlocks()->getSlots()->get($secondSlotId)->getConfig()
+        );
     }
 
     /**

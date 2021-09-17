@@ -5,12 +5,14 @@ namespace Shopware\Core\Checkout\Order\Aggregate\OrderCustomer;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopware\Core\System\Salutation\SalutationEntity;
 
 class OrderCustomerEntity extends Entity
 {
     use EntityIdTrait;
+    use EntityCustomFieldsTrait;
 
     /**
      * @var string
@@ -23,7 +25,7 @@ class OrderCustomerEntity extends Entity
     protected $orderId;
 
     /**
-     * @var string
+     * @var string|null
      */
     protected $salutationId;
 
@@ -41,6 +43,11 @@ class OrderCustomerEntity extends Entity
      * @var string|null
      */
     protected $title;
+
+    /**
+     * @var array|null
+     */
+    protected $vatIds;
 
     /**
      * @var string|null
@@ -73,11 +80,6 @@ class OrderCustomerEntity extends Entity
     protected $order;
 
     /**
-     * @var array|null
-     */
-    protected $customFields;
-
-    /**
      * @var string|null
      */
     protected $remoteAddress;
@@ -92,7 +94,7 @@ class OrderCustomerEntity extends Entity
         $this->email = $email;
     }
 
-    public function getSalutationId(): string
+    public function getSalutationId(): ?string
     {
         return $this->salutationId;
     }
@@ -130,6 +132,16 @@ class OrderCustomerEntity extends Entity
     public function setTitle(string $title): void
     {
         $this->title = $title;
+    }
+
+    public function getVatIds(): ?array
+    {
+        return $this->vatIds;
+    }
+
+    public function setVatIds(array $vatIds): void
+    {
+        $this->vatIds = $vatIds;
     }
 
     public function getCustomerNumber(): ?string
@@ -180,16 +192,6 @@ class OrderCustomerEntity extends Entity
     public function setSalutation(SalutationEntity $salutation): void
     {
         $this->salutation = $salutation;
-    }
-
-    public function getCustomFields(): ?array
-    {
-        return $this->customFields;
-    }
-
-    public function setCustomFields(?array $customFields): void
-    {
-        $this->customFields = $customFields;
     }
 
     public function getOrderId(): string

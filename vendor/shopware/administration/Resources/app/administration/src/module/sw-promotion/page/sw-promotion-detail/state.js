@@ -1,24 +1,22 @@
+/**
+ * @deprecated tag:v6.5.0 - will be removed, use `sw-promotion-v2` instead
+ */
 export default {
     namespaced: true,
 
     state() {
         return {
             promotion: null,
-            discounts: null,
             personaCustomerIdsAdd: null,
             personaCustomerIdsDelete: null,
             setGroupIdsDelete: [],
-            isLoading: false
+            isLoading: false,
         };
     },
 
     mutations: {
         setPromotion(state, promotion) {
             state.promotion = promotion;
-        },
-
-        setDiscounts(state, discounts) {
-            state.discounts = discounts;
         },
 
         setPersonaCustomerIdsAdd(state, customerIds) {
@@ -35,6 +33,6 @@ export default {
 
         setIsLoading(state, isLoading) {
             state.isLoading = isLoading;
-        }
-    }
+        },
+    },
 };

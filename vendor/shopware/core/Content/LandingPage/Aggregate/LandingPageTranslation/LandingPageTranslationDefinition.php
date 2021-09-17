@@ -13,9 +13,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\LongTextField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopware\Core\Framework\DataAbstractionLayer\FieldCollection;
 
-/**
- * @internal (flag:FEATURE_NEXT_12032)
- */
 class LandingPageTranslationDefinition extends EntityTranslationDefinition
 {
     public const ENTITY_NAME = 'landing_page_translation';
@@ -37,8 +34,7 @@ class LandingPageTranslationDefinition extends EntityTranslationDefinition
 
     public function since(): ?string
     {
-        // May insert correct since-value
-        return '6.3.5.0';
+        return '6.4.0.0';
     }
 
     protected function getParentDefinitionClass(): string
@@ -50,6 +46,7 @@ class LandingPageTranslationDefinition extends EntityTranslationDefinition
     {
         return new FieldCollection([
             (new StringField('name', 'name'))->addFlags(new ApiAware(), new Required()),
+            (new StringField('url', 'url'))->addFlags(new ApiAware(), new Required()),
             (new JsonField('slot_config', 'slotConfig'))->addFlags(new ApiAware()),
             (new LongTextField('meta_title', 'metaTitle'))->addFlags(new ApiAware(), new AllowHtml()),
             (new LongTextField('meta_description', 'metaDescription'))->addFlags(new ApiAware(), new AllowHtml()),

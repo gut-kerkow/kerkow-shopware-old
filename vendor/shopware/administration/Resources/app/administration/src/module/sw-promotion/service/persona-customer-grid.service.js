@@ -1,5 +1,8 @@
 const { Criteria } = Shopware.Data;
 
+/**
+ * @deprecated tag:v6.5.0 - will be removed, use `sw-promotion-v2` instead
+ */
 export default class PersonaCustomerGridService {
     constructor(component, repoCustomers, repoPromotionCustomers, context) {
         this.component = component;
@@ -19,12 +22,12 @@ export default class PersonaCustomerGridService {
             property: 'fullName',
             dataIndex: 'fullName',
             label: this.component.$tc('sw-promotion.detail.main.preconditions.persona.customers.grid.headerName'),
-            allowResize: false
+            allowResize: false,
         }, {
             property: 'customerNumber',
             dataIndex: 'customerNumber',
             label: this.component.$tc('sw-promotion.detail.main.preconditions.persona.customers.grid.headerCustomerNumber'),
-            allowResize: false
+            allowResize: false,
         }];
     }
 

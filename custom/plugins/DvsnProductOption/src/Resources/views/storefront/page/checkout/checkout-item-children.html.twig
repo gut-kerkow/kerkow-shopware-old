@@ -1,0 +1,18 @@
+
+{# file to extend #}
+{% sw_extends '@Storefront/storefront/page/checkout/checkout-item-children.html.twig' %}
+
+{# add the quantity #}
+{% block page_checkout_item_child_headline_label %}
+    {% if nestedLineItem.type == 'dvsn-product-option' %}
+        <div class="cart-item-child-label-bullet">
+            <div class="swag-fade-container swag-fade-container-shrinked">
+                <span class="dvsn-product-option-quantity">{{ nestedLineItem.quantity }}x</span> {{ nestedLineItem.label }}
+            </div>
+            <a href="#" class="swag-fading-link-more swag-fade-link-hidden">more</a>
+            <a href="#" class="swag-fading-link-less swag-fade-link-hidden">less</a>
+        </div>
+    {% else %}
+        {{ parent() }}
+    {% endif %}
+{% endblock %}

@@ -15,30 +15,17 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 class ElasticsearchEntityAggregator implements EntityAggregatorInterface
 {
-    /**
-     * @var ElasticsearchHelper
-     */
-    private $helper;
+    public const RESULT_STATE = 'loaded-by-elastic';
 
-    /**
-     * @var Client
-     */
-    private $client;
+    private ElasticsearchHelper $helper;
 
-    /**
-     * @var EntityAggregatorInterface
-     */
-    private $decorated;
+    private Client $client;
 
-    /**
-     * @var AbstractElasticsearchAggregationHydrator
-     */
-    private $hydrator;
+    private EntityAggregatorInterface $decorated;
 
-    /**
-     * @var EventDispatcherInterface
-     */
-    private $eventDispatcher;
+    private AbstractElasticsearchAggregationHydrator $hydrator;
+
+    private EventDispatcherInterface $eventDispatcher;
 
     public function __construct(
         ElasticsearchHelper $helper,
@@ -63,18 +50,12 @@ class ElasticsearchEntityAggregator implements EntityAggregatorInterface
         $search = $this->createSearch($definition, $criteria, $context);
 
         $this->eventDispatcher->dispatch(
-            new ElasticsearchEntityAggregatorSearchEvent(
-                $search,
-                $definition,
-                $criteria,
-                $context
-            )
+            new ElasticsearchEntityAggregatorSearchEvent($search, $definition, $criteria, $context)
         );
 
         try {
             $result = $this->client->search([
                 'index' => $this->helper->getIndexName($definition, $context->getLanguageId()),
-                'type' => $definition->getEntityName(),
                 'body' => $search->toArray(),
             ]);
         } catch (\Throwable $e) {
@@ -83,7 +64,10 @@ class ElasticsearchEntityAggregator implements EntityAggregatorInterface
             return $this->decorated->aggregate($definition, $criteria, $context);
         }
 
-        return $this->hydrator->hydrate($definition, $criteria, $context, $result);
+        $result = $this->hydrator->hydrate($definition, $criteria, $context, $result);
+        $result->addState(self::RESULT_STATE);
+
+        return $result;
     }
 
     private function createSearch(EntityDefinition $definition, Criteria $criteria, Context $context): Search

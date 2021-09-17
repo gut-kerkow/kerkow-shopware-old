@@ -4,10 +4,12 @@ namespace Shopware\Storefront\Page\Account\Order;
 
 use Shopware\Core\Checkout\Cart\Exception\CustomerNotLoggedInException;
 use Shopware\Core\Checkout\Cart\Exception\OrderPaidException;
+use Shopware\Core\Checkout\Cart\Order\OrderConverter;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Order\SalesChannel\AbstractOrderRoute;
-use Shopware\Core\Checkout\Order\SalesChannel\OrderRouteResponseStruct;
+use Shopware\Core\Checkout\Order\SalesChannel\OrderRouteResponse;
+use Shopware\Core\Checkout\Order\SalesChannel\OrderService;
 use Shopware\Core\Checkout\Payment\PaymentMethodCollection;
 use Shopware\Core\Checkout\Payment\SalesChannel\AbstractPaymentMethodRoute;
 use Shopware\Core\Content\Category\Exception\CategoryNotFoundException;
@@ -26,43 +28,36 @@ use Symfony\Component\HttpFoundation\Request;
 
 class AccountEditOrderPageLoader
 {
-    /**
-     * @var GenericPageLoaderInterface
-     */
-    private $genericLoader;
+    private GenericPageLoaderInterface $genericLoader;
 
-    /**
-     * @var EventDispatcherInterface
-     */
-    private $eventDispatcher;
+    private EventDispatcherInterface $eventDispatcher;
 
-    /**
-     * @var AbstractOrderRoute
-     */
-    private $orderRoute;
+    private AbstractOrderRoute $orderRoute;
 
-    /**
-     * @var RequestCriteriaBuilder
-     */
-    private $requestCriteriaBuilder;
+    private RequestCriteriaBuilder $requestCriteriaBuilder;
 
-    /**
-     * @var AbstractPaymentMethodRoute
-     */
-    private $paymentMethodRoute;
+    private AbstractPaymentMethodRoute $paymentMethodRoute;
+
+    private OrderConverter $orderConverter;
+
+    private OrderService $orderService;
 
     public function __construct(
         GenericPageLoaderInterface $genericLoader,
         EventDispatcherInterface $eventDispatcher,
         AbstractOrderRoute $orderRoute,
         RequestCriteriaBuilder $requestCriteriaBuilder,
-        AbstractPaymentMethodRoute $paymentMethodRoute
+        AbstractPaymentMethodRoute $paymentMethodRoute,
+        OrderConverter $orderConverter,
+        OrderService $orderService
     ) {
         $this->genericLoader = $genericLoader;
         $this->eventDispatcher = $eventDispatcher;
         $this->orderRoute = $orderRoute;
         $this->requestCriteriaBuilder = $requestCriteriaBuilder;
         $this->paymentMethodRoute = $paymentMethodRoute;
+        $this->orderConverter = $orderConverter;
+        $this->orderService = $orderService;
     }
 
     /**
@@ -79,6 +74,7 @@ class AccountEditOrderPageLoader
 
         $page = $this->genericLoader->load($request, $salesChannelContext);
 
+        /** @var AccountEditOrderPage $page */
         $page = AccountEditOrderPage::createFrom($page);
 
         if ($page->getMetaInformation()) {
@@ -94,11 +90,8 @@ class AccountEditOrderPageLoader
         }
 
         $page->setOrder($order);
-
-        $page->setPaymentChangeable($orderRouteResponse->getPaymentChangeable($page->getOrder()->getId()));
-
-        $page->setPaymentMethods($this->getPaymentMethods($salesChannelContext, $request));
-
+        $page->setPaymentChangeable($this->isPaymentChangeable($orderRouteResponse, $page));
+        $page->setPaymentMethods($this->getPaymentMethods($salesChannelContext, $request, $order));
         $page->setDeepLinkCode($request->get('deepLinkCode'));
 
         $this->eventDispatcher->dispatch(
@@ -108,21 +101,17 @@ class AccountEditOrderPageLoader
         return $page;
     }
 
-    private function getOrder(Request $request, SalesChannelContext $context): OrderRouteResponseStruct
+    private function getOrder(Request $request, SalesChannelContext $context): OrderRouteResponse
     {
         $criteria = $this->createCriteria($request, $context);
         $apiRequest = new Request();
-        $apiRequest->query->set('checkPromotion', true);
+        $apiRequest->query->set('checkPromotion', 'true');
 
         $event = new OrderRouteRequestEvent($request, $apiRequest, $context, $criteria);
         $this->eventDispatcher->dispatch($event);
 
-        /** @var OrderRouteResponseStruct $responseStruct */
-        $responseStruct = $this->orderRoute
-            ->load($event->getStoreApiRequest(), $context, $criteria)
-            ->getObject();
-
-        return $responseStruct;
+        return $this->orderRoute
+            ->load($event->getStoreApiRequest(), $context, $criteria);
     }
 
     private function createCriteria(Request $request, SalesChannelContext $context): Criteria
@@ -130,11 +119,13 @@ class AccountEditOrderPageLoader
         if ($request->get('orderId')) {
             $criteria = new Criteria([$request->get('orderId')]);
         } else {
-            $criteria = new Criteria([]);
+            $criteria = new Criteria();
         }
         $criteria->addAssociation('lineItems.cover')
             ->addAssociation('transactions.paymentMethod')
-            ->addAssociation('deliveries.shippingMethod');
+            ->addAssociation('deliveries.shippingMethod')
+            ->addAssociation('billingAddress.country')
+            ->addAssociation('deliveries.shippingOrderAddress.country');
 
         $criteria->getAssociation('transactions')->addSorting(new FieldSorting('createdAt'));
 
@@ -149,22 +140,27 @@ class AccountEditOrderPageLoader
         return $criteria;
     }
 
-    private function getPaymentMethods(SalesChannelContext $context, Request $request): PaymentMethodCollection
+    private function getPaymentMethods(SalesChannelContext $context, Request $request, OrderEntity $order): PaymentMethodCollection
     {
-        $criteria = new Criteria([]);
+        $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('afterOrderEnabled', true));
 
         $routeRequest = new Request();
         $routeRequest->query->replace($this->requestCriteriaBuilder->toArray($criteria));
-        $routeRequest->query->set('onlyAvailable', 1);
+        $routeRequest->query->set('onlyAvailable', '1');
 
-        $event = new PaymentMethodRouteRequestEvent($request, $routeRequest, $context);
+        $event = new PaymentMethodRouteRequestEvent($request, $routeRequest, $context, $criteria);
         $this->eventDispatcher->dispatch($event);
 
-        return $this->paymentMethodRoute->load(
+        $paymentMethods = $this->paymentMethodRoute->load(
             $event->getStoreApiRequest(),
-            $context
+            $this->orderConverter->assembleSalesChannelContext($order, $context->getContext()),
+            $event->getCriteria()
         )->getPaymentMethods();
+
+        $paymentMethods->sortPaymentMethodsByPreference($context);
+
+        return $paymentMethods;
     }
 
     private function isOrderPaid(OrderEntity $order): bool
@@ -186,5 +182,13 @@ class AccountEditOrderPageLoader
         }
 
         return $stateMachineState->getTechnicalName() === OrderTransactionStates::STATE_PAID;
+    }
+
+    private function isPaymentChangeable(OrderRouteResponse $orderRouteResponse, AccountEditOrderPage $page): bool
+    {
+        $isChangeableByResponse = $orderRouteResponse->getPaymentsChangeable()[$page->getOrder()->getId()] ?? true;
+        $isChangeableByTransactionState = $this->orderService->isPaymentChangeableByTransactionState($page->getOrder());
+
+        return $isChangeableByResponse && $isChangeableByTransactionState;
     }
 }

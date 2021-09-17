@@ -36,6 +36,7 @@ use Symfony\Component\HttpKernel\Event\ControllerEvent;
  */
 class OrderSubscriber implements EventSubscriberInterface
 {
+    private static $orderNumberMap = [];
     /**
      * @var OrderRepository
      */
@@ -64,8 +65,6 @@ class OrderSubscriber implements EventSubscriberInterface
      * @var RequestStack
      */
     private $requestStack;
-
-    private static $orderNumberMap = [];
 
     /**
      * OrderSubscriber constructor.
@@ -212,7 +211,7 @@ class OrderSubscriber implements EventSubscriberInterface
             }
         }
     }
-    
+
     /**
      * Enqueues given task
      *
@@ -268,5 +267,4 @@ class OrderSubscriber implements EventSubscriberInterface
             self::$orderNumberMap[] = $orderId;
         }
     }
-
 }

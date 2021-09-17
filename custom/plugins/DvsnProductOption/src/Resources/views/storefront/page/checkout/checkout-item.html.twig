@@ -2,37 +2,12 @@
 {# file to extend #}
 {% sw_extends '@Storefront/storefront/page/checkout/checkout-item.html.twig' %}
 
-{# remove quantity #}
-{% block page_checkout_item_quantity_number %}
-    {% if lineItem.type == 'dvsn-product-option' %}
-        <div class="d-flex justify-content-end cart-item-quantity">
-            &nbsp;
-        </div>
-    {% else %}
-        {{ parent() }}
-    {% endif %}
-{% endblock %}
-
-{# replace image and link #}
+{# replace default nested icon with product image #}
 {% block page_checkout_item_info_image_link %}
-    {% if lineItem.type == 'dvsn-product-option' %}
-        {% if lineItem.cover.url %}
-            {% sw_thumbnails 'cart-item-img-thumbnails' with {
-                media: lineItem.cover,
-                sizes: {
-                    'default': '100px'
-                },
-                attributes: {
-                    'class': 'img-fluid cart-item-img',
-                    'alt': (lineItem.cover.translated.alt ?: ''),
-                    'title': (lineItem.cover.translated.title ?: '')
-                }
-            } %}
-        {% else %}
-            <div class="cart-item-img">
-                {% sw_include "@Storefront/storefront/utilities/icon.html.twig" with { 'name': lineItem.payload.dvsnProductOptionIcon} %}
-            </div>
-        {% endif %}
+    {% if isNested and lineItem.payload.dvsnProductOptionHasOptions == true %}
+        {% set isNested = false %}
+        {{ parent() }}
+        {% set isNested = true %}
     {% else %}
         {{ parent() }}
     {% endif %}

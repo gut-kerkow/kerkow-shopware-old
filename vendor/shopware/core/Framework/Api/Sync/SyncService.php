@@ -5,7 +5,6 @@ namespace Shopware\Core\Framework\Api\Sync;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Framework\Api\Converter\ApiVersionConverter;
 use Shopware\Core\Framework\Api\Converter\Exceptions\ApiConversionException;
-use Shopware\Core\Framework\Api\Converter\Exceptions\ApiConversionNotAllowedException;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
@@ -15,6 +14,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\EntityWriterInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\WriteContext;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\WriteException;
+use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Struct\ArrayEntity;
 use Shopware\Core\Framework\Validation\WriteConstraintViolationException;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
@@ -70,17 +70,35 @@ class SyncService implements SyncServiceInterface
         }
 
         // allows to execute all writes inside a single transaction and a single entity write event
+        // @internal (flag:FEATURE_NEXT_15815) tag:v6.5.0 - Remove "IF" condition - useSingleOperation is always true
         if ($behavior->useSingleOperation()) {
             $result = $this->writer->sync($operations, WriteContext::createFromContext($context));
 
-            $event = EntityWrittenContainerEvent::createWithWrittenEvents($result, $context, []);
+            $writes = EntityWrittenContainerEvent::createWithWrittenEvents($result->getWritten(), $context, []);
+            $deletes = EntityWrittenContainerEvent::createWithWrittenEvents($result->getDeleted(), $context, []);
 
-            $this->eventDispatcher->dispatch($event);
+            if ($deletes->getEvents() !== null) {
+                $writes->addEvent(...$deletes->getEvents()->getElements());
+            }
 
-            $ids = $this->getWrittenEntities($event);
+            $this->eventDispatcher->dispatch($writes);
 
-            return new SyncResult($ids, !empty($ids));
+            $ids = $this->getWrittenEntities($result->getWritten());
+
+            $deleted = $this->getWrittenEntitiesByEvent($deletes);
+
+            $notFound = $this->getWrittenEntities($result->getNotFound());
+
+            //@internal (flag:FEATURE_NEXT_15815) - second construct parameter removed - simply remove if condition and all other code below
+            if (Feature::isActive('FEATURE_NEXT_15815')) {
+                return new SyncResult($ids, $notFound, $deleted);
+            }
+
+            return new SyncResult($ids, true, $notFound, $deleted);
         }
+
+        //@internal (flag:FEATURE_NEXT_15815) - remove all code below and all functions which will are no longer used
+        Feature::throwException('FEATURE_NEXT_15815', 'Sync api can only be used in single operation mode');
 
         if ($behavior->failOnError()) {
             $this->connection->beginTransaction();
@@ -160,11 +178,11 @@ class SyncService implements SyncServiceInterface
 
         foreach ($records as $index => $record) {
             try {
-                $record = $this->convertToApiVersion($record, $definition, $operation->getApiVersion(), $index);
+                $record = $this->convertToApiVersion($record, $definition, $index);
 
                 $result = $repository->upsert([$record], $context);
                 $results[$index] = [
-                    'entities' => $this->getWrittenEntities($result),
+                    'entities' => $this->getWrittenEntitiesByEvent($result),
                     'errors' => [],
                 ];
             } catch (\Throwable $exception) {
@@ -196,11 +214,12 @@ class SyncService implements SyncServiceInterface
 
         foreach ($records as $index => $record) {
             try {
-                $record = $this->convertToApiVersion($record, $definition, $operation->getApiVersion(), $index);
+                $record = $this->convertToApiVersion($record, $definition, $index);
 
                 $result = $repository->delete([$record], $context);
+
                 $results[$index] = [
-                    'entities' => $this->getWrittenEntities($result),
+                    'entities' => $this->getWrittenEntitiesByEvent($result),
                     'errors' => [],
                 ];
             } catch (\Throwable $exception) {
@@ -220,16 +239,11 @@ class SyncService implements SyncServiceInterface
         return new SyncOperationResult($results);
     }
 
-    private function convertToApiVersion(array $record, EntityDefinition $definition, int $apiVersion, int $writeIndex)
+    private function convertToApiVersion(array $record, EntityDefinition $definition, int $writeIndex): array
     {
         $exception = new ApiConversionException();
 
-        if (!$this->apiVersionConverter->isAllowed($definition->getEntityName(), null, $apiVersion)) {
-            $exception->add(new ApiConversionNotAllowedException($definition->getEntityName(), $apiVersion), "/${writeIndex}");
-            $exception->tryToThrow();
-        }
-
-        $converted = $this->apiVersionConverter->convertPayload($definition, $record, $apiVersion, $exception, "/${writeIndex}");
+        $converted = $this->apiVersionConverter->convertPayload($definition, $record, $exception, "/${writeIndex}");
         $exception->tryToThrow();
 
         return $converted;
@@ -240,7 +254,10 @@ class SyncService implements SyncServiceInterface
         if ($exception instanceof WriteException) {
             foreach ($exception->getExceptions() as $innerException) {
                 if ($innerException instanceof WriteConstraintViolationException) {
-                    $innerException->setPath(preg_replace('/^\/0/', "/{$writeIndex}", $innerException->getPath()));
+                    $path = preg_replace('/^\/0/', "/{$writeIndex}", $innerException->getPath());
+                    if ($path !== null) {
+                        $innerException->setPath($path);
+                    }
                 }
             }
 
@@ -250,16 +267,32 @@ class SyncService implements SyncServiceInterface
         return (new WriteException())->add($exception);
     }
 
-    private function getWrittenEntities(?EntityWrittenContainerEvent $result): array
+    private function getWrittenEntities(array $grouped): array
     {
-        if (!$result) {
+        $mapped = [];
+
+        foreach ($grouped as $entity => $results) {
+            foreach ($results as $result) {
+                $mapped[$entity][] = $result->getPrimaryKey();
+            }
+        }
+
+        ksort($mapped);
+
+        return $mapped;
+    }
+
+    private function getWrittenEntitiesByEvent(EntityWrittenContainerEvent $result): array
+    {
+        $entities = [];
+
+        $events = $result->getEvents();
+        if ($events === null) {
             return [];
         }
 
-        $entities = [];
-
         /** @var EntityWrittenEvent $event */
-        foreach ($result->getEvents() as $event) {
+        foreach ($events as $event) {
             $entity = $event->getEntityName();
 
             if (!isset($entities[$entity])) {

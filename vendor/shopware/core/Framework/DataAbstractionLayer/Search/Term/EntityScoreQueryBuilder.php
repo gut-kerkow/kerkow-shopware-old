@@ -36,7 +36,6 @@ class EntityScoreQueryBuilder
         $fields = $this->getQueryFields($definition, $context);
 
         $queries = [];
-        /** @var Field $field */
         foreach ($fields as $field) {
             /** @var SearchRanking|null $flag */
             $flag = $field->getFlag(SearchRanking::class);
@@ -81,6 +80,10 @@ class EntityScoreQueryBuilder
                 new ContainsFilter($select, $term->getOriginal()->getTerm()),
                 $ranking * $term->getOriginal()->getScore() * 0.5
             );
+
+            if ($flag && !$flag->tokenize()) {
+                continue;
+            }
 
             foreach ($term->getTerms() as $part) {
                 $queries[] = new ScoreQuery(

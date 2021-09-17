@@ -8,7 +8,7 @@ Component.extend('sw-property-create', 'sw-property-detail', {
 
     data() {
         return {
-            newId: null
+            newId: null,
         };
     },
 
@@ -18,10 +18,12 @@ Component.extend('sw-property-create', 'sw-property-detail', {
                 Shopware.Context.api.languageId = Shopware.Context.api.systemLanguageId;
             }
 
-            this.propertyGroup = this.propertyRepository.create(Shopware.Context.api);
+            this.propertyGroup = this.propertyRepository.create();
             this.propertyGroup.sortingType = 'alphanumeric';
             this.propertyGroup.displayType = 'text';
             this.propertyGroup.position = 1;
+            this.propertyGroup.filterable = true;
+            this.propertyGroup.visibleOnProductDetailPage = true;
             this.newId = this.propertyGroup.id;
 
             this.isLoading = false;
@@ -34,6 +36,6 @@ Component.extend('sw-property-create', 'sw-property-detail', {
 
         onSave() {
             this.$super('onSave');
-        }
-    }
+        },
+    },
 });

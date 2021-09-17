@@ -8,13 +8,6 @@ function createWrapper(privileges = []) {
     return shallowMount(Shopware.Component.build('sw-settings-salutation-detail'), {
         localVue,
 
-        mocks: {
-            $tc: key => key,
-            $device: {
-                getSystemKey: () => 'CTRL',
-                onResize: () => {}
-            }
-        },
         propsData: {
             salutationId: '1'
         },
@@ -79,6 +72,9 @@ function createWrapper(privileges = []) {
 
                     return privileges.includes(identifier);
                 }
+            },
+            customFieldDataProviderService: {
+                getCustomFieldSets: () => Promise.resolve([])
             }
         },
 

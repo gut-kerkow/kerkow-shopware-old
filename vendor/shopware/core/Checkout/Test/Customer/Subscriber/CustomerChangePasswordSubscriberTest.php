@@ -13,7 +13,6 @@ use Shopware\Core\Framework\Test\TestCaseBase\AdminFunctionalTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour;
 use Shopware\Core\Framework\Test\TestDataCollection;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\PlatformRequest;
 use Symfony\Component\HttpFoundation\Response;
 
 class CustomerChangePasswordSubscriberTest extends TestCase
@@ -59,13 +58,12 @@ class CustomerChangePasswordSubscriberTest extends TestCase
 
         $this->getBrowser()->request(
             'PATCH',
-            '/api/v' . PlatformRequest::API_VERSION . '/customer/' . $customerId,
+            '/api/customer/' . $customerId,
             ['password' => $newPassword]
         );
 
         $response = $this->getBrowser()->getResponse();
 
-        /* @var Response $response */
         static::assertSame(Response::HTTP_NO_CONTENT, $response->getStatusCode(), $response->getContent());
 
         $criteria = new Criteria();
@@ -91,13 +89,12 @@ class CustomerChangePasswordSubscriberTest extends TestCase
 
         $this->getBrowser()->request(
             'PATCH',
-            '/api/v' . PlatformRequest::API_VERSION . '/customer/' . $customerId,
+            '/api/customer/' . $customerId,
             ['firstName' => 'Test']
         );
 
         $response = $this->getBrowser()->getResponse();
 
-        /* @var Response $response */
         static::assertSame(Response::HTTP_NO_CONTENT, $response->getStatusCode(), $response->getContent());
 
         $criteria = new Criteria();
@@ -118,7 +115,7 @@ class CustomerChangePasswordSubscriberTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/account/login',
+                '/store-api/account/login',
                 [
                     'email' => $email,
                     'password' => $password,

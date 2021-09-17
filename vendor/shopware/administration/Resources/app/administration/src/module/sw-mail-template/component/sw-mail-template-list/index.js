@@ -10,22 +10,22 @@ Component.register('sw-mail-template-list', {
 
     mixins: [
         Mixin.getByName('listing'),
-        Mixin.getByName('notification')
+        Mixin.getByName('notification'),
     ],
 
     props: {
         searchTerm: {
             type: String,
             required: false,
-            default: ''
-        }
+            default: '',
+        },
     },
 
     data() {
         return {
             mailTemplates: null,
             showDeleteModal: null,
-            isLoading: false
+            isLoading: false,
         };
     },
 
@@ -40,13 +40,13 @@ Component.register('sw-mail-template-list', {
 
         showListing() {
             return !!this.mailTemplates && this.mailTemplates.length !== 0;
-        }
+        },
     },
 
     watch: {
         searchTerm() {
             this.getList();
-        }
+        },
     },
 
     methods: {
@@ -55,17 +55,13 @@ Component.register('sw-mail-template-list', {
 
             const criteria = new Criteria(this.page, this.limit);
 
-            criteria.getAssociation('salesChannels')
-                .setLimit(10)
-                .addAssociation('salesChannel');
-
             criteria.addAssociation('mailTemplateType');
 
             if (this.searchTerm) {
                 criteria.setTerm(this.searchTerm);
             }
 
-            this.mailTemplateRepository.search(criteria, Shopware.Context.api).then(items => {
+            this.mailTemplateRepository.search(criteria).then(items => {
                 this.total = items.total;
                 this.mailTemplates = items;
                 this.isLoading = false;
@@ -80,39 +76,13 @@ Component.register('sw-mail-template-list', {
                 dataIndex: 'mailTemplateType.name',
                 label: 'sw-mail-template.list.columnMailType',
                 allowResize: true,
-                primary: true
+                primary: true,
             }, {
                 property: 'description',
                 dataIndex: 'description',
                 label: 'sw-mail-template.list.columnDescription',
-                allowResize: true
-            }, {
-                property: 'salesChannels.salesChannel.name',
-                dataIndex: 'salesChannels.salesChannel.name',
-                label: 'sw-mail-template.list.columnSalesChannels',
                 allowResize: true,
-                sortable: false
             }];
-        },
-
-        getSalesChannelsString(item) {
-            if (typeof item.salesChannels === 'undefined') {
-                return '';
-            }
-
-            let salesChannels = '';
-            item.salesChannels.forEach((mailTemplateSalesChannel) => {
-                if (salesChannels !== '') {
-                    salesChannels += ', ';
-                }
-                salesChannels += `${mailTemplateSalesChannel.salesChannel.translated.name}`;
-            });
-
-            if (item.salesChannels.length >= 5) {
-                salesChannels += '...';
-            }
-
-            return salesChannels;
         },
 
         onChangeLanguage(languageId) {
@@ -121,20 +91,20 @@ Component.register('sw-mail-template-list', {
 
         onDuplicate(id) {
             this.isLoading = true;
-            this.mailTemplateRepository.clone(id, Shopware.Context.api).then((mailTemplate) => {
+            this.mailTemplateRepository.clone(id).then((mailTemplate) => {
                 this.getList();
                 this.isLoading = false;
                 this.$router.push(
                     {
                         name: 'sw.mail.template.detail',
-                        params: { id: mailTemplate.id }
-                    }
+                        params: { id: mailTemplate.id },
+                    },
                 );
             });
         },
 
         updateRecords(result) {
             this.mailTemplates = result;
-        }
-    }
+        },
+    },
 });

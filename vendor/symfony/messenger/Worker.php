@@ -12,6 +12,7 @@
 namespace Symfony\Component\Messenger;
 
 use Psr\Log\LoggerInterface;
+use Symfony\Component\EventDispatcher\Event;
 use Symfony\Component\EventDispatcher\LegacyEventDispatcherProxy;
 use Symfony\Component\Messenger\Event\WorkerMessageFailedEvent;
 use Symfony\Component\Messenger\Event\WorkerMessageHandledEvent;
@@ -21,8 +22,10 @@ use Symfony\Component\Messenger\Event\WorkerStartedEvent;
 use Symfony\Component\Messenger\Event\WorkerStoppedEvent;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\Messenger\Exception\RejectRedeliveredMessageException;
+use Symfony\Component\Messenger\Exception\RuntimeException;
 use Symfony\Component\Messenger\Stamp\ConsumedByWorkerStamp;
 use Symfony\Component\Messenger\Stamp\ReceivedStamp;
+use Symfony\Component\Messenger\Transport\Receiver\QueueReceiverInterface;
 use Symfony\Component\Messenger\Transport\Receiver\ReceiverInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
@@ -48,12 +51,7 @@ class Worker
         $this->receivers = $receivers;
         $this->bus = $bus;
         $this->logger = $logger;
-
-        if (null !== $eventDispatcher && class_exists(LegacyEventDispatcherProxy::class)) {
-            $this->eventDispatcher = LegacyEventDispatcherProxy::decorate($eventDispatcher);
-        } else {
-            $this->eventDispatcher = $eventDispatcher;
-        }
+        $this->eventDispatcher = class_exists(Event::class) ? LegacyEventDispatcherProxy::decorate($eventDispatcher) : $eventDispatcher;
     }
 
     /**
@@ -61,6 +59,7 @@ class Worker
      *
      * Valid options are:
      *  * sleep (default: 1000000): Time in microseconds to sleep after no messages are found
+     *  * queues: The queue names to consume from, instead of consuming from all queues. When this is used, all receivers must implement the QueueReceiverInterface
      */
     public function run(array $options = []): void
     {
@@ -69,11 +68,25 @@ class Worker
         $options = array_merge([
             'sleep' => 1000000,
         ], $options);
+        $queueNames = $options['queues'] ?? false;
+
+        if ($queueNames) {
+            // if queue names are specified, all receivers must implement the QueueReceiverInterface
+            foreach ($this->receivers as $transportName => $receiver) {
+                if (!$receiver instanceof QueueReceiverInterface) {
+                    throw new RuntimeException(sprintf('Receiver for "%s" does not implement "%s".', $transportName, QueueReceiverInterface::class));
+                }
+            }
+        }
 
         while (false === $this->shouldStop) {
             $envelopeHandled = false;
             foreach ($this->receivers as $transportName => $receiver) {
-                $envelopes = $receiver->get();
+                if ($queueNames) {
+                    $envelopes = $receiver->getFromQueues($queueNames);
+                } else {
+                    $envelopes = $receiver->get();
+                }
 
                 foreach ($envelopes as $envelope) {
                     $envelopeHandled = true;
@@ -108,6 +121,7 @@ class Worker
     {
         $event = new WorkerMessageReceivedEvent($envelope, $transportName);
         $this->dispatchEvent($event);
+        $envelope = $event->getEnvelope();
 
         if (!$event->shouldHandle()) {
             return;
@@ -127,7 +141,9 @@ class Worker
                 $envelope = $throwable->getEnvelope();
             }
 
-            $this->dispatchEvent(new WorkerMessageFailedEvent($envelope, $transportName, $throwable));
+            $failedEvent = new WorkerMessageFailedEvent($envelope, $transportName, $throwable);
+            $this->dispatchEvent($failedEvent);
+            $envelope = $failedEvent->getEnvelope();
 
             if (!$rejectFirst) {
                 $receiver->reject($envelope);
@@ -136,7 +152,9 @@ class Worker
             return;
         }
 
-        $this->dispatchEvent(new WorkerMessageHandledEvent($envelope, $transportName));
+        $handledEvent = new WorkerMessageHandledEvent($envelope, $transportName);
+        $this->dispatchEvent($handledEvent);
+        $envelope = $handledEvent->getEnvelope();
 
         if (null !== $this->logger) {
             $message = $envelope->getMessage();
@@ -155,7 +173,7 @@ class Worker
         $this->shouldStop = true;
     }
 
-    private function dispatchEvent($event)
+    private function dispatchEvent(object $event): void
     {
         if (null === $this->eventDispatcher) {
             return;

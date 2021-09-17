@@ -9,6 +9,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\IntField;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\DataStack\KeyValuePair;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\EntityExistence;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\WriteParameterBag;
+use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Range;
 use Symfony\Component\Validator\Constraints\Type;
@@ -30,13 +31,18 @@ class IntFieldSerializer extends AbstractFieldSerializer
         yield $field->getStorageName() => $data->getValue();
     }
 
-    public function decode(Field $field, $value): ?int
+    /**
+     * @deprecated tag:v6.5.0 The parameter $value will be native typed
+     */
+    public function decode(Field $field, /*?string */$value): ?int
     {
         return $value === null ? null : (int) $value;
     }
 
     /**
      * @param IntField $field
+     *
+     * @return Constraint[]
      */
     protected function getConstraints(Field $field): array
     {

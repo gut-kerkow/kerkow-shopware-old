@@ -62,6 +62,10 @@
             "card-product": {
                 "title": "Stammdaten",
                 "active": "Aktiv",
+                "mandatory": "Pflichtfeld",
+                "mandatory-help": "Pflichtfelder sind immer automatisch markiert und können nicht abgewählt werden.",
+                "hidden": "Versteckt",
+                "hidden-help": "Versteckte Optionen werden dem Kunden nicht angezeigt. Nur sinnvoll, wenn das Feld als Pflichtfeld markiert ist.",
                 "number": "Nummer",
                 "number-help": "Die Artikelnummer der Option.",
                 "name": "Name",

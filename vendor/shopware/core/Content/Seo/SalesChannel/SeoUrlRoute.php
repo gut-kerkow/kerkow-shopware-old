@@ -3,10 +3,7 @@
 namespace Shopware\Core\Content\Seo\SalesChannel;
 
 use OpenApi\Annotations as OA;
-use Shopware\Core\Content\Seo\SeoUrl\SalesChannel\SalesChannelSeoUrlDefinition;
-use Shopware\Core\Content\Seo\SeoUrl\SeoUrlCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\RequestCriteriaBuilder;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopware\Core\Framework\Routing\Annotation\Entity;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
@@ -26,15 +23,9 @@ class SeoUrlRoute extends AbstractSeoUrlRoute
      */
     private $salesChannelRepository;
 
-    /**
-     * @var RequestCriteriaBuilder
-     */
-    private $requestCriteriaBuilder;
-
-    public function __construct(SalesChannelRepositoryInterface $salesChannelRepository, RequestCriteriaBuilder $requestCriteriaBuilder)
+    public function __construct(SalesChannelRepositoryInterface $salesChannelRepository)
     {
         $this->salesChannelRepository = $salesChannelRepository;
-        $this->requestCriteriaBuilder = $requestCriteriaBuilder;
     }
 
     public function getDecorated(): AbstractSeoUrlRoute
@@ -47,14 +38,27 @@ class SeoUrlRoute extends AbstractSeoUrlRoute
      * @Entity("seo_url")
      * @OA\Post(
      *      path="/seo-url",
-     *      summary="Loads seo urls",
+     *      summary="Fetch SEO routes",
+     *      description="Perform a filtered search for seo urls.",
      *      operationId="readSeoUrl",
-     *      tags={"Store API", "Seo"},
+     *      tags={"Store API", "Sitemap & Routes"},
      *      @OA\Parameter(name="Api-Basic-Parameters"),
      *      @OA\Response(
      *          response="200",
-     *          description="Found seo urls",
-     *          @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/seo_url_flat"))
+     *          description="Entity search result containing seo urls.",
+     *          @OA\JsonContent(
+     *              type="object",
+     *              allOf={
+     *                  @OA\Schema(ref="#/components/schemas/EntitySearchResult"),
+     *                  @OA\Schema(type="object",
+     *                      @OA\Property(
+     *                          type="array",
+     *                          property="elements",
+     *                          @OA\Items(ref="#/components/schemas/SeoUrl")
+     *                      )
+     *                  )
+     *              }
+     *          )
      *     ),
      *     @OA\Response(
      *          response="404",
@@ -62,18 +66,10 @@ class SeoUrlRoute extends AbstractSeoUrlRoute
      *     )
      * )
      *
-     * @Route("/store-api/v{version}/seo-url", name="store-api.seo.url", methods={"GET", "POST"})
+     * @Route("/store-api/seo-url", name="store-api.seo.url", methods={"GET", "POST"})
      */
-    public function load(Request $request, SalesChannelContext $context, ?Criteria $criteria = null): SeoUrlRouteResponse
+    public function load(Request $request, SalesChannelContext $context, Criteria $criteria): SeoUrlRouteResponse
     {
-        // @deprecated tag:v6.4.0 - Criteria will be required
-        if (!$criteria) {
-            $criteria = $this->requestCriteriaBuilder->handleRequest($request, new Criteria(), new SalesChannelSeoUrlDefinition(), $context->getContext());
-        }
-
-        /** @var SeoUrlCollection $seoUrlCollection */
-        $seoUrlCollection = $this->salesChannelRepository->search($criteria, $context)->getEntities();
-
-        return new SeoUrlRouteResponse($seoUrlCollection);
+        return new SeoUrlRouteResponse($this->salesChannelRepository->search($criteria, $context));
     }
 }

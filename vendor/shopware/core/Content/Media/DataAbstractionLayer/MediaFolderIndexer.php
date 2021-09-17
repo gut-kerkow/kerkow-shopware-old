@@ -5,7 +5,6 @@ namespace Shopware\Core\Content\Media\DataAbstractionLayer;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Content\Media\Aggregate\MediaFolder\MediaFolderDefinition;
 use Shopware\Core\Content\Media\Event\MediaFolderIndexerEvent;
-use Shopware\Core\Framework\Adapter\Cache\CacheClearer;
 use Shopware\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
 use Shopware\Core\Framework\DataAbstractionLayer\Doctrine\RetryableQuery;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
@@ -18,6 +17,8 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 class MediaFolderIndexer extends EntityIndexer
 {
+    public const CHILD_COUNT_UPDATER = 'media_folder.child-count';
+
     /**
      * @var IteratorFactory
      */
@@ -34,11 +35,6 @@ class MediaFolderIndexer extends EntityIndexer
     private $connection;
 
     /**
-     * @var CacheClearer
-     */
-    private $cacheClearer;
-
-    /**
      * @var EventDispatcherInterface
      */
     private $eventDispatcher;
@@ -52,14 +48,12 @@ class MediaFolderIndexer extends EntityIndexer
         IteratorFactory $iteratorFactory,
         EntityRepositoryInterface $repository,
         Connection $connection,
-        CacheClearer $cacheClearer,
         EventDispatcherInterface $eventDispatcher,
         ChildCountUpdater $childCountUpdater
     ) {
         $this->iteratorFactory = $iteratorFactory;
         $this->folderRepository = $repository;
         $this->connection = $connection;
-        $this->cacheClearer = $cacheClearer;
         $this->eventDispatcher = $eventDispatcher;
         $this->childCountUpdater = $childCountUpdater;
     }
@@ -69,7 +63,12 @@ class MediaFolderIndexer extends EntityIndexer
         return 'media_folder.indexer';
     }
 
-    public function iterate($offset): ?EntityIndexingMessage
+    /**
+     * @param array|null $offset
+     *
+     * @deprecated tag:v6.5.0 The parameter $offset will be native typed
+     */
+    public function iterate(/*?array */$offset): ?EntityIndexingMessage
     {
         $iterator = $this->iteratorFactory->createIterator($this->folderRepository->getDefinition(), $offset);
 
@@ -137,11 +136,11 @@ class MediaFolderIndexer extends EntityIndexer
             ]);
         }
 
-        $this->childCountUpdater->update(MediaFolderDefinition::ENTITY_NAME, $ids, $message->getContext());
+        if ($message->allow(self::CHILD_COUNT_UPDATER)) {
+            $this->childCountUpdater->update(MediaFolderDefinition::ENTITY_NAME, $ids, $message->getContext());
+        }
 
-        $this->eventDispatcher->dispatch(new MediaFolderIndexerEvent($ids, $message->getContext()));
-
-        $this->cacheClearer->invalidateIds($ids, MediaFolderDefinition::ENTITY_NAME);
+        $this->eventDispatcher->dispatch(new MediaFolderIndexerEvent($ids, $message->getContext(), $message->getSkip()));
     }
 
     private function fetchChildren(array $parentIds): array

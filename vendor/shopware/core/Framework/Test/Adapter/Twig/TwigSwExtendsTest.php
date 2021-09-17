@@ -2,12 +2,12 @@
 
 namespace Shopware\Core\Framework\Test\Adapter\Twig;
 
+use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Framework\Adapter\Twig\InheritanceExtension;
 use Shopware\Core\Framework\Adapter\Twig\NamespaceHierarchy\BundleHierarchyBuilder;
 use Shopware\Core\Framework\Adapter\Twig\NamespaceHierarchy\NamespaceHierarchyBuilder;
 use Shopware\Core\Framework\Adapter\Twig\TemplateFinder;
-use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Test\Adapter\Twig\fixtures\BundleFixture;
 use Shopware\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
 use Shopware\Core\Kernel;
@@ -21,15 +21,9 @@ class TwigSwExtendsTest extends TestCase
 {
     use KernelTestBehaviour;
 
-    /**
-     * @var string
-     */
-    private $cacheDir;
+    private string $cacheDir;
 
-    /**
-     * @var CacheInterface
-     */
-    private $cache;
+    private CacheInterface $cache;
 
     public function setUp(): void
     {
@@ -39,7 +33,6 @@ class TwigSwExtendsTest extends TestCase
 
     public function tearDown(): void
     {
-        /** @var Filesystem $filesystem */
         $filesystem = $this->getContainer()->get(Filesystem::class);
         $filesystem->remove($this->cacheDir);
     }
@@ -54,15 +47,13 @@ class TwigSwExtendsTest extends TestCase
 
         $templatePath = $templateFinder->find('@Storefront/storefront/frontend/base.html.twig');
 
-        $template = $twig->loadTemplate($templatePath);
+        $template = $twig->loadTemplate($twig->getTemplateClass($templatePath), $templatePath);
 
         static::assertSame('Base/TestPlugin1/TestPlugin2', $template->render([]));
     }
 
     public function testMultipleInheritanceIfExtendingTemplateInSamePlugin(): void
     {
-        Feature::skipTestIfInActive('FEATURE_NEXT_12553', $this);
-
         [$twig, $templateFinder] = $this->createFinder([
             new BundleFixture('Storefront', __DIR__ . '/fixtures/Storefront/'),
             new BundleFixture('TestPlugin1', __DIR__ . '/fixtures/Plugins/TestPlugin1'),
@@ -71,15 +62,13 @@ class TwigSwExtendsTest extends TestCase
 
         $templatePath = $templateFinder->find('@Storefront/storefront/frontend/extend_template_in_same_plugin.html.twig');
 
-        $template = $twig->loadTemplate($templatePath);
+        $template = $twig->loadTemplate($twig->getTemplateClass($templatePath), $templatePath);
 
         static::assertSame('Base/TestPlugin1/TestPlugin2/TestPlugin2Content', $template->render([]));
     }
 
     public function testMultipleInheritanceIfExtendingBaseTemplateInSamePlugin(): void
     {
-        Feature::skipTestIfInActive('FEATURE_NEXT_12553', $this);
-
         [$twig, $templateFinder] = $this->createFinder([
             new BundleFixture('Storefront', __DIR__ . '/fixtures/Storefront/'),
             new BundleFixture('TestPlugin1', __DIR__ . '/fixtures/Plugins/TestPlugin1'),
@@ -88,9 +77,51 @@ class TwigSwExtendsTest extends TestCase
 
         $templatePath = $templateFinder->find('@Storefront/storefront/frontend/extend_base_template_in_same_plugin.html.twig');
 
-        $template = $twig->loadTemplate($templatePath);
+        $template = $twig->loadTemplate($twig->getTemplateClass($templatePath), $templatePath);
 
         static::assertSame('Base/TestPlugin1/TestPlugin2/StorefrontContent/TestPlugin2Content', $template->render([]));
+    }
+
+    public function testPluginExtendsOtherPluginsNewTemplate(): void
+    {
+        [$twig, $templateFinder] = $this->createFinder([
+            new BundleFixture('Storefront', __DIR__ . '/fixtures/Storefront/'),
+            new BundleFixture('TestPlugin2', __DIR__ . '/fixtures/Plugins/TestPlugin2'),
+            new BundleFixture('TestPlugin1', __DIR__ . '/fixtures/Plugins/TestPlugin1'),
+        ]);
+
+        $templatePath = $templateFinder->find('@TestPlugin1/storefront/frontend/controller/index.html.twig');
+
+        $template = $twig->loadTemplate($twig->getTemplateClass($templatePath), $templatePath);
+        static::assertSame('TestPlugin1/TestPlugin2', $template->render([]));
+    }
+
+    public function testPluginExtendsOtherPluginsNewTemplateDifferentSorted(): void
+    {
+        [$twig, $templateFinder] = $this->createFinder([
+            new BundleFixture('Storefront', __DIR__ . '/fixtures/Storefront/'),
+            new BundleFixture('TestPlugin1', __DIR__ . '/fixtures/Plugins/TestPlugin1'),
+            new BundleFixture('TestPlugin2', __DIR__ . '/fixtures/Plugins/TestPlugin2'),
+        ]);
+
+        $templatePath = $templateFinder->find('@TestPlugin1/storefront/frontend/controller/index.html.twig');
+
+        $template = $twig->loadTemplate($twig->getTemplateClass($templatePath), $templatePath);
+        static::assertSame('TestPlugin1/TestPlugin2', $template->render([]));
+    }
+
+    public function testPluginExtendsOtherPluginsNewTemplateDifferentFirstStorefront(): void
+    {
+        [$twig, $templateFinder] = $this->createFinder([
+            new BundleFixture('TestPlugin1', __DIR__ . '/fixtures/Plugins/TestPlugin1'),
+            new BundleFixture('TestPlugin2', __DIR__ . '/fixtures/Plugins/TestPlugin2'),
+            new BundleFixture('Storefront', __DIR__ . '/fixtures/Storefront/'),
+        ]);
+
+        $templatePath = $templateFinder->find('@TestPlugin1/storefront/frontend/controller/index.html.twig');
+
+        $template = $twig->loadTemplate($twig->getTemplateClass($templatePath), $templatePath);
+        static::assertSame('TestPlugin1/TestPlugin2', $template->render([]));
     }
 
     public function testMultipleInheritanceWithChangingTemplateChain(): void
@@ -104,7 +135,7 @@ class TwigSwExtendsTest extends TestCase
         ]);
 
         $templatePath = $templateFinder->find('storefront/frontend/base.html.twig');
-        $template = $twig->loadTemplate($templatePath);
+        $template = $twig->loadTemplate($twig->getTemplateClass($templatePath), $templatePath);
         static::assertSame('Base/TestPlugin1/TestPlugin2', $template->render([]));
 
         [$twig, $templateFinder] = $this->createFinder([
@@ -113,7 +144,7 @@ class TwigSwExtendsTest extends TestCase
         ]);
 
         $templatePath = $templateFinder->find('storefront/frontend/base.html.twig');
-        $template = $twig->loadTemplate($templatePath);
+        $template = $twig->loadTemplate($twig->getTemplateClass($templatePath), $templatePath);
         static::assertSame('Base/TestPlugin2', $template->render([]));
     }
 
@@ -126,7 +157,7 @@ class TwigSwExtendsTest extends TestCase
         ]);
 
         $templatePath = $templateFinder->find('@TestPlugin1/storefront/frontend/new_template.html.twig');
-        $template = $twig->loadTemplate($templatePath);
+        $template = $twig->loadTemplate($twig->getTemplateClass($templatePath), $templatePath);
 
         $template->render([]);
         static::assertSame('AnotherBaseTestPlugin1TestPlugin2', $template->render([]));
@@ -142,7 +173,7 @@ class TwigSwExtendsTest extends TestCase
 
         // order is  important for this test. 2 needs to be loaded before 1
         $templatePath = $templateFinder->find('@Storefront/storefront/frontend/testExtendWithLoop/loop.html.twig');
-        $template = $twig->loadTemplate($templatePath);
+        $template = $twig->loadTemplate($twig->getTemplateClass($templatePath), $templatePath);
 
         $template->render([]);
         static::assertSame(
@@ -176,7 +207,7 @@ class TwigSwExtendsTest extends TestCase
             new NamespaceHierarchyBuilder([
                 new BundleHierarchyBuilder(
                     $kernel,
-                    $this->getContainer()->get('app.repository')
+                    $this->getContainer()->get(Connection::class)
                 ),
             ])
         );

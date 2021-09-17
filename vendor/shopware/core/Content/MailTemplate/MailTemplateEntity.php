@@ -3,15 +3,16 @@
 namespace Shopware\Core\Content\MailTemplate;
 
 use Shopware\Core\Content\MailTemplate\Aggregate\MailTemplateMedia\MailTemplateMediaCollection;
-use Shopware\Core\Content\MailTemplate\Aggregate\MailTemplateSalesChannel\MailTemplateSalesChannelCollection;
 use Shopware\Core\Content\MailTemplate\Aggregate\MailTemplateTranslation\MailTemplateTranslationCollection;
 use Shopware\Core\Content\MailTemplate\Aggregate\MailTemplateType\MailTemplateTypeEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 
 class MailTemplateEntity extends Entity
 {
     use EntityIdTrait;
+    use EntityCustomFieldsTrait;
 
     /**
      * @var string|null
@@ -52,18 +53,6 @@ class MailTemplateEntity extends Entity
      * @var string|null
      */
     protected $contentPlain;
-
-    /**
-     * @var array|null
-     */
-    protected $customFields;
-
-    /**
-     * @deprecated tag:v6.4.0 - Will be removed, sales channel specific templates will be handled by business events
-     *
-     * @var MailTemplateSalesChannelCollection|null
-     */
-    protected $salesChannels;
 
     /**
      * @var MailTemplateTranslationCollection|null
@@ -145,22 +134,6 @@ class MailTemplateEntity extends Entity
         $this->contentPlain = $contentPlain;
     }
 
-    /**
-     * @deprecated tag:v6.4.0 - Will be removed, sales channel specific templates will be handled by business events
-     */
-    public function getSalesChannels(): ?MailTemplateSalesChannelCollection
-    {
-        return $this->salesChannels;
-    }
-
-    /**
-     * @deprecated tag:v6.4.0 - Will be removed, sales channel specific templates will be handled by business events
-     */
-    public function setSalesChannels(MailTemplateSalesChannelCollection $salesChannels): void
-    {
-        $this->salesChannels = $salesChannels;
-    }
-
     public function getTranslations(): ?MailTemplateTranslationCollection
     {
         return $this->translations;
@@ -189,15 +162,5 @@ class MailTemplateEntity extends Entity
     public function setMailTemplateTypeId(?string $mailTemplateTypeId): void
     {
         $this->mailTemplateTypeId = $mailTemplateTypeId;
-    }
-
-    public function getCustomFields(): ?array
-    {
-        return $this->customFields;
-    }
-
-    public function setCustomFields(?array $customFields): void
-    {
-        $this->customFields = $customFields;
     }
 }

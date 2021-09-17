@@ -10,6 +10,8 @@ use Shopware\Core\Framework\DataAbstractionLayer\Write\WriteParameterBag;
 
 interface FieldSerializerInterface
 {
+    public function normalize(Field $field, array $data, WriteParameterBag $parameters): array;
+
     /**
      * Encodes the provided DAL value to a persitable storage value
      */
@@ -17,6 +19,10 @@ interface FieldSerializerInterface
 
     /**
      * Decodes the storage value to the DAL value
+     *
+     * @param string|null $value
+     *
+     * @deprecated tag:v6.5.0 The parameter $value will be native typed
      */
-    public function decode(Field $field, $value);
+    public function decode(Field $field, /*?string */$value);
 }

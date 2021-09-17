@@ -9,9 +9,6 @@ describe('Mail templates: Test acl privileges', () => {
                 cy.loginViaApi();
             })
             .then(() => {
-                return cy.createDefaultFixture('mail-header-footer');
-            })
-            .then(() => {
                 cy.openInitialPage(`${Cypress.env('admin')}#/sw/dashboard/index`);
             });
     });
@@ -24,11 +21,9 @@ describe('Mail templates: Test acl privileges', () => {
                 key: 'mail_templates',
                 role: 'viewer'
             }
-        ]);
-
-        // go to mail template module
-        cy.get('.sw-admin-menu__item--sw-settings').click();
-        cy.get('#sw-mail-template').click();
+        ]).then(() => {
+            cy.visit(`${Cypress.env('admin')}#/sw/mail/template/index`);
+        });
 
         // open email template
         cy.clickContextMenuItem(
@@ -53,8 +48,8 @@ describe('Mail templates: Test acl privileges', () => {
             `${page.elements.mailHeaderFooterGridList} ${page.elements.dataGridRow}--0`
         );
 
-        cy.get('#sw-field--mailHeaderFooter-name').should('have.value', 'Header and Footer');
-        cy.get('#sw-field--mailHeaderFooter-description').should('have.value', 'Default Description');
+        cy.get('#sw-field--mailHeaderFooter-name').should('have.value', 'Default email footer');
+        cy.get('#sw-field--mailHeaderFooter-description').should('have.value', 'Default email footer derived from basic information');
     });
 
     it('@settings: edit email template', () => {
@@ -69,17 +64,19 @@ describe('Mail templates: Test acl privileges', () => {
                 key: 'mail_templates',
                 role: 'editor'
             }
-        ]);
+        ]).then(() => {
+            cy.visit(`${Cypress.env('admin')}#/sw/mail/template/index`);
+        });
 
         // prepare api to update a mail template
         cy.server();
         cy.route({
-            url: '/api/v*/mail-template/*',
+            url: `${Cypress.env('apiPath')}/mail-template/*`,
             method: 'patch'
         }).as('saveMailTemplate');
 
         cy.route({
-            url: '/api/v*/mail-header-footer/*',
+            url: `${Cypress.env('apiPath')}/mail-header-footer/*`,
             method: 'patch'
         }).as('saveMailHeaderFooter');
 
@@ -162,23 +159,21 @@ describe('Mail templates: Test acl privileges', () => {
                 key: 'mail_templates',
                 role: 'creator'
             }
-        ]);
+        ]).then(() => {
+            cy.visit(`${Cypress.env('admin')}#/sw/mail/template/index`);
+        });
 
         // prepare api to update a mail template
         cy.server();
         cy.route({
-            url: '/api/v*/mail-template',
+            url: `${Cypress.env('apiPath')}/mail-template`,
             method: 'post'
         }).as('createMailTemplate');
 
         cy.route({
-            url: '/api/v*/mail-header-footer',
+            url: `${Cypress.env('apiPath')}/mail-header-footer`,
             method: 'post'
         }).as('createMailHeaderFooter');
-
-        // go to mail template module
-        cy.get('.sw-admin-menu__item--sw-settings').click();
-        cy.get('#sw-mail-template').click();
 
         // Create mail template
         cy.get('.sw-mail-template__button-create').click();
@@ -237,23 +232,21 @@ describe('Mail templates: Test acl privileges', () => {
                 key: 'mail_templates',
                 role: 'deleter'
             }
-        ]);
+        ]).then(() => {
+            cy.visit(`${Cypress.env('admin')}#/sw/mail/template/index`);
+        });
 
         // prepare api to delete a mail template
         cy.server();
         cy.route({
-            url: '/api/v*/mail-template/*',
+            url: `${Cypress.env('apiPath')}/mail-template/*`,
             method: 'delete'
         }).as('deleteMailTemplate');
 
         cy.route({
-            url: '/api/v*/mail-header-footer/*',
+            url: `${Cypress.env('apiPath')}/mail-header-footer/*`,
             method: 'delete'
         }).as('deleteMailHeaderFooter');
-
-        // go to mail template module
-        cy.get('.sw-admin-menu__item--sw-settings').click();
-        cy.get('#sw-mail-template').click();
 
         cy.clickContextMenuItem(
             '.sw-context-menu-item--danger',
@@ -316,23 +309,21 @@ describe('Mail templates: Test acl privileges', () => {
                 key: 'mail_templates',
                 role: 'creator'
             }
-        ]);
+        ]).then(() => {
+            cy.visit(`${Cypress.env('admin')}#/sw/mail/template/index`);
+        });
 
         // prepare api to update a mail template
         cy.server();
         cy.route({
-            url: '/api/v*/mail-template/*',
+            url: `${Cypress.env('apiPath')}/mail-template/*`,
             method: 'patch'
         }).as('saveMailTemplate');
 
         cy.route({
-            url: '/api/v*/mail-header-footer/*',
+            url: `${Cypress.env('apiPath')}/mail-header-footer/*`,
             method: 'patch'
         }).as('saveMailHeaderFooter');
-
-        // go to mail template module
-        cy.get('.sw-admin-menu__item--sw-settings').click();
-        cy.get('#sw-mail-template').click();
 
         // open email template
         cy.clickContextMenuItem(
@@ -388,9 +379,8 @@ describe('Mail templates: Test acl privileges', () => {
 
         // verify fields
         cy.get(`${page.elements.mailHeaderFooterGridList} ${page.elements.dataGridRow}--0 ${page.elements.mailHeaderFooterColumnName}`)
-            .contains('Header and Footer');
-
+            .contains('Default email footer');
         cy.get(`${page.elements.mailHeaderFooterGridList} ${page.elements.dataGridRow}--1 ${page.elements.mailHeaderFooterColumnName}`)
-            .contains('Header and Footer');
+            .contains('Default email footer');
     });
 });

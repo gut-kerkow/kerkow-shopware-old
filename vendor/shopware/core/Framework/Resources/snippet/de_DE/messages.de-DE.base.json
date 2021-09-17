@@ -6,8 +6,8 @@
         "stornoHeadline": "Storno-Nr. %stornoNumber% für Rechnung Nr. %invoiceNumber%",
         "deliveryNoteNumber": "Lieferschein-Nr. %deliveryNoteNumber%",
         "deliveryNoteHeadline": "Lieferschein-Nr. %deliveryNoteNumber% für Bestellung Nr. %orderNumber%",
-        "creditNoteNumber": "Gutschein-Nr. %creditNoteNumber%",
-        "creditNoteHeadline": "Gutschein-Nr. %creditNoteNumber% für Rechnung Nr. %invoiceNumber%",
+        "creditNoteNumber": "Gutschrift-Nr. %creditNoteNumber%",
+        "creditNoteHeadline": "Gutschrift-Nr. %creditNoteNumber% für Rechnung Nr. %invoiceNumber%",
         "customerNumber": "Kunden-Nr.: %customerNumber%",
         "date": "Datum: %date%",
         "comment": "Kommentar: %comment%",
@@ -27,6 +27,7 @@
         "intraCommunity": "Innergemeinschaftliche Lieferung (EU)",
         "shippingAddress": "Lieferadresse",
         "phoneNumber": "Telefonnummer: %phoneNumber%",
+        "email": "E-Mail-Adresse: %email%",
         "ceo": "Geschäftsführer",
         "lineItems": {
             "header": {
@@ -40,6 +41,7 @@
             },
             "tax": "zzgl. %taxRate%% MwSt.:",
             "total": "Gesamtsumme:",
+            "roundedTotal": "Gesamtsumme gerundet:",
             "totalNet": "Gesamtsumme (Netto):",
             "shippingCosts": "Versandkosten"
         },

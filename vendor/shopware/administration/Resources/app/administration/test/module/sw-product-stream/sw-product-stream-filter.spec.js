@@ -1,4 +1,4 @@
-import { createLocalVue, shallowMount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import 'src/module/sw-product-stream/component/sw-product-stream-filter';
 import 'src/app/component/rule/sw-condition-base';
 
@@ -7,7 +7,8 @@ const EntityDefinitionFactory = require('src/core/factory/entity-definition.fact
 function createWrapper(privileges = []) {
     const mockEntitySchema = {
         product: {
-            entity: 'product'
+            entity: 'product',
+            properties: {}
         }
     };
 
@@ -16,11 +17,7 @@ function createWrapper(privileges = []) {
         Shopware.EntityDefinition.add(entity, mockEntitySchema[entity]);
     });
 
-    const localVue = createLocalVue();
-    localVue.directive('tooltip', {});
-
     return shallowMount(Shopware.Component.build('sw-product-stream-filter'), {
-        localVue,
         stubs: {
             'sw-condition-type-select': true,
             'sw-text-field': true,
@@ -33,12 +30,20 @@ function createWrapper(privileges = []) {
         provide: {
             conditionDataProviderService: {
                 getPlaceholderData: () => {},
-                getComponentByCondition: () => {}
+                getComponentByCondition: () => {},
+                allowedJsonAccessors: {
+                    'json.test': {
+                        value: 'json.test',
+                        type: 'string'
+                    }
+                }
             },
             availableTypes: {},
             childAssociationField: {},
             createCondition: () => {},
-            productCustomFields: [],
+            productCustomFields: {
+                test: 'customFields.test'
+            },
             acl: {
                 can: (identifier) => {
                     if (!identifier) { return true; }
@@ -48,9 +53,6 @@ function createWrapper(privileges = []) {
             },
             insertNodeIntoTree: () => {},
             removeNodeFromTree: () => {}
-        },
-        mocks: {
-            $tc: key => key
         },
         propsData: {
             condition: {}
@@ -92,6 +94,39 @@ describe('src/module/sw-product-stream/component/sw-product-stream-filter', () =
         const targetElement = wrapper.find(element);
 
         expect(targetElement.attributes('disabled')).toBe(state);
+    });
+
+    it('should return correct custom fields', async () => {
+        const wrapper = createWrapper();
+
+        await wrapper.setProps({
+            condition: {
+                field: 'customFields.test'
+            }
+        });
+        wrapper.vm.$nextTick();
+
+        expect(wrapper.vm.fields).toEqual(['customFields.test']);
+    });
+
+    it('should return true if input is custom field', async () => {
+        const wrapper = createWrapper();
+        wrapper.vm.$nextTick();
+
+        expect(wrapper.vm.isCustomField('customFields.test')).toBe(true);
+    });
+
+    it('should return correct json field', async () => {
+        const wrapper = createWrapper();
+
+        await wrapper.setProps({
+            condition: {
+                field: 'json.test'
+            }
+        });
+        wrapper.vm.$nextTick();
+
+        expect(wrapper.vm.fields).toEqual(['json.test']);
     });
 });
 

@@ -19,6 +19,8 @@ use Shopware\Core\Framework\Test\TestCaseBase\CountryAddToSalesChannelTestBehavi
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\TaxAddToSalesChannelTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
+use Shopware\Core\System\SalesChannel\Context\AbstractSalesChannelContextFactory;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -51,7 +53,7 @@ class ProductStockIndexerTest extends TestCase
     private $cartService;
 
     /**
-     * @var SalesChannelContextFactory
+     * @var AbstractSalesChannelContextFactory
      */
     private $contextFactory;
 
@@ -361,9 +363,7 @@ class ProductStockIndexerTest extends TestCase
         $this->lineItemRepository->update($update, $context);
 
         /** @var EntityCollection $products */
-        $products = $context->disableCache(function () use ($id, $id2, $context) {
-            return $this->productRepository->search(new Criteria([$id, $id2]), $context);
-        });
+        $products = $this->productRepository->search(new Criteria([$id, $id2]), $context);
 
         $product = $products->get($id);
         static::assertTrue($product->getAvailable());
@@ -409,9 +409,7 @@ class ProductStockIndexerTest extends TestCase
             ['id' => $lineItem->getId()],
         ], $context);
 
-        $product = $context->disableCache(function () use ($id, $context) {
-            return $this->productRepository->search(new Criteria([$id]), $context)->get($id);
-        });
+        $product = $this->productRepository->search(new Criteria([$id]), $context)->get($id);
 
         static::assertTrue($product->getAvailable());
         static::assertSame(5, $product->getStock());
@@ -763,7 +761,7 @@ class ProductStockIndexerTest extends TestCase
 
         static::assertSame($quantity, $cart->get($id)->getQuantity());
 
-        return $this->cartService->order($cart, $this->context);
+        return $this->cartService->order($cart, $this->context, new RequestDataBag());
     }
 
     private function transitionOrder(string $orderId, string $transition): void

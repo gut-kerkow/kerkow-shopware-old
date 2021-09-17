@@ -22,34 +22,29 @@ describe('Import/Export - Check import functionality', () => {
     it('@base @settings: Perform import with product profile', () => {
         cy.server();
         cy.route({
-            url: '/api/v*/_action/import-export/prepare',
+            url: `${Cypress.env('apiPath')}/_action/import-export/prepare`,
             method: 'post'
         }).as('prepare');
 
         cy.route({
-            url: '/api/v*/_action/import-export/process',
+            url: `${Cypress.env('apiPath')}/_action/import-export/process`,
             method: 'post'
         }).as('process');
 
         cy.route({
-            url: '/api/v*/search/import-export-log',
+            url: `${Cypress.env('apiPath')}/search/import-export-log`,
             method: 'post'
         }).as('importExportLog');
 
         cy.get('.sw-import-export-view-import').should('be.visible');
 
         // Upload a fixture CSV file with a single product
-        cy.fixture('csv/single-product.csv').then(fileContent => {
-            cy.get('.sw-file-input__file-input').upload(
-                {
-                    fileContent,
-                    fileName: 'single-product.csv',
-                    mimeType: 'text/csv'
-                }, {
-                    subjectType: 'input'
-                }
-            );
-        });
+        cy.get('.sw-file-input__file-input')
+            .attachFile({
+                filePath: 'csv/single-product.csv',
+                fileName: 'single-product.csv',
+                mimeType: 'text/csv'
+            });
 
         // File upload component should display file name
         cy.get('.sw-file-input__file-headline').should('contain', 'single-product.csv');

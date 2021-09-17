@@ -19,7 +19,12 @@ import './acl/index';
 
 const { Module } = Shopware;
 
+/**
+ * @deprecated tag:v6.5.0 - will be removed, use `sw-promotion-v2` instead
+ * @feature-deprecated (flag:FEATURE_NEXT_13810)
+ */
 Module.register('sw-promotion', {
+    flag: 'FEATURE_NEXT_13810',
     type: 'core',
     name: 'promotion',
     title: 'sw-promotion.general.mainMenuItemGeneral',
@@ -34,15 +39,15 @@ Module.register('sw-promotion', {
     routes: {
         index: {
             components: {
-                default: 'sw-promotion-list'
+                default: 'sw-promotion-list',
             },
             path: 'index',
             meta: {
                 privilege: 'promotion.viewer',
                 appSystem: {
-                    view: 'list'
-                }
-            }
+                    view: 'list',
+                },
+            },
 
         },
 
@@ -50,10 +55,10 @@ Module.register('sw-promotion', {
             component: 'sw-promotion-detail',
             path: 'create',
             redirect: {
-                name: 'sw.promotion.create.base'
+                name: 'sw.promotion.create.base',
             },
             meta: {
-                privilege: 'promotion.creator'
+                privilege: 'promotion.creator',
             },
             children: {
                 base: {
@@ -61,23 +66,23 @@ Module.register('sw-promotion', {
                     path: 'base',
                     meta: {
                         parentPath: 'sw.promotion.index',
-                        privilege: 'promotion.creator'
-                    }
-                }
-            }
+                        privilege: 'promotion.creator',
+                    },
+                },
+            },
         },
 
         detail: {
             component: 'sw-promotion-detail',
             path: 'detail/:id?',
             redirect: {
-                name: 'sw.promotion.detail.base'
+                name: 'sw.promotion.detail.base',
             },
             meta: {
                 privilege: 'promotion.viewer',
                 appSystem: {
-                    view: 'detail'
-                }
+                    view: 'detail',
+                },
             },
             children: {
                 base: {
@@ -85,34 +90,34 @@ Module.register('sw-promotion', {
                     path: 'base',
                     meta: {
                         parentPath: 'sw.promotion.index',
-                        privilege: 'promotion.viewer'
-                    }
+                        privilege: 'promotion.viewer',
+                    },
                 },
                 restrictions: {
                     component: 'sw-promotion-detail-restrictions',
                     path: 'restrictions',
                     meta: {
                         parentPath: 'sw.promotion.index',
-                        privilege: 'promotion.viewer'
-                    }
+                        privilege: 'promotion.viewer',
+                    },
                 },
                 discounts: {
                     component: 'sw-promotion-detail-discounts',
                     path: 'discounts',
                     meta: {
                         parentPath: 'sw.promotion.index',
-                        privilege: 'promotion.viewer'
-                    }
-                }
+                        privilege: 'promotion.viewer',
+                    },
+                },
             },
             props: {
                 default: (route) => {
                     return {
-                        promotionId: route.params.id
+                        promotionId: route.params.id,
                     };
-                }
-            }
-        }
+                },
+            },
+        },
     },
 
     navigation: [{
@@ -121,7 +126,7 @@ Module.register('sw-promotion', {
         color: '#FFD700',
         icon: 'default-object-marketing',
         position: 70,
-        privilege: 'promotion.viewer'
+        privilege: 'promotion.viewer',
     }, {
         id: 'sw-promotion',
         path: 'sw.promotion.index',
@@ -130,6 +135,6 @@ Module.register('sw-promotion', {
         icon: 'default-package-gift',
         position: 100,
         parent: 'sw-marketing',
-        privilege: 'promotion.viewer'
-    }]
+        privilege: 'promotion.viewer',
+    }],
 });

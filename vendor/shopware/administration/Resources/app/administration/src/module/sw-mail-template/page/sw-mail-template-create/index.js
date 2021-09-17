@@ -23,13 +23,10 @@ Component.extend('sw-mail-template-create', 'sw-mail-template-detail', {
             if (this.$route.params.id) {
                 this.mailTemplate = this.mailTemplateRepository.create(Shopware.Context.api, this.$route.params.id);
             } else {
-                this.mailTemplate = this.mailTemplateRepository.create(Shopware.Context.api);
+                this.mailTemplate = this.mailTemplateRepository.create();
             }
 
             this.mailTemplateId = this.mailTemplate.id;
-            this.mailTemplateSalesChannels = [];
-
-            this.getPossibleSalesChannels([]);
         },
 
         saveFinish() {
@@ -39,6 +36,6 @@ Component.extend('sw-mail-template-create', 'sw-mail-template-detail', {
 
         onSave() {
             this.$super('onSave');
-        }
-    }
+        },
+    },
 });

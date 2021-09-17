@@ -102,21 +102,18 @@ describe('module/sw-settings-snippet/page/sw-settings-snippet-list', () => {
                     query: {
                         ids: 'a2f95068665e4498ae98a2318a7963df'
                     }
-                },
-                $tc: key => key,
-                $te: key => key,
-                $device: {
-                    onResize: () => {}
                 }
             },
             stubs: {
-                'sw-page': `
+                'sw-page': {
+                    template: `
                     <div class="sw-page">
                         <div class="smart-bar__actions">
                             <slot name="smart-bar-actions"></slot>
                         </div>
                         <slot name="content"></slot>
-                    </div>`,
+                    </div>`
+                },
                 'sw-data-grid': Shopware.Component.build('sw-data-grid'),
                 'sw-pagination': true,
                 'sw-data-grid-skeleton': true,

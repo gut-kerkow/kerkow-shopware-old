@@ -12,16 +12,19 @@ use Shopware\Core\Framework\App\Exception\AppUrlChangeDetectedException;
 use Shopware\Core\Framework\App\ShopId\ShopIdProvider;
 use Shopware\Core\Framework\Event\BeforeSendResponseEvent;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
+use Shopware\Core\Framework\Routing\Event\SalesChannelContextResolvedEvent;
 use Shopware\Core\Framework\Routing\KernelListenerPriorities;
 use Shopware\Core\Framework\Util\Random;
 use Shopware\Core\PlatformRequest;
 use Shopware\Core\SalesChannelRequest;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextServiceInterface;
+use Shopware\Core\System\SalesChannel\Context\SalesChannelContextServiceParameters;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Shopware\Storefront\Controller\ErrorController;
 use Shopware\Storefront\Event\StorefrontRenderEvent;
 use Shopware\Storefront\Framework\Csrf\CsrfPlaceholderHandler;
+use Shopware\Storefront\Theme\StorefrontPluginRegistryInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -35,60 +38,29 @@ use Symfony\Component\Routing\RouterInterface;
 
 class StorefrontSubscriber implements EventSubscriberInterface
 {
-    /**
-     * @var RequestStack
-     */
-    private $requestStack;
+    private RequestStack $requestStack;
 
-    /**
-     * @var RouterInterface
-     */
-    private $router;
+    private RouterInterface $router;
 
-    /**
-     * @var ErrorController
-     */
-    private $errorController;
+    private ErrorController $errorController;
 
-    /**
-     * @var SalesChannelContextServiceInterface
-     */
-    private $contextService;
+    private SalesChannelContextServiceInterface $contextService;
 
-    /**
-     * @var bool
-     */
-    private $kernelDebug;
+    private bool $kernelDebug;
 
-    /**
-     * @var CsrfPlaceholderHandler
-     */
-    private $csrfPlaceholderHandler;
+    private CsrfPlaceholderHandler $csrfPlaceholderHandler;
 
-    /**
-     * @var MaintenanceModeResolver
-     */
-    private $maintenanceModeResolver;
+    private MaintenanceModeResolver $maintenanceModeResolver;
 
-    /**
-     * @var HreflangLoaderInterface
-     */
-    private $hreflangLoader;
+    private HreflangLoaderInterface $hreflangLoader;
 
-    /**
-     * @var ShopIdProvider
-     */
-    private $shopIdProvider;
+    private ShopIdProvider $shopIdProvider;
 
-    /**
-     * @var ActiveAppsLoader
-     */
-    private $activeAppsLoader;
+    private ActiveAppsLoader $activeAppsLoader;
 
-    /**
-     * @var SystemConfigService
-     */
-    private $systemConfigService;
+    private SystemConfigService $systemConfigService;
+
+    private StorefrontPluginRegistryInterface $themeRegistry;
 
     public function __construct(
         RequestStack $requestStack,
@@ -101,7 +73,8 @@ class StorefrontSubscriber implements EventSubscriberInterface
         MaintenanceModeResolver $maintenanceModeResolver,
         ShopIdProvider $shopIdProvider,
         ActiveAppsLoader $activeAppsLoader,
-        SystemConfigService $systemConfigService
+        SystemConfigService $systemConfigService,
+        StorefrontPluginRegistryInterface $themeRegistry
     ) {
         $this->requestStack = $requestStack;
         $this->router = $router;
@@ -114,6 +87,7 @@ class StorefrontSubscriber implements EventSubscriberInterface
         $this->shopIdProvider = $shopIdProvider;
         $this->activeAppsLoader = $activeAppsLoader;
         $this->systemConfigService = $systemConfigService;
+        $this->themeRegistry = $themeRegistry;
     }
 
     public static function getSubscribedEvents(): array
@@ -144,13 +118,17 @@ class StorefrontSubscriber implements EventSubscriberInterface
             StorefrontRenderEvent::class => [
                 ['addHreflang'],
                 ['addShopIdParameter'],
+                ['addIconSetConfig'],
+            ],
+            SalesChannelContextResolvedEvent::class => [
+                ['replaceContextToken'],
             ],
         ];
     }
 
     public function startSession(): void
     {
-        $master = $this->requestStack->getMasterRequest();
+        $master = $this->requestStack->getMainRequest();
 
         if (!$master) {
             return;
@@ -164,10 +142,9 @@ class StorefrontSubscriber implements EventSubscriberInterface
         }
 
         $session = $master->getSession();
-        $applicationId = $master->attributes->get(PlatformRequest::ATTRIBUTE_OAUTH_CLIENT_ID);
 
         if (!$session->isStarted()) {
-            $session->setName('session-' . $applicationId);
+            $session->setName('session-');
             $session->start();
             $session->set('sessionId', $session->getId());
         }
@@ -209,7 +186,7 @@ class StorefrontSubscriber implements EventSubscriberInterface
 
     public function updateSession(string $token, bool $destroyOldSession = false): void
     {
-        $master = $this->requestStack->getMasterRequest();
+        $master = $this->requestStack->getMainRequest();
         if (!$master) {
             return;
         }
@@ -244,7 +221,7 @@ class StorefrontSubscriber implements EventSubscriberInterface
             $event->stopPropagation();
             $response = $this->errorController->error(
                 $event->getThrowable(),
-                $this->requestStack->getMasterRequest(),
+                $this->requestStack->getMainRequest(),
                 $event->getRequest()->get(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT)
             );
             $event->setResponse($response);
@@ -313,6 +290,19 @@ class StorefrontSubscriber implements EventSubscriberInterface
         throw new AccessDeniedHttpException('PageController can\'t be requested via XmlHttpRequest.');
     }
 
+    // used to switch session token - when the context token expired
+    public function replaceContextToken(SalesChannelContextResolvedEvent $event): void
+    {
+        $context = $event->getSalesChannelContext();
+
+        // only update session if token expired and switched
+        if ($event->getUsedToken() === $context->getToken()) {
+            return;
+        }
+
+        $this->updateSession($context->getToken());
+    }
+
     public function setCanonicalUrl(BeforeSendResponseEvent $event): void
     {
         if (!$event->getResponse()->isSuccessful()) {
@@ -360,23 +350,56 @@ class StorefrontSubscriber implements EventSubscriberInterface
         }
 
         $event->setParameter('appShopId', $shopId);
-        /*
-         * @deprecated tag:v6.4.0 use `appShopId` instead
-         */
-        $event->setParameter('swagShopId', $shopId);
+    }
+
+    public function addIconSetConfig(StorefrontRenderEvent $event): void
+    {
+        $request = $event->getRequest();
+
+        // get name if theme is not inherited
+        $theme = $request->attributes->get(SalesChannelRequest::ATTRIBUTE_THEME_NAME);
+
+        if (!$theme) {
+            // get theme name from base theme because for inherited themes the name is always null
+            $theme = $request->attributes->get(SalesChannelRequest::ATTRIBUTE_THEME_BASE_NAME);
+        }
+
+        if (!$theme) {
+            return;
+        }
+
+        $themeConfig = $this->themeRegistry->getConfigurations()->getByTechnicalName($theme);
+
+        if (!$themeConfig) {
+            return;
+        }
+
+        $iconConfig = [];
+        foreach ($themeConfig->getIconSets() as $pack => $path) {
+            $iconConfig[$pack] = [
+                'path' => $path,
+                'namespace' => $theme,
+            ];
+        }
+
+        $event->setParameter('themeIconConfig', $iconConfig);
     }
 
     private function setSalesChannelContext(ExceptionEvent $event): void
     {
-        $contextToken = $event->getRequest()->headers->get(PlatformRequest::HEADER_CONTEXT_TOKEN);
-        $salesChannelId = $event->getRequest()->attributes->get(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_ID);
+        $contextToken = (string) $event->getRequest()->headers->get(PlatformRequest::HEADER_CONTEXT_TOKEN);
+        $salesChannelId = (string) $event->getRequest()->attributes->get(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_ID);
 
         $context = $this->contextService->get(
-            $salesChannelId,
-            $contextToken,
-            $event->getRequest()->headers->get(PlatformRequest::HEADER_LANGUAGE_ID),
-            $event->getRequest()->attributes->get(SalesChannelRequest::ATTRIBUTE_DOMAIN_CURRENCY_ID)
+            new SalesChannelContextServiceParameters(
+                $salesChannelId,
+                $contextToken,
+                $event->getRequest()->headers->get(PlatformRequest::HEADER_LANGUAGE_ID),
+                $event->getRequest()->attributes->get(SalesChannelRequest::ATTRIBUTE_DOMAIN_CURRENCY_ID),
+                $event->getRequest()->attributes->get(SalesChannelRequest::ATTRIBUTE_DOMAIN_ID)
+            )
         );
+
         $event->getRequest()->attributes->set(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT, $context);
     }
 

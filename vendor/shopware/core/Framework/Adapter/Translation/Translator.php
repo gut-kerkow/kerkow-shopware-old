@@ -2,83 +2,57 @@
 
 namespace Shopware\Core\Framework\Adapter\Translation;
 
+use Doctrine\DBAL\Exception\ConnectionException;
 use Psr\Cache\CacheItemPoolInterface;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopware\Core\SalesChannelRequest;
 use Shopware\Core\System\Snippet\SnippetService;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\CacheWarmer\WarmableInterface;
-use Symfony\Component\Translation\Exception\LogicException;
-use Symfony\Component\Translation\Formatter\ChoiceMessageFormatterInterface;
 use Symfony\Component\Translation\Formatter\MessageFormatterInterface;
 use Symfony\Component\Translation\MessageCatalogueInterface;
 use Symfony\Component\Translation\TranslatorBagInterface;
-use Symfony\Component\Translation\TranslatorInterface as LegacyTranslatorInterface;
+use Symfony\Contracts\Translation\LocaleAwareInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Symfony\Contracts\Translation\TranslatorTrait;
 
-class Translator implements TranslatorInterface, TranslatorBagInterface, LegacyTranslatorInterface
+class Translator extends AbstractTranslator
 {
     use TranslatorTrait;
 
     /**
-     * @var TranslatorInterface|TranslatorBagInterface|LegacyTranslatorInterface
+     * @var TranslatorInterface|TranslatorBagInterface|WarmableInterface
      */
     private $translator;
 
-    /**
-     * @var RequestStack
-     */
-    private $requestStack;
+    private RequestStack $requestStack;
 
-    /**
-     * @var CacheItemPoolInterface
-     */
-    private $cache;
+    private CacheItemPoolInterface $cache;
 
-    /**
-     * @var array
-     */
-    private $isCustomized = [];
+    private array $isCustomized = [];
 
-    /**
-     * @var MessageFormatterInterface
-     */
-    private $formatter;
+    private MessageFormatterInterface $formatter;
 
-    /**
-     * @var SnippetService
-     */
-    private $snippetService;
+    private SnippetService $snippetService;
 
-    /**
-     * @var string|null
-     */
-    private $fallbackLocale;
+    private ?string $fallbackLocale = null;
 
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $languageRepository;
+    private EntityRepositoryInterface $languageRepository;
 
-    /**
-     * @var string|null
-     */
-    private $snippetSetId = null;
+    private ?string $snippetSetId = null;
 
-    /**
-     * @var string|null
-     */
-    private $localeBeforeInject = null;
+    private ?string $localeBeforeInject = null;
 
-    /**
-     * @var string
-     */
-    private $environment;
+    private string $environment;
+
+    private array $keys = ['all' => true];
+
+    private array $traces = [];
 
     public function __construct(
         TranslatorInterface $translator,
@@ -98,11 +72,45 @@ class Translator implements TranslatorInterface, TranslatorBagInterface, LegacyT
         $this->environment = $environment;
     }
 
+    public static function buildName(string $id): string
+    {
+        return 'translator.' . $id;
+    }
+
+    public function getDecorated(): AbstractTranslator
+    {
+        throw new DecorationPatternException(self::class);
+    }
+
+    /**
+     * @return mixed|null All kind of data could be cached
+     */
+    public function trace(string $key, \Closure $param)
+    {
+        $this->traces[$key] = [];
+        $this->keys[$key] = true;
+
+        $result = $param();
+
+        unset($this->keys[$key]);
+
+        return $result;
+    }
+
+    public function getTrace(string $key): array
+    {
+        $trace = isset($this->traces[$key]) ? array_keys($this->traces[$key]) : [];
+        unset($this->traces[$key]);
+
+        return $trace;
+    }
+
     /**
      * {@inheritdoc}
      */
-    public function getCatalogue($locale = null): MessageCatalogueInterface
+    public function getCatalogue(?string $locale = null): MessageCatalogueInterface
     {
+        \assert($this->translator instanceof TranslatorBagInterface);
         $catalog = $this->translator->getCatalogue($locale);
 
         $fallbackLocale = $this->getFallbackLocale();
@@ -127,40 +135,17 @@ class Translator implements TranslatorInterface, TranslatorBagInterface, LegacyT
     /**
      * {@inheritdoc}
      */
-    public function trans($id, array $parameters = [], $domain = null, $locale = null): string
+    public function trans($id, array $parameters = [], ?string $domain = null, ?string $locale = null): string
     {
         if ($domain === null) {
             $domain = 'messages';
         }
 
-        return $this->formatter->format($this->getCatalogue($locale)->get($id, $domain), $locale, $parameters);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function transChoice($id, $number, array $parameters = [], $domain = null, $locale = null)
-    {
-        if (!$this->formatter instanceof ChoiceMessageFormatterInterface) {
-            throw new LogicException(sprintf('The formatter "%s" does not support plural translations.', \get_class($this->formatter)));
+        foreach (array_keys($this->keys) as $trace) {
+            $this->traces[$trace][self::buildName($id)] = true;
         }
 
-        if ($domain === null) {
-            $domain = 'messages';
-        }
-
-        $catalogue = $this->getCatalogue($locale);
-        $locale = $catalogue->getLocale();
-        while (!$catalogue->defines($id, $domain)) {
-            if ($cat = $catalogue->getFallbackCatalogue()) {
-                $catalogue = $cat;
-                $locale = $catalogue->getLocale();
-            } else {
-                break;
-            }
-        }
-
-        return $this->formatter->choiceFormat($catalogue->get($id, $domain), $number, $locale, $parameters);
+        return $this->formatter->format($this->getCatalogue($locale)->get($id, $domain), $locale ?? $this->getFallbackLocale(), $parameters);
     }
 
     /**
@@ -168,6 +153,7 @@ class Translator implements TranslatorInterface, TranslatorBagInterface, LegacyT
      */
     public function setLocale($locale): void
     {
+        \assert($this->translator instanceof LocaleAwareInterface);
         $this->translator->setLocale($locale);
     }
 
@@ -176,11 +162,13 @@ class Translator implements TranslatorInterface, TranslatorBagInterface, LegacyT
      */
     public function getLocale(): string
     {
+        \assert($this->translator instanceof LocaleAwareInterface);
+
         return $this->translator->getLocale();
     }
 
     /**
-     * {@inheritdoc}
+     * @param string $cacheDir
      */
     public function warmUp($cacheDir): void
     {
@@ -210,8 +198,25 @@ class Translator implements TranslatorInterface, TranslatorBagInterface, LegacyT
 
     public function resetInjection(): void
     {
+        \assert($this->localeBeforeInject !== null);
         $this->setLocale($this->localeBeforeInject);
         $this->snippetSetId = null;
+    }
+
+    public function getSnippetSetId(): ?string
+    {
+        if ($this->snippetSetId !== null) {
+            return $this->snippetSetId;
+        }
+
+        $request = $this->requestStack->getCurrentRequest();
+        if (!$request) {
+            return null;
+        }
+
+        $this->snippetSetId = $request->attributes->get(SalesChannelRequest::ATTRIBUTE_DOMAIN_SNIPPET_SET_ID);
+
+        return $this->snippetSetId;
     }
 
     private function isFallbackLocaleCatalogue(MessageCatalogueInterface $catalog, string $fallbackLocale): bool
@@ -276,36 +281,25 @@ class Translator implements TranslatorInterface, TranslatorBagInterface, LegacyT
         return $snippets;
     }
 
-    private function getSnippetSetId(): ?string
-    {
-        if ($this->snippetSetId !== null) {
-            return $this->snippetSetId;
-        }
-
-        $request = $this->requestStack->getCurrentRequest();
-        if (!$request) {
-            return null;
-        }
-
-        $this->snippetSetId = $request->attributes->get(SalesChannelRequest::ATTRIBUTE_DOMAIN_SNIPPET_SET_ID);
-
-        return $this->snippetSetId;
-    }
-
     private function getFallbackLocale(): string
     {
         if ($this->fallbackLocale) {
             return $this->fallbackLocale;
         }
 
-        $criteria = new Criteria();
-        $criteria->setTitle('snippet-translator::load-fallback');
+        try {
+            $criteria = new Criteria();
+            $criteria->setTitle('snippet-translator::load-fallback');
 
-        $criteria->addFilter(new EqualsFilter('id', Defaults::LANGUAGE_SYSTEM));
-        $criteria->addAssociation('locale');
+            $criteria->addFilter(new EqualsFilter('id', Defaults::LANGUAGE_SYSTEM));
+            $criteria->addAssociation('locale');
 
-        $defaultLanguage = $this->languageRepository->search($criteria, Context::createDefaultContext())->get(Defaults::LANGUAGE_SYSTEM);
+            $defaultLanguage = $this->languageRepository->search($criteria, Context::createDefaultContext())->get(Defaults::LANGUAGE_SYSTEM);
 
-        return $this->fallbackLocale = $defaultLanguage->getLocale()->getCode();
+            return $this->fallbackLocale = $defaultLanguage->getLocale()->getCode();
+        } catch (ConnectionException $_) {
+            // this allows us to use the translator even if there's no db connection yet
+            return 'en-GB';
+        }
     }
 }

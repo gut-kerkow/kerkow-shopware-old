@@ -2,89 +2,52 @@
 
 namespace Shopware\Storefront\Theme\StorefrontPluginConfiguration;
 
-class StorefrontPluginConfiguration
+use Shopware\Core\Framework\Struct\Struct;
+
+class StorefrontPluginConfiguration extends Struct
 {
-    /**
-     * @var array
-     */
-    private $themeConfig = [];
+    protected ?array $themeConfig = [];
 
-    /**
-     * @deprecated tag:6.4.0.0 will only accept string
-     *
-     * @var string|null
-     */
-    private $technicalName;
+    protected string $technicalName;
 
-    /**
-     * @var string
-     */
-    private $name;
+    protected ?string $name = null;
 
-    /**
-     * @var string|null
-     */
-    private $previewMedia;
+    protected ?string $previewMedia = null;
 
-    /**
-     * @var string|null
-     */
-    private $author;
+    protected ?string $author = null;
 
-    /**
-     * @var bool|null
-     */
-    private $isTheme;
+    protected ?bool $isTheme = null;
 
-    /**
-     * @var FileCollection
-     */
-    private $styleFiles;
+    protected FileCollection $styleFiles;
 
-    /**
-     * @var FileCollection
-     */
-    private $scriptFiles;
+    protected FileCollection $scriptFiles;
 
-    /**
-     * @var string|null
-     */
-    private $storefrontEntryFilepath;
+    protected ?string $storefrontEntryFilepath = null;
 
-    /**
-     * @var string|null
-     */
-    private $basePath;
+    protected ?string $basePath = null;
 
-    /**
-     * @var array
-     */
-    private $assetPaths = [];
+    protected array $assetPaths = [];
 
     /**
      * @var string[]
      */
-    private $viewInheritance = [];
+    protected array $viewInheritance = [];
 
     /**
-     * @deprecated tag:v6.4.0 - parameter $technicalName will be required
+     * @var array<string, string>
      */
-    public function __construct(?string $technicalName = null)
+    protected array $iconSets = [];
+
+    public function __construct(string $technicalName)
     {
         $this->technicalName = $technicalName;
+        $this->styleFiles = new FileCollection();
+        $this->scriptFiles = new FileCollection();
     }
 
-    public function getTechnicalName(): ?string
+    public function getTechnicalName(): string
     {
         return $this->technicalName;
-    }
-
-    /**
-     * @deprecated tag:v6.4.0 - Will be removed. Set name n constructor
-     */
-    public function setTechnicalName(string $technicalName): void
-    {
-        $this->technicalName = $technicalName;
     }
 
     public function getName(): ?string
@@ -201,6 +164,22 @@ class StorefrontPluginConfiguration
     public function setViewInheritance(array $viewInheritance): void
     {
         $this->viewInheritance = $viewInheritance;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function getIconSets(): array
+    {
+        return $this->iconSets;
+    }
+
+    /**
+     * @param array<string, string> $iconSets
+     */
+    public function setIconSets(array $iconSets): void
+    {
+        $this->iconSets = $iconSets;
     }
 
     public function hasFilesToCompile(): bool

@@ -1,4 +1,4 @@
-/// <reference types="Cypress" />
+// / <reference types="Cypress" />
 
 import SettingsPageObject from '../../../support/pages/module/sw-settings.page-object';
 
@@ -24,11 +24,9 @@ describe('Customer groups: Test acl privileges', () => {
                 key: 'customer_groups',
                 role: 'viewer'
             }
-        ]);
-
-        // go to customer groups module
-        cy.get('.sw-admin-menu__item--sw-settings').click();
-        cy.get('#sw-settings-customer-group').click();
+        ]).then(() => {
+            cy.visit(`${Cypress.env('admin')}#/sw/settings/customer/group/index`);
+        });
 
         cy.get('.sw-settings-customer-group-list').should('be.visible');
 
@@ -55,18 +53,16 @@ describe('Customer groups: Test acl privileges', () => {
                 key: 'customer_groups',
                 role: 'editor'
             }
-        ]);
+        ]).then(() => {
+            cy.visit(`${Cypress.env('admin')}#/sw/settings/customer/group/index`);
+        });
 
         // Request we want to wait for later
         cy.server();
         cy.route({
-            url: '/api/v*/customer-group/*',
+            url: `${Cypress.env('apiPath')}/customer-group/*`,
             method: 'patch'
         }).as('updateCustomerGroup');
-
-        // go to customer groups module
-        cy.get('.sw-admin-menu__item--sw-settings').click();
-        cy.get('#sw-settings-customer-group').click();
 
         // click on first element in grid
         cy.get(`${page.elements.dataGridRow}--0`)
@@ -123,18 +119,16 @@ describe('Customer groups: Test acl privileges', () => {
                 key: 'customer_groups',
                 role: 'creator'
             }
-        ]);
+        ]).then(() => {
+            cy.visit(`${Cypress.env('admin')}#/sw/settings/customer/group/index`);
+        });
 
         // Request we want to wait for later
         cy.server();
         cy.route({
-            url: '/api/v*/customer-group',
+            url: `${Cypress.env('apiPath')}/customer-group`,
             method: 'post'
         }).as('createCustomerGroup');
-
-        // go to customer groups module
-        cy.get('.sw-admin-menu__item--sw-settings').click();
-        cy.get('#sw-settings-customer-group').click();
 
         // Create customer group
         cy.get('a[href="#/sw/settings/customer/group/create"]').click();
@@ -177,18 +171,16 @@ describe('Customer groups: Test acl privileges', () => {
                 key: 'customer_groups',
                 role: 'deleter'
             }
-        ]);
+        ]).then(() => {
+            cy.visit(`${Cypress.env('admin')}#/sw/settings/customer/group/index`);
+        });
 
         // Request we want to wait for later
         cy.server();
         cy.route({
-            url: '/api/v*/customer-group/*',
+            url: `${Cypress.env('apiPath')}/customer-group/*`,
             method: 'delete'
         }).as('deleteCustomerGroup');
-
-        // go to customer groups module
-        cy.get('.sw-admin-menu__item--sw-settings').click();
-        cy.get('#sw-settings-customer-group').click();
 
         // filter customer group via search bar
         cy.get('input.sw-search-bar__input').typeAndCheckSearchField('Chuck-Testers');

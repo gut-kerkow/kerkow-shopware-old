@@ -57,11 +57,14 @@
             "test": "API-Zugangsdaten testen",
             "titleSuccess": "Erfolg",
             "titleError": "Fehler",
+            "labelShowSpecificStatusMapping": "Statusmappingkonfiguration einblenden",
+            "helpTextShowSpecificStatusMapping": "Sie können für jede Zahlungsart ein spezifisches Statusmapping konfigurieren. Existiert eine solche Konfiguration nicht, wird auf die allgemeine Konfiguration zurückgegriffen.",
             "messageTestSuccess": "Die API-Zugangsdaten wurden erfolgreich validiert.",
             "messageTestNoTestedPayments": "Bei der Prüfung wurden keine Zahlarten getestet, weil keine der PAYONE Zahlarten aktiviert ist. Bitte aktivieren Sie mindestens eine PAYONE Zahlart unter Einstellungen --> Shop --> Zahlungsarten.",
             "messageTestError": {
                 "general": "Die API-Zugangsdaten konnten nicht validiert werden.",
                 "creditCard": "Die API-Zugangsdaten für Kreditkarte sind nicht korrekt.",
+                "prepayment": "Die API-Zugangsdaten für Vorkasse sind nicht korrekt.",
                 "debit": "Die API-Zugangsdaten für Lastschrift sind nicht korrekt.",
                 "paypalExpress": "Die API-Zugangsdaten für PayPal Express sind nicht korrekt.",
                 "paypal": "Die API-Zugangsdaten für PayPal sind nicht korrekt.",
@@ -71,7 +74,9 @@
                 "sofort": "Die API-Zugangsdaten für SOFORT sind nicht korrekt.",
                 "eps": "Die API-Zugangsdaten für EPS sind nicht korrekt.",
                 "iDeal": "Die API-Zugangsdaten für iDEAL sind nicht korrekt.",
-                "secureInvoice": "Die API-Zugangsdaten für den gesicherten Rechnungskauf sind nicht korrekt."
+                "secureInvoice": "Die API-Zugangsdaten für den gesicherten Rechnungskauf sind nicht korrekt.",
+                "paydirekt": "Die API-Zugangsdaten für Paydirekt sind nicht korrekt.",
+                "trustly": "Die API-Zugangsdaten für Trustly sind nicht korrekt."
             }
         },
         "supportModal": {
@@ -117,6 +122,14 @@
             "transaction": {
                 "notFound": "Es wurde keine passende Transaktion gefundend",
                 "orderNotFound": "Es wurde keine passende Bestellung gefundend"
+            }
+        }
+    },
+    "sw-privileges": {
+        "additional_permissions": {
+            "Payone": {
+                "label": "PAYONE",
+                "payone_order_management": "PAYONE Transaktionsmanagement"
             }
         }
     }

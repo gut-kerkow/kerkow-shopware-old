@@ -10,6 +10,7 @@ use Shopware\Core\Content\Seo\SeoUrlRoute\SeoUrlMapping;
 use Shopware\Core\Content\Seo\SeoUrlRoute\SeoUrlRouteConfig;
 use Shopware\Core\Content\Seo\SeoUrlRoute\SeoUrlRouteInterface;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\Dbal\Common\RepositoryIterator;
 use Shopware\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
@@ -18,7 +19,6 @@ use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\RouterInterface;
 use Twig\Environment;
-use Twig\Error\Error;
 use Twig\Error\SyntaxError;
 use Twig\Extension\EscaperExtension;
 use Twig\Loader\ArrayLoader;
@@ -27,25 +27,13 @@ class SeoUrlGenerator
 {
     public const ESCAPE_SLUGIFY = 'slugifyurlencode';
 
-    /**
-     * @var RouterInterface
-     */
-    private $router;
+    private RouterInterface $router;
 
-    /**
-     * @var Environment
-     */
-    private $twig;
+    private Environment $twig;
 
-    /**
-     * @var DefinitionInstanceRegistry
-     */
-    private $definitionRegistry;
+    private DefinitionInstanceRegistry $definitionRegistry;
 
-    /**
-     * @var RequestStack
-     */
-    private $requestStack;
+    private RequestStack $requestStack;
 
     public function __construct(
         DefinitionInstanceRegistry $definitionRegistry,
@@ -70,15 +58,18 @@ class SeoUrlGenerator
 
         $repository = $this->definitionRegistry->getRepository($config->getDefinition()->getEntityName());
 
-        $entities = $context->enableInheritance(static function (Context $context) use ($repository, $criteria) {
-            return $context->disableCache(static function (Context $context) use ($repository, $criteria) {
-                return $repository->search($criteria, $context)->getEntities();
-            });
+        $criteria->setLimit(50);
+
+        /** @var RepositoryIterator $iterator */
+        $iterator = $context->enableInheritance(static function (Context $context) use ($repository, $criteria) {
+            return new RepositoryIterator($repository, $context, $criteria);
         });
 
-        $this->setTwigTemplate($config, $template);
+        while ($entities = $iterator->fetch()) {
+            $this->setTwigTemplate($config, $template);
 
-        yield from $this->generateUrls($route, $config, $salesChannel, $entities);
+            yield from $this->generateUrls($route, $config, $salesChannel, $entities);
+        }
     }
 
     private function initTwig(SlugifyInterface $slugify): void
@@ -92,7 +83,8 @@ class SeoUrlGenerator
         $coreExtension = $this->twig->getExtension(EscaperExtension::class);
         $coreExtension->setEscaper(
             self::ESCAPE_SLUGIFY,
-            static function ($twig, $string) use ($slugify) {
+            // Do not remove $_twig, although it is marked as unused. It somehow important
+            static function ($_twig, $string) use ($slugify) {
                 return rawurlencode($slugify->slugify($string));
             }
         );
@@ -100,7 +92,7 @@ class SeoUrlGenerator
 
     private function generateUrls(SeoUrlRouteInterface $seoUrlRoute, SeoUrlRouteConfig $config, ?SalesChannelEntity $salesChannel, EntityCollection $entities): iterable
     {
-        $request = $this->requestStack->getMasterRequest();
+        $request = $this->requestStack->getMainRequest();
 
         $basePath = $request ? $request->getBasePath() : '';
 
@@ -145,7 +137,7 @@ class SeoUrlGenerator
     {
         try {
             return trim($this->twig->render('template', $mapping->getSeoPathInfoContext()));
-        } catch (Error $error) {
+        } catch (\Throwable $error) {
             if (!$config->getSkipInvalid()) {
                 throw $error;
             }
@@ -160,7 +152,7 @@ class SeoUrlGenerator
         $this->twig->setLoader(new ArrayLoader(['template' => $template]));
 
         try {
-            $this->twig->loadTemplate('template');
+            $this->twig->loadTemplate($this->twig->getTemplateClass('template'), 'template');
         } catch (SyntaxError $syntaxError) {
             if (!$config->getSkipInvalid()) {
                 throw new InvalidTemplateException('Syntax error: ' . $syntaxError->getMessage());

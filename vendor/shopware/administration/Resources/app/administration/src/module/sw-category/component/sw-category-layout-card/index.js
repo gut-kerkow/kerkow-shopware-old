@@ -6,30 +6,44 @@ const { Component } = Shopware;
 Component.register('sw-category-layout-card', {
     template,
 
-    inject: ['acl'],
+    inject: ['acl', 'feature'],
 
     props: {
         category: {
             type: Object,
-            required: true
+            required: true,
         },
 
         cmsPage: {
             type: Object,
             required: false,
-            default: null
+            default: null,
         },
 
         isLoading: {
             type: Boolean,
             required: false,
-            default: false
-        }
+            default: false,
+        },
+
+        pageTypes: {
+            type: Array,
+            required: false,
+            default() {
+                return ['page', 'landingpage', 'product_list'];
+            },
+        },
+
+        headline: {
+            type: String,
+            required: false,
+            default: '',
+        },
     },
 
     data() {
         return {
-            showLayoutSelectionModal: false
+            showLayoutSelectionModal: false,
         };
     },
 
@@ -39,9 +53,9 @@ Component.register('sw-category-layout-card', {
                 page: this.$tc('sw-cms.detail.label.pageTypeShopPage'),
                 landingpage: this.$tc('sw-cms.detail.label.pageTypeLandingpage'),
                 product_list: this.$tc('sw-cms.detail.label.pageTypeCategory'),
-                product_detail: this.$tc('sw-cms.detail.label.pageTypeProduct')
+                product_detail: this.$tc('sw-cms.detail.label.pageTypeProduct'),
             };
-        }
+        },
     },
 
     methods: {
@@ -71,6 +85,6 @@ Component.register('sw-category-layout-card', {
 
         closeLayoutModal() {
             this.showLayoutSelectionModal = false;
-        }
-    }
+        },
+    },
 });

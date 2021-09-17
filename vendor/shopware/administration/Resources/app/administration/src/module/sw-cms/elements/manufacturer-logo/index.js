@@ -2,10 +2,8 @@ import './component';
 import './config';
 
 Shopware.Service('cmsService').registerCmsElement({
-    flag: Shopware.Feature.isActive('FEATURE_NEXT_10078'),
     name: 'manufacturer-logo',
     label: 'sw-cms.elements.productHeading.logo.label',
-    hidden: !Shopware.Feature.isActive('FEATURE_NEXT_10078'),
     component: 'sw-cms-el-manufacturer-logo',
     configComponent: 'sw-cms-el-config-manufacturer-logo',
     defaultConfig: {
@@ -14,28 +12,28 @@ Shopware.Service('cmsService').registerCmsElement({
             value: null,
             required: true,
             entity: {
-                name: 'media'
-            }
+                name: 'media',
+            },
         },
         displayMode: {
             source: 'static',
-            value: 'cover'
+            value: 'standard',
         },
         url: {
             source: 'static',
-            value: null
+            value: null,
         },
         newTab: {
             source: 'static',
-            value: true
+            value: true,
         },
         minHeight: {
             source: 'static',
-            value: null
+            value: null,
         },
         verticalAlign: {
             source: 'static',
-            value: null
-        }
-    }
+            value: null,
+        },
+    },
 });

@@ -5,6 +5,7 @@ namespace Shopware\Core\Content\Test\Product\Cart;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Cart\CartBehavior;
+use Shopware\Core\Checkout\Cart\CartRuleLoader;
 use Shopware\Core\Checkout\Cart\Delivery\Struct\DeliveryInformation;
 use Shopware\Core\Checkout\Cart\LineItem\CartDataCollection;
 use Shopware\Core\Checkout\Cart\Price\QuantityPriceCalculator;
@@ -15,15 +16,18 @@ use Shopware\Core\Content\Product\Aggregate\ProductFeatureSet\ProductFeatureSetD
 use Shopware\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
 use Shopware\Core\Content\Product\Cart\ProductCartProcessor;
 use Shopware\Core\Content\Product\Cart\ProductLineItemFactory;
+use Shopware\Core\Content\Test\Product\ProductBuilder;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\Test\IdsCollection;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestDataCollection;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\CustomField\CustomFieldTypes;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
+use Shopware\Core\System\SalesChannel\Context\SalesChannelContextServiceParameters;
+use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class ProductCartProcessorTest extends TestCase
 {
@@ -75,20 +79,108 @@ class ProductCartProcessorTest extends TestCase
         static::assertEquals(103, $info->getLength());
     }
 
+    public function testNotCompletedLogic(): void
+    {
+        $context = $this->getContext();
+
+        $this->createProduct();
+        $cart = $this->getProductCart();
+
+        $lineItem = $cart->get($this->ids->get('product'));
+        static::assertSame('test', $lineItem->getLabel());
+
+        $update = ['id' => $this->ids->get('product'), 'name' => 'update'];
+        $this->getContainer()->get('product.repository')->upsert([$update], $context->getContext());
+
+        $cart = $this->cartService->getCart($context->getToken(), $this->getContext(), CartService::SALES_CHANNEL, false);
+
+        $lineItem = $cart->get($this->ids->get('product'));
+        static::assertSame('update', $lineItem->getLabel());
+    }
+
+    public function testReferencePriceWithZeroPurchaseUnit(): void
+    {
+        $this->createProduct([
+            'purchaseUnit' => 0.0,
+            'referenceUnit' => 1.0,
+            'unit' => [
+                'shortCode' => 't',
+                'name' => 'test',
+            ],
+        ]);
+
+        $cart = $this->getProductCart();
+        $lineItem = $cart->get($this->ids->get('product'));
+
+        static::assertInstanceOf(QuantityPriceDefinition::class, $lineItem->getPriceDefinition());
+
+        /** @var QuantityPriceDefinition $priceDefinition */
+        $priceDefinition = $lineItem->getPriceDefinition();
+        static::assertNull($priceDefinition->getReferencePriceDefinition());
+
+        static::assertNull($lineItem->getPrice()->getReferencePrice());
+    }
+
+    /**
+     * @dataProvider advancedPricingProvider
+     */
+    public function testAdvancedPricing(bool $valid, float $price): void
+    {
+        $ids = new IdsCollection();
+
+        $product = (new ProductBuilder($ids, 'test'))
+            ->price(100)
+            ->prices('rule-1', 200, 'default', null, 1, $valid)
+            ->visibility()
+            ->build();
+
+        $this->getContainer()->get('product.repository')->create([$product], $ids->getContext());
+
+        $context = $this->getContainer()->get(SalesChannelContextFactory::class)
+            ->create(Uuid::randomHex(), Defaults::SALES_CHANNEL);
+
+        $result = $this->getContainer()->get(CartRuleLoader::class)
+            ->loadByToken($context, Uuid::randomHex());
+
+        $cart = $result->getCart();
+
+        static::assertEquals($valid, \in_array($ids->get('rule-1'), $context->getRuleIds(), true));
+
+        $lineItem = $this->getContainer()->get(ProductLineItemFactory::class)
+            ->create($ids->get('test'));
+
+        $cart = $this->getContainer()->get(CartService::class)
+            ->add($cart, [$lineItem], $context);
+
+        static::assertCount(1, $cart->getLineItems());
+
+        $lineItem = $cart->getLineItems()->first();
+        static::assertEquals('product', $lineItem->getType());
+        static::assertEquals($ids->get('test'), $lineItem->getReferencedId());
+
+        static::assertEquals($price, $lineItem->getPrice()->getTotalPrice());
+    }
+
+    public function advancedPricingProvider()
+    {
+        yield 'Test not matching rule' => [false, 100];
+
+        yield 'Test matching rule' => [true, 200];
+    }
+
     public function testOverwriteLabelNoPermission(): void
     {
         $this->createProduct();
         $service = $this->getContainer()->get(CartService::class);
         $token = $this->ids->create('token');
         $context = $this->getContainer()->get(SalesChannelContextService::class)
-            ->get(Defaults::SALES_CHANNEL, $token);
+            ->get(new SalesChannelContextServiceParameters(Defaults::SALES_CHANNEL, $token));
 
         $product = $this->getContainer()->get(ProductLineItemFactory::class)
             ->create($this->ids->get('product'));
 
         $product->setLabel('My special product');
 
-        /** @var Cart $cart */
         $cart = $service->getCart($token, $context);
         $service->add($cart, $product, $context);
 
@@ -113,7 +205,6 @@ class ProductCartProcessorTest extends TestCase
 
         $product->setLabel('My special product');
 
-        /** @var Cart $cart */
         $cart = $service->getCart($token, $context);
         $service->add($cart, $product, $context);
 
@@ -138,7 +229,6 @@ class ProductCartProcessorTest extends TestCase
 
         $product->setLabel(null);
 
-        /** @var Cart $cart */
         $cart = $service->getCart($token, $context);
         $service->add($cart, $product, $context);
 
@@ -154,16 +244,13 @@ class ProductCartProcessorTest extends TestCase
         $this->createProduct();
 
         $token = $this->ids->create('token');
-        /** @var SalesChannelContextService $salesChannelContextService */
         $salesChannelContextService = $this->getContainer()->get(SalesChannelContextService::class);
-        $context = $salesChannelContextService->get(Defaults::SALES_CHANNEL, $token);
-        /** @var CartService $cartService */
+        $context = $salesChannelContextService->get(new SalesChannelContextServiceParameters(Defaults::SALES_CHANNEL, $token, null, Defaults::CURRENCY));
         $cartService = $this->getContainer()->get(CartService::class);
         $cart = $cartService->getCart($token, $context);
         $product = $this->getContainer()->get(ProductLineItemFactory::class)->create($this->ids->get('product'));
         $cartService->add($cart, $product, $context);
 
-        /** @var ProductCartProcessor $productCartProcessor */
         $productCartProcessor = $this->getContainer()->get(ProductCartProcessor::class);
         $productCartProcessor->collect(
             new CartDataCollection(),
@@ -173,7 +260,6 @@ class ProductCartProcessorTest extends TestCase
         );
 
         $payload = $cart->get($product->getId())->getPayload();
-        static::assertEquals(7.5, $payload['purchasePrice']);
         $purchasePrices = json_decode($payload['purchasePrices']);
         static::assertSame(Defaults::CURRENCY, $purchasePrices->currencyId);
         static::assertSame(7.5, $purchasePrices->gross);
@@ -446,7 +532,6 @@ class ProductCartProcessorTest extends TestCase
 
         $product->setLabel('My special product');
 
-        /** @var Cart $cart */
         $cart = $service->getCart($token, $context);
         $service->add($cart, $product, $context);
 
@@ -485,7 +570,6 @@ class ProductCartProcessorTest extends TestCase
 
         $product->setLabel('My special product');
 
-        /** @var Cart $cart */
         $cart = $service->getCart($token, $context);
         $service->add($cart, $product, $context);
 
@@ -510,7 +594,7 @@ class ProductCartProcessorTest extends TestCase
             'fixed quantity should be return equal max purchase' => [2, 2, 20, 22, 20, false],
             'fixed quantity should be return equal min purchase' => [2, 2, 20, 1, 2, false],
             'fixed quantity should be return 1' => [1, 3, 5, 2, 1, true],
-            'fixed quantity should be return 10 with error message' => [10, 3, 12, 11, 10, true],
+            'fixed quantity should be return 10 with error message' => [10, 3, 13, 11, 10, true],
             'fixed quantity should be return 10, without error message' => [10, 2, 20, 2, 10, false],
         ];
     }
@@ -579,19 +663,54 @@ class ProductCartProcessorTest extends TestCase
         static::assertEquals($product, $actualProduct);
     }
 
+    public function testProcessCartWithNulledFreeShipping(): void
+    {
+        $this->createProduct([
+            'shippingFree' => null,
+        ]);
+        $token = $this->ids->create('token');
+        $options = [
+            SalesChannelContextService::PERMISSIONS => [
+                ProductCartProcessor::SKIP_PRODUCT_STOCK_VALIDATION => false,
+                ProductCartProcessor::ALLOW_PRODUCT_PRICE_OVERWRITES => true,
+            ],
+        ];
+
+        $context = $this->getContainer()->get(SalesChannelContextFactory::class)
+            ->create($token, Defaults::SALES_CHANNEL, $options);
+
+        $product = $this->getContainer()->get(ProductLineItemFactory::class)
+            ->create($this->ids->get('product'));
+        $product->setLabel('My test product');
+
+        $cart = $this->cartService->getCart($token, $context);
+        $this->cartService->add($cart, $product, $context);
+
+        $actualProduct = $cart->get($product->getId());
+
+        static::assertFalse($actualProduct->getDeliveryInformation()->getFreeDelivery());
+    }
+
     private function getProductCart(): Cart
     {
         $product = $this->getContainer()->get(ProductLineItemFactory::class)
             ->create($this->ids->get('product'));
 
-        $token = $this->ids->create('token');
-        $context = $this->getContainer()->get(SalesChannelContextService::class)
-            ->get(Defaults::SALES_CHANNEL, $token);
+        $context = $this->getContext();
 
-        $cart = $this->cartService->getCart($token, $context);
+        $cart = $this->cartService->getCart($context->getToken(), $context);
+
         $this->cartService->add($cart, $product, $context);
 
         return $cart;
+    }
+
+    private function getContext(): SalesChannelContext
+    {
+        $token = $this->ids->create('token');
+
+        return $this->getContainer()->get(SalesChannelContextService::class)
+            ->get(new SalesChannelContextServiceParameters(Defaults::SALES_CHANNEL, $token));
     }
 
     private function createProduct(?array $additionalData = []): void
@@ -604,7 +723,6 @@ class ProductCartProcessorTest extends TestCase
             'price' => [
                 ['currencyId' => Defaults::CURRENCY, 'gross' => 15, 'net' => 10, 'linked' => false],
             ],
-            'purchasePrice' => 7.5,
             'purchasePrices' => [
                 ['currencyId' => Defaults::CURRENCY, 'gross' => 7.5, 'net' => 5, 'linked' => false],
                 ['currencyId' => Uuid::randomHex(), 'gross' => 150, 'net' => 100, 'linked' => false],
@@ -669,7 +787,6 @@ class ProductCartProcessorTest extends TestCase
 
     private function createLanguage(string $id, ?string $parentId = Defaults::LANGUAGE_SYSTEM): void
     {
-        /* @var EntityRepositoryInterface $languageRepository */
         $languageRepository = $this->getContainer()->get('language.repository');
 
         $languageRepository->create(

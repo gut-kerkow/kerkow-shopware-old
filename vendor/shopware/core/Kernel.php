@@ -6,27 +6,38 @@ use Doctrine\DBAL\Configuration;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\FetchMode;
+use Shopware\Core\DevOps\Environment\EnvironmentHelper;
 use Shopware\Core\Framework\Api\Controller\FallbackController;
 use Shopware\Core\Framework\Migration\MigrationStep;
 use Shopware\Core\Framework\Plugin\KernelPluginLoader\KernelPluginLoader;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
+use Symfony\Component\Config\ConfigCache;
 use Symfony\Component\Config\Loader\LoaderInterface;
+use Symfony\Component\DependencyInjection\Compiler\DecoratorServicePass;
+use Symfony\Component\DependencyInjection\Compiler\ServiceLocatorTagPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\HttpKernel\Bundle\BundleInterface;
 use Symfony\Component\HttpKernel\Kernel as HttpKernel;
+use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 use Symfony\Component\Routing\Route;
-use Symfony\Component\Routing\RouteCollection;
-use Symfony\Component\Routing\RouteCollectionBuilder;
 
 class Kernel extends HttpKernel
 {
     use MicroKernelTrait;
+
+    /**
+     * @internal
+     *
+     * @deprecated tag:v6.5.0 The connection requirements should be fixed
+     */
+    public const PLACEHOLDER_DATABASE_URL = 'mysql://_placeholder.test';
 
     public const CONFIG_EXTS = '.{php,xml,yaml,yml}';
 
     /**
      * @var string Fallback version if nothing is provided via kernel constructor
      */
-    public const SHOPWARE_FALLBACK_VERSION = '6.3.9999999.9999999-dev';
+    public const SHOPWARE_FALLBACK_VERSION = '6.4.9999999.9999999-dev';
 
     /**
      * @var string Regex pattern for validating Shopware versions
@@ -39,7 +50,7 @@ class Kernel extends HttpKernel
     protected static $connection;
 
     /**
-     * @var KernelPluginLoader|null
+     * @var KernelPluginLoader
      */
     protected $pluginLoader;
 
@@ -58,15 +69,9 @@ class Kernel extends HttpKernel
      */
     protected $projectDir;
 
-    /**
-     * @var bool
-     */
-    private $rebooting = false;
+    private bool $rebooting = false;
 
-    /**
-     * @var string
-     */
-    private $cacheId;
+    private string $cacheId;
 
     /**
      * {@inheritdoc}
@@ -92,7 +97,12 @@ class Kernel extends HttpKernel
         $this->projectDir = $projectDir;
     }
 
-    public function registerBundles()
+    /**
+     * @return \Generator<BundleInterface>
+     *
+     * @deprecated tag:v6.5.0 The return type will be native
+     */
+    public function registerBundles()/*: \Generator*/
     {
         /** @var array $bundles */
         $bundles = require $this->getProjectDir() . '/config/bundles.php';
@@ -111,10 +121,29 @@ class Kernel extends HttpKernel
         yield from $this->pluginLoader->getBundles($this->getKernelParameters(), $instanciatedBundleNames);
     }
 
-    public function getProjectDir()
+    /**
+     * @return string
+     *
+     * @deprecated tag:v6.5.0 The return type will be native
+     */
+    public function getProjectDir()/*: string*/
     {
         if ($this->projectDir === null) {
-            $this->projectDir = parent::getProjectDir();
+            $r = new \ReflectionObject($this);
+
+            $dir = (string) $r->getFileName();
+            if (!file_exists($dir)) {
+                throw new \LogicException(sprintf('Cannot auto-detect project dir for kernel of class "%s".', $r->name));
+            }
+
+            $dir = $rootDir = \dirname($dir);
+            while (!file_exists($dir . '/vendor')) {
+                if ($dir === \dirname($dir)) {
+                    return $this->projectDir = $rootDir;
+                }
+                $dir = \dirname($dir);
+            }
+            $this->projectDir = $dir;
         }
 
         return $this->projectDir;
@@ -134,13 +163,19 @@ class Kernel extends HttpKernel
             $this->startTime = microtime(true);
         }
 
-        if ($this->debug && !isset($_ENV['SHELL_VERBOSITY']) && !isset($_SERVER['SHELL_VERBOSITY'])) {
+        if ($this->debug && !EnvironmentHelper::hasVariable('SHELL_VERBOSITY')) {
             putenv('SHELL_VERBOSITY=3');
             $_ENV['SHELL_VERBOSITY'] = 3;
             $_SERVER['SHELL_VERBOSITY'] = 3;
         }
 
-        $this->pluginLoader->initializePlugins($this->getProjectDir());
+        try {
+            $this->pluginLoader->initializePlugins($this->getProjectDir());
+        } catch (\Throwable $e) {
+            if (\defined('\STDERR')) {
+                fwrite(\STDERR, 'Warning: Failed to load plugins. Message: ' . $e->getMessage() . \PHP_EOL);
+            }
+        }
 
         // init bundles
         $this->initializeBundles();
@@ -161,13 +196,27 @@ class Kernel extends HttpKernel
     public static function getConnection(): Connection
     {
         if (!self::$connection) {
-            $url = $_ENV['DATABASE_URL']
-                ?? $_SERVER['DATABASE_URL']
-                ?? getenv('DATABASE_URL');
+            $url = EnvironmentHelper::getVariable('DATABASE_URL', getenv('DATABASE_URL'));
             $parameters = [
                 'url' => $url,
                 'charset' => 'utf8mb4',
             ];
+
+            if ($sslCa = EnvironmentHelper::getVariable('DATABASE_SSL_CA')) {
+                $parameters['driverOptions'][\PDO::MYSQL_ATTR_SSL_CA] = $sslCa;
+            }
+
+            if ($sslCert = EnvironmentHelper::getVariable('DATABASE_SSL_CERT')) {
+                $parameters['driverOptions'][\PDO::MYSQL_ATTR_SSL_CERT] = $sslCert;
+            }
+
+            if ($sslCertKey = EnvironmentHelper::getVariable('DATABASE_SSL_KEY')) {
+                $parameters['driverOptions'][\PDO::MYSQL_ATTR_SSL_KEY] = $sslCertKey;
+            }
+
+            if (EnvironmentHelper::getVariable('DATABASE_SSL_DONT_VERIFY_SERVER_CERT')) {
+                $parameters['driverOptions'][\PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
+            }
 
             self::$connection = DriverManager::getConnection($parameters, new Configuration());
         }
@@ -221,36 +270,6 @@ class Kernel extends HttpKernel
         }
     }
 
-    /**
-     * @deprecated tag:v6.4.0.0 - API Routes does not contain versions anymore
-     */
-    public function loadRoutes(LoaderInterface $loader): RouteCollection
-    {
-        $routes = new RouteCollectionBuilder($loader);
-        $this->configureRoutes($routes);
-
-        return $this->addApiFallbackRoutes($routes->build());
-    }
-
-    /**
-     * @deprecated tag:v6.4.0.0 - API Routes does not contain versions anymore
-     */
-    public function addApiFallbackRoutes(RouteCollection $routes): RouteCollection
-    {
-        foreach ($routes->all() as $name => $route) {
-            if (strpos($route->getPath(), '{version}') === false) {
-                continue;
-            }
-
-            $fallbackRoute = clone $route;
-            $fallbackRoute->setPath(str_replace(['v{version}/', '{version}/'], '', $fallbackRoute->getPath()));
-            $fallbackRoute->setDefault('version', PlatformRequest::API_VERSION);
-            $routes->add($name . '.major_fallback', $fallbackRoute);
-        }
-
-        return $routes;
-    }
-
     protected function configureContainer(ContainerBuilder $container, LoaderInterface $loader): void
     {
         $container->setParameter('container.dumper.inline_class_loader', true);
@@ -264,13 +283,13 @@ class Kernel extends HttpKernel
         $loader->load($confDir . '/{services}_' . $this->environment . self::CONFIG_EXTS, 'glob');
     }
 
-    protected function configureRoutes(RouteCollectionBuilder $routes): void
+    protected function configureRoutes(RoutingConfigurator $routes): void
     {
         $confDir = $this->getProjectDir() . '/config';
 
-        $routes->import($confDir . '/{routes}/*' . self::CONFIG_EXTS, '/', 'glob');
-        $routes->import($confDir . '/{routes}/' . $this->environment . '/**/*' . self::CONFIG_EXTS, '/', 'glob');
-        $routes->import($confDir . '/{routes}' . self::CONFIG_EXTS, '/', 'glob');
+        $routes->import($confDir . '/{routes}/*' . self::CONFIG_EXTS, 'glob');
+        $routes->import($confDir . '/{routes}/' . $this->environment . '/**/*' . self::CONFIG_EXTS, 'glob');
+        $routes->import($confDir . '/{routes}' . self::CONFIG_EXTS, 'glob');
 
         $this->addBundleRoutes($routes);
         $this->addApiRoutes($routes);
@@ -298,17 +317,20 @@ class Kernel extends HttpKernel
 
         $pluginDir = $this->pluginLoader->getPluginDir($this->getProjectDir());
 
+        $coreDir = \dirname((string) (new \ReflectionClass(self::class))->getFileName());
+
         return array_merge(
             $parameters,
             [
                 'kernel.cache.hash' => $this->getCacheHash(),
                 'kernel.shopware_version' => $this->shopwareVersion,
                 'kernel.shopware_version_revision' => $this->shopwareVersionRevision,
+                'kernel.shopware_core_dir' => $coreDir,
                 'kernel.plugin_dir' => $pluginDir,
                 'kernel.app_dir' => rtrim($this->getProjectDir(), '/') . '/custom/apps',
                 'kernel.active_plugins' => $activePluginMeta,
                 'kernel.plugin_infos' => $this->pluginLoader->getPluginInfos(),
-                'kernel.supported_api_versions' => [2, 3],
+                'kernel.supported_api_versions' => [2, 3, 4],
                 'defaults_bool_true' => true,
                 'defaults_bool_false' => false,
                 'default_whitespace' => ' ',
@@ -316,14 +338,23 @@ class Kernel extends HttpKernel
         );
     }
 
-    protected function getCacheHash()
+    protected function getCacheHash(): string
     {
-        $pluginHash = md5(implode('', array_keys($this->pluginLoader->getPluginInstances()->getActives())));
+        $plugins = [];
+        foreach ($this->pluginLoader->getPluginInfos() as $plugin) {
+            if ($plugin['active'] === false) {
+                continue;
+            }
+            $plugins[$plugin['name']] = $plugin['version'];
+        }
 
-        return md5(json_encode([
+        $pluginHash = md5((string) json_encode($plugins));
+
+        return md5((string) json_encode([
             $this->cacheId,
-            mb_substr($this->shopwareVersionRevision, 0, 8),
+            mb_substr((string) $this->shopwareVersionRevision, 0, 8),
             mb_substr($pluginHash, 0, 8),
+            EnvironmentHelper::getVariable('DATABASE_URL', ''),
         ]));
     }
 
@@ -331,68 +362,124 @@ class Kernel extends HttpKernel
     {
         $connection = self::getConnection();
 
-        $nonDestructiveMigrations = $connection->executeQuery('
+        try {
+            $nonDestructiveMigrations = $connection->executeQuery('
             SELECT `creation_timestamp`
             FROM `migration`
             WHERE `update` IS NOT NULL AND `update_destructive` IS NULL
         ')->fetchAll(FetchMode::COLUMN);
 
-        $activeMigrations = $this->container->getParameter('migration.active');
+            $activeMigrations = $this->container->getParameter('migration.active');
 
-        $activeNonDestructiveMigrations = array_intersect($activeMigrations, $nonDestructiveMigrations);
+            $activeNonDestructiveMigrations = array_intersect($activeMigrations, $nonDestructiveMigrations);
 
-        $setSessionVariables = $_SERVER['SQL_SET_DEFAULT_SESSION_VARIABLES'] ?? true;
-        $connectionVariables = [];
+            $setSessionVariables = (bool) EnvironmentHelper::getVariable('SQL_SET_DEFAULT_SESSION_VARIABLES', true);
+            $connectionVariables = [];
 
-        if ($setSessionVariables) {
-            $connectionVariables[] = 'SET @@group_concat_max_len = CAST(IF(@@group_concat_max_len > 320000, @@group_concat_max_len, 320000) AS UNSIGNED)';
-            $connectionVariables[] = "SET sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))";
+            if ($setSessionVariables) {
+                $connectionVariables[] = 'SET @@group_concat_max_len = CAST(IF(@@group_concat_max_len > 320000, @@group_concat_max_len, 320000) AS UNSIGNED)';
+                $connectionVariables[] = "SET sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))";
+            }
+
+            foreach ($activeNonDestructiveMigrations as $migration) {
+                $connectionVariables[] = sprintf(
+                    'SET %s = TRUE',
+                    sprintf(MigrationStep::MIGRATION_VARIABLE_FORMAT, $migration)
+                );
+            }
+
+            if (empty($connectionVariables)) {
+                return;
+            }
+            $connection->executeQuery(implode(';', $connectionVariables));
+        } catch (\Throwable $_) {
         }
-
-        foreach ($activeNonDestructiveMigrations as $migration) {
-            $connectionVariables[] = sprintf(
-                'SET %s = TRUE',
-                sprintf(MigrationStep::MIGRATION_VARIABLE_FORMAT, $migration)
-            );
-        }
-
-        if (empty($connectionVariables)) {
-            return;
-        }
-        $connection->executeQuery(implode(';', $connectionVariables));
     }
 
-    private function addApiRoutes(RouteCollectionBuilder $routes): void
+    /**
+     * @deprecated tag:v6.5.0 Remove when Symfony 5.3.7 is released and we bumped up the minimum version
+     * @see https://github.com/symfony/symfony/pull/42347
+     */
+    protected function getContainerBuilder()
     {
-        $routes->import('.', null, 'api');
+        $c = parent::getContainerBuilder();
+
+        $passes = $c->getCompilerPassConfig()->getOptimizationPasses();
+        $newPasses = [];
+
+        foreach ($passes as $pass) {
+            if ($pass instanceof DecoratorServicePass) {
+                continue;
+            }
+
+            $newPasses[] = $pass;
+
+            if ($pass instanceof ServiceLocatorTagPass) {
+                $newPasses[] = new DecoratorServicePass();
+            }
+        }
+
+        $c->getCompilerPassConfig()->setOptimizationPasses($newPasses);
+
+        return $c;
     }
 
-    private function addBundleRoutes(RouteCollectionBuilder $routes): void
+    /**
+     * Dumps the preload file to an always known location outside the generated cache folder name
+     */
+    protected function dumpContainer(ConfigCache $cache, ContainerBuilder $container, string $class, string $baseClass): void
+    {
+        parent::dumpContainer($cache, $container, $class, $baseClass);
+        $cacheDir = $this->getCacheDir();
+        $cacheName = basename($cacheDir);
+        $fileName = substr(basename($cache->getPath()), 0, -3) . 'preload.php';
+
+        $preloadFile = \dirname($cacheDir) . '/opcache-preload.php';
+
+        $loader = <<<PHP
+<?php
+
+require_once __DIR__ . '/#CACHE_PATH#';
+PHP;
+
+        file_put_contents($preloadFile, str_replace(
+            ['#CACHE_PATH#'],
+            [$cacheName . '/' . $fileName],
+            $loader
+        ));
+    }
+
+    private function addApiRoutes(RoutingConfigurator $routes): void
+    {
+        $routes->import('.', 'api');
+    }
+
+    private function addBundleRoutes(RoutingConfigurator $routes): void
     {
         foreach ($this->getBundles() as $bundle) {
             if ($bundle instanceof Framework\Bundle) {
-                $bundle->configureRoutes($routes, (string) $this->environment);
+                $bundle->configureRoutes($routes, $this->environment);
             }
         }
     }
 
-    private function addBundleOverwrites(RouteCollectionBuilder $routes): void
+    private function addBundleOverwrites(RoutingConfigurator $routes): void
     {
         foreach ($this->getBundles() as $bundle) {
             if ($bundle instanceof Framework\Bundle) {
-                $bundle->configureRouteOverwrites($routes, (string) $this->environment);
+                $bundle->configureRouteOverwrites($routes, $this->environment);
             }
         }
     }
 
-    private function addFallbackRoute(RouteCollectionBuilder $routes): void
+    private function addFallbackRoute(RoutingConfigurator $routes): void
     {
         // detail routes
         $route = new Route('/');
         $route->setMethods(['GET']);
         $route->setDefault('_controller', FallbackController::class . '::rootFallback');
 
-        $routes->addRoute($route, 'root.fallback');
+        $routes->add('root.fallback', $route->getPath());
     }
 
     private function parseShopwareVersion(?string $version): void
@@ -407,7 +494,7 @@ class Kernel extends HttpKernel
 
         [$version, $hash] = explode('@', $version);
         $version = ltrim($version, 'v');
-        $version = (string) str_replace('+', '-', $version);
+        $version = str_replace('+', '-', $version);
 
         /*
          * checks if the version is a valid version pattern

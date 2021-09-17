@@ -4,6 +4,7 @@ namespace Shopware\Storefront\Framework\Twig;
 
 use Composer\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
+use Twig\Environment;
 use Twig\Extension\CoreExtension;
 
 class TwigDateRequestListener implements EventSubscriberInterface
@@ -11,11 +12,11 @@ class TwigDateRequestListener implements EventSubscriberInterface
     public const TIMEZONE_COOKIE = 'timezone';
 
     /**
-     * @var \Twig_Environment
+     * @var Environment
      */
     private $twig;
 
-    public function __construct(\Twig_Environment $twig)
+    public function __construct(Environment $twig)
     {
         $this->twig = $twig;
     }
@@ -27,7 +28,7 @@ class TwigDateRequestListener implements EventSubscriberInterface
 
     public function onKernelRequest(RequestEvent $event): void
     {
-        $timezone = $event->getRequest()->cookies->get(self::TIMEZONE_COOKIE);
+        $timezone = (string) $event->getRequest()->cookies->get(self::TIMEZONE_COOKIE);
 
         if (!$timezone || !\in_array($timezone, timezone_identifiers_list(), true)) {
             $timezone = 'UTC';

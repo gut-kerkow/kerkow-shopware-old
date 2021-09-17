@@ -1,7 +1,7 @@
 {
     "name": "dvsn/product-option",
     "description": "Optionale Zusatz/Pseudo Artikel (z.B. Garantie, Geschenkpapier etc.) direkt mit kaufen",
-    "version": "1.0.2",
+    "version": "1.3.0",
     "license": "proprietary",
     "type": "shopware-platform-plugin",
     "authors": [
@@ -11,9 +11,9 @@
         }
     ],
     "require": {
-        "shopware/core": "^6.2",
-        "shopware/storefront": "^6.2",
-        "shopware/administration": "^6.2"
+        "shopware/core": "^6.4.2",
+        "shopware/storefront": "^6.4.2",
+        "shopware/administration": "^6.4.2"
     },
     "autoload": {
         "psr-4": {

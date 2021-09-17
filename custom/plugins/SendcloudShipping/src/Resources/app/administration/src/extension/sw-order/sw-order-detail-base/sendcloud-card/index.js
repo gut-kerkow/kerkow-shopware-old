@@ -7,7 +7,7 @@ Component.register('sendcloud-card', {
     template,
 
     inject: [
-        'pluginService'
+        'sendcloudService'
     ],
 
     data() {
@@ -42,12 +42,8 @@ Component.register('sendcloud-card', {
 
     methods: {
         fetchShipmentInfo: function () {
-            const headers = this.pluginService.getBasicHeaders();
-
-            return this.pluginService.httpClient
-                .get('/sendcloud/shipment/' + this.order.orderNumber, {headers})
-                .then((response) => {
-                    let shipmentInfo = Shopware.Classes.ApiService.handleResponse(response);
+            return this.sendcloudService.sendShipment(this.order.orderNumber)
+                .then((shipmentInfo) => {
                     this.isLoading = false;
                     this.orderStatus = shipmentInfo.status ? shipmentInfo.status : this.$tc('send-cloud.shipment.emptyStatusMessage');
                     this.trackingNumber = shipmentInfo.trackingNumber;
@@ -62,7 +58,6 @@ Component.register('sendcloud-card', {
                         this.linkLabel = this.$tc('send-cloud.shipment.changeServicePoint');
                     }
                 }).catch(error => {
-
                 });
         }
     }

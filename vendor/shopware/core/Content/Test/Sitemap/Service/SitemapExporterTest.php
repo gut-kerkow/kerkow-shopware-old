@@ -6,15 +6,29 @@ use League\Flysystem\FilesystemInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Cache\CacheItemInterface;
 use Psr\Cache\CacheItemPoolInterface;
-use Shopware\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface;
 use Shopware\Core\Content\Sitemap\Exception\AlreadyLockedException;
 use Shopware\Core\Content\Sitemap\Service\SitemapExporter;
 use Shopware\Core\Content\Sitemap\Service\SitemapHandleFactoryInterface;
+use Shopware\Core\Framework\Test\Seo\StorefrontSalesChannelTestHelper;
+use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\Cache\CacheItem;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 
 class SitemapExporterTest extends TestCase
 {
+    use IntegrationTestBehaviour;
+    use StorefrontSalesChannelTestHelper;
+
+    private SalesChannelContext $context;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->context = $this->createStorefrontSalesChannelContext(Uuid::randomHex(), 'sitemap-exporter-test');
+    }
+
     public function testNotLocked(): void
     {
         $cache = $this->createMock(CacheItemPoolInterface::class);
@@ -24,14 +38,12 @@ class SitemapExporterTest extends TestCase
             [],
             $cache,
             10,
-            $this->createMock(SeoUrlPlaceholderHandlerInterface::class),
             $this->createMock(FilesystemInterface::class),
-            $this->createMock(SitemapHandleFactoryInterface::class)
+            $this->createMock(SitemapHandleFactoryInterface::class),
+            $this->createMock(EventDispatcher::class)
         );
 
-        $salesChannelContext = $this->createMock(SalesChannelContext::class);
-
-        $result = $exporter->generate($salesChannelContext, false, null, null);
+        $result = $exporter->generate($this->context, false, null, null);
 
         static::assertTrue($result->isFinish());
     }
@@ -45,15 +57,13 @@ class SitemapExporterTest extends TestCase
             [],
             $cache,
             10,
-            $this->createMock(SeoUrlPlaceholderHandlerInterface::class),
             $this->createMock(FilesystemInterface::class),
-            $this->createMock(SitemapHandleFactoryInterface::class)
+            $this->createMock(SitemapHandleFactoryInterface::class),
+            $this->createMock(EventDispatcher::class)
         );
 
-        $salesChannelContext = $this->createMock(SalesChannelContext::class);
-
         $this->expectException(AlreadyLockedException::class);
-        $exporter->generate($salesChannelContext, false, null, null);
+        $exporter->generate($this->context, false, null, null);
     }
 
     public function testForce(): void
@@ -65,14 +75,12 @@ class SitemapExporterTest extends TestCase
             [],
             $cache,
             10,
-            $this->createMock(SeoUrlPlaceholderHandlerInterface::class),
             $this->createMock(FilesystemInterface::class),
-            $this->createMock(SitemapHandleFactoryInterface::class)
+            $this->createMock(SitemapHandleFactoryInterface::class),
+            $this->createMock(EventDispatcher::class)
         );
 
-        $salesChannelContext = $this->createMock(SalesChannelContext::class);
-
-        $result = $exporter->generate($salesChannelContext, true, null, null);
+        $result = $exporter->generate($this->context, true, null, null);
 
         static::assertTrue($result->isFinish());
     }
@@ -107,14 +115,12 @@ class SitemapExporterTest extends TestCase
             [],
             $cache,
             10,
-            $this->createMock(SeoUrlPlaceholderHandlerInterface::class),
             $this->createMock(FilesystemInterface::class),
-            $this->createMock(SitemapHandleFactoryInterface::class)
+            $this->createMock(SitemapHandleFactoryInterface::class),
+            $this->createMock(EventDispatcher::class)
         );
 
-        $salesChannelContext = $this->createMock(SalesChannelContext::class);
-
-        $result = $exporter->generate($salesChannelContext, false, null, null);
+        $result = $exporter->generate($this->context, false, null, null);
 
         static::assertTrue($result->isFinish());
     }

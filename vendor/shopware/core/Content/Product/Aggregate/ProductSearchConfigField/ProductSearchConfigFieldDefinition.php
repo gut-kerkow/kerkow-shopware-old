@@ -15,9 +15,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopware\Core\Framework\DataAbstractionLayer\FieldCollection;
 use Shopware\Core\System\CustomField\CustomFieldDefinition;
 
-/**
- * @internal (flag:FEATURE_NEXT_10552)
- */
 class ProductSearchConfigFieldDefinition extends EntityDefinition
 {
     public const ENTITY_NAME = 'product_search_config_field';
@@ -49,6 +46,11 @@ class ProductSearchConfigFieldDefinition extends EntityDefinition
             'searchable' => false,
             'ranking' => 0,
         ];
+    }
+
+    public function getHydratorClass(): string
+    {
+        return ProductSearchConfigFieldHydrator::class;
     }
 
     protected function defineFields(): FieldCollection

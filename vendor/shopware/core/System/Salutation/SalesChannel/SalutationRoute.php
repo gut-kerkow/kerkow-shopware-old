@@ -3,9 +3,10 @@
 namespace Shopware\Core\System\Salutation\SalesChannel;
 
 use OpenApi\Annotations as OA;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopware\Core\Defaults;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\RequestCriteriaBuilder;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\NotFilter;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopware\Core\Framework\Routing\Annotation\Entity;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
@@ -25,24 +26,10 @@ class SalutationRoute extends AbstractSalutationRoute
      */
     private $salesChannelRepository;
 
-    /**
-     * @var RequestCriteriaBuilder
-     */
-    private $requestCriteriaBuilder;
-
-    /**
-     * @var EntityDefinition
-     */
-    private $definition;
-
     public function __construct(
-        SalesChannelRepositoryInterface $salesChannelRepository,
-        RequestCriteriaBuilder $requestCriteriaBuilder,
-        EntityDefinition $definition
+        SalesChannelRepositoryInterface $salesChannelRepository
     ) {
         $this->salesChannelRepository = $salesChannelRepository;
-        $this->requestCriteriaBuilder = $requestCriteriaBuilder;
-        $this->definition = $definition;
     }
 
     public function getDecorated(): AbstractSalutationRoute
@@ -55,25 +42,37 @@ class SalutationRoute extends AbstractSalutationRoute
      * @Entity("salutation")
      * @OA\Post(
      *      path="/salutation",
-     *      summary="Salutations",
+     *      summary="Fetch salutations",
+     *      description="Perform a filtered search for salutations.",
      *      operationId="readSalutation",
-     *      tags={"Store API", "Salutation"},
+     *      tags={"Store API", "System & Context"},
      *      @OA\Parameter(name="Api-Basic-Parameters"),
      *      @OA\Response(
      *          response="200",
-     *          description="",
-     *          @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/salutation_flat"))
+     *          description="Entity search result containing salutations.",
+     *          @OA\JsonContent(
+     *              type="object",
+     *              allOf={
+     *                  @OA\Schema(ref="#/components/schemas/EntitySearchResult"),
+     *                  @OA\Schema(type="object",
+     *                      @OA\Property(
+     *                          type="array",
+     *                          property="elements",
+     *                          @OA\Items(ref="#/components/schemas/Salutation")
+     *                      )
+     *                  )
+     *              }
+     *          )
      *     )
      * )
-     * @Route(path="/store-api/v{version}/salutation", name="store-api.salutation", methods={"GET", "POST"})
+     * @Route(path="/store-api/salutation", name="store-api.salutation", methods={"GET", "POST"})
      */
-    public function load(Request $request, SalesChannelContext $context, ?Criteria $criteria = null): SalutationRouteResponse
+    public function load(Request $request, SalesChannelContext $context, Criteria $criteria): SalutationRouteResponse
     {
-        // @deprecated tag:v6.4.0 - Criteria will be required
-        if (!$criteria) {
-            $criteria = $this->requestCriteriaBuilder->handleRequest($request, new Criteria(), $this->definition, $context->getContext());
-        }
+        $criteria->addFilter(new NotFilter('or', [
+            new EqualsFilter('id', Defaults::SALUTATION),
+        ]));
 
-        return new SalutationRouteResponse($this->salesChannelRepository->search($criteria, $context)->getEntities());
+        return new SalutationRouteResponse($this->salesChannelRepository->search($criteria, $context));
     }
 }

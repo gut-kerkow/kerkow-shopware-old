@@ -11,6 +11,9 @@ use Shopware\Storefront\Framework\Seo\SeoUrlRoute\NavigationPageSeoUrlRoute;
 use Shopware\Storefront\Framework\Seo\SeoUrlRoute\ProductPageSeoUrlRoute;
 use Shopware\Storefront\Migration\Migration1595492054SeoUrlTemplateData;
 
+/**
+ * @group skip-paratest
+ */
 class Migration1595492054SeoUrlTemplateDataTest extends TestCase
 {
     use IntegrationTestBehaviour;
@@ -59,7 +62,6 @@ class Migration1595492054SeoUrlTemplateDataTest extends TestCase
     {
         $migration = new Migration1595492054SeoUrlTemplateData();
 
-        /** @var Connection $connection */
         $connection = $this->getContainer()->get(Connection::class);
         foreach ($templates as $templateData) {
             $affectedColumns = $connection->update(
@@ -86,10 +88,8 @@ class Migration1595492054SeoUrlTemplateDataTest extends TestCase
 
     public function testDefaultTemplates(): void
     {
-        /** @var Connection $connection */
-        $connection = $this->getContainer()->get(Connection::class);
-
-        $stmt = $connection->prepare('SELECT template FROM seo_url_template WHERE `entity_name` = ? AND `route_name` = ?');
+        $stmt = $this->getContainer()->get(Connection::class)
+            ->prepare('SELECT template FROM seo_url_template WHERE `entity_name` = ? AND `route_name` = ?');
         $stmt->execute([
             ProductDefinition::ENTITY_NAME,
             ProductPageSeoUrlRoute::ROUTE_NAME,

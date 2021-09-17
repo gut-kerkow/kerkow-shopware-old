@@ -65,7 +65,7 @@ class Migration1595171361 extends MigrationStep
             )
             ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
         ';
-        $connection->executeUpdate($query);
+        $connection->executeStatement($query);
     }
 
     /**

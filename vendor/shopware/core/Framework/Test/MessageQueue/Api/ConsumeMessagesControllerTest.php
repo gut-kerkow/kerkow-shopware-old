@@ -4,13 +4,17 @@ namespace Shopware\Core\Framework\Test\MessageQueue\Api;
 
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\Content\Product\DataAbstractionLayer\ProductIndexingMessage;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\MessageQueue\MessageQueueStatsEntity;
 use Shopware\Core\Framework\MessageQueue\ScheduledTask\RequeueDeadMessagesTask;
 use Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskDefinition;
 use Shopware\Core\Framework\Test\TestCaseBase\AdminFunctionalTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\QueueTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\PlatformRequest;
 
 class ConsumeMessagesControllerTest extends TestCase
 {
@@ -36,12 +40,12 @@ class ConsumeMessagesControllerTest extends TestCase
             ],
         ], Context::createDefaultContext());
 
-        $url = sprintf('/api/v%s/_action/scheduled-task/run', PlatformRequest::API_VERSION);
+        $url = '/api/_action/scheduled-task/run';
         $client = $this->getBrowser();
         $client->request('POST', $url);
 
         // consume the queued task
-        $url = sprintf('/api/v%s/_action/message-queue/consume', PlatformRequest::API_VERSION);
+        $url = '/api/_action/message-queue/consume';
         $client = $this->getBrowser();
         $client->request('POST', $url, ['receiver' => 'default']);
 
@@ -50,5 +54,32 @@ class ConsumeMessagesControllerTest extends TestCase
         static::assertArrayHasKey('handledMessages', $response);
         static::assertIsInt($response['handledMessages']);
         static::assertEquals(1, $response['handledMessages']);
+    }
+
+    public function testMessageStatsDecrement(): void
+    {
+        $messageBus = $this->getContainer()->get('messenger.bus.shopware');
+        $message = new ProductIndexingMessage([Uuid::randomHex()]);
+        $messageBus->dispatch($message);
+
+        /** @var EntityRepositoryInterface $queueRepo */
+        $queueRepo = $this->getContainer()->get('message_queue_stats.repository');
+        $context = Context::createDefaultContext();
+        $criteria = new Criteria();
+        $criteria->setLimit(1)->addFilter(new EqualsFilter('name', ProductIndexingMessage::class));
+
+        /** @var MessageQueueStatsEntity $queueStatus */
+        $queueStatus = $queueRepo->search($criteria, $context)->first();
+
+        static::assertGreaterThan(0, $queueStatus->getSize());
+
+        $url = '/api/_action/message-queue/consume';
+        $client = $this->getBrowser();
+        $client->request('POST', $url, ['receiver' => 'default']);
+
+        /** @var MessageQueueStatsEntity $queueStatus */
+        $queueStatus = $queueRepo->search($criteria, $context)->first();
+
+        static::assertEquals(0, $queueStatus->getSize());
     }
 }

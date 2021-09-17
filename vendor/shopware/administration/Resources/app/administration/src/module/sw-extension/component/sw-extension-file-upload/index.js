@@ -2,25 +2,58 @@ import template from './sw-extension-file-upload.html.twig';
 import './sw-extension-file-upload.scss';
 import pluginErrorHandler from '../../service/extension-error-handler.service';
 
-const { Component, Mixin, State } = Shopware;
+const { Component, Mixin } = Shopware;
 const { Criteria } = Shopware.Data;
+
+const USER_CONFIG_KEY = 'extension.plugin_upload';
 
 Component.register('sw-extension-file-upload', {
     template,
 
-    inject: ['extensionApiService', 'repositoryFactory'],
+    inject: ['extensionStoreActionService', 'repositoryFactory'],
 
     mixins: [
-        Mixin.getByName('notification')
+        Mixin.getByName('notification'),
     ],
 
     data() {
         return {
-            isLoading: false
+            isLoading: true,
+            confirmModalVisible: false,
+            shouldHideConfirmModal: false,
+            pluginUploadUserConfig: null,
         };
     },
 
+    computed: {
+        userConfigRepository() {
+            return this.repositoryFactory.create('user_config');
+        },
+
+        currentUser() {
+            return Shopware.State.get('session').currentUser;
+        },
+
+        userConfigCriteria() {
+            const criteria = new Criteria();
+
+            criteria.addFilter(Criteria.equals('key', USER_CONFIG_KEY));
+            criteria.addFilter(Criteria.equals('userId', this.currentUser?.id));
+
+            return criteria;
+        },
+    },
+
+    created() {
+        this.createdComponent();
+    },
+
     methods: {
+        async createdComponent() {
+            await this.getUserConfig();
+            this.isLoading = false;
+        },
+
         onClickUpload() {
             this.$refs.fileInput.click();
         },
@@ -36,19 +69,10 @@ Component.register('sw-extension-file-upload', {
             const formData = new FormData();
             formData.append('file', files[0]);
 
-            const searchData = {
-                repository: this.repositoryFactory.create('plugin'),
-                criteria: new Criteria(),
-                context: {
-                    ...Shopware.Context.api,
-                    languageId: Shopware.State.get('session').languageId
-                }
-            };
-
-            return this.extensionApiService.upload(formData).then(() => {
-                State.dispatch('shopwareExtensions/updateInstalledExtensions', searchData).then(() => {
+            return this.extensionStoreActionService.upload(formData).then(() => {
+                Shopware.Service('shopwareExtensionService').updateExtensionData().then(() => {
                     return this.createNotificationSuccess({
-                        message: this.$tc('sw-extension.my-extensions.fileUpload.messageUploadSuccess')
+                        message: this.$tc('sw-extension.my-extensions.fileUpload.messageUploadSuccess'),
                     });
                 });
             }).catch((exception) => {
@@ -60,11 +84,16 @@ Component.register('sw-extension-file-upload', {
                     }
 
                     this.createNotificationError({
-                        message: this.$tc(error.message)
+                        message: this.$tc(error.message),
                     });
                 });
             }).finally(() => {
                 this.isLoading = false;
+                this.confirmModalVisible = false;
+
+                if (this.shouldHideConfirmModal === true) {
+                    this.saveConfig(true);
+                }
             });
         },
 
@@ -72,8 +101,46 @@ Component.register('sw-extension-file-upload', {
             const docLink = this.$tc('sw-extension.errors.messageToTheShopwareDocumentation', 0, error.parameters);
             this.createNotificationError({
                 message: `${error.message} ${docLink}`,
-                autoClose: false
+                autoClose: false,
             });
-        }
-    }
+        },
+
+        showConfirmModal() {
+            if (this.pluginUploadUserConfig.value.hide_upload_warning === true) {
+                this.onClickUpload();
+                return;
+            }
+
+            this.confirmModalVisible = true;
+        },
+
+        closeConfirmModal() {
+            this.confirmModalVisible = false;
+        },
+
+        getUserConfig() {
+            return this.userConfigRepository.search(this.userConfigCriteria, Shopware.Context.api).then(response => {
+                if (response.length) {
+                    this.pluginUploadUserConfig = response.first();
+                } else {
+                    this.pluginUploadUserConfig = this.userConfigRepository.create(Shopware.Context.api);
+                    this.pluginUploadUserConfig.key = USER_CONFIG_KEY;
+                    this.pluginUploadUserConfig.userId = this.currentUser?.id;
+                    this.pluginUploadUserConfig.value = {
+                        hide_upload_warning: false,
+                    };
+                }
+            });
+        },
+
+        saveConfig(value) {
+            this.pluginUploadUserConfig.value = {
+                hide_upload_warning: value,
+            };
+
+            this.userConfigRepository.save(this.pluginUploadUserConfig, Shopware.Context.api).then(() => {
+                this.getUserConfig();
+            });
+        },
+    },
 });

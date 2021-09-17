@@ -8,7 +8,6 @@ use Shopware\Core\Framework\App\ActiveAppsLoader;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
-use Shopware\Core\Kernel;
 use Shopware\Core\System\Snippet\Files\AppSnippetFileLoader;
 use Shopware\Core\System\Snippet\Files\GenericSnippetFile;
 use Shopware\Core\System\Snippet\Files\SnippetFileCollection;
@@ -232,13 +231,5 @@ class SnippetFileLoaderTest extends TestCase
         static::assertEquals('en-GB', $snippetFile->getIso());
         static::assertEquals('Plugin Manufacturer', $snippetFile->getAuthor());
         static::assertTrue($snippetFile->isBase());
-    }
-}
-
-class MockedKernel extends Kernel
-{
-    public function __construct(array $bundles)
-    {
-        $this->bundles = $bundles;
     }
 }

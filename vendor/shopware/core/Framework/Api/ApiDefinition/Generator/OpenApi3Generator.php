@@ -3,6 +3,7 @@
 namespace Shopware\Core\Framework\Api\ApiDefinition\Generator;
 
 use Shopware\Core\Framework\Api\ApiDefinition\ApiDefinitionGeneratorInterface;
+use Shopware\Core\Framework\Api\ApiDefinition\DefinitionService;
 use Shopware\Core\Framework\Api\ApiDefinition\Generator\OpenApi\OpenApiDefinitionSchemaBuilder;
 use Shopware\Core\Framework\Api\ApiDefinition\Generator\OpenApi\OpenApiLoader;
 use Shopware\Core\Framework\Api\ApiDefinition\Generator\OpenApi\OpenApiPathBuilder;
@@ -12,6 +13,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\AssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\TranslatedField;
 use Shopware\Core\Framework\DataAbstractionLayer\MappingEntityDefinition;
 use Shopware\Core\System\SalesChannel\Entity\SalesChannelDefinitionInterface;
+use Symfony\Component\Finder\Finder;
 
 /**
  * @internal
@@ -40,29 +42,36 @@ class OpenApi3Generator implements ApiDefinitionGeneratorInterface
      */
     private $openApiLoader;
 
+    /**
+     * @var string
+     */
+    private $schemaPath;
+
     public function __construct(
         OpenApiSchemaBuilder $openApiBuilder,
         OpenApiPathBuilder $pathBuilder,
         OpenApiDefinitionSchemaBuilder $definitionSchemaBuilder,
-        OpenApiLoader $openApiLoader
+        OpenApiLoader $openApiLoader,
+        array $bundles
     ) {
         $this->openApiBuilder = $openApiBuilder;
         $this->pathBuilder = $pathBuilder;
         $this->definitionSchemaBuilder = $definitionSchemaBuilder;
         $this->openApiLoader = $openApiLoader;
+        $this->schemaPath = $bundles['Framework']['path'] . '/Api/ApiDefinition/Generator/Schema/AdminApi/';
     }
 
-    public function supports(string $format, int $version, string $api): bool
+    public function supports(string $format, string $api): bool
     {
         return $format === self::FORMAT;
     }
 
-    public function generate(array $definitions, int $version, string $api): array
+    public function generate(array $definitions, string $api, string $apiType = DefinitionService::TypeJsonApi): array
     {
         $forSalesChannel = $this->containsSalesChannelDefinition($definitions);
 
         $openApi = $this->openApiLoader->load($api);
-        $this->openApiBuilder->enrich($openApi, $api, $version);
+        $this->openApiBuilder->enrich($openApi, $api);
 
         ksort($definitions);
 
@@ -71,24 +80,51 @@ class OpenApi3Generator implements ApiDefinitionGeneratorInterface
                 continue;
             }
 
-            $onlyReference = $this->shouldIncludeReferenceOnly($definition, $forSalesChannel);
+            switch ($apiType) {
+                case DefinitionService::TypeJson:
+                    $onlyFlat = true;
 
-            $schema = $this->definitionSchemaBuilder->getSchemaByDefinition($definition, $this->getResourceUri($definition), $forSalesChannel, $version, $onlyReference);
+                    break;
+                case DefinitionService::TypeJsonApi:
+                default:
+                    $onlyFlat = $this->shouldIncludeReferenceOnly($definition, $forSalesChannel);
+            }
+
+            $schema = $this->definitionSchemaBuilder->getSchemaByDefinition(
+                $definition,
+                $this->getResourceUri($definition),
+                $forSalesChannel,
+                $onlyFlat,
+                $apiType
+            );
 
             $openApi->components->merge($schema);
 
-            if ($onlyReference) {
+            if ($onlyFlat) {
                 continue;
             }
 
-            $openApi->merge($this->pathBuilder->getPathActions($definition, $this->getResourceUri($definition)));
-            $openApi->merge([$this->pathBuilder->getTag($definition)]);
+            if ($apiType === DefinitionService::TypeJsonApi) {
+                $openApi->merge($this->pathBuilder->getPathActions($definition, $this->getResourceUri($definition)));
+                $openApi->merge([$this->pathBuilder->getTag($definition)]);
+            }
         }
 
-        return json_decode($openApi->toJson(), true);
+        $data = json_decode($openApi->toJson(), true);
+
+        $finder = (new Finder())->in($this->schemaPath)->name('*.json');
+
+        foreach ($finder as $item) {
+            $name = str_replace('.json', '', $item->getFilename());
+
+            $readData = json_decode((string) file_get_contents($item->getPathname()), true);
+            $data['components']['schemas'][$name] = $readData;
+        }
+
+        return $data;
     }
 
-    public function getSchema(array $definitions, int $version): array
+    public function getSchema(array $definitions): array
     {
         $schemaDefinitions = [];
 
@@ -108,7 +144,7 @@ class OpenApi3Generator implements ApiDefinitionGeneratorInterface
                 continue;
             }
 
-            $schema = $this->definitionSchemaBuilder->getSchemaByDefinition($definition, $this->getResourceUri($definition), $forSalesChannel, $version);
+            $schema = $this->definitionSchemaBuilder->getSchemaByDefinition($definition, $this->getResourceUri($definition), $forSalesChannel);
             $schema = array_shift($schema);
             $schema = json_decode($schema->toJson(), true);
             $schema = $schema['allOf'][1]['properties'];
@@ -138,7 +174,7 @@ class OpenApi3Generator implements ApiDefinitionGeneratorInterface
                 [
                     'id' => [
                         'type' => 'string',
-                        'format' => 'uuid',
+                        'pattern' => '^[0-9a-f]{32}$',
                     ],
                 ],
                 $schema,

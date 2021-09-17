@@ -3,6 +3,7 @@
 namespace Shopware\Core\Framework\Store\Services;
 
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopware\Core\Framework\Plugin\PluginLifecycleService;
 use Shopware\Core\Framework\Plugin\PluginManagementService;
 use Shopware\Core\Framework\Plugin\PluginService;
@@ -10,7 +11,7 @@ use Shopware\Core\Framework\Plugin\PluginService;
 /**
  * @internal
  */
-class ExtensionLifecycleService
+class ExtensionLifecycleService extends AbstractExtensionLifecycle
 {
     /**
      * @var AbstractStoreAppLifecycleService
@@ -65,7 +66,7 @@ class ExtensionLifecycleService
             return;
         }
 
-        $this->storeAppLifecycleService->updateExtension($technicalName, $context);
+        $this->storeAppLifecycleService->updateExtension($technicalName, true, $context);
     }
 
     public function uninstall(string $type, string $technicalName, bool $keepUserData, Context $context): void
@@ -77,7 +78,7 @@ class ExtensionLifecycleService
             return;
         }
 
-        $this->storeAppLifecycleService->uninstallExtension($technicalName, $context);
+        $this->storeAppLifecycleService->uninstallExtension($technicalName, $context, $keepUserData);
     }
 
     public function activate(string $type, string $technicalName, Context $context): void
@@ -114,5 +115,10 @@ class ExtensionLifecycleService
         }
 
         $this->storeAppLifecycleService->deleteExtension($technicalName);
+    }
+
+    protected function getDecorated(): AbstractExtensionLifecycle
+    {
+        throw new DecorationPatternException(self::class);
     }
 }

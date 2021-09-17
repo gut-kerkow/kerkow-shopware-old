@@ -205,6 +205,25 @@ class QueueEntityRepository
     }
 
     /**
+     * Count all queue items which satisfy given condition
+     *
+     * @param array $filterBy
+     *
+     * @return int
+     */
+    public function countAll(array $filterBy = []): int
+    {
+        $criteria = new Criteria([]);
+        foreach ($filterBy as $key => $value) {
+            $criteria->addFilter(new EqualsFilter($key, $value));
+        }
+
+        return $this->baseRepository
+            ->search($criteria, Context::createDefaultContext())
+            ->count();
+    }
+
+    /**
      * Creates search criteria
      *
      * @param string|null $id

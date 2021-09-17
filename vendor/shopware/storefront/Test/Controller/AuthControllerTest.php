@@ -254,7 +254,6 @@ class AuthControllerTest extends TestCase
         );
 
         $cart = new Cart('sales-channel', $contextToken);
-        $products[] = $this->createProductItem(100, 0);
 
         $cart->add(new LineItem('productId', LineItem::PRODUCT_LINE_ITEM_TYPE, $productId));
 
@@ -266,6 +265,7 @@ class AuthControllerTest extends TestCase
 
         $request = new Request();
         $request->setSession($this->getContainer()->get('session'));
+        $this->getContainer()->get('request_stack')->push($request);
 
         $requestDataBag = new RequestDataBag();
         $requestDataBag->set('username', $customer->getEmail());

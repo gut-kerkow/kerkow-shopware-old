@@ -36,7 +36,22 @@ class Entity extends Struct
     /**
      * @var string|null
      */
-    protected $_entityName;
+    private $_entityName;
+
+    public function __get($name)
+    {
+        return $this->$name;
+    }
+
+    public function __set($name, $value): void
+    {
+        $this->$name = $value;
+    }
+
+    public function __isset($name)
+    {
+        return isset($this->$name);
+    }
 
     public function setUniqueIdentifier(string $identifier): void
     {
@@ -58,6 +73,9 @@ class Entity extends Struct
         $this->versionId = $versionId;
     }
 
+    /**
+     * @return mixed|Struct|null
+     */
     public function get(string $property)
     {
         if ($this->has($property)) {
@@ -158,7 +176,7 @@ class Entity extends Struct
 
         $class = static::class;
         $class = explode('\\', $class);
-        $class = (string) end($class);
+        $class = end($class);
 
         return $this->_entityName = preg_replace(
             '/_entity$/',
@@ -175,5 +193,10 @@ class Entity extends Struct
         $this->_entityName = $entityName;
 
         return $this;
+    }
+
+    public function getInternalEntityName(): ?string
+    {
+        return $this->_entityName;
     }
 }

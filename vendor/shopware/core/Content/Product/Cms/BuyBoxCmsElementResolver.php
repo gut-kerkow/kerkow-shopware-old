@@ -3,33 +3,32 @@
 namespace Shopware\Core\Content\Product\Cms;
 
 use Shopware\Core\Content\Cms\Aggregate\CmsSlot\CmsSlotEntity;
-use Shopware\Core\Content\Cms\DataResolver\CriteriaCollection;
-use Shopware\Core\Content\Cms\DataResolver\Element\AbstractCmsElementResolver;
 use Shopware\Core\Content\Cms\DataResolver\Element\ElementDataCollection;
 use Shopware\Core\Content\Cms\DataResolver\ResolverContext\EntityResolverContext;
 use Shopware\Core\Content\Cms\DataResolver\ResolverContext\ResolverContext;
 use Shopware\Core\Content\Cms\SalesChannel\Struct\BuyBoxStruct;
-use Shopware\Core\Content\Product\ProductDefinition;
-use Shopware\Core\Content\Product\SalesChannel\Detail\AbstractProductDetailRoute;
-use Shopware\Core\Content\Property\PropertyGroupCollection;
+use Shopware\Core\Content\Product\SalesChannel\Detail\ProductConfiguratorLoader;
+use Shopware\Core\Content\Product\SalesChannel\SalesChannelProductEntity;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Aggregation\Metric\CountAggregation;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\AggregationResult\Metric\CountResult;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
+use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
-/**
- * @internal (flag:FEATURE_NEXT_10078)
- */
-class BuyBoxCmsElementResolver extends AbstractCmsElementResolver
+class BuyBoxCmsElementResolver extends AbstractProductDetailCmsElementResolver
 {
-    private const PRODUCT_DETAIL_ROUTE = 'frontend.detail.page';
+    private ProductConfiguratorLoader $configuratorLoader;
 
-    /**
-     * @var AbstractProductDetailRoute
-     */
-    private $productRoute;
+    private EntityRepositoryInterface $repository;
 
     public function __construct(
-        AbstractProductDetailRoute $productRoute
+        ProductConfiguratorLoader $configuratorLoader,
+        EntityRepositoryInterface $repository
     ) {
-        $this->productRoute = $productRoute;
+        $this->configuratorLoader = $configuratorLoader;
+        $this->repository = $repository;
     }
 
     public function getType(): string
@@ -37,63 +36,65 @@ class BuyBoxCmsElementResolver extends AbstractCmsElementResolver
         return 'buy-box';
     }
 
-    public function collect(CmsSlotEntity $slot, ResolverContext $resolverContext): ?CriteriaCollection
-    {
-        $config = $slot->getFieldConfig();
-        $productConfig = $config->get('product');
-
-        if (!$productConfig || $productConfig->getValue() === null) {
-            return null;
-        }
-
-        $criteria = new Criteria([$productConfig->getValue()]);
-
-        $criteriaCollection = new CriteriaCollection();
-        $criteriaCollection->add('product_' . $slot->getUniqueIdentifier(), ProductDefinition::class, $criteria);
-
-        return $criteriaCollection;
-    }
-
     public function enrich(CmsSlotEntity $slot, ResolverContext $resolverContext, ElementDataCollection $result): void
     {
         $buyBox = new BuyBoxStruct();
         $slot->setData($buyBox);
 
-        $config = $slot->getFieldConfig();
-        $productConfig = $config->get('product');
-
-        if (!$productConfig) {
+        $productConfig = $slot->getFieldConfig()->get('product');
+        if ($productConfig === null) {
             return;
         }
 
-        if ($resolverContext instanceof EntityResolverContext && $resolverContext->getRequest()->get('_route') === self::PRODUCT_DETAIL_ROUTE) {
-            $productConfig->assign([
-                'value' => $resolverContext->getRequest()->get('productId'),
-            ]);
+        $product = null;
+
+        if ($productConfig->isMapped() && $resolverContext instanceof EntityResolverContext) {
+            $product = $this->resolveEntityValue($resolverContext->getEntity(), $productConfig->getStringValue());
         }
 
-        if (!$productConfig->getValue()) {
-            return;
+        if ($productConfig->isStatic()) {
+            $product = $this->getSlotProduct($slot, $result, $productConfig->getStringValue());
         }
 
-        $this->resolveProductFromRemote($buyBox, $resolverContext, $productConfig->getValue());
+        /** @var SalesChannelProductEntity|null $product */
+        if ($product !== null) {
+            $buyBox->setProduct($product);
+            $buyBox->setProductId($product->getId());
+            $buyBox->setConfiguratorSettings($this->configuratorLoader->load($product, $resolverContext->getSalesChannelContext()));
+            $buyBox->setTotalReviews($this->getReviewsCount($product, $resolverContext->getSalesChannelContext()));
+        }
     }
 
-    private function resolveProductFromRemote(BuyBoxStruct $buyBox, ResolverContext $resolverContext, string $productId): void
+    private function getReviewsCount(SalesChannelProductEntity $product, SalesChannelContext $context): int
     {
-        $context = $resolverContext->getSalesChannelContext();
-        $request = $resolverContext->getRequest();
+        $reviewCriteria = $this->createReviewCriteria($context, $product->getId());
 
-        $result = $this->productRoute->load($productId, $request, $context, new Criteria());
-        $product = $result->getProduct();
+        $aggregation = $this->repository->aggregate($reviewCriteria, $context->getContext())->get('review-count');
 
-        /** @var PropertyGroupCollection $configurator */
-        $configurator = $result->getConfigurator();
+        return $aggregation instanceof CountResult ? $aggregation->getCount() : 0;
+    }
 
-        // TODO: NEXT-12803 - Get totalReviews by ProductReviewLoader and store it in buyBox after NEXT-11745 completed
+    private function createReviewCriteria(SalesChannelContext $context, string $productId): Criteria
+    {
+        $criteria = new Criteria();
 
-        $buyBox->setConfiguratorSettings($configurator);
-        $buyBox->setProduct($product);
-        $buyBox->setProductId($product->getId());
+        $reviewFilters[] = new EqualsFilter('status', true);
+        if ($context->getCustomer() !== null) {
+            $reviewFilters[] = new EqualsFilter('customerId', $context->getCustomer()->getId());
+        }
+
+        $criteria->addFilter(
+            new MultiFilter(MultiFilter::CONNECTION_AND, [
+                new MultiFilter(MultiFilter::CONNECTION_OR, $reviewFilters),
+                new MultiFilter(MultiFilter::CONNECTION_OR, [
+                    new EqualsFilter('product.id', $productId),
+                    new EqualsFilter('product.parentId', $productId),
+                ]),
+            ])
+        );
+
+        $criteria->addAggregation(new CountAggregation('review-count', 'id'));
+
+        return $criteria;
     }
 }

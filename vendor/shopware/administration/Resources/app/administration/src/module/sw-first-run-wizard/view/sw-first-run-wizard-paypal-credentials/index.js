@@ -14,26 +14,26 @@ Component.register('sw-first-run-wizard-paypal-credentials', {
                     position: 'left',
                     variant: null,
                     action: 'sw.first.run.wizard.index.paypal.info',
-                    disabled: false
+                    disabled: false,
                 },
                 {
                     key: 'skip',
                     label: this.$tc('sw-first-run-wizard.general.buttonSkip'),
                     position: 'right',
                     variant: null,
-                    action: 'sw.first.run.wizard.index.plugins',
-                    disabled: false
+                    action: 'sw.first.run.wizard.index.markets',
+                    disabled: false,
                 },
                 {
                     key: 'next',
                     label: this.$tc('sw-first-run-wizard.general.buttonNext'),
                     position: 'right',
                     variant: 'primary',
-                    action: 'sw.first.run.wizard.index.plugins',
-                    disabled: false
-                }
+                    action: 'sw.first.run.wizard.index.markets',
+                    disabled: false,
+                },
             ];
-        }
+        },
     },
 
     created() {
@@ -52,6 +52,6 @@ Component.register('sw-first-run-wizard-paypal-credentials', {
 
         updateButtons() {
             this.$emit('buttons-update', this.buttonConfig);
-        }
-    }
+        },
+    },
 });

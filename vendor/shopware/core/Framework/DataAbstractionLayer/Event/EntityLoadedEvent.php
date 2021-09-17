@@ -6,7 +6,6 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\AssociationField;
-use Shopware\Core\Framework\DataAbstractionLayer\Field\Field;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Extension;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToManyAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
@@ -38,6 +37,8 @@ class EntityLoadedEvent extends NestedEvent implements GenericEvent
     protected $name;
 
     /**
+     * @deprecated tag:v6.5.0 (flag:FEATURE_NEXT_16155) - Remove nested parameter, parameter is no more used. Nested loaded events are generated over EntityLoadedEventFactory
+     *
      * @var bool
      */
     protected $nested = true;
@@ -48,6 +49,8 @@ class EntityLoadedEvent extends NestedEvent implements GenericEvent
         $this->definition = $definition;
         $this->context = $context;
         $this->name = $this->definition->getEntityName() . '.loaded';
+
+        //@deprecated tag:v6.5.0 (flag:FEATURE_NEXT_16155) - Remove nested parameter, parameter is no more used. Nested loaded events are generated over EntityLoadedEventFactory
         $this->nested = $nested;
     }
 
@@ -77,6 +80,7 @@ class EntityLoadedEvent extends NestedEvent implements GenericEvent
             return null;
         }
 
+        //@deprecated tag:v6.5.0 (flag:FEATURE_NEXT_16155) - Remove all code below in this function and related internal functions. Nested loaded events are generated over EntityLoadedEventFactory.
         $associations = $this->extractAssociations($this->definition, $this->entities);
 
         $events = [];
@@ -99,6 +103,9 @@ class EntityLoadedEvent extends NestedEvent implements GenericEvent
         return $ids;
     }
 
+    /**
+     * @deprecated tag:v6.5.0 (flag:FEATURE_NEXT_16155) - Remove all code below in this function and related internal functions. Nested loaded events are generated over EntityLoadedEventFactory.
+     */
     protected function extractAssociations(EntityDefinition $definition, iterable $entities): array
     {
         $events = $this->extractAssociationsInCurrentLevel($definition, $entities);
@@ -108,17 +115,22 @@ class EntityLoadedEvent extends NestedEvent implements GenericEvent
         return $events;
     }
 
+    /**
+     * @deprecated tag:v6.5.0 (flag:FEATURE_NEXT_16155) - Remove all code below in this function and related internal functions. Nested loaded events are generated over EntityLoadedEventFactory.
+     */
     protected function createNested(EntityDefinition $definition, array $entities): EntityLoadedEvent
     {
         return new EntityLoadedEvent($definition, $entities, $this->context, false);
     }
 
+    /**
+     * @deprecated tag:v6.5.0 (flag:FEATURE_NEXT_16155) - Remove all code below in this function and related internal functions. Nested loaded events are generated over EntityLoadedEventFactory.
+     */
     private function extractAssociationsInCurrentLevel(EntityDefinition $definition, iterable $entities): array
     {
         $associations = $definition->getFields();
 
         $events = [];
-        /** @var Field $association */
         foreach ($associations as $association) {
             if (!$association instanceof AssociationField) {
                 continue;
@@ -195,6 +207,9 @@ class EntityLoadedEvent extends NestedEvent implements GenericEvent
         return $events;
     }
 
+    /**
+     * @deprecated tag:v6.5.0 (flag:FEATURE_NEXT_16155) - Remove all code below in this function and related internal functions. Nested loaded events are generated over EntityLoadedEventFactory.
+     */
     private function loadRecursivelyNestedAssociations(array $events): array
     {
         $recursive = [];
@@ -216,6 +231,9 @@ class EntityLoadedEvent extends NestedEvent implements GenericEvent
         return $recursive;
     }
 
+    /**
+     * @deprecated tag:v6.5.0 (flag:FEATURE_NEXT_16155) - Remove all code below in this function and related internal functions. Nested loaded events are generated over EntityLoadedEventFactory.
+     */
     private function mergeIntoEvents(array $recursive, array $events): array
     {
         foreach ($recursive as $nested) {

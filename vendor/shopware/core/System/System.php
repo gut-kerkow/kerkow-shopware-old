@@ -10,8 +10,6 @@ use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
 
 class System extends Bundle
 {
-    protected $name = 'System';
-
     /**
      * {@inheritdoc}
      */

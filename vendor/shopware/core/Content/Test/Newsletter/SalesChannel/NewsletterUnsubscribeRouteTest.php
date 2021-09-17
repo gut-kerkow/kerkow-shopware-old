@@ -4,12 +4,16 @@ namespace Shopware\Core\Content\Test\Newsletter\SalesChannel;
 
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\Content\Newsletter\Event\NewsletterUnsubscribeEvent;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour;
+use Shopware\Core\Framework\Test\TestCaseHelper\CallableClass;
 use Shopware\Core\Framework\Test\TestDataCollection;
-use Shopware\Core\PlatformRequest;
 
+/**
+ * @group store-api
+ */
 class NewsletterUnsubscribeRouteTest extends TestCase
 {
     use IntegrationTestBehaviour;
@@ -39,7 +43,7 @@ class NewsletterUnsubscribeRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/newsletter/subscribe',
+                '/store-api/newsletter/subscribe',
                 [
                     'email' => 'test@test.de',
                     'option' => 'direct',
@@ -50,10 +54,16 @@ class NewsletterUnsubscribeRouteTest extends TestCase
         $count = (int) $this->getContainer()->get(Connection::class)->fetchColumn('SELECT COUNT(*) FROM newsletter_recipient WHERE email = "test@test.de" AND status = "direct"');
         static::assertSame(1, $count);
 
+        $listener = $this->getMockBuilder(CallableClass::class)->getMock();
+        $listener->expects(static::once())->method('__invoke');
+
+        $dispatcher = $this->getContainer()->get('event_dispatcher');
+        $dispatcher->addListener(NewsletterUnsubscribeEvent::class, $listener);
+
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/newsletter/unsubscribe',
+                '/store-api/newsletter/unsubscribe',
                 [
                     'email' => 'test@test.de',
                 ]

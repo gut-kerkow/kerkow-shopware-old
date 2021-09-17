@@ -2,6 +2,7 @@ import template from './sw-search-bar.html.twig';
 import './sw-search-bar.scss';
 
 const { Component, Application } = Shopware;
+const { Criteria } = Shopware.Data;
 const utils = Shopware.Utils;
 
 /**
@@ -14,39 +15,45 @@ const utils = Shopware.Utils;
 Component.register('sw-search-bar', {
     template,
 
-    inject: ['searchService', 'searchTypeService'],
+    inject: [
+        'searchService',
+        'searchTypeService',
+        'repositoryFactory',
+        'feature',
+    ],
 
     shortcuts: {
-        f: 'setFocus'
+        f: 'setFocus',
     },
 
     props: {
         initialSearchType: {
             type: String,
             required: false,
-            default: ''
+            default: '',
         },
         typeSearchAlwaysInContainer: {
             type: Boolean,
             required: false,
-            default: false
+            default: false,
         },
         placeholder: {
             type: String,
             required: false,
-            default: ''
+            default: '',
         },
         initialSearch: {
             type: String,
             required: false,
-            default: ''
-        }
+            default: '',
+        },
     },
 
     data() {
         return {
             currentSearchType: this.initialSearchType,
             showResultsContainer: false,
+            showModuleFiltersContainer: false,
             searchTerm: this.initialSearch,
             results: [],
             isActive: false,
@@ -59,26 +66,14 @@ Component.register('sw-search-bar', {
             searchTypes: null,
             showTypeSelectContainer: false,
             typeSelectResults: [],
-            moduleFactory: {}
+            moduleFactory: {},
         };
-    },
-
-    watch: {
-        // Watch for changes in query parameters
-        '$route'(newValue) {
-            // Use type search again when route changes and the term is undefined
-            if (newValue.query.term === undefined && this.initialSearchType) {
-                this.currentSearchType = this.initialSearchType;
-            }
-
-            this.searchTerm = newValue.query.term ? newValue.query.term : '';
-        }
     },
 
     computed: {
         searchBarFieldClasses() {
             return {
-                'is--active': this.isActive
+                'is--active': this.isActive,
             };
         },
 
@@ -94,7 +89,31 @@ Component.register('sw-search-bar', {
             }
 
             return placeholder;
-        }
+        },
+
+        searchBarTypesContainerClasses() {
+            return {
+                'sw-search-bar__types_container--v2': this.feature.isActive('FEATURE_NEXT_6040'),
+                'sw-search-bar__types_container': !this.feature.isActive('FEATURE_NEXT_6040'),
+            };
+        },
+    },
+
+    watch: {
+        // Watch for changes in query parameters
+        '$route'(newValue) {
+            // Use type search again when route changes and the term is undefined
+            if (newValue.query.term === undefined && this.initialSearchType) {
+                this.currentSearchType = this.initialSearchType;
+            }
+
+            // Do not modify the search term when the user is currently typing
+            if (this.isActive) {
+                return;
+            }
+
+            this.searchTerm = newValue.query.term ? newValue.query.term : '';
+        },
     },
 
     created() {
@@ -115,7 +134,7 @@ Component.register('sw-search-bar', {
                 listener() {
                     that.showSearchFieldOnLargerViewports();
                 },
-                component: this
+                component: this,
             });
 
             if (this.$route.query.term) {
@@ -140,7 +159,11 @@ Component.register('sw-search-bar', {
         },
 
         getLabelSearchType(type) {
-            if (!type) {
+            if (!type && !this.currentSearchType && this.feature.isActive('FEATURE_NEXT_6040')) {
+                type = 'all';
+            }
+
+            if (!type && this.currentSearchType) {
                 type = this.currentSearchType;
             }
 
@@ -161,6 +184,7 @@ Component.register('sw-search-bar', {
             if (!target.closest('.sw-search-bar')) {
                 this.clearSearchTerm();
                 this.showTypeSelectContainer = false;
+                this.showModuleFiltersContainer = false;
             }
         },
 
@@ -241,6 +265,7 @@ Component.register('sw-search-bar', {
 
         showTypeContainer() {
             this.showTypeSelectContainer = true;
+            this.showModuleFiltersContainer = false;
             this.showResultsContainer = false;
             this.activeTypeListIndex = 0;
         },
@@ -263,6 +288,7 @@ Component.register('sw-search-bar', {
         setSearchType(type) {
             this.currentSearchType = type;
             this.showTypeSelectContainer = false;
+            this.showModuleFiltersContainer = false;
             this.searchTerm = '';
         },
 
@@ -305,7 +331,10 @@ Component.register('sw-search-bar', {
             this.isLoading = true;
             this.results = [];
             this.searchService.search({ term: searchTerm }).then((response) => {
-                // filter not yet implemented entities and empty entities
+                response.data.forEach((item) => {
+                    item.entities = Object.values(item.entities);
+                });
+
                 this.results = response.data.filter(item => this.searchTypes.hasOwnProperty(item.entity) && item.total > 0);
                 this.activeResultColumn = 0;
                 this.activeResultIndex = 0;
@@ -317,10 +346,43 @@ Component.register('sw-search-bar', {
         },
 
         loadTypeSearchResults(searchTerm) {
+            // If searchType has an "entityService" load by service, otherwise load by entity
+            if (this.searchTypes[this.currentSearchType].entityService) {
+                this.loadTypeSearchResultsByService(searchTerm);
+                return;
+            }
+
+            this.isLoading = true;
+            this.results = [];
+            const entityResults = {};
+
+            const entityName = this.searchTypes[this.currentSearchType].entityName;
+            const repository = this.repositoryFactory.create(entityName);
+            const criteria = new Criteria();
+
+            criteria.setTerm(searchTerm);
+            if (this.feature.isActive('FEATURE_NEXT_6040')) {
+                criteria.setLimit(10);
+            }
+
+            repository.search(criteria, Shopware.Context.api).then((response) => {
+                entityResults.total = response.total;
+                entityResults.entity = this.currentSearchType;
+                entityResults.entities = response;
+
+                this.results.push(entityResults);
+                this.isLoading = false;
+            });
+            if (!this.showTypeSelectContainer) {
+                this.showResultsContainer = true;
+            }
+        },
+
+        loadTypeSearchResultsByService(searchTerm) {
             this.isLoading = true;
             const params = {
                 limit: 25,
-                term: searchTerm
+                term: searchTerm,
             };
             this.results = [];
             const entityResults = {};
@@ -354,7 +416,7 @@ Component.register('sw-search-bar', {
         emitActiveResultPosition() {
             this.$emit('active-item-index-select', {
                 index: this.activeResultIndex,
-                column: this.activeResultColumn
+                column: this.activeResultColumn,
             });
         },
 
@@ -440,7 +502,7 @@ Component.register('sw-search-bar', {
                 return;
             }
 
-            const itemsInActualColumn = Object.keys(this.results[this.activeResultColumn].entities).length;
+            const itemsInActualColumn = this.results[this.activeResultColumn].entities.length;
 
             if (this.activeResultIndex === itemsInActualColumn - 1 || itemsInActualColumn < 1) {
                 if (this.activeResultColumn < this.results.length - 1) {
@@ -514,12 +576,29 @@ Component.register('sw-search-bar', {
             return module.manifest.color || '#AEC4DA';
         },
 
+        getEntityIcon(entityName) {
+            const module = this.moduleFactory.getModuleByEntityName(entityName);
+            const defaultColor = '#AEC4DA';
+
+            if (!module) {
+                return defaultColor;
+            }
+
+            return module.manifest.icon || defaultColor;
+        },
+
         isResultEmpty() {
             return !this.results.some(result => result.total !== 0);
         },
 
         onMouseEnterSearchType(index) {
             this.activeTypeListIndex = index;
-        }
-    }
+        },
+
+        onOpenModuleFiltersDropDown() {
+            this.isActive = true;
+            this.showModuleFiltersContainer = true;
+            this.showTypeSelectContainer = false;
+        },
+    },
 });

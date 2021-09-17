@@ -25,7 +25,7 @@ describe('Property: Test ACL privileges', () => {
                 role: 'viewer'
             }
         ]).then(() => {
-            cy.openInitialPage(`${Cypress.env('admin')}#/sw/property/index`);
+            cy.visit(`${Cypress.env('admin')}#/sw/property/index`);
         });
 
         // open property without permissions
@@ -67,7 +67,7 @@ describe('Property: Test ACL privileges', () => {
         // Request we want to wait for later
         cy.server();
         cy.route({
-            url: '/api/v*/property-group/*',
+            url: `${Cypress.env('apiPath')}/property-group/*`,
             method: 'patch'
         }).as('saveProperty');
 
@@ -150,7 +150,7 @@ describe('Property: Test ACL privileges', () => {
         // Request we want to wait for later
         cy.server();
         cy.route({
-            url: '/api/v*/property-group/*',
+            url: `${Cypress.env('apiPath')}/property-group/*`,
             method: 'delete'
         }).as('deleteData');
 

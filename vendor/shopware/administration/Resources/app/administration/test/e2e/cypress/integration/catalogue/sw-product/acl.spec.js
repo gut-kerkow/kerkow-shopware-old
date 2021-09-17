@@ -24,10 +24,9 @@ describe('Product: Test ACL privileges', () => {
                 key: 'product',
                 role: 'viewer'
             }
-        ]);
-
-        cy.get('.sw-admin-menu__navigation-list-item.sw-catalogue').click();
-        cy.get('.sw-admin-menu__navigation-list-item.sw-product').click();
+        ]).then(() => {
+            cy.visit(`${Cypress.env('admin')}#/sw/product/index`);
+        });
 
         // open product
         cy.get(`${page.elements.dataGridRow}--0 .sw-data-grid__cell--name div > a`)
@@ -47,11 +46,11 @@ describe('Product: Test ACL privileges', () => {
         cy.get('.sw-product-detail-context-prices__empty-state')
             .should('be.visible');
 
-        cy.get('.sw-product-detail__tab-properties')
+        cy.get('.sw-product-detail__tab-specifications')
             .scrollIntoView()
             .click();
 
-        cy.contains('Create properties and property values first, then return here to assign them.');
+        cy.get('.sw-product-properties').should('be.visible');
 
         cy.get('.sw-product-detail__tab-variants')
             .scrollIntoView()
@@ -62,7 +61,7 @@ describe('Product: Test ACL privileges', () => {
         cy.get('.sw-product-detail__tab-cross-selling')
             .scrollIntoView()
             .click();
-        cy.get('.sw-product-detail-cross-selling__empty-state-inner')
+        cy.get('.sw-empty-state')
             .should('be.visible');
     });
 
@@ -70,8 +69,8 @@ describe('Product: Test ACL privileges', () => {
         // Request we want to wait for later
         cy.server();
         cy.route({
-            url: '/api/v*/product/*',
-            method: 'patch'
+            url: `${Cypress.env('apiPath')}/_action/sync`,
+            method: 'post'
         }).as('saveProduct');
 
         const page = new ProductPageObject();
@@ -85,10 +84,9 @@ describe('Product: Test ACL privileges', () => {
                 key: 'product',
                 role: 'editor'
             }
-        ]);
-
-        cy.get('.sw-admin-menu__navigation-list-item.sw-catalogue').click();
-        cy.get('.sw-admin-menu__navigation-list-item.sw-product').click();
+        ]).then(() => {
+            cy.visit(`${Cypress.env('admin')}#/sw/product/index`);
+        });
 
         // open product
         cy.get(`${page.elements.dataGridRow}--0 .sw-data-grid__cell--name div > a`)
@@ -105,7 +103,7 @@ describe('Product: Test ACL privileges', () => {
 
         // Verify updated product
         cy.wait('@saveProduct').then((xhr) => {
-            expect(xhr).to.have.property('status', 204);
+            expect(xhr).to.have.property('status', 200);
         });
 
         cy.get(page.elements.smartBarBack).click();
@@ -116,11 +114,11 @@ describe('Product: Test ACL privileges', () => {
         // Request we want to wait for later
         cy.server();
         cy.route({
-            url: '/api/v*/product',
+            url: `${Cypress.env('apiPath')}/_action/sync`,
             method: 'post'
         }).as('saveProduct');
         cy.route({
-            url: '/api/v*/_action/calculate-price',
+            url: `${Cypress.env('apiPath')}/_action/calculate-price`,
             method: 'post'
         }).as('calculatePrice');
 
@@ -139,10 +137,9 @@ describe('Product: Test ACL privileges', () => {
                 key: 'product',
                 role: 'creator'
             }
-        ]);
-
-        cy.get('.sw-admin-menu__navigation-list-item.sw-catalogue').click();
-        cy.get('.sw-admin-menu__navigation-list-item.sw-product').click();
+        ]).then(() => {
+            cy.visit(`${Cypress.env('admin')}#/sw/product/index`);
+        });
 
         // create new product
         cy.get('a[href="#/sw/product/create"]').click();
@@ -151,11 +148,11 @@ describe('Product: Test ACL privileges', () => {
         cy.get('.sw-select-product__select_manufacturer')
             .typeSingleSelectAndCheck('shopware AG', '.sw-select-product__select_manufacturer');
         cy.get('#sw-field--product-taxId').select('Standard rate');
-        cy.get('.sw-list-price-field .sw-price-field-gross').eq(0).type('10');
+        cy.get('.sw-list-price-field .sw-price-field__gross input').eq(0).type('10').blur();
 
         // Check net price calculation
         cy.wait('@calculatePrice').then(() => {
-            cy.get('.sw-list-price-field .sw-price-field-net input').eq(0).should('have.value', '8.4');
+            cy.get('.sw-list-price-field .sw-price-field__net input').eq(0).should('have.value', '8.4033613445378');
         });
 
         cy.get('input[name=sw-field--product-stock]').type('100');
@@ -170,7 +167,7 @@ describe('Product: Test ACL privileges', () => {
         // Save product
         cy.get(page.elements.productSaveAction).click();
         cy.wait('@saveProduct').then((xhr) => {
-            expect(xhr).to.have.property('status', 204);
+            expect(xhr).to.have.property('status', 200);
         });
         cy.get(page.elements.smartBarBack).click();
         cy.get(`${page.elements.dataGridRow}--0 .sw-data-grid__cell--name`)
@@ -191,7 +188,7 @@ describe('Product: Test ACL privileges', () => {
         // Request we want to wait for later
         cy.server();
         cy.route({
-            url: '/api/v*/product/*',
+            url: `${Cypress.env('apiPath')}/product/*`,
             method: 'delete'
         }).as('deleteData');
 
@@ -206,10 +203,9 @@ describe('Product: Test ACL privileges', () => {
                 key: 'product',
                 role: 'deleter'
             }
-        ]);
-
-        cy.get('.sw-admin-menu__navigation-list-item.sw-catalogue').click();
-        cy.get('.sw-admin-menu__navigation-list-item.sw-product').click();
+        ]).then(() => {
+            cy.visit(`${Cypress.env('admin')}#/sw/product/index`);
+        });
 
         // Delete product
         cy.clickContextMenuItem(

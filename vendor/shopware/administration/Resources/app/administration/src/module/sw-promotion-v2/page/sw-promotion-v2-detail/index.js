@@ -10,13 +10,13 @@ Component.register('sw-promotion-v2-detail', {
 
     inject: [
         'repositoryFactory',
-        'acl'
+        'acl',
     ],
 
     mixins: [
         'notification',
         'placeholder',
-        Mixin.getByName('discard-detail-page-changes')('promotion')
+        Mixin.getByName('discard-detail-page-changes')('promotion'),
     ],
 
     shortcuts: {
@@ -24,9 +24,9 @@ Component.register('sw-promotion-v2-detail', {
             active() {
                 return this.acl.can('promotion.editor');
             },
-            method: 'onSave'
+            method: 'onSave',
         },
-        ESCAPE: 'onCancel'
+        ESCAPE: 'onCancel',
     },
 
     props: {
@@ -35,8 +35,8 @@ Component.register('sw-promotion-v2-detail', {
             required: false,
             default() {
                 return null;
-            }
-        }
+            },
+        },
     },
 
     data() {
@@ -47,13 +47,13 @@ Component.register('sw-promotion-v2-detail', {
             cleanUpFixedCode: false,
             showCodeTypeChangeModal: false,
             isSaveSuccessful: false,
-            saveCallbacks: []
+            saveCallbacks: [],
         };
     },
 
     metaInfo() {
         return {
-            title: this.$createTitle(this.identifier)
+            title: this.$createTitle(this.identifier),
         };
     },
 
@@ -71,9 +71,18 @@ Component.register('sw-promotion-v2-detail', {
         },
 
         promotionCriteria() {
-            return (new Criteria(1, 1))
-                .addAssociation('salesChannels')
-                .addAssociation('individualCodes');
+            const criteria = (new Criteria(1, 1))
+                .addAssociation('discounts.promotionDiscountPrices')
+                .addAssociation('discounts.discountRules')
+                .addAssociation('salesChannels');
+
+            criteria.getAssociation('discounts')
+                .addSorting(Criteria.sort('createdAt', 'ASC'));
+
+            criteria.getAssociation('individualCodes')
+                .setLimit(25);
+
+            return criteria;
         },
 
         tooltipSave() {
@@ -81,7 +90,7 @@ Component.register('sw-promotion-v2-detail', {
                 return {
                     message: this.$tc('sw-privileges.tooltip.warning'),
                     disabled: this.acl.can('category.editor'),
-                    showOnDisabledElements: true
+                    showOnDisabledElements: true,
                 };
             }
 
@@ -89,28 +98,32 @@ Component.register('sw-promotion-v2-detail', {
 
             return {
                 message: `${systemKey} + S`,
-                appearance: 'light'
+                appearance: 'light',
             };
         },
 
         tooltipCancel() {
             return {
                 message: 'ESC',
-                appearance: 'light'
+                appearance: 'light',
             };
         },
 
-        ...mapPageErrors(errorConfig)
-    },
+        promotionGroupRepository() {
+            return this.repositoryFactory.create('promotion_setgroup');
+        },
 
-    created() {
-        this.createdComponent();
+        ...mapPageErrors(errorConfig),
     },
 
     watch: {
         promotionId() {
             this.createdComponent();
-        }
+        },
+    },
+
+    created() {
+        this.createdComponent();
     },
 
     methods: {
@@ -118,7 +131,7 @@ Component.register('sw-promotion-v2-detail', {
             this.isLoading = true;
 
             if (!this.promotionId) {
-                this.promotion = this.promotionRepository.create(Shopware.Context.api);
+                this.promotion = this.promotionRepository.create();
                 this.isLoading = false;
 
                 return;
@@ -130,7 +143,21 @@ Component.register('sw-promotion-v2-detail', {
         loadEntityData() {
             return this.promotionRepository.get(this.promotionId, Shopware.Context.api, this.promotionCriteria)
                 .then((promotion) => {
+                    if (promotion === null) {
+                        return;
+                    }
+
                     this.promotion = promotion;
+
+                    if (!this.promotion || !this.promotion.discounts || this.promotion.length < 1) {
+                        return;
+                    }
+
+                    // Needed to enrich the VueX state below
+                    this.promotion.hasOrders = (promotion.orderCount !== null) ? promotion.orderCount > 0 : false;
+
+                    Shopware.State.commit('swPromotionDetail/setPromotion', this.promotion);
+                }).finally(() => {
                     this.isLoading = false;
                 });
         },
@@ -181,19 +208,52 @@ Component.register('sw-promotion-v2-detail', {
                 this.promotion.code = '';
             }
 
-            return this.promotionRepository.save(this.promotion, Shopware.Context.api).then(() => {
-                this.isSaveSuccessful = true;
-            }).catch(() => {
-                this.isLoading = false;
-                this.createNotificationError({
-                    message: this.$tc('global.notification.notificationSaveErrorMessage', 0, {
-                        entityName: this.promotion.name
-                    })
+            if (this.promotion.discounts) {
+                this.promotion.discounts.forEach((discount) => {
+                    if (discount.type === 'free') {
+                        Object.assign(discount, {
+                            type: 'percentage',
+                            value: 100,
+                            applierKey: 'SELECT',
+                        });
+                    }
                 });
-            }).finally(() => {
-                this.loadEntityData();
-                this.cleanUpCodes(false, false);
-            });
+            }
+
+            return this.promotionRepository.save(this.promotion)
+                .then(() => {
+                    return this.savePromotionSetGroups();
+                })
+                .then(() => {
+                    Shopware.State.commit('swPromotionDetail/setSetGroupIdsDelete', []);
+                    this.isSaveSuccessful = true;
+                })
+                .catch(() => {
+                    this.isLoading = false;
+                    this.createNotificationError({
+                        message: this.$tc('global.notification.notificationSaveErrorMessage', 0, {
+                            entityName: this.promotion.name,
+                        }),
+                    });
+                })
+                .finally(() => {
+                    this.loadEntityData();
+                    this.cleanUpCodes(false, false);
+                });
+        },
+
+        savePromotionSetGroups() {
+            const setGroupIdsDelete = Shopware.State.get('swPromotionDetail').setGroupIdsDelete;
+
+            if (setGroupIdsDelete !== null) {
+                const deletePromises = setGroupIdsDelete.map((groupId) => {
+                    return this.promotionGroupRepository.delete(groupId);
+                });
+
+                return Promise.all(deletePromises);
+            }
+
+            return Promise.resolve();
         },
 
         saveFinish() {
@@ -211,6 +271,10 @@ Component.register('sw-promotion-v2-detail', {
         cleanUpCodes(cleanUpIndividual, cleanUpFixed) {
             this.cleanUpIndividualCodes = cleanUpIndividual;
             this.cleanUpFixedCode = cleanUpFixed;
-        }
-    }
+        },
+
+        onGenerateIndividualCodesFinish() {
+            this.savePromotion();
+        },
+    },
 });

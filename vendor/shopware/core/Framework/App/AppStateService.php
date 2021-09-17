@@ -5,6 +5,7 @@ namespace Shopware\Core\Framework\App;
 use Shopware\Core\Framework\App\Event\AppActivatedEvent;
 use Shopware\Core\Framework\App\Event\AppDeactivatedEvent;
 use Shopware\Core\Framework\App\Exception\AppNotFoundException;
+use Shopware\Core\Framework\App\Payment\PaymentMethodStateService;
 use Shopware\Core\Framework\App\Template\TemplateStateService;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
@@ -36,16 +37,23 @@ class AppStateService
      */
     private $templateStateService;
 
+    /**
+     * @var PaymentMethodStateService
+     */
+    private $paymentMethodStateService;
+
     public function __construct(
         EntityRepositoryInterface $appRepo,
         EventDispatcherInterface $eventDispatcher,
         ActiveAppsLoader $activeAppsLoader,
-        TemplateStateService $templateStateService
+        TemplateStateService $templateStateService,
+        PaymentMethodStateService $paymentMethodStateService
     ) {
         $this->appRepo = $appRepo;
         $this->eventDispatcher = $eventDispatcher;
         $this->activeAppsLoader = $activeAppsLoader;
         $this->templateStateService = $templateStateService;
+        $this->paymentMethodStateService = $paymentMethodStateService;
     }
 
     public function activateApp(string $appId, Context $context): void
@@ -62,6 +70,7 @@ class AppStateService
 
         $this->appRepo->update([['id' => $appId, 'active' => true]], $context);
         $this->templateStateService->activateAppTemplates($appId, $context);
+        $this->paymentMethodStateService->activatePaymentMethods($appId, $context);
         $this->activeAppsLoader->resetActiveApps();
         // manually set active flag to true, so we don't need to re-fetch the app from DB
         $app->setActive(true);
@@ -87,5 +96,6 @@ class AppStateService
 
         $this->appRepo->update([['id' => $appId, 'active' => false]], $context);
         $this->templateStateService->deactivateAppTemplates($appId, $context);
+        $this->paymentMethodStateService->deactivatePaymentMethods($appId, $context);
     }
 }

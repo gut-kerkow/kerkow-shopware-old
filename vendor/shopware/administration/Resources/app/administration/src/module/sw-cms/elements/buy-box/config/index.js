@@ -7,11 +7,11 @@ const { Criteria } = Shopware.Data;
 Component.register('sw-cms-el-config-buy-box', {
     template,
 
-    mixins: [
-        Mixin.getByName('cms-element')
-    ],
-
     inject: ['repositoryFactory'],
+
+    mixins: [
+        Mixin.getByName('cms-element'),
+    ],
 
     computed: {
         productRepository() {
@@ -21,7 +21,7 @@ Component.register('sw-cms-el-config-buy-box', {
         productSelectContext() {
             return {
                 ...Shopware.Context.api,
-                inheritance: true
+                inheritance: true,
             };
         },
 
@@ -37,7 +37,11 @@ Component.register('sw-cms-el-config-buy-box', {
             criteria.addAssociation('deliveryTime');
 
             return criteria;
-        }
+        },
+
+        isProductPage() {
+            return this.cmsPageState?.currentPage?.type === 'product_detail';
+        },
     },
 
     created() {
@@ -55,14 +59,15 @@ Component.register('sw-cms-el-config-buy-box', {
                 this.$set(this.element.data, 'productId', null);
                 this.$set(this.element.data, 'product', null);
             } else {
-                this.productRepository.get(productId, this.productSelectContext, this.selectedProductCriteria).then((product) => {
-                    this.element.config.product.value = productId;
-                    this.$set(this.element.data, 'productId', productId);
-                    this.$set(this.element.data, 'product', product);
-                });
+                this.productRepository.get(productId, this.productSelectContext, this.selectedProductCriteria)
+                    .then((product) => {
+                        this.element.config.product.value = productId;
+                        this.$set(this.element.data, 'productId', productId);
+                        this.$set(this.element.data, 'product', product);
+                    });
             }
 
             this.$emit('element-update', this.element);
-        }
-    }
+        },
+    },
 });

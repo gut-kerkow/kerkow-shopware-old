@@ -60,32 +60,28 @@ class ChangePaymentMethodRoute extends AbstractChangePaymentMethodRoute
      * @Since("6.2.0.0")
      * @OA\Post(
      *      path="/account/change-payment-method/{paymentMethodId}",
-     *      summary="Change payment method",
+     *      summary="Change the customer's default payment method",
+     *      description="Changes a customer's default (preselected) payment method.",
      *      operationId="changePaymentMethod",
-     *      tags={"Store API", "Account"},
+     *      tags={"Store API", "Profile"},
      *      @OA\Parameter(
      *        name="paymentMethodId",
      *        in="path",
-     *        description="Payment Method Id",
+     *        description="Identifier of the desired default payment method",
      *        @OA\Schema(type="string"),
      *        required=true
      *      ),
      *      @OA\Response(
      *          response="200",
-     *          description="",
+     *          description="Returns a success response indicating a successful update.",
      *          @OA\JsonContent(ref="#/components/schemas/SuccessResponse")
      *     )
      * )
      * @LoginRequired()
-     * @Route(path="/store-api/v{version}/account/change-payment-method/{paymentMethodId}", name="store-api.account.set.payment-method", methods={"POST"})
+     * @Route(path="/store-api/account/change-payment-method/{paymentMethodId}", name="store-api.account.set.payment-method", methods={"POST"})
      */
-    public function change(string $paymentMethodId, RequestDataBag $requestDataBag, SalesChannelContext $context, ?CustomerEntity $customer = null): SuccessResponse
+    public function change(string $paymentMethodId, RequestDataBag $requestDataBag, SalesChannelContext $context, CustomerEntity $customer): SuccessResponse
     {
-        /* @deprecated tag:v6.4.0 - Parameter $customer will be mandatory when using with @LoginRequired() */
-        if (!$customer) {
-            $customer = $context->getCustomer();
-        }
-
         $this->validatePaymentMethodId($paymentMethodId, $context->getContext());
 
         $this->customerRepository->update([
@@ -95,7 +91,7 @@ class ChangePaymentMethodRoute extends AbstractChangePaymentMethodRoute
             ],
         ], $context->getContext());
 
-        $event = new CustomerChangedPaymentMethodEvent($context, $context->getCustomer(), $requestDataBag);
+        $event = new CustomerChangedPaymentMethodEvent($context, $customer, $requestDataBag);
         $this->eventDispatcher->dispatch($event);
 
         return new SuccessResponse();

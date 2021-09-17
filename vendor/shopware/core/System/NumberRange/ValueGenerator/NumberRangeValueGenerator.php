@@ -66,7 +66,7 @@ class NumberRangeValueGenerator implements NumberRangeValueGeneratorInterface
         return $this->endEvent($generatedValue, $type, $context, $salesChannelId, $preview);
     }
 
-    public function previewPattern(string $definition, string $pattern, int $start): string
+    public function previewPattern(string $definition, ?string $pattern, int $start): string
     {
         $this->createPreviewConfiguration($definition, $pattern, $start);
 
@@ -82,7 +82,7 @@ class NumberRangeValueGenerator implements NumberRangeValueGeneratorInterface
             $pattern,
             -1,
             \PREG_SPLIT_DELIM_CAPTURE | \PREG_SPLIT_NO_EMPTY
-        ) ?? null;
+        );
     }
 
     protected function readConfiguration(string $definition, Context $context, ?string $salesChannelId): void
@@ -147,7 +147,7 @@ class NumberRangeValueGenerator implements NumberRangeValueGeneratorInterface
         }
     }
 
-    protected function createPreviewConfiguration(string $definition, string $pattern, int $start): void
+    protected function createPreviewConfiguration(string $definition, ?string $pattern, int $start): void
     {
         $entity = new NumberRangeTypeEntity();
         $entity->setTechnicalName($definition);

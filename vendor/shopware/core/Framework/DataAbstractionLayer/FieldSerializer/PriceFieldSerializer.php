@@ -2,6 +2,7 @@
 
 namespace Shopware\Core\Framework\DataAbstractionLayer\FieldSerializer;
 
+use Shopware\Core\Defaults;
 use Shopware\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InvalidSerializerFieldException;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Field;
@@ -14,10 +15,13 @@ use Shopware\Core\Framework\DataAbstractionLayer\Write\DataStack\KeyValuePair;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\EntityExistence;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\WriteParameterBag;
 use Shopware\Core\Framework\Validation\Constraint\Uuid;
+use Shopware\Core\Framework\Validation\WriteConstraintViolationException;
 use Symfony\Component\Validator\Constraints\Collection;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Optional;
 use Symfony\Component\Validator\Constraints\Type;
+use Symfony\Component\Validator\ConstraintViolation;
+use Symfony\Component\Validator\ConstraintViolationList;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class PriceFieldSerializer extends AbstractFieldSerializer
@@ -54,18 +58,31 @@ class PriceFieldSerializer extends AbstractFieldSerializer
                 $this->validate([new NotBlank()], $data, $parameters->getPath());
             }
 
-            $constraints = $this->getConstraints($field);
+            $constraints = $this->getCachedConstraints($field);
             $pricePath = $parameters->getPath() . '/price';
 
             foreach ($data->getValue() as $index => $price) {
                 $this->validate($constraints, new KeyValuePair((string) $index, $price, true), $pricePath);
             }
 
+            $this->ensureDefaultPrice($parameters, $data->getValue());
+
             $converted = [];
 
             foreach ($value as $price) {
                 $price['gross'] = (float) $price['gross'];
                 $price['net'] = (float) $price['net'];
+
+                if (isset($price['listPrice']) && isset($price['listPrice']['gross'])) {
+                    $price['percentage'] = [
+                        'net' => round(100 - $price['net'] / $price['listPrice']['net'] * 100, 2),
+                        'gross' => round(100 - $price['gross'] / $price['listPrice']['gross'] * 100, 2),
+                    ];
+                }
+
+                if (\array_key_exists('listPrice', $price) && $price['listPrice'] === null) {
+                    $price['percentage'] = null;
+                }
 
                 $converted['c' . $price['currencyId']] = $price;
             }
@@ -79,34 +96,53 @@ class PriceFieldSerializer extends AbstractFieldSerializer
         yield $field->getStorageName() => $value;
     }
 
-    public function decode(Field $field, $value)
+    /**
+     * @return PriceCollection|null
+     *
+     * @deprecated tag:v6.5.0 The parameter $value and return type will be native typed
+     */
+    public function decode(Field $field, /*?string */$value)/*: ?PriceCollection*/
     {
         if ($value === null) {
             return null;
         }
-        $value = json_decode($value, true);
 
-        $prices = [];
-        foreach ($value as $row) {
-            $price = new Price($row['currencyId'], (float) $row['net'], (float) $row['gross'], (bool) $row['linked']);
-
-            if (isset($row['listPrice']) && isset($row['listPrice']['gross'])) {
-                $listPrice = $row['listPrice'];
-
-                $price->setListPrice(
-                    new Price(
-                        $row['currencyId'],
-                        (float) $listPrice['net'],
-                        (float) $listPrice['gross'],
-                        (bool) $listPrice['linked']
-                    )
-                );
-            }
-
-            $prices[] = $price;
+        // used for nested hydration (example cheapest-price-hydrator)
+        if (\is_string($value)) {
+            $value = json_decode($value, true);
         }
 
-        return new PriceCollection($prices);
+        $collection = new PriceCollection();
+
+        foreach ($value as $row) {
+            if (!isset($row['listPrice']) || !isset($row['listPrice']['gross'])) {
+                $collection->add(
+                    new Price($row['currencyId'], (float) $row['net'], (float) $row['gross'], (bool) $row['linked'])
+                );
+
+                continue;
+            }
+
+            $data = $row['listPrice'];
+
+            $collection->add(
+                new Price(
+                    $row['currencyId'],
+                    (float) $row['net'],
+                    (float) $row['gross'],
+                    (bool) $row['linked'],
+                    new Price(
+                        $row['currencyId'],
+                        (float) $data['net'],
+                        (float) $data['gross'],
+                        (bool) $data['linked'],
+                    ),
+                    $row['percentage']
+                )
+            );
+        }
+
+        return $collection;
     }
 
     protected function getConstraints(Field $field): array
@@ -138,5 +174,28 @@ class PriceFieldSerializer extends AbstractFieldSerializer
         ];
 
         return $constraints;
+    }
+
+    private function ensureDefaultPrice(WriteParameterBag $parameters, array $prices): void
+    {
+        foreach ($prices as $price) {
+            if ($price['currencyId'] === Defaults::CURRENCY) {
+                return;
+            }
+        }
+
+        $violationList = new ConstraintViolationList();
+        $violationList->add(
+            new ConstraintViolation(
+                'No price for default currency defined',
+                'No price for default currency defined',
+                [],
+                '',
+                '/price',
+                $prices
+            )
+        );
+
+        throw new WriteConstraintViolationException($violationList, $parameters->getPath());
     }
 }

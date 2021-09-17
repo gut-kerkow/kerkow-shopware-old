@@ -78,10 +78,6 @@ function createWrapper(privileges = []) {
     return shallowMount(Shopware.Component.build('sw-event-action-list'), {
         localVue,
         mocks: {
-            $tc: (trans) => trans,
-            $te: (trans) => trans,
-            $router: { replace: () => {} },
-            $device: { onResize: () => {} },
             $route: {
                 query: {
                     limit: '25',
@@ -162,7 +158,7 @@ describe('src/module/sw-event-action/page/sw-event-action-list', () => {
 
         // Expect `event_action` repository calls to be correct
         const expectedCriteria = wrapper.vm.eventActionCriteria;
-        expect(wrapper.vm.eventActionRepository.search).toHaveBeenCalledWith(expectedCriteria, Shopware.Context.api);
+        expect(wrapper.vm.eventActionRepository.search).toHaveBeenCalledWith(expectedCriteria);
         expect(wrapper.vm.eventActionRepository.search).toHaveBeenCalledTimes(1);
     });
 
@@ -183,7 +179,7 @@ describe('src/module/sw-event-action/page/sw-event-action-list', () => {
         expect(expectedCriteria.ids).toEqual(['mailTemplate1', 'mailTemplate2']);
 
         // Expect `mail_template` repository calls to be correct
-        expect(wrapper.vm.mailTemplateRepository.search).toHaveBeenCalledWith(expectedCriteria, Shopware.Context.api);
+        expect(wrapper.vm.mailTemplateRepository.search).toHaveBeenCalledWith(expectedCriteria);
         expect(wrapper.vm.mailTemplateRepository.search).toHaveBeenCalledTimes(1);
     });
 

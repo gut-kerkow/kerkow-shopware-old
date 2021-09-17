@@ -1,6 +1,4 @@
-/// <reference types="Cypress" />
-
-import MediaPageObject from '../../../support/pages/module/sw-media.page-object';
+// / <reference types="Cypress" />
 
 describe('CMS: Check usage and editing of text elements', () => {
     beforeEach(() => {
@@ -53,7 +51,8 @@ describe('CMS: Check usage and editing of text elements', () => {
 
         // Assign layout to root category
         cy.visit(`${Cypress.env('admin')}#/sw/category/index`);
-        cy.get('.sw-tree-item__element').contains('Home').click();
+        cy.get('.sw-category-tree__inner .sw-tree-item__element').contains('Home').click();
+        cy.get('.sw-category-detail__tab-cms').scrollIntoView().click();
         cy.get('.sw-card.sw-category-layout-card').scrollIntoView();
         cy.get('.sw-category-detail-layout__change-layout-action').click();
         cy.get('.sw-modal__dialog').should('be.visible');
@@ -69,6 +68,49 @@ describe('CMS: Check usage and editing of text elements', () => {
         // Verify layout in Storefront
         cy.visit('/');
         cy.get('.cms-block').contains('Chocolate cake dragée');
+    });
+
+    it('@base @content: edit text block settings', () => {
+        cy.server();
+        cy.route({
+            url: `${Cypress.env('apiPath')}/cms-page/*`,
+            method: 'patch'
+        }).as('saveData');
+
+        cy.get('.sw-cms-list-item--0').click();
+        cy.get('.sw-cms-section__empty-stage').should('be.visible');
+
+        // Add simple text block
+        cy.get('.sw-cms-section__empty-stage').click();
+        cy.get('.sw-cms-sidebar__block-selection > div:nth-of-type(2)')
+            .dragTo('.sw-cms-section__empty-stage');
+        cy.get('.sw-cms-block').should('be.visible');
+
+        // Open block settings
+        cy.get('.sw-cms-block__config-overlay').invoke('show');
+        cy.get('.sw-cms-block__config-overlay').should('be.visible').click();
+        cy.get('.sw-cms-block-config').should('be.visible');
+        cy.get('.sw-colorpicker__input').should('be.visible');
+
+        // Change block background color and check for preview changes
+        cy.get('.sw-colorpicker__input').type('#000000');
+        cy.get('.sw-cms-block').should('have.css', 'background-color', 'rgb(0, 0, 0)');
+
+        // Save
+        cy.get('.sw-cms-detail__save-action').click();
+        cy.wait('@saveData');
+
+        // Check if settings are still reactive and change preview
+        cy.get('.sw-colorpicker__input').clear().type('#FF0000');
+        cy.get('.sw-cms-block').should('have.css', 'background-color', 'rgb(255, 0, 0)');
+
+        // Save
+        cy.get('.sw-cms-detail__save-action').click();
+        cy.wait('@saveData');
+
+        // Reload page and check that value persisted
+        cy.reload();
+        cy.get('.sw-cms-block').should('have.css', 'background-color', 'rgb(255, 0, 0)');
     });
 
     it('@content: use text block with three columns', () => {
@@ -111,7 +153,8 @@ describe('CMS: Check usage and editing of text elements', () => {
 
         // Assign layout to root category
         cy.visit(`${Cypress.env('admin')}#/sw/category/index`);
-        cy.get('.sw-tree-item__element').contains('Home').click();
+        cy.get('.sw-category-tree__inner .sw-tree-item__element').contains('Home').click();
+        cy.get('.sw-category-detail__tab-cms').scrollIntoView().click();
         cy.get('.sw-card.sw-category-layout-card').scrollIntoView();
         cy.get('.sw-category-detail-layout__change-layout-action').click();
         cy.get('.sw-modal__dialog').should('be.visible');

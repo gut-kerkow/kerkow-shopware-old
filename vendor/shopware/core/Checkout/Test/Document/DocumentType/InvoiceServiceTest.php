@@ -25,6 +25,7 @@ use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\TaxFreeConfig;
 use Shopware\Core\Framework\Rule\Collector\RuleConditionRegistry;
 use Shopware\Core\Framework\Test\TestCaseBase\CountryAddToSalesChannelTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
@@ -93,7 +94,6 @@ class InvoiceServiceTest extends TestCase
 
     public function testGenerateWithDifferentTaxes(): void
     {
-        /** @var InvoiceGenerator $invoiceService */
         $invoiceService = $this->getContainer()->get(InvoiceGenerator::class);
         $pdfGenerator = $this->getContainer()->get(PdfGenerator::class);
 
@@ -149,11 +149,29 @@ class InvoiceServiceTest extends TestCase
 
         $finfo = new \finfo(\FILEINFO_MIME_TYPE);
         static::assertEquals('application/pdf', $finfo->buffer($generatorOutput));
+
+        $deLanguageId = $this->getDeDeLanguageId();
+        $order->setLanguageId($deLanguageId);
+
+        $processedTemplate = $invoiceService->generate(
+            $order,
+            $documentConfiguration,
+            $context
+        );
+
+        static::assertStringContainsString(
+            preg_replace('/\xc2\xa0/', ' ', $this->currencyFormatter->formatCurrencyByLanguage(
+                $order->getAmountTotal(),
+                $order->getCurrency()->getIsoCode(),
+                $deLanguageId,
+                $context
+            )),
+            preg_replace('/\xc2\xa0/', ' ', $processedTemplate)
+        );
     }
 
     public function testGenerateWithShippingAddress(): void
     {
-        /** @var InvoiceGenerator $invoiceService */
         $invoiceService = $this->getContainer()->get(InvoiceGenerator::class);
 
         $possibleTaxes = [7, 19, 22];
@@ -163,10 +181,10 @@ class InvoiceServiceTest extends TestCase
         /** @var OrderEntity $order */
         $order = $this->getOrderById($orderId);
         $country = $order->getDeliveries()->getShippingAddress()->getCountries()->first();
-        $country->setCompanyTaxFree(true);
+        $country->setCompanyTax(new TaxFreeConfig(true, Defaults::CURRENCY, 0));
         $companyPhone = '123123123';
         $vatIds = ['VAT-123123'];
-        $order->getOrderCustomer()->getCustomer()->setVatIds($vatIds);
+        $order->getOrderCustomer()->setVatIds($vatIds);
 
         $documentConfiguration = DocumentConfigurationFactory::mergeConfiguration(
             new DocumentConfiguration(),

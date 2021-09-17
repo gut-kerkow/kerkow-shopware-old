@@ -9,6 +9,10 @@
             <tag name="shopware.entity.definition"/>
         </service>
 
+        <service id="Shopware\Core\Content\Newsletter\SalesChannel\SalesChannelNewsletterRecipientDefinition">
+            <tag name="shopware.sales_channel.entity.definition"/>
+        </service>
+
         <service id="Shopware\Core\Content\Newsletter\Aggregate\NewsletterRecipientTag\NewsletterRecipientTagDefinition">
             <tag name="shopware.entity.definition"/>
         </service>
@@ -23,15 +27,6 @@
             <tag name="messenger.message_handler" />
         </service>
 
-        <service id="Shopware\Core\Content\Newsletter\SalesChannel\SalesChannelNewsletterController" public="true">
-            <call method="setContainer">
-                <argument type="service" id="service_container"/>
-            </call>
-            <argument type="service" id="Shopware\Core\Content\Newsletter\SalesChannel\NewsletterSubscribeRoute"/>
-            <argument type="service" id="Shopware\Core\Content\Newsletter\SalesChannel\NewsletterConfirmRoute"/>
-            <argument type="service" id="Shopware\Core\Content\Newsletter\SalesChannel\NewsletterUnsubscribeRoute"/>
-        </service>
-
         <service id="Shopware\Core\Content\Newsletter\NewsletterExceptionHandler">
             <tag name="shopware.dal.exception_handler"/>
         </service>
@@ -40,6 +35,7 @@
             <argument type="service" id="newsletter_recipient.repository" />
             <argument type="service" id="Shopware\Core\Framework\Validation\DataValidator"/>
             <argument type="service" id="event_dispatcher"/>
+            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
         </service>
 
         <service id="Shopware\Core\Content\Newsletter\SalesChannel\NewsletterConfirmRoute" public="true">
@@ -51,6 +47,7 @@
         <service id="Shopware\Core\Content\Newsletter\SalesChannel\NewsletterUnsubscribeRoute" public="true">
             <argument type="service" id="newsletter_recipient.repository" />
             <argument type="service" id="Shopware\Core\Framework\Validation\DataValidator"/>
+            <argument type="service" id="event_dispatcher"/>
         </service>
     </services>
 </container>

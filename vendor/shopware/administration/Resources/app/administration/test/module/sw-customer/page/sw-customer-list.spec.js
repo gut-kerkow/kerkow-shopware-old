@@ -1,47 +1,37 @@
-import { createLocalVue, shallowMount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import 'src/module/sw-customer/page/sw-customer-list';
 
 function createWrapper(privileges = []) {
-    const localVue = createLocalVue();
-    localVue.directive('tooltip', {});
-
     return shallowMount(Shopware.Component.build('sw-customer-list'), {
-        localVue,
         mocks: {
-            $tc: () => {
-            },
             $route: {
                 query: {
                     page: 1,
                     limit: 25
                 }
-            },
-            $router: {
-                replace: () => {
-                }
             }
         },
         provide: {
             repositoryFactory: {
-                create: () => ({
+                create: (entity) => ({
                     create: () => {
-                        return Promise.resolve([{
+                        return Promise.resolve(entity === 'customer' ? [{
                             id: '1a2b3c',
                             entity: 'customer',
                             customerId: 'd4c3b2a1',
                             productId: 'd4c3b2a1',
                             salesChannelId: 'd4c3b2a1'
-                        }]);
+                        }] : []);
                     },
                     search: () => {
-                        return Promise.resolve([{
+                        return Promise.resolve(entity === 'customer' ? [{
                             id: '1a2b3c',
                             entity: 'customer',
                             customerId: 'd4c3b2a1',
                             productId: 'd4c3b2a1',
                             salesChannelId: 'd4c3b2a1',
                             sourceEntitiy: 'customer'
-                        }]);
+                        }] : []);
                     }
                 })
             },
@@ -54,9 +44,7 @@ function createWrapper(privileges = []) {
                     return privileges.includes(identifier);
                 }
             },
-            feature: {
-                isActive: () => true
-            }
+            filterFactory: {}
         },
         stubs: {
             'sw-page': {
@@ -85,6 +73,12 @@ function createWrapper(privileges = []) {
         }
     });
 }
+
+Shopware.Service().register('filterService', () => {
+    return {
+        mergeWithStoredFilters: (storeKey, criteria) => criteria
+    };
+});
 
 describe('module/sw-customer/page/sw-customer-list', () => {
     it('should be a Vue.JS component', async () => {
@@ -117,11 +111,12 @@ describe('module/sw-customer/page/sw-customer-list', () => {
     it('should not be able to inline edit', async () => {
         const wrapper = createWrapper();
         await wrapper.vm.$nextTick();
+        await wrapper.vm.$nextTick();
 
         const entityListing = wrapper.find('.sw-customer-list-grid');
 
         expect(entityListing.exists()).toBeTruthy();
-        expect(entityListing.attributes().allowinlineedit).toBeFalsy();
+        expect(entityListing.attributes()['allow-inline-edit']).toBeFalsy();
     });
 
     it('should be able to inline edit', async () => {
@@ -129,14 +124,16 @@ describe('module/sw-customer/page/sw-customer-list', () => {
             'customer.editor'
         ]);
         await wrapper.vm.$nextTick();
+        await wrapper.vm.$nextTick();
 
         const entityListing = wrapper.find('.sw-customer-list-grid');
         expect(entityListing.exists()).toBeTruthy();
-        expect(entityListing.attributes().allowinlineedit).toBeTruthy();
+        expect(entityListing.attributes()['allow-inline-edit']).toBeTruthy();
     });
 
     it('should not be able to delete', async () => {
         const wrapper = createWrapper();
+        await wrapper.vm.$nextTick();
         await wrapper.vm.$nextTick();
 
         const deleteMenuItem = wrapper.find('.sw-customer-list__delete-action');
@@ -148,6 +145,7 @@ describe('module/sw-customer/page/sw-customer-list', () => {
             'customer.deleter'
         ]);
         await wrapper.vm.$nextTick();
+        await wrapper.vm.$nextTick();
 
         const deleteMenuItem = wrapper.find('.sw-customer-list__delete-action');
         expect(deleteMenuItem.attributes().disabled).toBeFalsy();
@@ -155,6 +153,7 @@ describe('module/sw-customer/page/sw-customer-list', () => {
 
     it('should not be able to edit', async () => {
         const wrapper = createWrapper();
+        await wrapper.vm.$nextTick();
         await wrapper.vm.$nextTick();
 
         const editMenuItem = wrapper.find('.sw-customer-list__edit-action');
@@ -165,6 +164,7 @@ describe('module/sw-customer/page/sw-customer-list', () => {
         const wrapper = createWrapper([
             'customer.editor'
         ]);
+        await wrapper.vm.$nextTick();
         await wrapper.vm.$nextTick();
 
         const editMenuItem = wrapper.find('.sw-customer-list__edit-action');

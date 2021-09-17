@@ -4,6 +4,7 @@ namespace Shopware\Core\Framework\Test\TestCaseBase;
 
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Checkout\Cart\CartRuleLoader;
+use Shopware\Core\Checkout\Test\Payment\Handler\V630\SyncTestPaymentHandler;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Api\Util\AccessKeyHelper;
 use Shopware\Core\Framework\Context;
@@ -11,6 +12,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Test\TestCaseHelper\ReflectionHelper;
+use Shopware\Core\Framework\Util\Random;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\PlatformRequest;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory;
@@ -39,7 +41,6 @@ trait SalesChannelApiTestBehaviour
             return;
         }
 
-        /** @var Connection $connection */
         $connection = $this->salesChannelApiBrowser
             ->getContainer()
             ->get(Connection::class);
@@ -61,7 +62,7 @@ trait SalesChannelApiTestBehaviour
     public function getSalesChannelApiSalesChannelId(): string
     {
         if (!$this->salesChannelIds) {
-            throw new \LogicException('The sales channel id con only be requested after calling `createSalesChannelApiClient`.');
+            throw new \LogicException('The sales channel id can only be requested after calling `createSalesChannelApiClient`.');
         }
 
         return end($this->salesChannelIds);
@@ -73,6 +74,7 @@ trait SalesChannelApiTestBehaviour
         $salesChannelApiBrowser = KernelLifecycleManager::createBrowser($kernel);
         $salesChannelApiBrowser->setServerParameters([
             'HTTP_ACCEPT' => 'application/json',
+            'HTTP_' . PlatformRequest::HEADER_CONTEXT_TOKEN => Random::getAlphanumericString(32),
         ]);
 
         $this->authorizeSalesChannelBrowser($salesChannelApiBrowser, $salesChannelOverride);
@@ -85,6 +87,28 @@ trait SalesChannelApiTestBehaviour
         $salesChannel = $this->createSalesChannel($salesChannelOverride);
 
         return $this->createContext($salesChannel, $options);
+    }
+
+    public function login(): string
+    {
+        $email = Uuid::randomHex() . '@example.com';
+        $customerId = $this->createCustomer('shopware', $email);
+
+        $this->browser
+            ->request(
+                'POST',
+                '/store-api/account/login',
+                [
+                    'email' => $email,
+                    'password' => 'shopware',
+                ]
+            );
+
+        $response = json_decode($this->browser->getResponse()->getContent(), true);
+
+        $this->browser->setServerParameter('HTTP_SW_CONTEXT_TOKEN', $response['contextToken']);
+
+        return $customerId;
     }
 
     abstract protected function getKernel(): KernelInterface;
@@ -100,7 +124,8 @@ trait SalesChannelApiTestBehaviour
 
     protected function createSalesChannelBrowser(
         ?KernelInterface $kernel = null,
-        bool $enableReboot = false
+        bool $enableReboot = false,
+        array $salesChannelOverrides = []
     ): KernelBrowser {
         if (!$kernel) {
             $kernel = $this->getKernel();
@@ -109,11 +134,79 @@ trait SalesChannelApiTestBehaviour
         $salesChannelApiBrowser = KernelLifecycleManager::createBrowser($kernel, $enableReboot);
         $salesChannelApiBrowser->setServerParameters([
             'HTTP_ACCEPT' => 'application/json',
+            'HTTP_' . PlatformRequest::HEADER_CONTEXT_TOKEN => Random::getAlphanumericString(32),
         ]);
 
-        $this->authorizeSalesChannelBrowser($salesChannelApiBrowser);
+        $this->authorizeSalesChannelBrowser($salesChannelApiBrowser, $salesChannelOverrides);
 
         return $salesChannelApiBrowser;
+    }
+
+    private function createCustomer(?string $password = null, ?string $email = null, ?bool $guest = false): string
+    {
+        $customerId = Uuid::randomHex();
+        $addressId = Uuid::randomHex();
+
+        if ($email === null) {
+            $email = Uuid::randomHex() . '@example.com';
+        }
+
+        if ($password === null) {
+            $password = Uuid::randomHex();
+        }
+
+        $this->getContainer()->get('customer.repository')->create([
+            [
+                'id' => $customerId,
+                'salesChannelId' => Defaults::SALES_CHANNEL,
+                'defaultShippingAddress' => [
+                    'id' => $addressId,
+                    'firstName' => 'Max',
+                    'lastName' => 'Mustermann',
+                    'street' => 'Musterstraße 1',
+                    'city' => 'Schöppingen',
+                    'zipcode' => '12345',
+                    'salutationId' => $this->getValidSalutationId(),
+                    'countryId' => $this->getValidCountryId(),
+                ],
+                'defaultBillingAddressId' => $addressId,
+                'defaultPaymentMethod' => [
+                    'name' => 'Invoice',
+                    'active' => true,
+                    'description' => 'Default payment method',
+                    'handlerIdentifier' => SyncTestPaymentHandler::class,
+                    'availabilityRule' => [
+                        'id' => Uuid::randomHex(),
+                        'name' => 'true',
+                        'priority' => 0,
+                        'conditions' => [
+                            [
+                                'type' => 'cartCartAmount',
+                                'value' => [
+                                    'operator' => '>=',
+                                    'amount' => 0,
+                                ],
+                            ],
+                        ],
+                    ],
+                    'salesChannels' => [
+                        [
+                            'id' => Defaults::SALES_CHANNEL,
+                        ],
+                    ],
+                ],
+                'groupId' => Defaults::FALLBACK_CUSTOMER_GROUP,
+                'email' => $email,
+                'password' => $password,
+                'firstName' => 'Max',
+                'lastName' => 'Mustermann',
+                'guest' => $guest,
+                'salutationId' => $this->getValidSalutationId(),
+                'customerNumber' => '12345',
+            ],
+        ], Context::createDefaultContext());
+
+        return $customerId;
     }
 
     private function createContext(array $salesChannel, array $options): SalesChannelContext
@@ -189,7 +282,7 @@ trait SalesChannelApiTestBehaviour
     private function assignSalesChannelContext(?KernelBrowser $customBrowser = null): void
     {
         $browser = $customBrowser ?: $this->getSalesChannelBrowser();
-        $browser->request('GET', '/sales-channel-api/v' . PlatformRequest::API_VERSION . '/context');
+        $browser->request('GET', '/store-api/context');
         $response = $browser->getResponse();
         $content = json_decode($response->getContent(), true);
         $browser->setServerParameter('HTTP_SW_CONTEXT_TOKEN', $content['token']);

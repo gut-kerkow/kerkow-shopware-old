@@ -39,16 +39,13 @@ describe('Dashboard: Test first sight of the Administration', () => {
                 storefrontCustomer = result;
             })
             .then(() => {
-                cy.openInitialPage(`${Cypress.env('admin')}`);
+                cy.openInitialPage(Cypress.env('admin'));
             });
     });
 
     it('@base @general: read dashboard', () => {
         // Check today stats
-        cy.get('.sw-dashboard-index__intro-content').contains('Welcome to Shopware 6');
-        cy.get('.sw-dashboard-index__intro-image img')
-            .should('have.attr', 'src')
-            .should('include', '/bundles/administration/static/img/dashboard-logo.svg');
+        cy.get('.sw-dashboard-index__welcome-title').should('be.visible');
         cy.get('.sw-dashboard-index__intro-stats-today-single-stat-number-value').should('be.visible');
         cy.get('.sw-dashboard-index__intro-stats-today-single-stat-number-value').contains('1');
         cy.get('.sw-dashboard-index__intro-stats-today-single-stat-number-value').contains(product.price[0].gross);

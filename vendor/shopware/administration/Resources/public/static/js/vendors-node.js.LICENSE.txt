@@ -7,16 +7,9 @@
   */
 
 /*!
- * ApexCharts v3.8.3
- * (c) 2018-2019 Juned Chhipa
+ * ApexCharts v3.25.0
+ * (c) 2018-2021 Juned Chhipa
  * Released under the MIT License.
- */
-
-/*!
- * Determine if an object is a Buffer
- *
- * @author   Feross Aboukhadijeh <https://feross.org>
- * @license  MIT
  */
 
 /*!
@@ -26,7 +19,7 @@
  */
 
 /*!
- * vue-i18n v8.12.0 
+ * vue-i18n v8.14.0 
  * (c) 2019 kazuya kawaguchi
  * Released under the MIT License.
  */
@@ -46,9 +39,7 @@
     and limitations under the License.
     ***************************************************************************** */
 
-/*! @license DOMPurify | (c) Cure53 and other contributors | Released under the Apache license 2.0 and Mozilla Public License 2.0 | github.com/cure53/DOMPurify/blob/2.0.8/LICENSE */
-
-/*! @source http://purl.eligrey.com/github/classList.js/blob/master/classList.js */
+/*! @license DOMPurify | (c) Cure53 and other contributors | Released under the Apache license 2.0 and Mozilla Public License 2.0 | github.com/cure53/DOMPurify/blob/2.2.2/LICENSE */
 
 /*! https://mths.be/punycode v1.4.1 by @mathias */
 

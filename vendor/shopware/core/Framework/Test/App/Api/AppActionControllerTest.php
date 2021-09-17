@@ -14,7 +14,6 @@ use Shopware\Core\Framework\Test\App\GuzzleTestClientBehaviour;
 use Shopware\Core\Framework\Test\App\StorefrontPluginRegistryTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\AdminApiTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\PlatformRequest;
 
 class AppActionControllerTest extends TestCase
 {
@@ -25,7 +24,7 @@ class AppActionControllerTest extends TestCase
 
     public function testGetActionsPerViewEmpty(): void
     {
-        $url = '/api/v' . PlatformRequest::API_VERSION . '/app-system/action-button/product/index';
+        $url = '/api/app-system/action-button/product/index';
         $this->getBrowser()->request('GET', $url);
         $response = json_decode($this->getBrowser()->getResponse()->getContent(), true);
 
@@ -37,7 +36,7 @@ class AppActionControllerTest extends TestCase
     public function testGetActionsPerView(): void
     {
         $this->loadAppsFromDir(__DIR__ . '/../Manifest/_fixtures/test');
-        $url = '/api/v' . PlatformRequest::API_VERSION . '/app-system/action-button/order/detail';
+        $url = '/api/app-system/action-button/order/detail';
         $this->getBrowser()->request('GET', $url);
 
         static::assertEquals(200, $this->getBrowser()->getResponse()->getStatusCode());
@@ -59,6 +58,11 @@ class AppActionControllerTest extends TestCase
                 ],
                 'action' => 'viewOrder',
                 'url' => 'https://swag-test.com/your-order',
+                /*
+                 * @feature-deprecated (FEATURE_NEXT_14360) tag:v6.5.0 - "openNewTab" key will be removed.
+                 * It will no longer be used in the manifest.xml file
+                 * and will be processed in the Executor with an OpenNewTabResponse response instead.
+                 */
                 'openNewTab' => true,
                 'icon' => base64_encode(file_get_contents(__DIR__ . '/../Manifest/_fixtures/test/icon.png')),
             ],
@@ -80,7 +84,7 @@ class AppActionControllerTest extends TestCase
         /** @var ActionButtonEntity $action */
         $action = $action->first();
 
-        $url = '/api/v' . PlatformRequest::API_VERSION . '/app-system/action-button/run/' . $action->getId();
+        $url = '/api/app-system/action-button/run/' . $action->getId();
 
         $ids = [Uuid::randomHex()];
         $postData = [
@@ -99,7 +103,6 @@ class AppActionControllerTest extends TestCase
         static::assertJson($body);
         $data = json_decode($body, true);
 
-        /** @var ShopIdProvider $shopIdProvider */
         $shopIdProvider = $this->getContainer()->get(ShopIdProvider::class);
 
         $expectedSource = [
@@ -133,7 +136,7 @@ class AppActionControllerTest extends TestCase
         /** @var ActionButtonEntity $action */
         $action = $action->first();
 
-        $url = '/api/v' . PlatformRequest::API_VERSION . '/app-system/action-button/run/' . $action->getId();
+        $url = '/api/app-system/action-button/run/' . $action->getId();
 
         $postData = ['ids' => []];
 
@@ -160,7 +163,7 @@ class AppActionControllerTest extends TestCase
 
     public function testRunInvalidAction(): void
     {
-        $url = '/api/v' . PlatformRequest::API_VERSION . '/app-system/action-button/run/' . Uuid::randomHex();
+        $url = '/api/app-system/action-button/run/' . Uuid::randomHex();
 
         $postData = ['ids' => []];
 
@@ -172,7 +175,7 @@ class AppActionControllerTest extends TestCase
     public function testGetModules(): void
     {
         $this->loadAppsFromDir(__DIR__ . '/../Manifest/_fixtures/test');
-        $url = '/api/v' . PlatformRequest::API_VERSION . '/app-system/modules';
+        $url = '/api/app-system/modules';
         $this->getBrowser()->request('GET', $url);
 
         static::assertEquals(200, $this->getBrowser()->getResponse()->getStatusCode());
@@ -200,7 +203,22 @@ class AppActionControllerTest extends TestCase
                             ],
                             'source' => 'https://test.com',
                             'name' => 'first-module',
+                            'parent' => 'sw-test-structure-module',
+                            'position' => 10,
                         ],
+                        [
+                            'label' => [
+                                'en-GB' => 'My menu entry for modules',
+                                'de-DE' => 'Mein Menüeintrag für Module',
+                            ],
+                            'source' => null,
+                            'name' => 'structure-module',
+                            'parent' => 'sw-catalogue',
+                            'position' => 50,
+                        ],
+                    ],
+                    'mainModule' => [
+                        'source' => 'https://main-module',
                     ],
                 ],
             ],
@@ -209,11 +227,16 @@ class AppActionControllerTest extends TestCase
 
     private function removeQueryStringsFromResult(array $result): array
     {
-        $queryString = parse_url($result['modules'][0]['modules'][0]['source'], PHP_URL_QUERY);
-        $result['modules'][0]['modules'][0]['source'] = str_replace(
-            '?' . $queryString,
+        $result['modules'][0]['modules'][0]['source'] = preg_replace(
+            '/\?.*/',
             '',
             $result['modules'][0]['modules'][0]['source']
+        );
+
+        $result['modules'][0]['mainModule']['source'] = preg_replace(
+            '/\?.*/',
+            '',
+            $result['modules'][0]['mainModule']['source']
         );
 
         return $result;

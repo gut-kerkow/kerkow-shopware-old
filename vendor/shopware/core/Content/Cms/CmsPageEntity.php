@@ -10,11 +10,13 @@ use Shopware\Core\Content\Media\MediaEntity;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 
 class CmsPageEntity extends Entity
 {
     use EntityIdTrait;
+    use EntityCustomFieldsTrait;
 
     /**
      * @var string|null
@@ -47,8 +49,6 @@ class CmsPageEntity extends Entity
     protected $categories;
 
     /**
-     * @internal (flag:FEATURE_NEXT_10078)
-     *
      * @var ProductCollection|null
      */
     protected $products;
@@ -69,28 +69,26 @@ class CmsPageEntity extends Entity
     protected $previewMedia;
 
     /**
-     * @var array|null
-     */
-    protected $customFields;
-
-    /**
      * @var bool
      */
     protected $locked;
 
     /**
-     * @internal (flag:FEATURE_NEXT_12032)
-     *
      * @var LandingPageCollection|null
      */
     protected $landingPages;
 
-    public function getName(): string
+    /**
+     * @var CmsPageCollection|null
+     */
+    protected $homeSalesChannels;
+
+    public function getName(): ?string
     {
         return $this->name;
     }
 
-    public function setName(string $name): void
+    public function setName(?string $name): void
     {
         $this->name = $name;
     }
@@ -135,16 +133,6 @@ class CmsPageEntity extends Entity
         $this->translations = $translations;
     }
 
-    public function getCustomFields(): ?array
-    {
-        return $this->customFields;
-    }
-
-    public function setCustomFields(?array $customFields): void
-    {
-        $this->customFields = $customFields;
-    }
-
     public function getCategories(): ?CategoryCollection
     {
         return $this->categories;
@@ -155,17 +143,11 @@ class CmsPageEntity extends Entity
         $this->categories = $categories;
     }
 
-    /**
-     *@internal (flag:FEATURE_NEXT_10078)
-     */
     public function getProducts(): ?ProductCollection
     {
         return $this->products;
     }
 
-    /**
-     *@internal (flag:FEATURE_NEXT_10078)
-     */
     public function setProducts(ProductCollection $products): void
     {
         $this->products = $products;
@@ -218,31 +200,35 @@ class CmsPageEntity extends Entity
         return array_shift($elements);
     }
 
-    /**
-     * @internal (flag:FEATURE_NEXT_12032)
-     */
     public function getLandingPages(): ?LandingPageCollection
     {
         return $this->landingPages;
     }
 
-    /**
-     * @internal (flag:FEATURE_NEXT_12032)
-     */
     public function setLandingPages(LandingPageCollection $landingPages): void
     {
         $this->landingPages = $landingPages;
     }
 
+    public function getHomeSalesChannels(): ?CmsPageCollection
+    {
+        return $this->homeSalesChannels;
+    }
+
+    public function setHomeSalesChannels(CmsPageCollection $homeSalesChannels): void
+    {
+        $this->homeSalesChannels = $homeSalesChannels;
+    }
+
     public function getElementsOfType(string $type): array
     {
         $elements = [];
-        if (!$this->getSections()) {
+        if ($this->getSections() === null) {
             return $elements;
         }
 
         foreach ($this->getSections()->getBlocks() as $block) {
-            if (!$block->getSlots()) {
+            if ($block->getSlots() === null) {
                 continue;
             }
 

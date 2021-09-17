@@ -5,18 +5,19 @@ namespace Shopware\Core\Framework\Store\Services;
 use Shopware\Core\Framework\App\AppEntity;
 use Shopware\Core\Framework\App\AppStateService;
 use Shopware\Core\Framework\App\Lifecycle\AbstractAppLifecycle;
-use Shopware\Core\Framework\App\Lifecycle\AppLoader;
+use Shopware\Core\Framework\App\Lifecycle\AbstractAppLoader;
+use Shopware\Core\Framework\App\Manifest\Manifest;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Aggregation\Bucket\FilterAggregation;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Aggregation\Bucket\TermsAggregation;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\AggregationResult\AggregationResultCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\AggregationResult\Bucket\TermsResult;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopware\Core\Framework\Store\Exception\ExtensionInstallException;
 use Shopware\Core\Framework\Store\Exception\ExtensionNotFoundException;
+use Shopware\Core\Framework\Store\Exception\ExtensionRequiresNewPrivilegesException;
 use Shopware\Core\Framework\Store\Exception\ExtensionThemeStillInUseException;
 
 class StoreAppLifecycleService extends AbstractStoreAppLifecycleService
@@ -52,13 +53,13 @@ class StoreAppLifecycleService extends AbstractStoreAppLifecycleService
     private $appStateService;
 
     /**
-     * @var AppLoader
+     * @var AbstractAppLoader
      */
     private $appLoader;
 
     public function __construct(
         StoreClient $storeClient,
-        AppLoader $appLoader,
+        AbstractAppLoader $appLoader,
         AbstractAppLifecycle $appLifecycle,
         EntityRepositoryInterface $appRepository,
         EntityRepositoryInterface $salesChannelRepository,
@@ -82,10 +83,10 @@ class StoreAppLifecycleService extends AbstractStoreAppLifecycleService
             throw new ExtensionInstallException(sprintf('Cannot find app by name %s', $technicalName));
         }
 
-        $this->appLifecycle->install($manifests[$technicalName], true, $context);
+        $this->appLifecycle->install($manifests[$technicalName], false, $context);
     }
 
-    public function uninstallExtension(string $technicalName, Context $context): void
+    public function uninstallExtension(string $technicalName, Context $context, bool $keepUserData = false): void
     {
         try {
             $id = $this->getAppIdByName($technicalName, $context);
@@ -95,7 +96,7 @@ class StoreAppLifecycleService extends AbstractStoreAppLifecycleService
 
         $this->validateExtensionCanBeRemoved($technicalName, $id, $context);
         $app = $this->getAppById($id, $context);
-        $this->appLifecycle->delete($technicalName, ['id' => $id, 'roleId' => $app->getAclRoleId()], $context);
+        $this->appLifecycle->delete($technicalName, ['id' => $id, 'roleId' => $app->getAclRoleId()], $context, $keepUserData);
     }
 
     public function removeExtensionAndCancelSubscription(int $licenseId, string $technicalName, string $id, Context $context): void
@@ -124,7 +125,7 @@ class StoreAppLifecycleService extends AbstractStoreAppLifecycleService
         $this->appStateService->deactivateApp($id, $context);
     }
 
-    public function updateExtension(string $technicalName, Context $context): void
+    public function updateExtension(string $technicalName, bool $allowNewPrivileges, Context $context): void
     {
         $manifests = $this->appLoader->load();
 
@@ -134,6 +135,11 @@ class StoreAppLifecycleService extends AbstractStoreAppLifecycleService
 
         $id = $this->getAppIdByName($technicalName, $context);
         $app = $this->getAppById($id, $context);
+        $newPrivileges = $this->diffPrivileges($manifests[$technicalName], $app);
+
+        if (!$allowNewPrivileges && \count($newPrivileges) > 0) {
+            throw ExtensionRequiresNewPrivilegesException::fromPrivilegeList($technicalName, $newPrivileges);
+        }
 
         $this->appLifecycle->update(
             $manifests[$technicalName],
@@ -158,9 +164,29 @@ class StoreAppLifecycleService extends AbstractStoreAppLifecycleService
         return $app;
     }
 
+    /**
+     * @codeCoverageIgnore
+     */
     protected function getDecorated(): AbstractStoreAppLifecycleService
     {
         throw new DecorationPatternException(self::class);
+    }
+
+    private function diffPrivileges(Manifest $manifest, AppEntity $app): array
+    {
+        $permissions = $manifest->getPermissions();
+        if (!$permissions) {
+            return [];
+        }
+        $newPrivileges = $permissions->asParsedPrivileges();
+
+        $aclRole = $app->getAclRole();
+        if (!$aclRole) {
+            return $newPrivileges;
+        }
+        $currentPrivileges = $aclRole->getPrivileges();
+
+        return array_diff($newPrivileges, $currentPrivileges);
     }
 
     private function getThemeIdByTechnicalName(string $technicalName, Context $context): ?string
@@ -196,10 +222,7 @@ class StoreAppLifecycleService extends AbstractStoreAppLifecycleService
             )
         );
 
-        /** @var AggregationResultCollection $aggregates */
-        $aggregates = $context->disableCache(function (Context $context) use ($criteria) {
-            return $this->salesChannelRepository->aggregate($criteria, $context);
-        });
+        $aggregates = $this->salesChannelRepository->aggregate($criteria, $context);
 
         /** @var TermsResult $directlyAssigned */
         $directlyAssigned = $aggregates->get('assigned_theme');

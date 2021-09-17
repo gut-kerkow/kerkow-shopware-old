@@ -6,7 +6,6 @@ use Shopware\Core\Framework\Api\ApiDefinition\ApiDefinitionGeneratorInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Dbal\EntityDefinitionQueryHelper;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\AssociationField;
-use Shopware\Core\Framework\DataAbstractionLayer\Field\BlacklistRuleField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\BlobField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\BoolField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\CalculatedPriceField;
@@ -25,7 +24,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\IdField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\IntField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\JsonField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ListField;
-use Shopware\Core\Framework\DataAbstractionLayer\Field\ListingPriceField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\LongTextField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToManyAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
@@ -46,7 +44,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\TreePathField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\UpdatedAtField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\VersionDataPayloadField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\VersionField;
-use Shopware\Core\Framework\DataAbstractionLayer\Field\WhitelistRuleField;
 
 /**
  * @internal
@@ -55,17 +52,17 @@ class EntitySchemaGenerator implements ApiDefinitionGeneratorInterface
 {
     public const FORMAT = 'entity-schema';
 
-    public function supports(string $format, int $version, string $api): bool
+    public function supports(string $format, string $api): bool
     {
         return $format === self::FORMAT;
     }
 
-    public function generate(array $definitions, int $version, string $api): array
+    public function generate(array $definitions, string $api, string $apiType = 'jsonapi'): array
     {
-        return $this->getSchema($definitions, $version);
+        return $this->getSchema($definitions);
     }
 
-    public function getSchema(array $definitions, int $version): array
+    public function getSchema(array $definitions): array
     {
         $schema = [];
 
@@ -124,13 +121,10 @@ class EntitySchemaGenerator implements ApiDefinitionGeneratorInterface
             // json fields
             case $field instanceof CustomFields:
             case $field instanceof VersionDataPayloadField:
-            case $field instanceof WhitelistRuleField:
-            case $field instanceof BlacklistRuleField:
             case $field instanceof CalculatedPriceField:
             case $field instanceof CartPriceField:
             case $field instanceof PriceDefinitionField:
             case $field instanceof PriceField:
-            case $field instanceof ListingPriceField:
             case $field instanceof ObjectField:
                 return $this->createJsonObjectType($definition, $field, $flags);
 
@@ -152,6 +146,11 @@ class EntitySchemaGenerator implements ApiDefinitionGeneratorInterface
                 $localField = $definition->getFields()->getByStorageName($field->getLocalField());
                 $referenceField = $reference->getFields()->getByStorageName($field->getReferenceField());
 
+                $primary = $reference->getPrimaryKeys()->first();
+                if (!$primary) {
+                    throw new \RuntimeException(sprintf('No primary key defined for %s', $reference->getEntityName()));
+                }
+
                 return [
                     'type' => 'association',
                     'relation' => 'one_to_many',
@@ -159,6 +158,7 @@ class EntitySchemaGenerator implements ApiDefinitionGeneratorInterface
                     'flags' => $flags,
                     'localField' => $localField ? $localField->getPropertyName() : null,
                     'referenceField' => $referenceField ? $referenceField->getPropertyName() : null,
+                    'primary' => $primary->getPropertyName(),
                 ];
 
             case $field instanceof ParentAssociationField:
@@ -185,9 +185,26 @@ class EntitySchemaGenerator implements ApiDefinitionGeneratorInterface
                 $localField = $definition->getFields()->getByStorageName($field->getLocalField());
                 $referenceField = $reference->getFields()->getByStorageName($field->getReferenceField());
 
+                $mappingReference = $field->getMappingDefinition()->getFields()->getByStorageName(
+                    $field->getMappingReferenceColumn()
+                );
+                $mappingLocal = $field->getMappingDefinition()->getFields()->getByStorageName(
+                    $field->getMappingLocalColumn()
+                );
+
+                if (!$mappingReference) {
+                    throw new \RuntimeException(sprintf('Can not find mapping entity field for storage field %s', $field->getMappingReferenceColumn()));
+                }
+                if (!$mappingLocal) {
+                    throw new \RuntimeException(sprintf('Can not find mapping entity field for storage field %s', $field->getMappingLocalColumn()));
+                }
+
                 return [
                     'type' => 'association',
                     'relation' => 'many_to_many',
+                    'local' => $mappingLocal->getPropertyName(),
+                    'reference' => $mappingReference->getPropertyName(),
+                    'mapping' => $field->getMappingDefinition()->getEntityName(),
                     'entity' => $field->getToManyReferenceDefinition()->getEntityName(),
                     'flags' => $flags,
                     'localField' => $localField ? $localField->getPropertyName() : null,

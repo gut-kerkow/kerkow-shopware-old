@@ -43,43 +43,43 @@ Component.register('sw-tree', {
     props: {
         items: {
             type: Array,
-            required: true
+            required: true,
         },
 
         rootParentId: {
             type: String,
             required: false,
-            default: null
+            default: null,
         },
 
         parentProperty: {
             type: String,
             required: false,
-            default: 'parentId'
+            default: 'parentId',
         },
 
         afterIdProperty: {
             type: String,
             required: false,
-            default: 'afterId'
+            default: 'afterId',
         },
 
         childCountProperty: {
             type: String,
             required: false,
-            default: 'childCount'
+            default: 'childCount',
         },
 
         searchable: {
             type: Boolean,
             required: false,
-            default: true
+            default: true,
         },
 
         activeTreeItemId: {
             type: String,
             required: false,
-            default: ''
+            default: '',
         },
 
         routeParamsActiveElementId: {
@@ -87,44 +87,50 @@ Component.register('sw-tree', {
             required: false,
             default() {
                 return 'id';
-            }
+            },
         },
 
         translationContext: {
             type: String,
-            default: 'sw-tree'
+            default: 'sw-tree',
         },
 
         onChangeRoute: {
             type: Function,
-            default: null
+            default: null,
         },
 
         disableContextMenu: {
             type: Boolean,
-            default: false
+            default: false,
         },
 
         bindItemsToFolder: {
             type: Boolean,
-            default: false
+            default: false,
         },
 
         sortable: {
             type: Boolean,
-            default: true
+            default: true,
         },
 
         checkItemsInitial: {
             type: Boolean,
-            default: false
+            default: false,
         },
 
         allowDeleteCategories: {
             type: Boolean,
             default: true,
-            required: false
-        }
+            required: false,
+        },
+
+        allowCreateCategories: {
+            type: Boolean,
+            default: true,
+            required: false,
+        },
     },
 
     data() {
@@ -137,29 +143,15 @@ Component.register('sw-tree', {
             contextItem: null,
             currentEditMode: null,
             addElementPosition: null,
+            // eslint-disable-next-line vue/no-reserved-keys
             _eventFromEdit: null,
             createdItem: null,
             checkedElements: {},
             checkedElementsCount: 0,
             showDeleteModal: false,
             toDeleteItem: null,
-            checkedElementsChildCount: 0
+            checkedElementsChildCount: 0,
         };
-    },
-
-    watch: {
-        items: {
-            immediate: true,
-            handler() {
-                this.treeItems = this.getTreeItems(this.isSearched ? null : this.rootParentId);
-            }
-        },
-
-        activeTreeItemId(val) {
-            if (val && this.activeElementId) {
-                this.openTreeById();
-            }
-        }
     },
 
     computed: {
@@ -188,11 +180,46 @@ Component.register('sw-tree', {
                 return true;
             }
             return this.items.length < 1;
-        }
+        },
+
+        selectedItemsPathIds() {
+            return Object.keys(this.checkedElements).reduce((acc, itemId) => {
+                const item = this.findById(itemId);
+
+                // get each parent id
+                const pathIds = item?.data?.path?.split('|').filter((pathId) => pathId.length > 0) ?? '';
+
+                // add parent id to accumulator
+                return [...acc, ...pathIds];
+            }, []);
+        },
+
+        checkedItemIds() {
+            return Object.keys(this.checkedElements);
+        },
+    },
+
+    watch: {
+        items: {
+            immediate: true,
+            handler() {
+                this.treeItems = this.getTreeItems(this.isSearched ? null : this.rootParentId);
+            },
+        },
+
+        activeTreeItemId(val) {
+            if (val && this.activeElementId) {
+                this.openTreeById();
+            }
+        },
     },
 
     created() {
         this.createdComponent();
+    },
+
+    destroyed() {
+        this.$emit('checked-elements-count', 0);
     },
 
     methods: {
@@ -200,6 +227,7 @@ Component.register('sw-tree', {
             if (this.activeTreeItemId && this.activeElementId) {
                 this.openTreeById();
             }
+            this.$emit('checked-elements-count', this.checkedElementsCount);
         },
 
         getItems(parentId = this.rootParentId, searchTerm = null) {
@@ -225,17 +253,22 @@ Component.register('sw-tree', {
                     return;
                 }
 
+                const hasChildCountProperty = item.hasOwnProperty(this.childCountProperty);
+                const childCount = hasChildCountProperty ? item[this.childCountProperty] : 0;
+
+                const alreadyLoadedTreeItem = this.findById(item.id);
+
                 treeItems.push({
                     data: item,
                     id: item.id,
                     parentId: parentId,
-                    childCount: item[this.childCountProperty],
+                    childCount: childCount,
                     children: this.getTreeItems(item.id),
                     initialOpened: false,
                     active: false,
                     activeElementId: this.routeParamsActiveElementId,
-                    checked: !!this.checkItemsInitial,
-                    [this.afterIdProperty]: item[this.afterIdProperty]
+                    checked: alreadyLoadedTreeItem?.checked ?? !!this.checkItemsInitial,
+                    [this.afterIdProperty]: item[this.afterIdProperty],
                 });
             });
             return sort.afterSort(treeItems, this.afterIdProperty);
@@ -299,7 +332,7 @@ Component.register('sw-tree', {
                 draggedItem: this.draggedItem,
                 droppedItem: this.droppedItem,
                 oldParentId,
-                newParentId
+                newParentId,
             };
 
             // reset event items
@@ -345,6 +378,11 @@ Component.register('sw-tree', {
 
         openTreeById(id = this.activeElementId) {
             const item = this.findById(id);
+
+            if (item === null) {
+                return;
+            }
+
             if (this.activeElementId === item.id) {
                 item.active = true;
             } else {
@@ -428,6 +466,10 @@ Component.register('sw-tree', {
             });
         },
 
+        duplicateElement(contextItem) {
+            this.$parent.duplicateElement(contextItem);
+        },
+
         addElement(contextItem, pos) {
             const newElem = this.$parent.createNewElement(contextItem);
 
@@ -438,6 +480,10 @@ Component.register('sw-tree', {
             }
             if (this.addElementPosition === null) {
                 this.addElementPosition = pos;
+            }
+
+            if (!contextItem.hasOwnProperty('parentId')) {
+                contextItem.parentId = null;
             }
 
             this.currentEditMode = this.addElement;
@@ -461,14 +507,20 @@ Component.register('sw-tree', {
         },
 
         getNewTreeItem(elem) {
+            const hasChildCountProperty = elem.hasOwnProperty(this.childCountProperty);
+            const childCount = hasChildCountProperty ? elem[this.childCountProperty] : 0;
+
+            const hasParentProperty = elem.hasOwnProperty('parentId');
+            const parentId = hasParentProperty ? elem.parentId : null;
+
             return {
                 data: elem,
                 id: elem.id,
-                parentId: elem.parentId,
-                childCount: elem[this.childCountProperty],
+                parentId: parentId,
+                childCount: childCount,
                 children: 0,
                 initialOpened: false,
-                active: false
+                active: false,
             };
         },
 
@@ -541,6 +593,7 @@ Component.register('sw-tree', {
             this.checkedElements = {};
             this.checkedElementsCount = 0;
             this.checkedElementsChildCount = 0;
+            this.$emit('checked-elements-count', this.checkedElementsCount);
         },
 
         checkItem(item) {
@@ -548,15 +601,17 @@ Component.register('sw-tree', {
                 if (item.childCount > 0) {
                     this.checkedElementsChildCount += 1;
                 }
-                this.checkedElements[item.id] = item.id;
+                this.$set(this.checkedElements, item.id, item.id);
                 this.checkedElementsCount += 1;
             } else {
                 if (item.childCount > 0) {
                     this.checkedElementsChildCount -= 1;
                 }
-                delete this.checkedElements[item.id];
+                this.$delete(this.checkedElements, item.id);
                 this.checkedElementsCount -= 1;
             }
+
+            this.$emit('checked-elements-count', this.checkedElementsCount);
         },
 
         saveItems() {
@@ -581,6 +636,6 @@ Component.register('sw-tree', {
             }
             this.showDeleteModal = false;
             this.toDeleteItem = null;
-        }
-    }
+        },
+    },
 });

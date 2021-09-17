@@ -14,36 +14,38 @@ Component.register('sw-text-editor-toolbar', {
         parentIsActive: {
             type: Boolean,
             required: false,
-            default: false
+            default: false,
         },
 
         isInlineEdit: {
             type: Boolean,
             required: false,
-            default: false
+            default: false,
         },
 
+        // FIXME: add property type
+        // eslint-disable-next-line vue/require-prop-types
         selection: {
             required: false,
-            default: null
+            default: null,
         },
 
         buttonConfig: {
             type: Array,
-            required: true
+            required: true,
         },
 
         isCodeEdit: {
             type: Boolean,
             required: false,
-            default: false
+            default: false,
         },
 
         isTableEdit: {
             type: Boolean,
             required: false,
-            default: false
-        }
+            default: false,
+        },
 
     },
 
@@ -52,7 +54,7 @@ Component.register('sw-text-editor-toolbar', {
             position: {},
             range: null,
             arrowPosition: {
-                '--left': '49%;'
+                '--left': '49%;',
             },
             activeTags: [],
             currentColor: null,
@@ -60,16 +62,16 @@ Component.register('sw-text-editor-toolbar', {
             leftButtons: [],
             middleButtons: [],
             rightButtons: [],
-            tableEdit: false
+            tableEdit: false,
         };
     },
 
     computed: {
         classes() {
             return {
-                'is--boxedEdit': !this.isInlineEdit
+                'is--boxedEdit': !this.isInlineEdit,
             };
-        }
+        },
     },
 
     watch: {
@@ -79,8 +81,8 @@ Component.register('sw-text-editor-toolbar', {
                 this.$nextTick(() => {
                     this.setActiveTags();
                 });
-            }
-        }
+            },
+        },
     },
 
     created() {
@@ -197,7 +199,7 @@ Component.register('sw-text-editor-toolbar', {
 
             this.position = {
                 left: `${offsetLeft}px`,
-                top: `${offsetTop}px`
+                top: `${offsetTop}px`,
             };
         },
 
@@ -227,10 +229,9 @@ Component.register('sw-text-editor-toolbar', {
                 this.currentColor = null;
             }
 
-            if (button.type === 'link' && this.currentLink) {
-                button.value = this.currentLink.url;
-                button.newTab = this.currentLink.newTab;
-                this.currentLink = null;
+            if (button.type === 'link') {
+                button.value = this.currentLink?.url ?? '';
+                button.newTab = this.currentLink?.newTab ?? false;
             }
 
             this.$set(button, 'active', !!this.activeTags.includes(button.tag));
@@ -305,11 +306,11 @@ Component.register('sw-text-editor-toolbar', {
             this.currentColor = null;
             this.currentLink = null;
 
-            if (!this.selection || !this.selection.baseNode) {
+            if (!this.selection || !this.selection.anchorNode) {
                 return;
             }
 
-            let parentNode = this.selection.baseNode.parentNode;
+            let parentNode = this.selection.anchorNode.parentNode;
             this.activeTags = [];
 
             while (parentNode.tagName !== 'DIV') {
@@ -369,7 +370,7 @@ Component.register('sw-text-editor-toolbar', {
                     'on-set-link',
                     this.prepareLink(button.value),
                     target,
-                    button.displayAsButton ? button.buttonVariant : ''
+                    button.displayAsButton ? button.buttonVariant : '',
                 );
                 this.range = document.getSelection().getRangeAt(0);
                 this.range.setStart(this.range.startContainer, 0);
@@ -388,7 +389,7 @@ Component.register('sw-text-editor-toolbar', {
         },
 
         addProtocol(link) {
-            if (/^(\w+):\/\//.test(link)) {
+            if (/(^(\w+):\/\/)|(mailto:)|(fax:)|(tel:)/.test(link)) {
                 return link;
             }
 
@@ -429,6 +430,6 @@ Component.register('sw-text-editor-toolbar', {
             });
 
             button.expanded = !button.expanded;
-        }
-    }
+        },
+    },
 });

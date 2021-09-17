@@ -48,7 +48,7 @@ class RefreshMigrationCommand extends Command
 
         rename($path, $newPath);
 
-        return 0;
+        return self::SUCCESS;
     }
 
     private function getCurrentTimestamp(string $filename): string
@@ -63,6 +63,10 @@ class RefreshMigrationCommand extends Command
     private function updateMigrationFile(string $path, array $search, array $replace): void
     {
         $content = file_get_contents($path);
+        if ($content === false) {
+            return;
+        }
+
         $content = str_replace($search, $replace, $content);
         file_put_contents($path, $content);
     }

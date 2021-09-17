@@ -5,7 +5,7 @@ import deepmerge from 'deepmerge';
 export default class ListingPaginationPlugin extends FilterBasePlugin {
 
     static options = deepmerge(FilterBasePlugin.options, {
-        page: 1
+        page: 1,
     });
 
     init() {
@@ -69,5 +69,17 @@ export default class ListingPaginationPlugin extends FilterBasePlugin {
      */
     getLabels() {
         return [];
+    }
+
+    setValuesFromUrl(params) {
+        let stateChanged = false;
+        this.tempValue = 1;
+
+        if (params.p && parseInt(params.p) !== parseInt(this.tempValue)) {
+            this.tempValue = parseInt(params.p);
+            stateChanged = true;
+        }
+
+        return stateChanged;
     }
 }

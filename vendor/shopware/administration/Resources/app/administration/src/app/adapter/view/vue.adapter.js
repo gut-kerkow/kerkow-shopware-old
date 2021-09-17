@@ -22,7 +22,7 @@ export default class VueAdapter extends ViewAdapter {
     }
 
     /**
-     * Creates the main instance for the view layer.
+     * Creates the main instance dfsffor the view layer.
      * Is used on startup process of the main application.
      *
      * @param renderElement
@@ -41,6 +41,11 @@ export default class VueAdapter extends ViewAdapter {
         const i18n = this.initLocales(store);
         const components = this.getComponents();
 
+        // add router to View
+        this.router = router;
+        // add i18n to View
+        this.i18n = i18n;
+
         // Enable performance measurements in development mode
         Vue.config.performance = process.env.NODE_ENV !== 'production';
 
@@ -50,15 +55,15 @@ export default class VueAdapter extends ViewAdapter {
             router,
             store,
             i18n,
+            provide() {
+                return providers;
+            },
             components,
             data() {
                 return {
-                    initError: {}
+                    initError: {},
                 };
             },
-            provide() {
-                return providers;
-            }
         });
 
         return this.root;
@@ -137,18 +142,26 @@ export default class VueAdapter extends ViewAdapter {
             return false;
         }
 
-        // If the mixin is a string, use our mixin registry
-        if (componentConfig.mixins && componentConfig.mixins.length) {
-            componentConfig.mixins = componentConfig.mixins.map((mixin) => {
-                if (typeof mixin === 'string') {
-                    return Mixin.getByName(mixin);
-                }
-
-                return mixin;
-            });
-        }
+        this.resolveMixins(componentConfig);
 
         const vueComponent = Vue.component(componentName, componentConfig);
+        this.vueComponents[componentName] = vueComponent;
+
+        return vueComponent;
+    }
+
+    /**
+     * Builds and creates a Vue component using the provided component configuration.
+     *
+     * @param {Object }componentConfig
+     * @memberOf module:app/adapter/view/vue
+     * @returns {Function}
+     */
+    buildAndCreateComponent(componentConfig) {
+        const componentName = componentConfig.name;
+        this.resolveMixins(componentConfig);
+
+        const vueComponent = Vue.component(componentConfig.name, componentConfig);
         this.vueComponents[componentName] = vueComponent;
 
         return vueComponent;
@@ -298,7 +311,7 @@ export default class VueAdapter extends ViewAdapter {
             fallbackLocale,
             silentFallbackWarn: true,
             sync: true,
-            messages
+            messages,
         });
 
         store.subscribe(({ type }, state) => {
@@ -354,5 +367,28 @@ export default class VueAdapter extends ViewAdapter {
 
             return params.reverse().join(' | ');
         };
+    }
+
+    /**
+     * Recursively resolves mixins referenced by name
+     *
+     * @private
+     * @memberOf module:app/adapter/view/vue
+     */
+    resolveMixins(componentConfig) {
+        // If the mixin is a string, use our mixin registry
+        if (componentConfig.mixins?.length) {
+            componentConfig.mixins = componentConfig.mixins.map((mixin) => {
+                if (typeof mixin === 'string') {
+                    return Mixin.getByName(mixin);
+                }
+
+                return mixin;
+            });
+        }
+
+        if (componentConfig.extends) {
+            this.resolveMixins(componentConfig.extends);
+        }
     }
 }

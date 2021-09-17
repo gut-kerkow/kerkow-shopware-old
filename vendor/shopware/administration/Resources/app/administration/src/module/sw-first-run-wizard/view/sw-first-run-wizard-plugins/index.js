@@ -15,20 +15,20 @@ Component.register('sw-first-run-wizard-plugins', {
             categories: [],
             selectedRegion: null,
             selectedCategory: null,
-            isLoading: false
+            isLoading: false,
         };
     },
 
     computed: {
         categoryLead() {
-            return this.plugins.filter((p) => {
-                return p.isCategoryLead;
+            return this.plugins.filter(plugin => {
+                return plugin.isCategoryLead;
             });
         },
 
         notCategoryLead() {
-            return this.plugins.filter((p) => {
-                return !p.isCategoryLead;
+            return this.plugins.filter(plugin => {
+                return !plugin.isCategoryLead;
             });
         },
 
@@ -43,7 +43,7 @@ Component.register('sw-first-run-wizard-plugins', {
 
         showNotCategoryLead() {
             return this.notCategoryLead.length > 0;
-        }
+        },
 
     },
 
@@ -69,8 +69,8 @@ Component.register('sw-first-run-wizard-plugins', {
                     label: this.$tc('sw-first-run-wizard.general.buttonBack'),
                     position: 'left',
                     variant: null,
-                    action: 'sw.first.run.wizard.index.paypal.info',
-                    disabled: false
+                    action: 'sw.first.run.wizard.index.markets',
+                    disabled: false,
                 },
                 {
                     key: 'next',
@@ -78,8 +78,8 @@ Component.register('sw-first-run-wizard-plugins', {
                     position: 'right',
                     variant: 'primary',
                     action: 'sw.first.run.wizard.index.shopware.account',
-                    disabled: false
-                }
+                    disabled: false,
+                },
             ];
 
             this.$emit('buttons-update', buttonConfig);
@@ -121,32 +121,29 @@ Component.register('sw-first-run-wizard-plugins', {
             this.recommendationsService.getRecommendations({
                 language,
                 region,
-                category
+                category,
             }).then((response) => {
                 this.plugins = response.items;
-                this.isLoading = false;
-            }).catch(() => {
+            }).finally(() => {
                 this.isLoading = false;
             });
         },
 
         getRecommendationRegions() {
             const language = Shopware.State.get('session').currentLocale;
-
             this.isLoading = true;
 
             this.recommendationsService.getRecommendationRegions({
-                language
+                language,
             }).then((response) => {
                 this.regions = response.items;
-                this.isLoading = false;
-            }).catch(() => {
+            }).finally(() => {
                 this.isLoading = false;
             });
         },
 
         reloadRecommendations() {
             this.getRecommendations();
-        }
-    }
+        },
+    },
 });

@@ -1,14 +1,9 @@
-import { createLocalVue, shallowMount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import 'src/module/sw-media/page/sw-media-index';
 
 describe('src/module/sw-media/page/sw-media-index', () => {
     function createWrapper(privileges = []) {
-        const localVue = createLocalVue();
-        localVue.directive('tooltip', {});
-        localVue.directive('droppable', {});
-
         return shallowMount(Shopware.Component.build('sw-media-index'), {
-            localVue,
             stubs: {
                 'sw-context-button': true,
                 'sw-context-menu-item': true,
@@ -25,8 +20,6 @@ describe('src/module/sw-media/page/sw-media-index', () => {
                 'sw-media-upload-v2': true
             },
             mocks: {
-                $t: v => v,
-                $tc: v => v,
                 $route: {
                     query: ''
                 }
@@ -65,7 +58,7 @@ describe('src/module/sw-media/page/sw-media-index', () => {
     it('should contain the default accept value', async () => {
         const wrapper = createWrapper();
         const fileInput = wrapper.find('sw-media-upload-v2-stub');
-        expect(fileInput.attributes().fileaccept).toBe('*/*');
+        expect(fileInput.attributes()['file-accept']).toBe('*/*');
     });
 
     it('should contain "application/pdf" value', async () => {
@@ -74,7 +67,7 @@ describe('src/module/sw-media/page/sw-media-index', () => {
             fileAccept: 'application/pdf'
         });
         const fileInput = wrapper.find('sw-media-upload-v2-stub');
-        expect(fileInput.attributes().fileaccept).toBe('application/pdf');
+        expect(fileInput.attributes()['file-accept']).toBe('application/pdf');
     });
 
     it('should not be able to upload a new medium', async () => {

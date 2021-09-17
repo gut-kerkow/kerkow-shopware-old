@@ -16,9 +16,7 @@
                     </div>
                 {% endblock %}
 
-                {% set formAjaxSubmitOptions = {
-                    replaceSelectors: '.js-address-editor'
-                } %}
+                {% set formAjaxSubmitOptions = {} %}
 
                 {% block component_address_address_editor_modal_create_address_card_body %}
                     <div class="card-body">
@@ -58,7 +56,9 @@
                                         'prefix': 'address',
                                         'scope': 'parent',
                                         'parentSelector': 'form',
-                                        'showFormCompany': true
+                                        'showFormCompany': true,
+                                        'showNoShippingPostfix': true,
+                                        'showVatIdField': feature('FEATURE_NEXT_15957') and changeBilling and context.customer and context.customer.guest ? true : false
                                     } %}
                                 {% endblock %}
 

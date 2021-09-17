@@ -14,6 +14,18 @@ use Shopware\Core\Framework\Validation\Constraint\Uuid as UuidConstraint;
 
 class IdFieldSerializer extends AbstractFieldSerializer
 {
+    public function normalize(Field $field, array $data, WriteParameterBag $parameters): array
+    {
+        $key = $field->getPropertyName();
+        if (!isset($data[$key])) {
+            $data[$key] = Uuid::randomHex();
+        }
+
+        $parameters->getContext()->set($parameters->getDefinition()->getClass(), $key, $data[$key]);
+
+        return $data;
+    }
+
     public function encode(
         Field $field,
         EntityExistence $existence,
@@ -36,7 +48,10 @@ class IdFieldSerializer extends AbstractFieldSerializer
         yield $field->getStorageName() => Uuid::fromHexToBytes($value);
     }
 
-    public function decode(Field $field, $value): ?string
+    /**
+     * @deprecated tag:v6.5.0 The parameter $value will be native typed
+     */
+    public function decode(Field $field, /*?string */$value): ?string
     {
         if ($value === null) {
             return null;

@@ -1,9 +1,8 @@
 @import "~scss/variables";
 @import "~scss/mixins";
 
-$sw-duplicated-media-v2-separator-color: $color-steam-cloud;
+$sw-duplicated-media-v2-separator-color: $color-gray-300;
 $sw-duplicated-media-v2-font-size-preview: $font-size-small;
-
 
 .sw-duplicated-media-v2 {
     .sw-duplicated-media-v2__description {
@@ -45,7 +44,7 @@ $sw-duplicated-media-v2-font-size-preview: $font-size-small;
         display: grid;
         grid-template-columns: auto 1fr;
         grid-column-gap: 10px;
-        border: 1px solid $color-steam-cloud;
+        border: 1px solid $color-gray-300;
         border-radius: 4px;
         padding: 8px;
     }
@@ -66,11 +65,12 @@ $sw-duplicated-media-v2-font-size-preview: $font-size-small;
 
     .sw-duplicated-media-v2__target-label {
         @include truncate();
+
         font-size: $sw-duplicated-media-v2-font-size-preview;
     }
 
     .sw-duplicated-media-v2__target-details {
         font-size: $font-size-small;
-        color: $color-steam-cloud;
+        color: $color-gray-300;
     }
 }

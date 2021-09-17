@@ -3,14 +3,21 @@
 namespace Shopware\Core\Content\Test\Product\SalesChannel\Detail;
 
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\Content\Cms\CmsPageEntity;
 use Shopware\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
+use Shopware\Core\Content\Product\SalesChannel\Detail\ProductDetailRoute;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour;
 use Shopware\Core\Framework\Test\TestDataCollection;
-use Shopware\Core\PlatformRequest;
+use Shopware\Core\Framework\Uuid\Uuid;
+use Symfony\Component\HttpFoundation\Request;
 
+/**
+ * @group store-api
+ */
 class ProductDetailRouteTest extends TestCase
 {
     use IntegrationTestBehaviour;
@@ -47,6 +54,37 @@ class ProductDetailRouteTest extends TestCase
 
         static::assertSame('product_detail', $response['apiAlias']);
         static::assertArrayHasKey('product', $response);
+    }
+
+    public function testLoadProductWithCmsPage(): void
+    {
+        $expectedCmsPageId = Uuid::randomHex();
+
+        $context = $this->createSalesChannelContext();
+
+        $product = $this->createData([
+            'id' => Uuid::randomHex(),
+            'productNumber' => Uuid::randomHex(),
+            'visibilities' => [[
+                'salesChannelId' => $context->getSalesChannelId(),
+                'visibility' => ProductVisibilityDefinition::VISIBILITY_ALL,
+            ]],
+            'tax' => ['id' => $context->getTaxRules()->first()->getId(), 'name' => 'test', 'taxRate' => 15],
+            'cmsPage' => [
+                'id' => $expectedCmsPageId,
+                'type' => 'product_detail',
+                'sections' => [],
+            ],
+        ]);
+
+        $productDetailRoute = $this->getContainer()->get(ProductDetailRoute::class);
+
+        $result = $productDetailRoute->load($product['id'], new Request(), $context, new Criteria());
+
+        static::assertNotEmpty($product = $result->getProduct());
+        static::assertInstanceOf(CmsPageEntity::class, $cmsPage = $product->getCmsPage());
+        static::assertEquals($expectedCmsPageId, $cmsPage->getId());
+        static::assertEquals('product_detail', $cmsPage->getType());
     }
 
     public function testIncludes(): void
@@ -99,7 +137,7 @@ class ProductDetailRouteTest extends TestCase
         static::assertNotEmpty($response['product']['manufacturer']);
     }
 
-    private function createData(): void
+    private function createData(array $config = []): array
     {
         $product = [
             'id' => $this->ids->create('product'),
@@ -114,8 +152,12 @@ class ProductDetailRouteTest extends TestCase
             'active' => true,
         ];
 
+        $product = array_replace_recursive($product, $config);
+
         $this->getContainer()->get('product.repository')
             ->create([$product], Context::createDefaultContext());
+
+        return $product;
     }
 
     private function setVisibilities(): void
@@ -134,6 +176,6 @@ class ProductDetailRouteTest extends TestCase
 
     private function getUrl()
     {
-        return '/store-api/v' . PlatformRequest::API_VERSION . '/product/' . $this->ids->get('product');
+        return '/store-api/product/' . $this->ids->get('product');
     }
 }

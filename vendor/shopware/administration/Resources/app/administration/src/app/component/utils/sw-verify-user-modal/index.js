@@ -6,16 +6,16 @@ Component.register('sw-verify-user-modal', {
     template,
 
     inject: [
-        'loginService'
+        'loginService',
     ],
 
     mixins: [
-        Mixin.getByName('notification')
+        Mixin.getByName('notification'),
     ],
 
     data() {
         return {
-            confirmPassword: ''
+            confirmPassword: '',
         };
     },
 
@@ -35,8 +35,8 @@ Component.register('sw-verify-user-modal', {
                 const authObject = {
                     ...this.loginService.getBearerAuthentication(),
                     ...{
-                        access: verifiedToken
-                    }
+                        access: verifiedToken,
+                    },
                 };
 
                 this.loginService.setBearerAuthentication(authObject);
@@ -44,8 +44,12 @@ Component.register('sw-verify-user-modal', {
                 this.$emit('verified', context);
             }).catch(() => {
                 this.createNotificationError({
-                    title: this.$tc('sw-settings-user.user-detail.passwordConfirmation.notificationPasswordErrorTitle'),
-                    message: this.$tc('sw-settings-user.user-detail.passwordConfirmation.notificationPasswordErrorMessage')
+                    title: this.$tc(
+                        'sw-users-permissions.users.user-detail.passwordConfirmation.notificationPasswordErrorTitle',
+                    ),
+                    message: this.$tc(
+                        'sw-users-permissions.users.user-detail.passwordConfirmation.notificationPasswordErrorMessage',
+                    ),
                 });
             }).finally(() => {
                 this.confirmPassword = '';
@@ -53,22 +57,9 @@ Component.register('sw-verify-user-modal', {
             });
         },
 
-        // @deprecated tag:v6.4.0 use loginService.verifyUserToken() instead
-        verifyUserToken() {
-            // eslint-disable-next-line no-unused-vars
-            return this.loginService.verifyUserToken(this.confirmPassword).catch(e => {
-                this.createNotificationError({
-                    title: this.$tc('sw-settings-user.user-detail.passwordConfirmation.notificationPasswordErrorTitle'),
-                    message: this.$tc('sw-settings-user.user-detail.passwordConfirmation.notificationPasswordErrorMessage')
-                });
-            }).finally(() => {
-                this.confirmPassword = '';
-            });
-        },
-
         onCloseConfirmPasswordModal() {
             this.confirmPassword = '';
             this.$emit('close');
-        }
-    }
+        },
+    },
 });

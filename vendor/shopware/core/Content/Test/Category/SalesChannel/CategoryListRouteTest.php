@@ -10,8 +10,10 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour;
 use Shopware\Core\Framework\Test\TestDataCollection;
-use Shopware\Core\PlatformRequest;
 
+/**
+ * @group store-api
+ */
 class CategoryListRouteTest extends TestCase
 {
     use IntegrationTestBehaviour;
@@ -53,7 +55,7 @@ class CategoryListRouteTest extends TestCase
     {
         $this->browser->request(
             'GET',
-            '/store-api/v' . PlatformRequest::API_VERSION . '/category',
+            '/store-api/category',
             [
             ]
         );
@@ -72,7 +74,7 @@ class CategoryListRouteTest extends TestCase
     {
         $this->browser->request(
             'GET',
-            '/store-api/v' . PlatformRequest::API_VERSION . '/category?limit=1',
+            '/store-api/category?limit=1',
             [
             ]
         );
@@ -87,7 +89,7 @@ class CategoryListRouteTest extends TestCase
     {
         $this->browser->request(
             'POST',
-            '/store-api/v' . PlatformRequest::API_VERSION . '/category',
+            '/store-api/category',
             [
                 'ids' => [
                     $this->ids->get('category'),
@@ -106,7 +108,7 @@ class CategoryListRouteTest extends TestCase
     {
         $this->browser->request(
             'POST',
-            '/store-api/v' . PlatformRequest::API_VERSION . '/category',
+            '/store-api/category',
             [
                 'includes' => [
                     'category' => ['id', 'name'],

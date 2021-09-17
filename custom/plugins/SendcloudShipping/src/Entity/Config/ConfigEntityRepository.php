@@ -71,6 +71,22 @@ class ConfigEntityRepository
     }
 
     /**
+     * @param string $key
+     * @return mixed|string|null
+     * @throws DBALException
+     */
+    public function getCustomsField(string $key): ?string
+    {
+        $config = $this->getConfigByKey($key);
+
+        if (empty($config)) {
+            return null;
+        }
+
+        return $config['value'] ?? '';
+    }
+
+    /**
      * Returns config entity by key
      *
      * @param string $key

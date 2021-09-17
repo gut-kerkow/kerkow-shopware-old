@@ -1,4 +1,4 @@
-import { shallowMount, createLocalVue } from '@vue/test-utils';
+import { shallowMount, createLocalVue, config } from '@vue/test-utils';
 import VueRouter from 'vue-router';
 import productStore from 'src/module/sw-product/page/sw-product-detail/state';
 import 'src/module/sw-product/view/sw-product-detail-context-prices';
@@ -18,13 +18,25 @@ import Vuex from 'vuex';
 
 describe('src/module/sw-product/view/sw-product-detail-context-prices', () => {
     Shopware.State.registerModule('swProductDetail', productStore);
+    Shopware.State.registerModule('context', {
+        namespaced: true,
+
+        getters: {
+            isSystemDefaultLanguage() {
+                return true;
+            }
+        }
+    });
 
     const createWrapper = () => {
+        // delete global $router and $routes mocks
+        delete config.mocks.$router;
+        delete config.mocks.$route;
+
         const localVue = createLocalVue();
 
         localVue.use(VueRouter);
         localVue.use(Vuex);
-        localVue.directive('tooltip', {});
         localVue.filter('asset', key => key);
 
         return shallowMount(Shopware.Component.build('sw-product-detail-context-prices'), {
@@ -49,14 +61,6 @@ describe('src/module/sw-product/view/sw-product-detail-context-prices', () => {
                 'sw-context-button': true,
                 'sw-context-menu-item': true
             },
-            mocks: {
-                $tc: (translationPath) => translationPath,
-                $te: () => true,
-                $device: {
-                    onResize: () => {}
-                },
-                $store: Shopware.State._store
-            },
             provide: {
                 repositoryFactory: {
                     create: (repositoryName) => {
@@ -78,7 +82,6 @@ describe('src/module/sw-product/view/sw-product-detail-context-prices', () => {
                     }
                 },
                 acl: { can: () => true },
-                feature: { isActive: () => true },
                 validationService: {}
             }
         });
@@ -153,7 +156,7 @@ describe('src/module/sw-product/view/sw-product-detail-context-prices', () => {
         await wrapper.vm.$nextTick();
 
         // get first quantity field
-        const firstQuantityField = wrapper.find('.sw-data-grid__row--0 input[name="sw-field--item-quantityStart"]');
+        const firstQuantityField = wrapper.find('.sw-data-grid__row--0 input[name="ruleId-1-quantityStart"]');
 
         // check if input field has a value of 1 and is disabled
         expect(firstQuantityField.element.value).toBe('1');
@@ -185,7 +188,7 @@ describe('src/module/sw-product/view/sw-product-detail-context-prices', () => {
         await wrapper.vm.$nextTick();
 
         // get second quantity field
-        const secondQuantityField = wrapper.find('.sw-data-grid__row--1 input[name="sw-field--item-quantityStart"]');
+        const secondQuantityField = wrapper.find('.sw-data-grid__row--1 input[name="ruleId-5-quantityStart"]');
 
         // check if input field has a value of 5 and is not disabled
         expect(secondQuantityField.element.value).toBe('5');

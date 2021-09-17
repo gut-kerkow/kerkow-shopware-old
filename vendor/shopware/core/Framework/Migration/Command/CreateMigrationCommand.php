@@ -14,21 +14,18 @@ class CreateMigrationCommand extends Command
 {
     protected static $defaultName = 'database:create-migration';
 
-    /**
-     * @var string
-     */
-    private $projectDir;
+    private string $coreDir;
 
-    /**
-     * @var KernelPluginCollection
-     */
-    private $kernelPluginCollection;
+    private KernelPluginCollection $kernelPluginCollection;
 
-    public function __construct(KernelPluginCollection $kernelPluginCollection, string $projectDir)
+    private string $shopwareVersion;
+
+    public function __construct(KernelPluginCollection $kernelPluginCollection, string $coreDir, string $shopwareVersion)
     {
         parent::__construct();
-        $this->projectDir = $projectDir;
+        $this->coreDir = $coreDir;
         $this->kernelPluginCollection = $kernelPluginCollection;
+        $this->shopwareVersion = $shopwareVersion;
     }
 
     protected function configure(): void
@@ -60,20 +57,23 @@ class CreateMigrationCommand extends Command
             throw new \InvalidArgumentException('Please specify both dir and namespace or none.');
         }
 
+        $timestamp = (new \DateTime())->getTimestamp();
+
         // Both dir and namespace were given
         if ($directory) {
-            $this->createMigrationFile($name, $output, realpath($directory), $namespace);
+            $this->createMigrationFile($output, (string) realpath($directory), \dirname(__DIR__) . '/Template/MigrationTemplate.txt', [
+                '%%timestamp%%' => $timestamp,
+                '%%name%%' => $name,
+                '%%namespace%%' => $namespace,
+            ]);
 
-            return 0;
+            return self::SUCCESS;
         }
 
         $pluginName = $input->getOption('plugin');
         if ($pluginName) {
-            if (\is_array($pluginName)) {
-                $pluginName = implode(' ', $pluginName);
-            }
-            $pluginBundles = array_filter($this->kernelPluginCollection->all(), function (Plugin $value) use ($pluginName) {
-                return (int) (mb_strpos($value->getName(), (string) $pluginName) === 0);
+            $pluginBundles = array_filter($this->kernelPluginCollection->all(), static function (Plugin $value) use ($pluginName) {
+                return mb_strpos($value->getName(), $pluginName) === 0;
             });
 
             if (\count($pluginBundles) === 0) {
@@ -81,13 +81,19 @@ class CreateMigrationCommand extends Command
             }
 
             if (\count($pluginBundles) > 1) {
-                throw new \RuntimeException(
-                    sprintf(
-                        'More than one pluginname starting with "%s" was found: %s',
-                        $pluginName,
-                        implode(';', array_keys($pluginBundles))
-                    )
-                );
+                $pluginBundles = array_filter($pluginBundles, static function (Plugin $value) use ($pluginName) {
+                    return $pluginName === $value->getName();
+                });
+
+                if (\count($pluginBundles) > 1) {
+                    throw new \RuntimeException(
+                        sprintf(
+                            'More than one pluginname starting with "%s" was found: %s',
+                            $pluginName,
+                            implode(';', array_keys($pluginBundles))
+                        )
+                    );
+                }
             }
 
             $pluginBundle = array_values($pluginBundles)[0];
@@ -100,30 +106,64 @@ class CreateMigrationCommand extends Command
             $namespace = $pluginBundle->getMigrationNamespace();
             $output->writeln(sprintf('Creating plugin-migration with namespace %s in path %s...', $namespace, $directory));
         } else {
+            [$_, $major] = explode('.', $this->shopwareVersion);
             // We create a core-migration in case no plugin was given
-            $directory = $this->projectDir . '/vendor/shopware/platform/src/Core/Migration/';
-            $namespace = 'Shopware\\Core\\Migration';
+            $directory = $this->coreDir . '/Migration/V6_' . $major;
+            $namespace = 'Shopware\\Core\\Migration\\V6_' . $major;
 
-            $output->writeln('Creating core-migration ...');
+            // create legacy migration
+            $legacyDirectory = $this->coreDir . '/Migration';
+            $legacyNamespace = 'Shopware\\Core\\Migration';
+
+            // @deprecated tag:v6.5.0 - Only necessary until 6.5.0.0
+            $output->writeln('Creating legacy core migration ...');
+            // @deprecated tag:v6.5.0 - Only necessary until 6.5.0.0
+            $this->createMigrationFile(
+                $output,
+                $legacyDirectory,
+                \dirname(__DIR__) . '/Template/MigrationTemplateLegacy.txt',
+                [
+                    '%%timestamp%%' => $timestamp,
+                    '%%name%%' => $name,
+                    '%%namespace%%' => $legacyNamespace,
+                    '%%superclassnamespace%%' => '\\' . $namespace,
+                ]
+            );
         }
 
-        $this->createMigrationFile($name, $output, $directory, $namespace);
-
-        return 0;
-    }
-
-    private function createMigrationFile(string $name, OutputInterface $output, string $directory, string $namespace): void
-    {
-        $timestamp = (new \DateTime())->getTimestamp();
-        $path = rtrim($directory, '/') . '/Migration' . $timestamp . $name . '.php';
-        $file = fopen($path, 'wb');
-
-        $template = file_get_contents(\dirname(__DIR__) . '/Template/MigrationTemplate.txt');
         $params = [
-            '%%namespace%%' => $namespace,
             '%%timestamp%%' => $timestamp,
             '%%name%%' => $name,
+            '%%namespace%%' => $namespace,
+            '%%superclassnamespace%%' => $namespace,
         ];
+
+        $output->writeln('Creating core-migration ...');
+
+        $this->createMigrationFile(
+            $output,
+            $directory,
+            \dirname(__DIR__) . '/Template/MigrationTemplate.txt',
+            $params
+        );
+
+        return self::SUCCESS;
+    }
+
+    private function createMigrationFile(OutputInterface $output, string $directory, string $templatePatch, array $params): void
+    {
+        $params['%%timestamp%%'] = $params['%%timestamp%%'] ?? (new \DateTime())->getTimestamp();
+        $path = rtrim($directory, '/') . '/Migration' . $params['%%timestamp%%'] . $params['%%name%%'] . '.php';
+        $file = fopen($path, 'wb');
+        if ($file === false) {
+            return;
+        }
+
+        $template = file_get_contents($templatePatch);
+        if ($template === false) {
+            return;
+        }
+
         fwrite($file, str_replace(array_keys($params), array_values($params), $template));
         fclose($file);
 

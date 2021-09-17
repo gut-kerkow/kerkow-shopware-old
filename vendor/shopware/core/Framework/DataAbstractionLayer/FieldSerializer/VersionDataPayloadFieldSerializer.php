@@ -11,16 +11,26 @@ use Shopware\Core\Framework\DataAbstractionLayer\Write\WriteParameterBag;
 
 class VersionDataPayloadFieldSerializer implements FieldSerializerInterface
 {
+    public function normalize(Field $field, array $data, WriteParameterBag $parameters): array
+    {
+        return $data;
+    }
+
     public function encode(Field $field, EntityExistence $existence, KeyValuePair $data, WriteParameterBag $parameters): \Generator
     {
         if (!$field instanceof VersionDataPayloadField) {
             throw new InvalidSerializerFieldException(VersionDataPayloadField::class, $field);
         }
-        /* @var VersionDataPayloadField $field */
+
         yield $field->getStorageName() => $data->getValue();
     }
 
-    public function decode(Field $field, $value)
+    /**
+     * @return mixed|null
+     *
+     * @deprecated tag:v6.5.0 The parameter $value will be native typed
+     */
+    public function decode(Field $field, /*?string */$value)
     {
         if ($value === null) {
             return null;

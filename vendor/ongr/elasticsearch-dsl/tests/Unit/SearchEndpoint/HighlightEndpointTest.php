@@ -9,12 +9,11 @@
  * file that was distributed with this source code.
  */
 
-namespace ONGR\ElasticsearchDSL\Tests\Unit\Unit\SearchEndpoint;
+namespace ONGR\ElasticsearchDSL\Tests\Unit\SearchEndpoint;
 
 use ONGR\ElasticsearchDSL\Highlight\Highlight;
 use ONGR\ElasticsearchDSL\SearchEndpoint\HighlightEndpoint;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
-use PHPUnit_Framework_MockObject_MockObject as MockObject;
 
 /**
  * Class HighlightEndpointTest.
@@ -35,7 +34,6 @@ class HighlightEndpointTest extends \PHPUnit\Framework\TestCase
     public function testNormalization()
     {
         $instance = new HighlightEndpoint();
-        /** @var NormalizerInterface|MockObject $normalizerInterface */
         $normalizerInterface = $this->getMockForAbstractClass(
             NormalizerInterface::class
         );

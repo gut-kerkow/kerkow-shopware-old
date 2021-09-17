@@ -1,5 +1,10 @@
 import ApiService from '../api.service';
 
+const DocumentEvents = {
+    DOCUMENT_FAILED: 'create-document-fail',
+    DOCUMENT_FINISHED: 'create-document-finished',
+};
+
 /**
  * Gateway for the API end point "document"
  * @class
@@ -9,6 +14,7 @@ class DocumentApiService extends ApiService {
     constructor(httpClient, loginService, apiEndpoint = 'document') {
         super(httpClient, loginService, apiEndpoint);
         this.name = 'documentService';
+        this.$listener = () => ({});
     }
 
     createDocument(orderId,
@@ -23,7 +29,7 @@ class DocumentApiService extends ApiService {
 
         const params = {
             config: documentConfig,
-            referenced_document_id: referencedDocumentId
+            referenced_document_id: referencedDocumentId,
         };
 
         if (file) {
@@ -33,7 +39,7 @@ class DocumentApiService extends ApiService {
         let docCreated = this.httpClient
             .post(route, params, {
                 additionalParams,
-                headers
+                headers,
             }).then((response) => {
                 if (file && response.data.documentId) {
                     const fileName = file.name.split('.').shift();
@@ -43,19 +49,20 @@ class DocumentApiService extends ApiService {
                     headers['Content-Type'] = file.type;
                     docCreated = this.httpClient.post(route, file, {
                         additionalParams,
-                        headers
+                        headers,
                     });
                 }
-                return docCreated;
-            });
-    }
 
-    /**
-     * @deprecated tag:v6.4.0 use getDocumentPreview to get the preview blob instead
-     */
-    generateDocumentPreviewLink(orderId, orderDeepLink, documentTypeName, config, context) {
-        // eslint-disable-next-line max-len
-        return `${context.apiPath}/v${this.getApiVersion()}/_action/order/${orderId}/${orderDeepLink}/document/${documentTypeName}/preview?config=${config}`;
+                this.$listener(this.createDocumentEvent(DocumentEvents.DOCUMENT_FINISHED));
+
+                return docCreated;
+            }).catch((error) => {
+                if (error.response?.data?.errors) {
+                    this.$listener(
+                        this.createDocumentEvent(DocumentEvents.DOCUMENT_FAILED, error.response.data.errors.pop()),
+                    );
+                }
+            });
     }
 
     getDocumentPreview(orderId, orderDeepLink, documentTypeName, params) {
@@ -63,11 +70,12 @@ class DocumentApiService extends ApiService {
 
         return this.httpClient
             .get(
-                `/_action/order/${orderId}/${orderDeepLink}/document/${documentTypeName}/preview?config=${config}`,
+                `/_action/order/${orderId}/${orderDeepLink}/document/${documentTypeName}/preview`,
                 {
+                    params: { config },
                     responseType: 'blob',
-                    headers: this.getBasicHeaders()
-                }
+                    headers: this.getBasicHeaders(),
+                },
             );
     }
 
@@ -77,18 +85,18 @@ class DocumentApiService extends ApiService {
                 `/_action/document/${documentId}/${documentDeepLink}${download ? '?download=1' : ''}`,
                 {
                     responseType: 'blob',
-                    headers: this.getBasicHeaders()
-                }
+                    headers: this.getBasicHeaders(),
+                },
             );
     }
 
-    /**
-     * @deprecated tag:v6.4.0 use getDocument to get the document blob instead
-     */
-    generateDocumentLink(documentId, documentDeepLink, context, download = false) {
-        // eslint-disable-next-line max-len
-        return `${context.apiPath}/v${this.getApiVersion()}/_action/document/${documentId}/${documentDeepLink}${download ? '?download=1' : ''}`;
+    createDocumentEvent(action, payload) {
+        return { action, payload };
+    }
+
+    setListener(callback) {
+        this.$listener = callback;
     }
 }
 
-export default DocumentApiService;
+export { DocumentApiService as default, DocumentEvents };

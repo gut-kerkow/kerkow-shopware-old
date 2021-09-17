@@ -3,6 +3,7 @@
 namespace Shopware\Core\Framework\DataAbstractionLayer;
 
 use Shopware\Core\Content\Seo\SeoUrl\SeoUrlDefinition;
+use Shopware\Core\Framework\DataAbstractionLayer\Dbal\EntityHydrator;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityProtection\EntityProtectionCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\AssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\CreatedAtField;
@@ -20,6 +21,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\OneToManyAssociationField
 use Shopware\Core\Framework\DataAbstractionLayer\Field\OneToOneAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ParentAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ReferenceVersionField;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\TranslatedField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\TranslationsAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\UpdatedAtField;
 use Shopware\Core\Framework\Struct\ArrayEntity;
@@ -52,14 +54,21 @@ abstract class EntityDefinition
     protected $registry;
 
     /**
+     * @var TranslatedField[]
+     */
+    protected array $translatedFields = [];
+
+    /**
+     * @var Field[]
+     */
+    protected array $extensionFields = [];
+
+    /**
      * @var EntityDefinition|false|null
      */
     private $parentDefinition = false;
 
-    /**
-     * @var string
-     */
-    private $className;
+    private string $className;
 
     final public function __construct()
     {
@@ -124,7 +133,6 @@ abstract class EntityDefinition
 
             $extension->extendFields($new);
 
-            /** @var Field $field */
             foreach ($new as $field) {
                 $field->addFlags(new Extension());
 
@@ -198,11 +206,17 @@ abstract class EntityDefinition
         return $this->getFields()->get($propertyName);
     }
 
+    /**
+     * @return class-string<EntityCollection>
+     */
     public function getCollectionClass(): string
     {
         return EntityCollection::class;
     }
 
+    /**
+     * @return class-string<Entity>
+     */
     public function getEntityClass(): string
     {
         return ArrayEntity::class;
@@ -235,6 +249,14 @@ abstract class EntityDefinition
         return $this->translationField->getReferenceDefinition();
     }
 
+    final public function getTranslationField(): ?TranslationsAssociationField
+    {
+        // value is initialized from this method
+        $this->getFields();
+
+        return $this->translationField;
+    }
+
     final public function getPrimaryKeys(): CompiledFieldCollection
     {
         if ($this->primaryKeys !== null) {
@@ -243,6 +265,10 @@ abstract class EntityDefinition
 
         $fields = $this->getFields()->filter(function (Field $field): bool {
             return $field->is(PrimaryKey::class);
+        });
+
+        $fields->sort(static function (Field $a, Field $b) {
+            return $b->getExtractPriority() <=> $a->getExtractPriority();
         });
 
         return $this->primaryKeys = $fields;
@@ -279,16 +305,6 @@ abstract class EntityDefinition
         return $this->getFields()->has('versionId');
     }
 
-    public function isBlacklistAware(): bool
-    {
-        return $this->getFields()->has('blacklistIds');
-    }
-
-    public function isWhitelistAware(): bool
-    {
-        return $this->getFields()->has('whitelistIds');
-    }
-
     public function isLockAware(): bool
     {
         $field = $this->getFields()->get('locked');
@@ -306,6 +322,35 @@ abstract class EntityDefinition
     public function since(): ?string
     {
         return null;
+    }
+
+    public function getHydratorClass(): string
+    {
+        return EntityHydrator::class;
+    }
+
+    /**
+     * @internal
+     */
+    public function decode(string $property, ?string $value)
+    {
+        $field = $this->getField($property);
+
+        if ($field === null) {
+            throw new \RuntimeException(sprintf('Field %s not found', $property));
+        }
+
+        return $field->getSerializer()->decode($field, $value);
+    }
+
+    public function getTranslatedFields(): array
+    {
+        return $this->getFields()->getTranslatedFields();
+    }
+
+    public function getExtensionFields(): array
+    {
+        return $this->getFields()->getExtensionFields();
     }
 
     protected function getParentDefinitionClass(): ?string

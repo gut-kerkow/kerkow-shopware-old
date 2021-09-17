@@ -1,6 +1,8 @@
 import { createLocalVue, shallowMount } from '@vue/test-utils';
-import Vue from 'vue';
 import extensionStore from 'src/module/sw-extension/store/extensions.store';
+import ShopwareExtensionService from 'src/module/sw-extension/service/shopware-extension.service';
+
+let isLoggedIn = false;
 
 function createWrapper() {
     const localVue = createLocalVue();
@@ -8,10 +10,6 @@ function createWrapper() {
 
     return shallowMount(Shopware.Component.build('sw-extension-my-extensions-account'), {
         localVue,
-        propsData: {},
-        mocks: {
-            $tc: v => v
-        },
         stubs: {
             'sw-avatar': true,
             'sw-loader': true,
@@ -31,6 +29,7 @@ function createWrapper() {
             }
         },
         provide: {
+            shopwareExtensionService: new ShopwareExtensionService(),
             systemConfigApiService: {
                 getValues: () => {
                     return Promise.resolve({
@@ -49,13 +48,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-account', () =
     /** @type Wrapper */
     let wrapper;
 
-    let isLoggedIn = false;
-
     beforeAll(async () => {
-        Shopware.Application.view = {
-            setReactive: Vue.set
-        };
-
         Shopware.State.registerModule('shopwareExtensions', extensionStore);
         Shopware.Service().register('storeService', () => {
             return {
@@ -84,9 +77,7 @@ describe('src/module/sw-extension/page/sw-extension-my-extensions-account', () =
             };
         });
 
-        Shopware.Feature.init({
-            FEATURE_NEXT_12608: true
-        });
+        global.activeFeatureFlags = ['FEATURE_NEXT_12608'];
 
         await import('src/module/sw-extension/page/sw-extension-my-extensions-account');
         await import('src/app/component/meteor/sw-meteor-card');

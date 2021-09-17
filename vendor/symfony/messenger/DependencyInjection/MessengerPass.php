@@ -36,6 +36,10 @@ class MessengerPass implements CompilerPassInterface
 
     public function __construct(string $handlerTag = 'messenger.message_handler', string $busTag = 'messenger.bus', string $receiverTag = 'messenger.receiver')
     {
+        if (0 < \func_num_args()) {
+            trigger_deprecation('symfony/messenger', '5.3', 'Configuring "%s" is deprecated.', __CLASS__);
+        }
+
         $this->handlerTag = $handlerTag;
         $this->busTag = $busTag;
         $this->receiverTag = $receiverTag;
@@ -78,7 +82,7 @@ class MessengerPass implements CompilerPassInterface
                     throw new RuntimeException(sprintf('Invalid handler service "%s": bus "%s" specified on the tag "%s" does not exist (known ones are: "%s").', $serviceId, $tag['bus'], $this->handlerTag, implode('", "', $busIds)));
                 }
 
-                $className = $container->getDefinition($serviceId)->getClass();
+                $className = $this->getServiceClass($container, $serviceId);
                 $r = $container->getReflectionClass($className);
 
                 if (null === $r) {
@@ -102,7 +106,7 @@ class MessengerPass implements CompilerPassInterface
                             $message = $options;
                             $options = [];
                         } else {
-                            throw new RuntimeException(sprintf('The handler configuration needs to return an array of messages or an associated array of message and configuration. Found value of type "%s" at position "%d" for service "%s".', \gettype($options), $message, $serviceId));
+                            throw new RuntimeException(sprintf('The handler configuration needs to return an array of messages or an associated array of message and configuration. Found value of type "%s" at position "%d" for service "%s".', get_debug_type($options), $message, $serviceId));
                         }
                     }
 
@@ -121,7 +125,7 @@ class MessengerPass implements CompilerPassInterface
                         if (!\in_array($options['bus'], $busIds)) {
                             $messageLocation = isset($tag['handles']) ? 'declared in your tag attribute "handles"' : ($r->implementsInterface(MessageSubscriberInterface::class) ? sprintf('returned by method "%s::getHandledMessages()"', $r->getName()) : sprintf('used as argument type in method "%s::%s()"', $r->getName(), $method));
 
-                            throw new RuntimeException(sprintf('Invalid configuration %s for message "%s": bus "%s" does not exist.', $messageLocation, $message, $options['bus']));
+                            throw new RuntimeException(sprintf('Invalid configuration "%s" for message "%s": bus "%s" does not exist.', $messageLocation, $message, $options['bus']));
                         }
 
                         $buses = [$options['bus']];
@@ -130,7 +134,7 @@ class MessengerPass implements CompilerPassInterface
                     if ('*' !== $message && !class_exists($message) && !interface_exists($message, false)) {
                         $messageLocation = isset($tag['handles']) ? 'declared in your tag attribute "handles"' : ($r->implementsInterface(MessageSubscriberInterface::class) ? sprintf('returned by method "%s::getHandledMessages()"', $r->getName()) : sprintf('used as argument type in method "%s::%s()"', $r->getName(), $method));
 
-                        throw new RuntimeException(sprintf('Invalid handler service "%s": class or interface "%s" %s not found.', $serviceId, $message, $messageLocation));
+                        throw new RuntimeException(sprintf('Invalid handler service "%s": class or interface "%s" "%s" not found.', $serviceId, $message, $messageLocation));
                     }
 
                     if (!$r->hasMethod($method)) {
@@ -251,9 +255,21 @@ class MessengerPass implements CompilerPassInterface
     private function registerReceivers(ContainerBuilder $container, array $busIds)
     {
         $receiverMapping = [];
+        $failureTransportsMap = [];
+        if ($container->hasDefinition('console.command.messenger_failed_messages_retry')) {
+            $commandDefinition = $container->getDefinition('console.command.messenger_failed_messages_retry');
+            $globalReceiverName = $commandDefinition->getArgument(0);
+            if (null !== $globalReceiverName) {
+                if ($container->hasAlias('messenger.failure_transports.default')) {
+                    $failureTransportsMap[$globalReceiverName] = new Reference('messenger.failure_transports.default');
+                } else {
+                    $failureTransportsMap[$globalReceiverName] = new Reference('messenger.transport.'.$globalReceiverName);
+                }
+            }
+        }
 
         foreach ($container->findTaggedServiceIds($this->receiverTag) as $id => $tags) {
-            $receiverClass = $container->findDefinition($id)->getClass();
+            $receiverClass = $this->getServiceClass($container, $id);
             if (!is_subclass_of($receiverClass, ReceiverInterface::class)) {
                 throw new RuntimeException(sprintf('Invalid receiver "%s": class "%s" must implement interface "%s".', $id, $receiverClass, ReceiverInterface::class));
             }
@@ -263,6 +279,9 @@ class MessengerPass implements CompilerPassInterface
             foreach ($tags as $tag) {
                 if (isset($tag['alias'])) {
                     $receiverMapping[$tag['alias']] = $receiverMapping[$id];
+                    if ($tag['is_failure_transport'] ?? false) {
+                        $failureTransportsMap[$tag['alias']] = $receiverMapping[$id];
+                    }
                 }
             }
         }
@@ -299,6 +318,8 @@ class MessengerPass implements CompilerPassInterface
 
         $container->getDefinition('messenger.receiver_locator')->replaceArgument(0, $receiverMapping);
 
+        $failureTransportsLocator = ServiceLocatorTagPass::register($container, $failureTransportsMap);
+
         $failedCommandIds = [
             'console.command.messenger_failed_messages_retry',
             'console.command.messenger_failed_messages_show',
@@ -307,7 +328,7 @@ class MessengerPass implements CompilerPassInterface
         foreach ($failedCommandIds as $failedCommandId) {
             if ($container->hasDefinition($failedCommandId)) {
                 $definition = $container->getDefinition($failedCommandId);
-                $definition->replaceArgument(1, $receiverMapping[$definition->getArgument(0)]);
+                $definition->replaceArgument(1, $failureTransportsLocator);
             }
         }
     }
@@ -351,5 +372,20 @@ class MessengerPass implements CompilerPassInterface
         }
 
         $container->getDefinition($busId)->replaceArgument(0, new IteratorArgument(array_values($middlewareReferences)));
+    }
+
+    private function getServiceClass(ContainerBuilder $container, string $serviceId): string
+    {
+        while (true) {
+            $definition = $container->findDefinition($serviceId);
+
+            if (!$definition->getClass() && $definition instanceof ChildDefinition) {
+                $serviceId = $definition->getParent();
+
+                continue;
+            }
+
+            return $definition->getClass();
+        }
     }
 }

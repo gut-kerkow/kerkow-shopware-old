@@ -6,13 +6,7 @@ use Doctrine\DBAL\Connection;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Dbal\Exception\UnmappedFieldException;
-use Shopware\Core\Framework\DataAbstractionLayer\Dbal\FieldResolver\AbstractFieldResolver;
 use Shopware\Core\Framework\DataAbstractionLayer\Dbal\FieldResolver\FieldResolverContext;
-//@deprecated tag:v6.4.0 - Will be removed
-use Shopware\Core\Framework\DataAbstractionLayer\Dbal\JoinBuilder\AntiJoinBuilder;
-//@deprecated tag:v6.4.0 - Will be removed
-use Shopware\Core\Framework\DataAbstractionLayer\Dbal\JoinBuilder\AntiJoinInfo;
-use Shopware\Core\Framework\DataAbstractionLayer\Dbal\JoinBuilder\JoinBuilderInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\AssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Field;
@@ -26,6 +20,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\TranslatedField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\VersionField;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\CriteriaPartInterface;
+use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Uuid\Uuid;
 
 /**
@@ -35,21 +30,6 @@ use Shopware\Core\Framework\Uuid\Uuid;
 class EntityDefinitionQueryHelper
 {
     public const HAS_TO_MANY_JOIN = 'has_to_many_join';
-
-    /**
-     * @deprecated tag:v6.4.0 - Will be removed
-     *
-     * @var AntiJoinBuilder
-     */
-    private $antiJoinBuilder;
-
-    public function __construct(
-        // @deprecated tag:v6.4.0 - Will be removed
-        AntiJoinBuilder $antiJoinBuilder
-    ) {
-        //@deprecated tag:v6.4.0 - Will be removed
-        $this->antiJoinBuilder = $antiJoinBuilder;
-    }
 
     public static function escape(string $string): string
     {
@@ -105,7 +85,7 @@ class EntityDefinitionQueryHelper
             }
         }
 
-        return $accessorFields;
+        return array_filter($accessorFields);
     }
 
     /**
@@ -240,6 +220,25 @@ class EntityDefinitionQueryHelper
         );
     }
 
+    public static function getAssociationPath(string $accessor, EntityDefinition $definition): ?string
+    {
+        $fields = self::getFieldsOfAccessor($definition, $accessor, true);
+
+        $path = [];
+        foreach ($fields as $field) {
+            if (!$field instanceof AssociationField) {
+                break;
+            }
+            $path[] = $field->getPropertyName();
+        }
+
+        if (empty($path)) {
+            return null;
+        }
+
+        return implode('.', $path);
+    }
+
     /**
      * Creates the basic root query for the provided entity definition and application context.
      * It considers the current context version.
@@ -278,46 +277,7 @@ class EntityDefinitionQueryHelper
             $query->setParameter('version', Uuid::fromHexToBytes($context->getVersionId()));
         }
 
-        $this->addRuleCondition($query, $definition, $context);
-
         return $query;
-    }
-
-    public function buildRuleCondition(EntityDefinition $definition, QueryBuilder $query, string $alias, Context $context): ?string
-    {
-        $ids = $context->getRuleIds();
-
-        $conditions = [];
-
-        if ($definition->isBlacklistAware() && $ids) {
-            $accessor = self::escape($alias) . '.`blacklist_ids`';
-
-            $param = '(' . implode('|', $ids) . ')';
-
-            $conditions[] = '(NOT (' . $accessor . ' REGEXP :rules) OR ' . $accessor . ' IS NULL)';
-
-            $query->setParameter('rules', $param);
-        }
-
-        if ($definition->isWhitelistAware() && $ids) {
-            $accessor = self::escape($alias) . '.`whitelist_ids`';
-
-            $param = '(' . implode('|', $ids) . ')';
-
-            $conditions[] = '(' . $accessor . ' REGEXP :rules OR ' . $accessor . ' IS NULL)';
-
-            $query->setParameter('rules', $param);
-        } elseif ($definition->isWhitelistAware()) {
-            $accessor = self::escape($alias) . '.`whitelist_ids`';
-
-            $conditions[] = $accessor . ' IS NULL';
-        }
-
-        if (empty($conditions)) {
-            return null;
-        }
-
-        return implode(' AND ', $conditions);
     }
 
     /**
@@ -387,39 +347,6 @@ class EntityDefinitionQueryHelper
         }
     }
 
-    /**
-     * @deprecated tag:v6.4.0 - Will be removed
-     */
-    public function resolveAntiJoinAccessors(
-        string $fieldName,
-        EntityDefinition $definition,
-        string $root,
-        QueryBuilder $parentQueryBuilder,
-        Context $context,
-        array $antiJoinConditions = []
-    ): void {
-        foreach ($antiJoinConditions as $antiJoinIdentifier => $antiJoinCondition) {
-            $select = $this->getFieldAccessor($fieldName, $definition, $root, $context);
-            [$alias, $field] = explode('`.`', $select);
-            $alias = ltrim($alias, '`');
-
-            $selectField = EntityDefinitionQueryHelper::escape($alias) . '.`' . $field;
-
-            $associations = $this->getAssociations($fieldName, $definition, $root);
-            $antiJoinInfo = new AntiJoinInfo($associations, $antiJoinCondition, [$selectField]);
-
-            $this->antiJoinBuilder->join(
-                $definition,
-                JoinBuilderInterface::LEFT_JOIN,
-                $antiJoinInfo,
-                $root,
-                $alias . '_' . $antiJoinIdentifier,
-                $parentQueryBuilder,
-                $context
-            );
-        }
-    }
-
     public function resolveField(Field $field, EntityDefinition $definition, string $root, QueryBuilder $query, Context $context): void
     {
         $resolver = $field->getResolver();
@@ -428,7 +355,7 @@ class EntityDefinitionQueryHelper
             return;
         }
 
-        $resolver->resolve($definition, $root, $field, $query, $context, $this);
+        $resolver->join(new FieldResolverContext($root, $root, $field, $definition, $definition, $query, $context, null));
     }
 
     /**
@@ -448,15 +375,7 @@ class EntityDefinitionQueryHelper
 
         $inherited = $context->considerInheritance() && $definition->isInheritanceAware();
 
-        $alias = $root . '.' . $translationDefinition->getEntityName();
-        $query->addSelect(self::escape($alias) . '.*');
-
-        if ($inherited) {
-            $alias = $root . '.' . $translationDefinition->getEntityName() . '.parent';
-            $query->addSelect(self::escape($alias) . '.*');
-        }
-
-        $chain = self::buildTranslationChain($root, $context, $inherited);
+        $chain = EntityDefinitionQueryHelper::buildTranslationChain($root, $context, $inherited);
 
         /** @var TranslatedField $field */
         foreach ($fields as $field) {
@@ -470,6 +389,12 @@ class EntityDefinitionQueryHelper
                     '#root#' => $select,
                     '#field#' => $field->getPropertyName(),
                 ];
+
+                $query->addSelect(str_replace(
+                    array_keys($vars),
+                    array_values($vars),
+                    EntityDefinitionQueryHelper::escape('#root#.#field#')
+                ));
 
                 $selects[] = str_replace(
                     array_keys($vars),
@@ -527,6 +452,11 @@ class EntityDefinitionQueryHelper
     public static function getTranslatedField(EntityDefinition $definition, TranslatedField $translatedField): Field
     {
         $translationDefinition = $definition->getTranslationDefinition();
+
+        if ($translationDefinition === null) {
+            throw new \RuntimeException(sprintf('Entity %s has no translation definition', $definition->getEntityName()));
+        }
+
         $field = $translationDefinition->getFields()->get($translatedField->getPropertyName());
 
         if ($field === null || !$field instanceof StorageAware || !$field instanceof Field) {
@@ -573,7 +503,10 @@ class EntityDefinitionQueryHelper
 
         if (!\is_array($primaryKeys[0]) || \count($primaryKeys[0]) === 1) {
             $primaryKeyField = $definition->getPrimaryKeys()->first();
-            if ($primaryKeyField instanceof IdField) {
+            /** @feature-deprecated (flag:FEATURE_NEXT_14872) remove FeatureCheck
+             * if ($primaryKeyField instanceof IdField || $primaryKeyField instanceof FkField) {
+             */
+            if ($primaryKeyField instanceof IdField || (Feature::isActive('FEATURE_NEXT_14872') && $primaryKeyField instanceof FkField)) {
                 $primaryKeys = array_map(function ($id) {
                     if (\is_array($id)) {
                         /** @var string $shiftedId */
@@ -612,14 +545,7 @@ class EntityDefinitionQueryHelper
             return $context->getAlias();
         }
 
-        if ($resolver instanceof AbstractFieldResolver) {
-            return $resolver->join($context);
-        }
-
-        //@deprecated tag:v6.4.0 - Will be removed
-        $resolver->resolve($context->getDefinition(), $context->getAlias(), $context->getField(), $context->getQuery(), $context->getContext(), $this);
-
-        return $context->getAlias() . '.' . $context->getField()->getPropertyName();
+        return $resolver->join($context);
     }
 
     private function addIdConditionWithOr(Criteria $criteria, EntityDefinition $definition, QueryBuilder $query): void
@@ -655,105 +581,6 @@ class EntityDefinitionQueryHelper
         $wheres = implode(' OR ', $wheres);
 
         $query->andWhere($wheres);
-    }
-
-    private function getAssociations(string $fieldName, EntityDefinition $definition, string $root): array
-    {
-        $fieldName = str_replace('extensions.', '', $fieldName);
-
-        //example: `product.manufacturer.media.name`
-        $original = $fieldName;
-        $prefix = $root . '.';
-
-        if (mb_strpos($fieldName, $prefix) === 0) {
-            $fieldName = mb_substr($fieldName, mb_strlen($prefix));
-        }
-
-        $fields = $definition->getFields();
-
-        if (!$fields->has($fieldName)) {
-            $associationKey = explode('.', $fieldName);
-            $fieldName = array_shift($associationKey);
-        }
-
-        if (!$fields->has($fieldName)) {
-            return [];
-        }
-
-        /** @var AssociationField|null $field */
-        $field = $fields->get($fieldName);
-
-        if ($field === null || !$field instanceof AssociationField) {
-            return [];
-        }
-
-        $referenceDefinition = $field->getReferenceDefinition();
-        if ($field instanceof ManyToManyAssociationField) {
-            $referenceDefinition = $field->getToManyReferenceDefinition();
-        }
-
-        return array_merge([$root => $field], $this->getAssociations($original, $referenceDefinition, $root . '.' . $field->getPropertyName()));
-    }
-
-    /**
-     * Adds a blacklist and whitelist where condition to the provided query.
-     * This function is only for internal usage for the root entity of the query.
-     */
-    private function addRuleCondition(QueryBuilder $query, EntityDefinition $definition, Context $context): void
-    {
-        $ids = $context->getRuleIds();
-
-        if ($definition->isBlacklistAware() && $ids) {
-            $accessor = self::escape($definition->getEntityName()) . '.`blacklist_ids`';
-
-            if ($this->isInherited($definition, $definition->getFields()->get('blacklistIds'), $context)) {
-                $accessor = sprintf(
-                    'IFNULL(%s, %s)',
-                    self::escape($definition->getEntityName()) . '.`blacklist_ids`',
-                    self::escape($definition->getEntityName() . '.parent') . '.`blacklist_ids`'
-                );
-            }
-
-            $param = '(' . implode('|', $ids) . ')';
-
-            $query->andWhere('NOT ' . $accessor . ' REGEXP :rules OR ' . $accessor . ' IS NULL');
-
-            $query->setParameter('rules', $param);
-        }
-
-        if ($definition->isWhitelistAware() && $ids) {
-            $accessor = self::escape($definition->getEntityName()) . '.`whitelist_ids`';
-            if ($this->isInherited($definition, $definition->getFields()->get('whitelistIds'), $context)) {
-                $accessor = sprintf(
-                    'IFNULL(%s, %s)',
-                    self::escape($definition->getEntityName()) . '.`whitelist_ids`',
-                    self::escape($definition->getEntityName() . '.parent') . '.`whitelist_ids`'
-                );
-            }
-
-            $param = '(' . implode('|', $ids) . ')';
-
-            $query->andWhere($accessor . ' REGEXP :rules OR ' . $accessor . ' IS NULL');
-
-            $query->setParameter('rules', $param);
-        } elseif ($definition->isWhitelistAware()) {
-            $accessor = self::escape($definition->getEntityName()) . '.`whitelist_ids`';
-
-            if ($this->isInherited($definition, $definition->getFields()->get('whitelistIds'), $context)) {
-                $accessor = sprintf(
-                    'IFNULL(%s, %s)',
-                    self::escape($definition->getEntityName()) . '.`whitelist_ids`',
-                    self::escape($definition->getEntityName() . '.parent') . '.`whitelist_ids`'
-                );
-            }
-
-            $query->andWhere($accessor . ' IS NULL');
-        }
-    }
-
-    private function isInherited(EntityDefinition $definition, Field $field, Context $context): bool
-    {
-        return $definition->isInheritanceAware() && $field->is(Inherited::class) && $context->considerInheritance();
     }
 
     private function getTranslationFieldAccessor(Field $field, string $accessor, array $chain, Context $context): string

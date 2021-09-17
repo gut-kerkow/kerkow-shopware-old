@@ -11,38 +11,24 @@ Component.register('sw-order-product-select', {
         item: {
             type: Object,
             required: true,
-            default() {
-                return [];
-            }
         },
 
         salesChannelId: {
             type: String,
-            // @deprecated tag:v6.4.0 - salesChannelId will become required: true
-            required: false,
-            default: ''
-        },
-
-        /** @deprecated tag:v6.4.0 */
-        displayProductSelection: {
-            type: Boolean,
-            required: false,
-            default() {
-                return true;
-            }
+            required: true,
+            default: '',
         },
 
         taxStatus: {
             type: String,
-            // @deprecated tag:v6.4.0 - taxStatus will become required: true
-            required: false,
-            default: ''
-        }
+            required: true,
+            default: '',
+        },
     },
 
     data() {
         return {
-            product: null
+            product: null,
         };
     },
 
@@ -81,20 +67,17 @@ Component.register('sw-order-product-select', {
                     'OR',
                     [
                         Criteria.equals('product.childCount', 0),
-                        Criteria.equals('product.childCount', null)
-                    ]
-                )
+                        Criteria.equals('product.childCount', null),
+                    ],
+                ),
             );
 
-            // @deprecated tag:v6.4.0 - If-clause will be removed and filter will always be added
-            if (this.salesChannelId) {
-                criteria.addFilter(
-                    Criteria.equals('product.visibilities.salesChannelId', this.salesChannelId)
-                );
-            }
+            criteria.addFilter(
+                Criteria.equals('product.visibilities.salesChannelId', this.salesChannelId),
+            );
 
             return criteria;
-        }
+        },
     },
 
     methods: {
@@ -115,6 +98,6 @@ Component.register('sw-order-product-select', {
                 this.item.precision = 2;
                 this.item.priceDefinition.taxRules[0].taxRate = newProduct.tax.taxRate;
             });
-        }
-    }
+        },
+    },
 });

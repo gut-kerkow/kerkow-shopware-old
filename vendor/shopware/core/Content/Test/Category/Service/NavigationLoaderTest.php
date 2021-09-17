@@ -4,7 +4,6 @@ namespace Shopware\Core\Content\Test\Category\Service;
 
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Checkout\Test\Cart\Common\Generator;
-use Shopware\Core\Content\Category\CategoryDefinition;
 use Shopware\Core\Content\Category\CategoryEntity;
 use Shopware\Core\Content\Category\Exception\CategoryNotFoundException;
 use Shopware\Core\Content\Category\SalesChannel\NavigationRoute;
@@ -18,7 +17,6 @@ use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseHelper\ReflectionHelper;
 use Shopware\Core\Framework\Test\TestDataCollection;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\System\SalesChannel\Entity\SalesChannelRepository;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 class NavigationLoaderTest extends TestCase
@@ -62,7 +60,6 @@ class NavigationLoaderTest extends TestCase
 
     public function setUp(): void
     {
-        /* @var EntityRepositoryInterface $repository */
         $this->repository = $this->getContainer()->get('category.repository');
 
         $this->rootId = Uuid::randomHex();
@@ -77,7 +74,6 @@ class NavigationLoaderTest extends TestCase
     public function testTreeBuilderWithSimpleTree(): void
     {
         $loader = new NavigationLoader(
-            $this->createMock(SalesChannelRepository::class),
             $this->createMock(EventDispatcher::class),
             $this->createMock(NavigationRoute::class)
         );
@@ -228,23 +224,6 @@ class NavigationLoaderTest extends TestCase
         static::assertCount(0, $tree->getChildren($data->get('d'))->getTree());
     }
 
-    public function testLoadRootLevelsAreCached(): void
-    {
-        CountingEntitySearcher::resetCount();
-        CountingEntityReader::resetCount();
-        $this->createCategoryTree();
-
-        $context = Generator::createSalesChannelContext();
-        $context->getSalesChannel()->setNavigationCategoryId($this->rootId);
-
-        $this->navigationLoader->load($this->category1_1Id, $context, $this->rootId);
-
-        $this->navigationLoader->load($this->category2_1Id, $context, $this->rootId);
-
-        static::assertEquals(1, CountingEntityReader::getReadOperationCount(CategoryDefinition::ENTITY_NAME));
-        static::assertEquals(0, CountingEntitySearcher::getSearchOperationCount(CategoryDefinition::ENTITY_NAME));
-    }
-
     private function createSimpleTree(): array
     {
         return [
@@ -295,16 +274,6 @@ class NavigationLoaderTest extends TestCase
 
 class TestTreeAware extends CategoryEntity
 {
-    /**
-     * @var string
-     */
-    protected $id;
-
-    /**
-     * @var string
-     */
-    protected $parentId;
-
     public function __construct(string $id, string $parentId)
     {
         $this->id = $id;

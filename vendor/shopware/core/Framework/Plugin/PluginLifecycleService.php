@@ -52,61 +52,31 @@ use Symfony\Component\Messenger\EventListener\StopWorkerOnRestartSignalListener;
  */
 class PluginLifecycleService
 {
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $pluginRepo;
+    private EntityRepositoryInterface $pluginRepo;
+
+    private EventDispatcherInterface $eventDispatcher;
+
+    private KernelPluginCollection $pluginCollection;
+
+    private ContainerInterface $container;
+
+    private MigrationCollectionLoader $migrationLoader;
+
+    private AssetService $assetInstaller;
+
+    private CommandExecutor $executor;
+
+    private RequirementsValidator $requirementValidator;
+
+    private string $shopwareVersion;
+
+    private CacheItemPoolInterface $restartSignalCachePool;
+
+    private SystemConfigService $systemConfigService;
 
     /**
-     * @var EventDispatcherInterface
+     * @psalm-suppress ContainerDependency
      */
-    private $eventDispatcher;
-
-    /**
-     * @var KernelPluginCollection
-     */
-    private $pluginCollection;
-
-    /**
-     * @var ContainerInterface
-     */
-    private $container;
-
-    /**
-     * @var MigrationCollectionLoader
-     */
-    private $migrationLoader;
-
-    /**
-     * @var AssetService
-     */
-    private $assetInstaller;
-
-    /**
-     * @var CommandExecutor
-     */
-    private $executor;
-
-    /**
-     * @var RequirementsValidator
-     */
-    private $requirementValidator;
-
-    /**
-     * @var string
-     */
-    private $shopwareVersion;
-
-    /**
-     * @var CacheItemPoolInterface
-     */
-    private $restartSignalCachePool;
-
-    /**
-     * @var SystemConfigService
-     */
-    private $systemConfigService;
-
     public function __construct(
         EntityRepositoryInterface $pluginRepo,
         EventDispatcherInterface $eventDispatcher,
@@ -238,8 +208,6 @@ class PluginLifecycleService
             $this->shopwareVersion,
             $plugin->getVersion(),
             $this->createMigrationCollection($pluginBaseClass),
-            $keepUserData,
-            /* @deprecated tag:v6.4.0 */
             $keepUserData
         );
         $uninstallContext->setAutoMigrate(false);
@@ -249,7 +217,7 @@ class PluginLifecycleService
 
         $pluginBaseClass->uninstall($uninstallContext);
 
-        if (!$uninstallContext->keepMigrations()) {
+        if (!$uninstallContext->keepUserData()) {
             $pluginBaseClass->removeMigrations();
         }
 
@@ -559,7 +527,6 @@ class PluginLifecycleService
             throw new \RuntimeException('Container parameter "kernel.plugin_dir" needs to be a string');
         }
 
-        /** @var KernelPluginLoader $pluginLoader */
         $pluginLoader = $this->container->get(KernelPluginLoader::class);
 
         $plugins = $pluginLoader->getPluginInfos();
@@ -577,7 +544,7 @@ class PluginLifecycleService
         $tmpStaticPluginLoader = new StaticKernelPluginLoader($pluginLoader->getClassLoader(), $pluginDir, $plugins);
         $kernel->reboot(null, $tmpStaticPluginLoader);
 
-        // If symfony throws an exception when calling getContainer on an not booted kernel and catch it here
+        // If symfony throws an exception when calling getContainer on a not booted kernel and catch it here
         /** @var ContainerInterface|null $newContainer */
         $newContainer = $kernel->getContainer();
         if (!$newContainer) {

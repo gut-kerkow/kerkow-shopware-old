@@ -15,6 +15,7 @@ use Shopware\Core\Framework\Test\App\StorefrontPluginRegistryTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Storefront\Test\Theme\fixtures\ThemeFixtures;
+use Shopware\Storefront\Theme\ConfigLoader\DatabaseConfigLoader;
 use Shopware\Storefront\Theme\StorefrontPluginConfiguration\StorefrontPluginConfiguration;
 use Shopware\Storefront\Theme\StorefrontPluginConfiguration\StorefrontPluginConfigurationFactory;
 use Shopware\Storefront\Theme\StorefrontPluginRegistry;
@@ -46,7 +47,9 @@ class ThemeTest extends TestCase
      */
     private $themeRepository;
 
-    /** @var string */
+    /**
+     * @var string
+     */
     private $createdStorefrontTheme = '';
 
     protected function setUp(): void
@@ -111,14 +114,6 @@ class ThemeTest extends TestCase
         foreach ($themeConfiguration['fields'] as $item) {
             static::assertStringNotContainsString('sw-theme', $item['label']);
         }
-    }
-
-    public function testDefaultThemeConfigFields(): void
-    {
-        $theme = $this->themeRepository->search(new Criteria(), $this->context)->first();
-
-        $theme = $this->themeService->getThemeConfigurationFields($theme->getId(), false, $this->context);
-        static::assertEquals(ThemeFixtures::getThemeFields(), $theme);
     }
 
     public function testDefaultThemeConfigStructuredFields(): void
@@ -229,6 +224,51 @@ class ThemeTest extends TestCase
         static::assertEquals($themeInheritedConfig, $theme);
     }
 
+    public function testThemeConfigWithMultiSelect(): void
+    {
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('technicalName', StorefrontPluginRegistry::BASE_THEME_NAME));
+
+        /** @var ThemeEntity $baseTheme */
+        $baseTheme = $this->themeRepository->search($criteria, $this->context)->first();
+
+        $name = $this->createTheme(
+            $baseTheme,
+            $this->getCustomConfigMultiSelect()
+        );
+
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('technicalName', $name));
+
+        /** @var ThemeEntity $inheritedTheme */
+        $inheritedTheme = $this->themeRepository->search($criteria, $this->context)->first();
+
+        $name = $this->createTheme($inheritedTheme);
+
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('name', $name));
+
+        /** @var ThemeEntity $childTheme */
+        $childTheme = $this->themeRepository->search($criteria, $this->context)->first();
+
+        $this->themeService->updateTheme(
+            $childTheme->getId(),
+            [
+                'multi' => [
+                    'value' => ['top'],
+                ],
+            ],
+            null,
+            $this->context
+        );
+
+        $theme = $this->themeService->getThemeConfiguration($childTheme->getId(), false, $this->context);
+
+        static::assertArrayHasKey('multi', $theme['fields']);
+        static::assertArrayHasKey('value', $theme['fields']['multi']);
+        static::assertEquals(['top'], $theme['fields']['multi']['value']);
+    }
+
     public function testCompileTheme(): void
     {
         static::markTestSkipped('theme compile is not possible cause app.js does not exists');
@@ -279,140 +319,156 @@ class ThemeTest extends TestCase
             'technicalName' => null,
         ]], $this->context);
 
-        $expectedColor = '';
-        $expectedTheme = '';
+        $_expectedColor = '';
+        $_expectedTheme = '';
         $themeCompilerMock = $this->createMock(ThemeCompiler::class);
         $themeCompilerMock->expects(static::exactly(2))
             ->method('compileTheme')
             ->with(
                 new IsEqual(Defaults::SALES_CHANNEL),
-                new Callback(static function (string $value) use (&$expectedTheme): bool {
-                    return $value === $expectedTheme;
+                new Callback(static function (string $value) use (&$_expectedTheme): bool {
+                    return $value === $_expectedTheme;
                 }),
-                new Callback(static function (StorefrontPluginConfiguration $value) use (&$expectedColor): bool {
-                    return $value->getThemeConfig()['fields']['sw-color-brand-primary']['value'] === $expectedColor;
+                new Callback(static function (StorefrontPluginConfiguration $value) use (&$_expectedColor): bool {
+                    return $value->getThemeConfig()['fields']['sw-color-brand-primary']['value'] === $_expectedColor;
                 })
             );
 
+        $kernel = new class($this->getContainer()->get('kernel')) implements KernelInterface {
+            /**
+             * @var KernelInterface
+             */
+            private $kernel;
+
+            /**
+             * @var fixtures\SimpleTheme\SimpleTheme
+             */
+            private $simpleTheme;
+
+            public function __construct(KernelInterface $kernel)
+            {
+                $this->kernel = $kernel;
+                $this->simpleTheme = new fixtures\SimpleTheme\SimpleTheme();
+            }
+
+            public function getBundles()
+            {
+                $bundles = $this->kernel->getBundles();
+                $bundles[$this->simpleTheme->getName()] = $this->simpleTheme;
+
+                return $bundles;
+            }
+
+            public function getBundle($name)
+            {
+                return $name === $this->simpleTheme->getName() ? $this->simpleTheme : $this->kernel->getBundle($name);
+            }
+
+            public function handle(Request $request, $type = self::MASTER_REQUEST, $catch = true)
+            {
+                return $this->kernel->{__FUNCTION__}(...\func_get_args());
+            }
+
+            public function registerBundles()
+            {
+                return $this->kernel->{__FUNCTION__}(...\func_get_args());
+            }
+
+            public function registerContainerConfiguration(LoaderInterface $loader)
+            {
+                return $this->kernel->{__FUNCTION__}(...\func_get_args());
+            }
+
+            public function boot()
+            {
+                return $this->kernel->{__FUNCTION__}(...\func_get_args());
+            }
+
+            public function shutdown()
+            {
+                return $this->kernel->{__FUNCTION__}(...\func_get_args());
+            }
+
+            public function locateResource($name)
+            {
+                return $this->kernel->{__FUNCTION__}(...\func_get_args());
+            }
+
+            public function getName()
+            {
+                return $this->kernel->{__FUNCTION__}(...\func_get_args());
+            }
+
+            public function getEnvironment()
+            {
+                return $this->kernel->{__FUNCTION__}(...\func_get_args());
+            }
+
+            public function isDebug()
+            {
+                return $this->kernel->{__FUNCTION__}(...\func_get_args());
+            }
+
+            public function getRootDir()
+            {
+                return $this->kernel->{__FUNCTION__}(...\func_get_args());
+            }
+
+            public function getProjectDir()
+            {
+                return $this->kernel->{__FUNCTION__}(...\func_get_args());
+            }
+
+            public function getContainer()
+            {
+                return $this->kernel->{__FUNCTION__}(...\func_get_args());
+            }
+
+            public function getStartTime()
+            {
+                return $this->kernel->{__FUNCTION__}(...\func_get_args());
+            }
+
+            public function getCacheDir()
+            {
+                return $this->kernel->{__FUNCTION__}(...\func_get_args());
+            }
+
+            public function getLogDir()
+            {
+                return $this->kernel->{__FUNCTION__}(...\func_get_args());
+            }
+
+            public function getCharset()
+            {
+                return $this->kernel->{__FUNCTION__}(...\func_get_args());
+            }
+
+            public function __call($name, $arguments)
+            {
+                return $this->kernel->{__FUNCTION__}(...\func_get_args());
+            }
+        };
+
         $themeService = new ThemeService(
             new StorefrontPluginRegistry(
-                new class($this->getContainer()->get('kernel')) implements KernelInterface {
-                    /**
-                     * @var KernelInterface
-                     */
-                    private $kernel;
-
-                    /**
-                     * @var fixtures\SimpleTheme\SimpleTheme
-                     */
-                    private $simpleTheme;
-
-                    public function __construct(KernelInterface $kernel)
-                    {
-                        $this->kernel = $kernel;
-                        $this->simpleTheme = new fixtures\SimpleTheme\SimpleTheme();
-                    }
-
-                    public function getBundles()
-                    {
-                        $bundles = $this->kernel->getBundles();
-                        $bundles[$this->simpleTheme->getName()] = $this->simpleTheme;
-
-                        return $bundles;
-                    }
-
-                    public function getBundle($name)
-                    {
-                        return $name === $this->simpleTheme->getName() ? $this->simpleTheme : $this->kernel->getBundle($name);
-                    }
-
-                    public function handle(Request $request, $type = self::MASTER_REQUEST, $catch = true)
-                    {
-                        return $this->kernel->{__FUNCTION__}(...\func_get_args());
-                    }
-
-                    public function registerBundles()
-                    {
-                        return $this->kernel->{__FUNCTION__}(...\func_get_args());
-                    }
-
-                    public function registerContainerConfiguration(LoaderInterface $loader)
-                    {
-                        return $this->kernel->{__FUNCTION__}(...\func_get_args());
-                    }
-
-                    public function boot()
-                    {
-                        return $this->kernel->{__FUNCTION__}(...\func_get_args());
-                    }
-
-                    public function shutdown()
-                    {
-                        return $this->kernel->{__FUNCTION__}(...\func_get_args());
-                    }
-
-                    public function locateResource($name)
-                    {
-                        return $this->kernel->{__FUNCTION__}(...\func_get_args());
-                    }
-
-                    public function getName()
-                    {
-                        return $this->kernel->{__FUNCTION__}(...\func_get_args());
-                    }
-
-                    public function getEnvironment()
-                    {
-                        return $this->kernel->{__FUNCTION__}(...\func_get_args());
-                    }
-
-                    public function isDebug()
-                    {
-                        return $this->kernel->{__FUNCTION__}(...\func_get_args());
-                    }
-
-                    public function getRootDir()
-                    {
-                        return $this->kernel->{__FUNCTION__}(...\func_get_args());
-                    }
-
-                    public function getContainer()
-                    {
-                        return $this->kernel->{__FUNCTION__}(...\func_get_args());
-                    }
-
-                    public function getStartTime()
-                    {
-                        return $this->kernel->{__FUNCTION__}(...\func_get_args());
-                    }
-
-                    public function getCacheDir()
-                    {
-                        return $this->kernel->{__FUNCTION__}(...\func_get_args());
-                    }
-
-                    public function getLogDir()
-                    {
-                        return $this->kernel->{__FUNCTION__}(...\func_get_args());
-                    }
-
-                    public function getCharset()
-                    {
-                        return $this->kernel->{__FUNCTION__}(...\func_get_args());
-                    }
-
-                    public function __call($name, $arguments)
-                    {
-                        return $this->kernel->{__FUNCTION__}(...\func_get_args());
-                    }
-                },
+                $kernel,
                 $this->getContainer()->get(StorefrontPluginConfigurationFactory::class),
                 $this->getContainer()->get(ActiveAppsLoader::class)
             ),
             $this->getContainer()->get('theme.repository'),
             $this->getContainer()->get('theme_sales_channel.repository'),
-            $this->getContainer()->get('media.repository'),
-            $themeCompilerMock
+            $themeCompilerMock,
+            $this->getContainer()->get('event_dispatcher'),
+            new DatabaseConfigLoader(
+                $this->getContainer()->get('theme.repository'),
+                new StorefrontPluginRegistry(
+                    $kernel,
+                    $this->getContainer()->get(StorefrontPluginConfigurationFactory::class),
+                    $this->getContainer()->get(ActiveAppsLoader::class)
+                ),
+                $this->getContainer()->get('media.repository'),
+            ),
         );
         $themeService->updateTheme(
             $childTheme->getId(),
@@ -425,11 +481,11 @@ class ThemeTest extends TestCase
             $this->context
         );
 
-        $expectedColor = '#b1900f';
-        $expectedTheme = $childTheme->getId();
+        $_expectedColor = '#b1900f';
+        $_expectedTheme = $childTheme->getId();
         $themeService->compileTheme(Defaults::SALES_CHANNEL, $childTheme->getId(), $this->context);
-        $expectedColor = '#008490';
-        $expectedTheme = $baseTheme->getId();
+        $_expectedColor = '#008490';
+        $_expectedTheme = $baseTheme->getId();
         $themeService->compileTheme(Defaults::SALES_CHANNEL, $baseTheme->getId(), $this->context);
     }
 
@@ -538,5 +594,52 @@ class ThemeTest extends TestCase
         );
 
         return $name;
+    }
+
+    private function getCustomConfigMultiSelect(): array
+    {
+        return [
+            'fields' => [
+                'multi' => [
+                    'label' => [
+                        'en-GB' => 'Multi',
+                        'de-DE' => 'Multi',
+                    ],
+                    'scss' => false,
+                    'type' => 'text',
+                    'value' => [
+                        0 => 'top',
+                        1 => 'bottom',
+                    ],
+                    'custom' => [
+                        'componentName' => 'sw-multi-select',
+                        'options' => [
+                            0 => [
+                                'value' => 'bottom',
+                                'label' => [
+                                    'en-GB' => 'bottom',
+                                    'de-DE' => 'unten',
+                                ],
+                            ],
+                            1 => [
+                                'value' => 'top',
+                                'label' => [
+                                    'en-GB' => 'top',
+                                    'de-DE' => 'oben',
+                                ],
+                            ],
+                            2 => [
+                                'value' => 'middle',
+                                'label' => [
+                                    'en-GB' => 'middle',
+                                    'de-DE' => 'mittel',
+                                ],
+                            ],
+                        ],
+                    ],
+                    'editable' => true,
+                ],
+            ],
+        ];
     }
 }

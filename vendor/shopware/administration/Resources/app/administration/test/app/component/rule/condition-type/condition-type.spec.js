@@ -1,6 +1,7 @@
 /* global adminPath */
-import { createLocalVue, shallowMount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import 'src/app/component/rule/sw-condition-base';
+import ConditionDataProviderService from 'src/app/service/rule-condition.service';
 import fs from 'fs';
 // eslint-disable-next-line
 import path from 'path';
@@ -15,11 +16,7 @@ function importAllConditionTypes() {
 }
 
 function createWrapperForComponent(componentName, props = {}) {
-    const localVue = createLocalVue();
-    localVue.directive('tooltip', {});
-
     return shallowMount(Shopware.Component.build(componentName), {
-        localVue,
         stubs: {
             'sw-field-error': {
                 template: '<div class="sw-field-error"></div>'
@@ -77,21 +74,12 @@ function createWrapperForComponent(componentName, props = {}) {
             }
         },
         provide: {
-            conditionDataProviderService: {
-                getComponentByCondition: () => {},
-                getOperatorSet: () => {}
-            },
+            conditionDataProviderService: new ConditionDataProviderService(),
             availableTypes: [],
             childAssociationField: {},
             repositoryFactory: {
                 create: () => ({})
-            },
-            feature: {
-                isActive: () => true
             }
-        },
-        mocks: {
-            $tc: v => v
         },
         propsData: {
             condition: {},

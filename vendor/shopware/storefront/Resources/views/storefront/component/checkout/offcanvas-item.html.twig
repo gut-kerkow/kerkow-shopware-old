@@ -7,9 +7,13 @@
     {% set type = lineItem.type %}
     {% set quantity = lineItem.quantity %}
     {% set id = lineItem.id %}
+    {% set childrenTemplate = '@Storefront/storefront/component/checkout/offcanvas-item-children.html.twig' %}
+
+    {# @deprecated tag:v6.5.0 - var will be removed with no replacement #}
+    {% set cartItemClasses = '' %}
 
     {% block component_offcanvas_cart_item_container %}
-        <div class="cart-item cart-item-{{ type }}{% if isDiscount %} is-discount{% endif %}{% if isNested %} is-nested{% endif %}{% if isChild %} is-child{% endif %} js-cart-item">
+        <div class="cart-item cart-item-{{ type }}{% if isDiscount %} is-discount{% endif %}{{ cartItemClasses }} js-cart-item">
             <div class="row cart-item-row">
                 {% block component_offcanvas_product_image %}
                     <div class="col-auto">
@@ -56,7 +60,7 @@
                 {% endblock %}
 
                 {% block component_offcanvas_product_details %}
-                    <div class="col cart-item-details">
+                    <div class="col-7 cart-item-details">
                         {% block component_offcanvas_product_details_inner %}
                             <div class="cart-item-details-container">
                                 {% block component_offcanvas_product_label %}
@@ -96,9 +100,6 @@
                                     {% endif %}
                                 {% endblock %}
 
-                                {# @deprecated tag:v6.4.0.0 #}
-                                {% block component_offcanvas_product_variants %}{% endblock %}
-
                                 {% block component_offcanvas_product_quantity_price %}
                                     <div class="cart-quantity-price">
                                         {% block component_offcanvas_product_quantity %}
@@ -123,7 +124,7 @@
                                                             {% if quantityInformation.maxPurchase %}
                                                                 {% set maxQuantity = quantityInformation.maxPurchase %}
                                                             {% else %}
-                                                                {% set maxQuantity = shopware.config.core.cart.maxQuantity %}
+                                                                {% set maxQuantity = config('core.cart.maxQuantity') %}
                                                             {% endif %}
 
                                                             {% block component_offcanvas_product_buy_quantity %}
@@ -192,17 +193,20 @@
                         {% endblock %}
                     </div>
                 {% endblock %}
+
+                {% block component_offcanvas_children %}
+                    {% if isNested %}
+                        {# @deprecated tag:v6.5.0 - block will be removed, use `component_offcanvas_item_children` in `@Storefront/storefront/component/checkout/offcanvas-item-children.html.twig` instead #}
+                        {% block component_offcanvas_cart_item_children %}
+                            {% sw_include childrenTemplate %}
+                        {% endblock %}
+                    {% endif %}
+                {% endblock %}
+
             </div>
         </div>
     {% endblock %}
 
-    {% block component_offcanvas_cart_item_children %}
-        {% for lineItem in lineItem.children %}
-            {% block component_offcanvas_cart_item_child %}
-                {% sw_include '@Storefront/storefront/component/checkout/offcanvas-item.html.twig' with {
-                    'isChild': true
-                } %}
-            {% endblock %}
-        {% endfor %}
-    {% endblock %}
+    {# @deprecated tag:v6.5.0 - block will be removed #}
+    {% block component_offcanvas_cart_item_child %}{% endblock %}
 {% endblock %}

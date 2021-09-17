@@ -4,7 +4,6 @@ namespace Shopware\Core\Framework\DataAbstractionLayer;
 
 use Shopware\Core\Framework\DataAbstractionLayer\Dbal\EntityDefinitionQueryHelper;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\AssociationField;
-use Shopware\Core\Framework\DataAbstractionLayer\Field\BlacklistRuleField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\BlobField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\BoolField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\CalculatedPriceField;
@@ -25,7 +24,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\IdField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\IntField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\JsonField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ListField;
-use Shopware\Core\Framework\DataAbstractionLayer\Field\ListingPriceField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\LongTextField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\OneToManyAssociationField;
@@ -43,18 +41,17 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\TreeLevelField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\TreePathField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\UpdatedAtField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\VersionField;
-use Shopware\Core\Framework\DataAbstractionLayer\Field\WhitelistRuleField;
 
 class SchemaGenerator
 {
-    private $tableTemplate = <<<EOL
+    private string $tableTemplate = <<<EOL
 CREATE TABLE `#name#` (
     #columns#,
     #keys#
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 EOL;
 
-    private $columnTemplate = <<<EOL
+    private string $columnTemplate = <<<EOL
     `#name#` #type# #nullable# #default#
 EOL;
 
@@ -131,13 +128,10 @@ EOL;
             case $field instanceof TranslatedField:
                 return null;
 
-            case $field instanceof WhitelistRuleField:
-            case $field instanceof BlacklistRuleField:
             case $field instanceof CartPriceField:
             case $field instanceof CalculatedPriceField:
             case $field instanceof PriceDefinitionField:
             case $field instanceof PriceField:
-            case $field instanceof ListingPriceField:
             case $field instanceof ListField:
             case $field instanceof JsonField:
                 $type = 'JSON';

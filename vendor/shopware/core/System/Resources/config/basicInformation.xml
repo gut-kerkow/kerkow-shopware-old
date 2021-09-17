@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/platform/master/src/Core/System/SystemConfig/Schema/config.xsd">
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/platform/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
     <card>
         <title>Basic information</title>
         <title lang="de-DE">Stammdaten</title>
@@ -29,6 +29,21 @@
             <helpText lang="de-DE">Setzt den Metatag "isFamilyFriendly" für Suchmaschinen</helpText>
         </input-field>
 
+        <input-field type="text-editor">
+            <name>address</name>
+            <label>Shop owner's address</label>
+            <label lang="de-DE">Shopbetreiber-Adresse</label>
+            <placeholder>Enter address...</placeholder>
+            <placeholder lang="de-DE">Adresse eingeben ...</placeholder>
+        </input-field>
+
+        <input-field type="text-editor">
+            <name>bankAccount</name>
+            <label>Shop owner's banking information</label>
+            <label lang="de-DE">Shopbetreiber-Bankinformationen</label>
+            <placeholder>Enter banking information...</placeholder>
+            <placeholder lang="de-DE">Bankinformationen eingeben ...</placeholder>
+        </input-field>
     </card>
 
     <card>
@@ -86,7 +101,7 @@
         </component>
 
         <component name="sw-cms-page-select">
-            <name>404Page</name>
+            <name>http404Page</name>
             <entity>cms_page</entity>
             <pageType>page</pageType>
             <label>Layout for 404 pages</label>
@@ -131,14 +146,6 @@
         <title>Security and Privacy</title>
         <title lang="de-DE">Sicherheit und Datenschutz</title>
 
-        <component name="sw-settings-captcha-select">
-            <name>activeCaptchas</name>
-            <label>Active captchas</label>
-            <label lang="de-DE">Aktive Captchas</label>
-            <placeholder>None</placeholder>
-            <placeholder lang="de-DE">Keine</placeholder>
-        </component>
-
         <component name="sw-switch-field">
             <name>acceptAllCookies</name>
             <bordered>bordered</bordered>
@@ -173,6 +180,19 @@
             <label lang="de-DE">Telefonummer in Kontaktformularen als Pflichtfeld behandeln</label>
             <helpText>If active, the field "phone number" has to be filled in, in order to submit a contact form.</helpText>
             <helpText lang="de-DE">Wenn aktiv, muss das Feld "Telefonnummer" ausgefüllt werden, um ein Kontaktformular absenden zu können.</helpText>
+        </component>
+    </card>
+
+    <card>
+        <title>CAPTCHA</title>
+        <title lang="de-DE">CAPTCHA</title>
+
+        <component name="sw-settings-captcha-select-v2">
+            <name>activeCaptchasV2</name>
+            <label>Active CAPTCHAS</label>
+            <label lang="de-DE">Aktive CAPTCHAS</label>
+            <placeholder>None</placeholder>
+            <placeholder lang="de-DE">Keine</placeholder>
         </component>
     </card>
 

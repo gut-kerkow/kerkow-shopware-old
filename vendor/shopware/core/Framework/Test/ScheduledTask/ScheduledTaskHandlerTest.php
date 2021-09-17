@@ -4,6 +4,7 @@ namespace Shopware\Core\Framework\Test\ScheduledTask;
 
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -35,19 +36,24 @@ class ScheduledTaskHandlerTest extends TestCase
         $this->scheduledTaskRepo = $this->getContainer()->get('scheduled_task.repository');
     }
 
-    public function testHandle(): void
+    /**
+     * @dataProvider allowedStatus
+     */
+    public function testHandle(string $status): void
     {
         $this->connection->exec('DELETE FROM scheduled_task');
 
         $taskId = Uuid::randomHex();
         $originalNextExecution = (new \DateTime())->modify('-10 seconds');
+        $interval = 300;
+
         $this->scheduledTaskRepo->create([
             [
                 'id' => $taskId,
                 'name' => 'test',
                 'scheduledTaskClass' => RequeueDeadMessagesTask::class,
-                'runInterval' => 300,
-                'status' => ScheduledTaskDefinition::STATUS_QUEUED,
+                'runInterval' => $interval,
+                'status' => $status,
                 'nextExecutionTime' => $originalNextExecution,
             ],
         ], Context::createDefaultContext());
@@ -62,8 +68,61 @@ class ScheduledTaskHandlerTest extends TestCase
 
         /** @var ScheduledTaskEntity $task */
         $task = $this->scheduledTaskRepo->search(new Criteria([$taskId]), Context::createDefaultContext())->get($taskId);
+
+        $newOriginalNextExecution = clone $originalNextExecution;
+        $newOriginalNextExecution->modify(sprintf('+%d seconds', $interval));
+        $newOriginalNextExecutionString = $newOriginalNextExecution->format(Defaults::STORAGE_DATE_TIME_FORMAT);
+        $nextExecutionTimeString = $task->getNextExecutionTime()->format(Defaults::STORAGE_DATE_TIME_FORMAT);
+
         static::assertEquals(ScheduledTaskDefinition::STATUS_SCHEDULED, $task->getStatus());
-        static::assertEquals($task->getLastExecutionTime()->modify('+300 seconds'), $task->getNextExecutionTime());
+        static::assertEquals($newOriginalNextExecutionString, $nextExecutionTimeString);
+        static::assertNotEquals($originalNextExecution->format(\DATE_ATOM), $task->getNextExecutionTime()->format(\DATE_ATOM));
+    }
+
+    public function allowedStatus(): array
+    {
+        return [
+            [ScheduledTaskDefinition::STATUS_QUEUED],
+            [ScheduledTaskDefinition::STATUS_FAILED],
+        ];
+    }
+
+    public function testHandleWhenNewNextExecutionTimeLessThanNowTime(): void
+    {
+        $this->connection->exec('DELETE FROM scheduled_task');
+
+        $taskId = Uuid::randomHex();
+        $originalNextExecution = (new \DateTime())->modify('-24 hours');
+        $interval = 60;
+
+        $this->scheduledTaskRepo->create([
+            [
+                'id' => $taskId,
+                'name' => 'test',
+                'scheduledTaskClass' => RequeueDeadMessagesTask::class,
+                'runInterval' => $interval,
+                'status' => ScheduledTaskDefinition::STATUS_QUEUED,
+                'nextExecutionTime' => $originalNextExecution,
+            ],
+        ], Context::createDefaultContext());
+
+        $task = new RequeueDeadMessagesTask();
+        $task->setTaskId($taskId);
+
+        $handler = new DummyScheduledTaskHandler($this->scheduledTaskRepo, $taskId);
+        $handler($task);
+        $nowTime = new \DateTime();
+
+        static::assertTrue($handler->wasCalled());
+
+        /** @var ScheduledTaskEntity $task */
+        $task = $this->scheduledTaskRepo->search(new Criteria([$taskId]), Context::createDefaultContext())->get($taskId);
+
+        static::assertEquals(ScheduledTaskDefinition::STATUS_SCHEDULED, $task->getStatus());
+        static::assertGreaterThan(
+            $task->getNextExecutionTime()->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            $nowTime->format(Defaults::STORAGE_DATE_TIME_FORMAT)
+        );
         static::assertNotEquals($originalNextExecution->format(\DATE_ATOM), $task->getNextExecutionTime()->format(\DATE_ATOM));
     }
 
@@ -122,9 +181,9 @@ class ScheduledTaskHandlerTest extends TestCase
     }
 
     /**
-     * @dataProvider notQueuedStatus
+     * @dataProvider notAllowedStatus
      */
-    public function testHandleIgnoresWhenTaskIsNotQueued(string $status): void
+    public function testHandleIgnoresWhenTaskIsNotAllowedForExecution(string $status): void
     {
         $this->connection->exec('DELETE FROM scheduled_task');
 
@@ -153,10 +212,9 @@ class ScheduledTaskHandlerTest extends TestCase
         static::assertEquals($status, $task->getStatus());
     }
 
-    public function notQueuedStatus(): array
+    public function notAllowedStatus(): array
     {
         return [
-            [ScheduledTaskDefinition::STATUS_FAILED],
             [ScheduledTaskDefinition::STATUS_RUNNING],
             [ScheduledTaskDefinition::STATUS_SCHEDULED],
             [ScheduledTaskDefinition::STATUS_INACTIVE],

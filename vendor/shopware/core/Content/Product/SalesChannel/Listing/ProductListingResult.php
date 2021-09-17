@@ -4,60 +4,23 @@ namespace Shopware\Core\Content\Product\SalesChannel\Listing;
 
 use Shopware\Core\Content\Product\SalesChannel\Sorting\ProductSortingCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopware\Core\Framework\Struct\StateAwareTrait;
 
 class ProductListingResult extends EntitySearchResult
 {
-    /**
-     * @var string|null
-     */
-    protected $sorting;
+    use StateAwareTrait;
 
-    /**
-     * @var array
-     */
-    protected $currentFilters = [];
+    protected ?string $sorting = null;
 
-    /**
-     * @var int
-     */
-    protected $page;
+    protected array $currentFilters = [];
 
-    /**
-     * @var int
-     */
-    protected $limit;
+    protected ProductSortingCollection $availableSortings;
 
-    /**
-     * @var ProductListingSorting[]
-     *
-     * @deprecated tag:v6.4.0 - use availableSortings instead
-     */
-    protected $sortings = [];
-
-    /**
-     * @var ProductSortingCollection
-     */
-    protected $availableSortings;
+    protected ?string $streamId = null;
 
     public function addCurrentFilter(string $key, $value): void
     {
         $this->currentFilters[$key] = $value;
-    }
-
-    /**
-     * @deprecated tag:v6.4.0 - use getAvailableSortings() instead
-     */
-    public function getSortings(): array
-    {
-        return $this->sortings;
-    }
-
-    /**
-     * @deprecated tag:v6.4.0 - use setAvailableSortings() instead
-     */
-    public function setSortings(array $sortings): void
-    {
-        $this->sortings = $sortings;
     }
 
     public function getAvailableSortings(): ProductSortingCollection
@@ -80,26 +43,6 @@ class ProductListingResult extends EntitySearchResult
         $this->sorting = $sorting;
     }
 
-    public function getPage(): int
-    {
-        return $this->page;
-    }
-
-    public function setPage(int $page): void
-    {
-        $this->page = $page;
-    }
-
-    public function getLimit(): int
-    {
-        return $this->limit;
-    }
-
-    public function setLimit(int $limit): void
-    {
-        $this->limit = $limit;
-    }
-
     public function getCurrentFilters(): array
     {
         return $this->currentFilters;
@@ -113,5 +56,15 @@ class ProductListingResult extends EntitySearchResult
     public function getApiAlias(): string
     {
         return 'product_listing';
+    }
+
+    public function setStreamId(?string $streamId): void
+    {
+        $this->streamId = $streamId;
+    }
+
+    public function getStreamId(): ?string
+    {
+        return $this->streamId;
     }
 }

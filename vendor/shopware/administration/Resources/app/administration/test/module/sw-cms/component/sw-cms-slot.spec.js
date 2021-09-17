@@ -15,9 +15,6 @@ function createWrapper() {
             'foo-bar': true,
             'sw-icon': true
         },
-        mocks: {
-            $tc: (value) => value
-        },
         provide: {
             cmsService: {
                 getCmsElementConfigByName: () => ({
@@ -36,6 +33,17 @@ describe('module/sw-cms/component/sw-cms-slot', () => {
         const wrapper = createWrapper();
 
         expect(wrapper.vm).toBeTruthy();
+    });
+
+    it('should contain the slot name as class', async () => {
+        const wrapper = createWrapper();
+        await wrapper.setProps({
+            element: {
+                slot: 'left'
+            }
+        });
+
+        expect(wrapper.classes()).toContain('sw-cms-slot-left');
     });
 
     it('disable the custom component', async () => {

@@ -114,6 +114,17 @@ class AppLoaderTest extends TestCase
         static::assertEquals($expectedConfig, $appLoader->getConfiguration($app));
     }
 
+    public function testGetCmsExtensions(): void
+    {
+        $appLoader = $this->getAppLoaderForFolder(__DIR__ . '/../Manifest/_fixtures/test');
+
+        $path = str_replace($this->getContainer()->getParameter('kernel.project_dir') . '/', '', __DIR__ . '/../Manifest/_fixtures/test');
+        $app = (new AppEntity())->assign(['path' => $path]);
+
+        static::assertNotNull($appLoader->getCmsExtensions($app)->getBlocks());
+        static::assertCount(2, $appLoader->getCmsExtensions($app)->getBlocks()->getBlocks());
+    }
+
     private function getAppLoaderForFolder(string $folder): AppLoader
     {
         return new AppLoader(

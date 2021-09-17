@@ -7,7 +7,7 @@ Component.register('sw-cms-el-youtube-video', {
     template,
 
     mixins: [
-        Mixin.getByName('cms-element')
+        Mixin.getByName('cms-element'),
     ],
 
     computed: {
@@ -17,18 +17,6 @@ Component.register('sw-cms-el-youtube-video', {
 
         relatedVideos() {
             return 'rel=0&';
-        },
-
-        /**
-         * @deprecated tag:v6.4.0 - This computed prop will be removed because videos should never have autoplay
-         * in the administration
-         */
-        autoPlay() {
-            if (!this.element.config.autoPlay.value) {
-                return '';
-            }
-
-            return 'autoplay=1&';
         },
 
         loop() {
@@ -86,7 +74,7 @@ Component.register('sw-cms-el-youtube-video', {
             }
 
             return `is--${this.element.config.displayMode.value}`;
-        }
+        },
     },
 
     created() {
@@ -97,6 +85,6 @@ Component.register('sw-cms-el-youtube-video', {
         createdComponent() {
             this.initElementConfig('youtube-video');
             this.initElementData('youtube-video');
-        }
-    }
+        },
+    },
 });

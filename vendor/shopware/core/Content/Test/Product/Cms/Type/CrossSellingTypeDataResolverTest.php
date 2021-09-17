@@ -16,7 +16,6 @@ use Shopware\Core\Content\Product\SalesChannel\CrossSelling\CrossSellingElementC
 use Shopware\Core\Content\Product\SalesChannel\CrossSelling\ProductCrossSellingRouteResponse;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
-use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
@@ -32,8 +31,6 @@ class CrossSellingTypeDataResolverTest extends TestCase
 
     protected function setUp(): void
     {
-        Feature::skipTestIfInActive('FEATURE_NEXT_10078', $this);
-
         $mock = $this->createMock(AbstractProductCrossSellingRoute::class);
         $mock->method('load')->willReturn(
             new ProductCrossSellingRouteResponse(
@@ -82,28 +79,6 @@ class CrossSellingTypeDataResolverTest extends TestCase
         static::assertCount(1, $criteriaCollection->all());
     }
 
-    public function testCollectWithRequest(): void
-    {
-        $requests = [
-            '_route' => 'frontend.detail.page',
-            'productId' => '123',
-        ];
-        $resolverContext = new ResolverContext($this->createMock(SalesChannelContext::class), new Request($requests));
-
-        $fieldConfig = new FieldConfigCollection();
-        $fieldConfig->add(new FieldConfig('product', FieldConfig::SOURCE_STATIC, null));
-
-        $slot = new CmsSlotEntity();
-        $slot->setUniqueIdentifier('id');
-        $slot->setType('cross-selling');
-        $slot->setFieldConfig($fieldConfig);
-
-        $criteriaCollection = $this->crossSellingResolver->collect($slot, $resolverContext);
-
-        static::assertNotNull($criteriaCollection);
-        static::assertCount(1, $criteriaCollection->all());
-    }
-
     public function testEnrichWithEmptyConfig(): void
     {
         $resolverContext = new ResolverContext($this->createMock(SalesChannelContext::class), new Request());
@@ -127,6 +102,7 @@ class CrossSellingTypeDataResolverTest extends TestCase
         $resolverContext = new ResolverContext($this->createMock(SalesChannelContext::class), new Request());
         $result = new ElementDataCollection();
         $result->add('product_id', new EntitySearchResult(
+            'product',
             1,
             new ProductCollection(),
             null,

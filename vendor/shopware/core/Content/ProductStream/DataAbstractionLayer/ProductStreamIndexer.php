@@ -6,7 +6,6 @@ use Doctrine\DBAL\Connection;
 use Shopware\Core\Content\Product\ProductDefinition;
 use Shopware\Core\Content\ProductStream\Event\ProductStreamIndexerEvent;
 use Shopware\Core\Content\ProductStream\ProductStreamDefinition;
-use Shopware\Core\Framework\Adapter\Cache\CacheClearer;
 use Shopware\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
 use Shopware\Core\Framework\DataAbstractionLayer\Doctrine\FetchModeHelper;
 use Shopware\Core\Framework\DataAbstractionLayer\Doctrine\RetryableQuery;
@@ -23,46 +22,22 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 class ProductStreamIndexer extends EntityIndexer
 {
-    /**
-     * @var IteratorFactory
-     */
-    private $iteratorFactory;
+    private IteratorFactory $iteratorFactory;
 
-    /**
-     * @var Connection
-     */
-    private $connection;
+    private Connection $connection;
 
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $repository;
+    private EntityRepositoryInterface $repository;
 
-    /**
-     * @var CacheClearer
-     */
-    private $cacheClearer;
+    private Serializer $serializer;
 
-    /**
-     * @var Serializer
-     */
-    private $serializer;
+    private ProductDefinition $productDefinition;
 
-    /**
-     * @var ProductDefinition
-     */
-    private $productDefinition;
-
-    /**
-     * @var EventDispatcherInterface
-     */
-    private $eventDispatcher;
+    private EventDispatcherInterface $eventDispatcher;
 
     public function __construct(
         Connection $connection,
         IteratorFactory $iteratorFactory,
         EntityRepositoryInterface $repository,
-        CacheClearer $cacheClearer,
         Serializer $serializer,
         ProductDefinition $productDefinition,
         EventDispatcherInterface $eventDispatcher
@@ -70,7 +45,6 @@ class ProductStreamIndexer extends EntityIndexer
         $this->iteratorFactory = $iteratorFactory;
         $this->repository = $repository;
         $this->connection = $connection;
-        $this->cacheClearer = $cacheClearer;
         $this->serializer = $serializer;
         $this->productDefinition = $productDefinition;
         $this->eventDispatcher = $eventDispatcher;
@@ -81,7 +55,12 @@ class ProductStreamIndexer extends EntityIndexer
         return 'product_stream.indexer';
     }
 
-    public function iterate($offset): ?EntityIndexingMessage
+    /**
+     * @param array|null $offset
+     *
+     * @deprecated tag:v6.5.0 The parameter $offset will be native typed
+     */
+    public function iterate(/*?array */$offset): ?EntityIndexingMessage
     {
         $iterator = $this->iteratorFactory->createIterator($this->repository->getDefinition(), $offset);
 
@@ -134,11 +113,12 @@ class ProductStreamIndexer extends EntityIndexer
         foreach ($filters as $id => $filter) {
             $invalid = false;
 
+            $serialized = null;
+
             try {
                 $serialized = $this->buildPayload($filter);
             } catch (InvalidFilterQueryException | SearchRequestException $exception) {
                 $invalid = true;
-                $serialized = null;
             } finally {
                 $update->execute([
                     'serialized' => $serialized,
@@ -148,14 +128,12 @@ class ProductStreamIndexer extends EntityIndexer
             }
         }
 
-        $this->eventDispatcher->dispatch(new ProductStreamIndexerEvent($ids, $message->getContext()));
-
-        $this->cacheClearer->invalidateIds($ids, ProductStreamDefinition::ENTITY_NAME);
+        $this->eventDispatcher->dispatch(new ProductStreamIndexerEvent($ids, $message->getContext(), $message->getSkip()));
     }
 
-    private function buildPayload($filter): string
+    private function buildPayload(array $filter): string
     {
-        usort($filter, function (array $a, array $b) {
+        usort($filter, static function (array $a, array $b) {
             return $a['position'] <=> $b['position'];
         });
 

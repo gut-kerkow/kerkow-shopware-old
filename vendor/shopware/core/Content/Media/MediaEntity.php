@@ -19,7 +19,9 @@ use Shopware\Core\Content\Product\Aggregate\ProductConfiguratorSetting\ProductCo
 use Shopware\Core\Content\Product\Aggregate\ProductManufacturer\ProductManufacturerCollection;
 use Shopware\Core\Content\Product\Aggregate\ProductMedia\ProductMediaCollection;
 use Shopware\Core\Content\Property\Aggregate\PropertyGroupOption\PropertyGroupOptionCollection;
+use Shopware\Core\Framework\App\Aggregate\AppPaymentMethod\AppPaymentMethodCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopware\Core\System\Tag\TagCollection;
 use Shopware\Core\System\User\UserEntity;
@@ -27,6 +29,7 @@ use Shopware\Core\System\User\UserEntity;
 class MediaEntity extends Entity
 {
     use EntityIdTrait;
+    use EntityCustomFieldsTrait;
 
     /**
      * @var string|null
@@ -159,11 +162,6 @@ class MediaEntity extends Entity
     protected $mailTemplateMedia;
 
     /**
-     * @var array|null
-     */
-    protected $customFields;
-
-    /**
      * @var TagCollection|null
      */
     protected $tags;
@@ -217,6 +215,11 @@ class MediaEntity extends Entity
      * @var DocumentCollection|null
      */
     protected $documents;
+
+    /**
+     * @var AppPaymentMethodCollection|null
+     */
+    protected $appPaymentMethods;
 
     public function get(string $property)
     {
@@ -474,16 +477,6 @@ class MediaEntity extends Entity
         $this->mailTemplateMedia = $mailTemplateMedia;
     }
 
-    public function getCustomFields(): ?array
-    {
-        return $this->customFields;
-    }
-
-    public function setCustomFields(?array $customFields): void
-    {
-        $this->customFields = $customFields;
-    }
-
     public function getTags(): ?TagCollection
     {
         return $this->tags;
@@ -610,5 +603,15 @@ class MediaEntity extends Entity
     public function setDocuments(DocumentCollection $documents): void
     {
         $this->documents = $documents;
+    }
+
+    public function getAppPaymentMethods(): ?AppPaymentMethodCollection
+    {
+        return $this->appPaymentMethods;
+    }
+
+    public function setAppPaymentMethods(AppPaymentMethodCollection $appPaymentMethods): void
+    {
+        $this->appPaymentMethods = $appPaymentMethods;
     }
 }

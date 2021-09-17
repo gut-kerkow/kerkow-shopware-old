@@ -9,13 +9,11 @@ use Shopware\Core\Framework\Api\ApiDefinition\Generator\OpenApi\OpenApiLoader;
 use Shopware\Core\Framework\Api\ApiDefinition\Generator\OpenApi\OpenApiPathBuilder;
 use Shopware\Core\Framework\Api\ApiDefinition\Generator\OpenApi\OpenApiSchemaBuilder;
 use Shopware\Core\Framework\Api\ApiDefinition\Generator\OpenApi3Generator;
-use Shopware\Core\Framework\Api\Converter\ApiVersionConverter;
 use Shopware\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Test\Api\ApiDefinition\EntityDefinition\SimpleDefinition;
 use Shopware\Core\Framework\Test\DataAbstractionLayer\Field\DataAbstractionLayerFieldTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
-use Shopware\Core\PlatformRequest;
 
 class OpenApi3GeneratorTest extends TestCase
 {
@@ -52,13 +50,14 @@ class OpenApi3GeneratorTest extends TestCase
             ['simple' => 'simple.repository']
         );
         $this->openApiGenerator = new OpenApi3Generator(
-            new OpenApiSchemaBuilder(),
+            new OpenApiSchemaBuilder('6.4.0.0'),
             new OpenApiPathBuilder(),
-            new OpenApiDefinitionSchemaBuilder($this->getContainer()->get(ApiVersionConverter::class)),
-            new OpenApiLoader($this->getContainer()->get('router'), $this->getContainer()->get('event_dispatcher'))
+            new OpenApiDefinitionSchemaBuilder(),
+            new OpenApiLoader($this->getContainer()->get('router'), $this->getContainer()->get('event_dispatcher')),
+            $this->getContainer()->getParameter('kernel.bundles_metadata')
         );
 
-        $this->schema = $this->openApiGenerator->getSchema($this->definitionRegistry->getDefinitions(), PlatformRequest::API_VERSION);
+        $this->schema = $this->openApiGenerator->getSchema($this->definitionRegistry->getDefinitions());
         $this->entityName = 'simple';
     }
 
@@ -67,7 +66,6 @@ class OpenApi3GeneratorTest extends TestCase
         Feature::registerFeature('FEATURE_NEXT_12345', ['default' => true]);
         $generatedSchema = $this->openApiGenerator->generate(
             $this->definitionRegistry->getDefinitions(),
-            PlatformRequest::API_VERSION,
             DefinitionService::STORE_API
         );
 
@@ -94,7 +92,6 @@ class OpenApi3GeneratorTest extends TestCase
         Feature::registerFeature('FEATURE_NEXT_12345', ['default' => false]);
         $generatedSchema = $this->openApiGenerator->generate(
             $this->definitionRegistry->getDefinitions(),
-            PlatformRequest::API_VERSION,
             DefinitionService::STORE_API
         );
         static::assertArrayHasKey('paths', $generatedSchema);
@@ -124,8 +121,8 @@ class OpenApi3GeneratorTest extends TestCase
         static::assertArrayHasKey('id', $properties);
         static::assertArrayHasKey('type', $properties['id']);
         static::assertEquals('string', $properties['id']['type']);
-        static::assertArrayHasKey('format', $properties['id']);
-        static::assertEquals('uuid', $properties['id']['format']);
+        static::assertArrayHasKey('pattern', $properties['id']);
+        static::assertEquals('^[0-9a-f]{32}$', $properties['id']['pattern']);
         static::assertArrayHasKey('stringField', $properties);
         static::assertArrayHasKey('type', $properties['stringField']);
         static::assertEquals('string', $properties['stringField']['type']);
@@ -161,8 +158,7 @@ class OpenApi3GeneratorTest extends TestCase
 
     private static function isFeatureAllTrue(): bool
     {
-        /* @var mixed $value */
-        $value = $_SERVER['FEATURE_ALL'];
+        $value = $_SERVER['FEATURE_ALL'] ?? 'false';
 
         return $value
             && $value !== 'false'

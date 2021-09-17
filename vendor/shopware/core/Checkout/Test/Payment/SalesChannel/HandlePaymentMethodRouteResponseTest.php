@@ -17,48 +17,27 @@ use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour;
 use Shopware\Core\Framework\Test\TestDataCollection;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\PlatformRequest;
 use Shopware\Core\System\StateMachine\StateMachineRegistry;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 
 class HandlePaymentMethodRouteResponseTest extends TestCase
 {
     use IntegrationTestBehaviour;
     use SalesChannelApiTestBehaviour;
 
-    /**
-     * @var \Symfony\Bundle\FrameworkBundle\KernelBrowser
-     */
-    private $browser;
+    private KernelBrowser $browser;
 
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $orderRepository;
+    private EntityRepositoryInterface $orderRepository;
 
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $customerRepository;
+    private EntityRepositoryInterface $customerRepository;
 
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $orderTransactionRepository;
+    private EntityRepositoryInterface $orderTransactionRepository;
 
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $paymentMethodRepository;
+    private EntityRepositoryInterface $paymentMethodRepository;
 
-    /**
-     * @var StateMachineRegistry
-     */
-    private $stateMachineRegistry;
+    private StateMachineRegistry $stateMachineRegistry;
 
-    /**
-     * @var TestDataCollection
-     */
-    private $ids;
+    private TestDataCollection $ids;
 
     protected function setUp(): void
     {
@@ -80,11 +59,12 @@ class HandlePaymentMethodRouteResponseTest extends TestCase
         $this->browser
             ->request(
                 'GET',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/handle-payment',
+                '/store-api/handle-payment',
                 [
                 ]
             );
 
+        static::assertIsString($this->browser->getResponse()->getContent());
         $response = json_decode($this->browser->getResponse()->getContent(), true);
 
         static::assertArrayHasKey('errors', $response);
@@ -96,12 +76,13 @@ class HandlePaymentMethodRouteResponseTest extends TestCase
         $this->browser
             ->request(
                 'GET',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/handle-payment',
+                '/store-api/handle-payment',
                 [
                     'orderId' => Uuid::randomHex(),
                 ]
             );
 
+        static::assertIsString($this->browser->getResponse()->getContent());
         $response = json_decode($this->browser->getResponse()->getContent(), true);
 
         static::assertArrayHasKey('errors', $response);
@@ -118,12 +99,13 @@ class HandlePaymentMethodRouteResponseTest extends TestCase
         $this->browser
             ->request(
                 'GET',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/handle-payment',
+                '/store-api/handle-payment',
                 [
                     'orderId' => $orderId,
                 ]
             );
 
+        static::assertIsString($this->browser->getResponse()->getContent());
         $response = json_decode($this->browser->getResponse()->getContent(), true);
         static::assertArrayHasKey('redirectUrl', $response);
         static::assertSame(AsyncTestPaymentHandlerV630::REDIRECT_URL, $response['redirectUrl']);

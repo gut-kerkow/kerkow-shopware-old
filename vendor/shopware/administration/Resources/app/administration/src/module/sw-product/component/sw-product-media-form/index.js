@@ -6,31 +6,32 @@ const { mapGetters } = Component.getComponentHelper();
 
 Component.register('sw-product-media-form', {
     template,
+
     inject: ['repositoryFactory', 'acl'],
 
     mixins: [
-        Mixin.getByName('notification')
+        Mixin.getByName('notification'),
     ],
 
     props: {
         disabled: {
             type: Boolean,
             required: false,
-            default: false
+            default: false,
         },
 
         isInherited: {
             type: Boolean,
             required: false,
-            default: false
-        }
+            default: false,
+        },
     },
 
     data() {
         return {
             isMediaLoading: false,
             columnCount: 5,
-            columnWidth: 90
+            columnWidth: 90,
         };
     },
 
@@ -68,7 +69,7 @@ Component.register('sw-product-media-form', {
         },
 
         ...mapGetters('swProductDetail', {
-            isStoreLoading: 'isLoading'
+            isStoreLoading: 'isLoading',
         }),
 
         isLoading() {
@@ -98,12 +99,20 @@ Component.register('sw-product-media-form', {
             const coverMediaItem = this.productMedia.find(coverMedium => coverMedium.media.id === this.product.coverId);
 
             return coverMediaItem.id;
-        }
+        },
     },
 
     methods: {
+        /**
+         * @deprecated tag:v6.5.0 - The method "onMediaUploadButtonOpenSidebar" will be removed because
+         * its relevant view was removed
+         */
         onMediaUploadButtonOpenSidebar() {
             this.$root.$emit('sidebar-toggle-open');
+        },
+
+        onOpenMedia() {
+            this.$emit('media-open');
         },
 
         updateColumnCount() {
@@ -145,9 +154,9 @@ Component.register('sw-product-media-form', {
                 isCover: mediaItems.length === 0,
                 media: {
                     isPlaceholder: true,
-                    name: ''
+                    name: '',
                 },
-                mediaId: mediaItems.length.toString()
+                mediaId: mediaItems.length.toString(),
             };
         },
 
@@ -180,7 +189,7 @@ Component.register('sw-product-media-form', {
         },
 
         createMediaAssociation(targetId) {
-            const productMedia = this.productMediaRepository.create(Shopware.Context.api);
+            const productMedia = this.productMediaRepository.create();
 
             productMedia.productId = this.product.id;
             productMedia.mediaId = targetId;
@@ -270,6 +279,6 @@ Component.register('sw-product-media-form', {
             this.productMedia.forEach((medium, index) => {
                 medium.position = index;
             });
-        }
-    }
+        },
+    },
 });

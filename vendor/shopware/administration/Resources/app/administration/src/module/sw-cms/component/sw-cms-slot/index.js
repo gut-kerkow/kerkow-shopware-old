@@ -14,26 +14,26 @@ Component.register('sw-cms-slot', {
             required: true,
             default() {
                 return {};
-            }
+            },
         },
 
         active: {
             type: Boolean,
             required: false,
-            default: false
+            default: false,
         },
 
         disabled: {
             type: Boolean,
             required: false,
-            default: false
-        }
+            default: false,
+        },
     },
 
     data() {
         return {
             showElementSettings: false,
-            showElementSelection: false
+            showElementSelection: false,
         };
     },
 
@@ -47,8 +47,11 @@ Component.register('sw-cms-slot', {
         },
 
         componentClasses() {
+            const componentClass = `sw-cms-slot-${this.element.slot}`;
+
             return {
-                'is--disabled': this.disabled
+                'is--disabled': this.disabled,
+                [componentClass]: !!this.element.slot,
             };
         },
 
@@ -64,15 +67,15 @@ Component.register('sw-cms-slot', {
             if (this.elementConfig.disabledConfigInfoTextKey) {
                 return {
                     message: this.$tc(this.elementConfig.disabledConfigInfoTextKey),
-                    disabled: !!this.elementConfig.defaultConfig && !this.element.locked
+                    disabled: !!this.elementConfig.defaultConfig && !this.element.locked,
                 };
             }
 
             return {
                 message: this.$tc('sw-cms.elements.general.config.tab.settings'),
-                disabled: true
+                disabled: true,
             };
-        }
+        },
     },
 
     methods: {
@@ -102,6 +105,6 @@ Component.register('sw-cms-slot', {
             this.element.type = elementType;
             this.element.locked = false;
             this.showElementSelection = false;
-        }
-    }
+        },
+    },
 });

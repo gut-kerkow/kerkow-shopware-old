@@ -1,7 +1,7 @@
 import template from './sw-url-field.html.twig';
 import './sw-url-field.scss';
 
-const { Component } = Shopware;
+const { Component, Utils } = Shopware;
 const { ShopwareError } = Shopware.Classes;
 
 /**
@@ -20,15 +20,24 @@ Component.extend('sw-url-field', 'sw-text-field', {
     props: {
         error: {
             type: Object,
-            required: false
-        }
+            required: false,
+            default: null,
+        },
+        omitUrlHash: {
+            type: Boolean,
+            default: false,
+        },
+        omitUrlSearch: {
+            type: Boolean,
+            default: false,
+        },
     },
 
     data() {
         return {
             sslActive: true,
             currentValue: this.value || '',
-            errorUrl: null
+            errorUrl: null,
         };
     },
 
@@ -60,13 +69,13 @@ Component.extend('sw-url-field', 'sw-text-field', {
 
         combinedError() {
             return this.errorUrl || this.error;
-        }
+        },
     },
 
     watch: {
         value() {
             this.checkInput(this.value || '');
-        }
+        },
     },
 
     created() {
@@ -79,6 +88,24 @@ Component.extend('sw-url-field', 'sw-text-field', {
         },
 
         onInput(event) {
+            this.$emit('beforeDebounce', this.url);
+
+            this.onDebounceInput(event);
+        },
+
+        /*
+         * input handling is debounced to give the user a little time to enter a valid url
+         * by direct-input-validation it is impossible to enter a url with port by typing
+         */
+        onDebounceInput: Utils.debounce(function debounceOnInput(event) {
+            this.handleInput(event);
+        }, 400),
+
+        onBlur(event) {
+            this.handleInput(event);
+        },
+
+        handleInput(event) {
             this.checkInput(event.target.value);
             this.$emit('input', this.url);
         },
@@ -99,13 +126,26 @@ Component.extend('sw-url-field', 'sw-text-field', {
             if (this.currentValue) {
                 try {
                     const url = new URL(`${this.urlPrefix}${this.currentValue}`);
-                    const path = this.currentValue.endsWith('/') ? url.pathname : url.pathname.replace(/\/$/, '');
-                    const host = url.host + (this.currentValue.endsWith(':') && url.port === '' && path === '' ? ':' : '');
-                    this.currentValue = this.$options.filters.unicodeUri(host) + path;
+                    if (this.omitUrlSearch) {
+                        url.search = '';
+                    }
+                    if (this.omitUrlHash) {
+                        url.hash = '';
+                    }
+
+                    // when a hash or search query is provided we want to allow trailing slash, eg a vue route `admin#/`
+                    const removeTrailingSlash = url.hash === '' && url.search === '' ? /\/$/ : '';
+
+                    // build URL via native URL.toString() function instead by hand @see NEXT-15747
+                    this.currentValue = url
+                        .toString()
+                        .replace(/https?\:\/\//, '') // remove leading http|https
+                        .replace(url.host, this.$options.filters.unicodeUri(url.host)) // fix "umlaut" domains
+                        .replace(removeTrailingSlash, ''); // remove trailing slash
                     this.errorUrl = null;
                 } catch {
                     this.errorUrl = new ShopwareError({
-                        code: 'INVALID_URL'
+                        code: 'INVALID_URL',
                     });
                 }
             }
@@ -118,6 +158,6 @@ Component.extend('sw-url-field', 'sw-text-field', {
 
             this.sslActive = !this.sslActive;
             this.$emit('input', this.url);
-        }
-    }
+        },
+    },
 });

@@ -16,10 +16,7 @@ class ValidatorTest extends TestCase
     {
         $mockValidator = $this->createMock(CartValidatorInterface::class);
         $mockValidator2 = new class($this->createMock(Error::class)) implements CartValidatorInterface {
-            /**
-             * @var Error
-             */
-            private $error;
+            private Error $error;
 
             public function __construct(Error $error)
             {
@@ -28,10 +25,10 @@ class ValidatorTest extends TestCase
 
             public function validate(
                 Cart $cart,
-                ErrorCollection $errorCollection,
-                SalesChannelContext $salesChannelContext
+                ErrorCollection $errors,
+                SalesChannelContext $context
             ): void {
-                $errorCollection->add($this->error);
+                $errors->add($this->error);
             }
         };
         $validator = new Validator([$mockValidator, $mockValidator2]);

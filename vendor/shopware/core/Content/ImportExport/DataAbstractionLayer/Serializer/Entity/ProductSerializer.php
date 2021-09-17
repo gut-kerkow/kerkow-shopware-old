@@ -11,7 +11,9 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
 use Shopware\Core\Framework\Struct\Struct;
+use Shopware\Core\Framework\Uuid\Uuid;
 
 class ProductSerializer extends EntitySerializer
 {
@@ -21,29 +23,36 @@ class ProductSerializer extends EntitySerializer
         ProductVisibilityDefinition::VISIBILITY_SEARCH => 'search',
     ];
 
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $visibilityRepository;
+    private EntityRepositoryInterface $visibilityRepository;
 
-    public function __construct(EntityRepositoryInterface $visibilityRepository)
-    {
+    private EntityRepositoryInterface $salesChannelRepository;
+
+    public function __construct(
+        EntityRepositoryInterface $visibilityRepository,
+        EntityRepositoryInterface $salesChannelRepository
+    ) {
         $this->visibilityRepository = $visibilityRepository;
+        $this->salesChannelRepository = $salesChannelRepository;
     }
 
-    public function serialize(Config $config, EntityDefinition $definition, $value): iterable
+    /**
+     * @param array|Struct|null $entity
+     *
+     * @return \Generator
+     */
+    public function serialize(Config $config, EntityDefinition $definition, $entity): iterable
     {
-        if ($value instanceof Struct) {
-            $value = $value->jsonSerialize();
+        if ($entity instanceof Struct) {
+            $entity = $entity->jsonSerialize();
         }
 
-        yield from parent::serialize($config, $definition, $value);
+        yield from parent::serialize($config, $definition, $entity);
 
-        if (!isset($value['visibilities'])) {
+        if (!isset($entity['visibilities'])) {
             return;
         }
 
-        $visibilities = $value['visibilities'];
+        $visibilities = $entity['visibilities'];
         if ($visibilities instanceof Struct) {
             $visibilities = $visibilities->jsonSerialize();
         }
@@ -70,24 +79,32 @@ class ProductSerializer extends EntitySerializer
         }
     }
 
-    public function deserialize(Config $config, EntityDefinition $definition, $value)
+    /**
+     * @param array|\Traversable $entity
+     *
+     * @return array|\Traversable
+     */
+    public function deserialize(Config $config, EntityDefinition $definition, $entity)
     {
-        $value = \is_array($value) ? $value : iterator_to_array($value);
+        $entity = \is_array($entity) ? $entity : iterator_to_array($entity);
 
-        yield from parent::deserialize($config, $definition, $value);
+        yield from parent::deserialize($config, $definition, $entity);
 
-        $productId = $value['id'] ?? null;
+        $productId = $entity['id'] ?? null;
 
         $mapping = array_flip(self::VISIBILITY_MAPPING);
 
         $visibilities = [];
 
         foreach ($mapping as $key => $type) {
-            if (!isset($value['visibilities'][$key])) {
+            if (!isset($entity['visibilities'][$key])) {
                 continue;
             }
 
-            $ids = array_filter(explode('|', $value['visibilities'][$key]));
+            $ids = array_filter(explode('|', $entity['visibilities'][$key]));
+
+            $ids = $this->convertSalesChannelNamesToIds($ids);
+
             foreach ($ids as $salesChannelId) {
                 $visibility = [
                     'salesChannelId' => $salesChannelId,
@@ -132,5 +149,38 @@ class ProductSerializer extends EntitySerializer
         }
 
         return $visibilities;
+    }
+
+    private function convertSalesChannelNamesToIds(array $ids): array
+    {
+        $salesChannelNames = [];
+
+        foreach ($ids as $key => $id) {
+            if (!Uuid::isValid($id)) {
+                $salesChannelNames[] = $id;
+                unset($ids[$key]);
+            }
+        }
+
+        if (empty($salesChannelNames)) {
+            return $ids;
+        }
+
+        $salesChannelNames = array_unique($salesChannelNames);
+        $filters = [];
+
+        foreach ($salesChannelNames as $salesChannelName) {
+            $filters[] = new EqualsFilter('name', $salesChannelName);
+        }
+
+        $criteria = new Criteria();
+        $criteria->addFilter(new MultiFilter(MultiFilter::CONNECTION_OR, $filters));
+
+        $additionalIds = $this->salesChannelRepository->searchIds(
+            $criteria,
+            Context::createDefaultContext()
+        )->getIds();
+
+        return array_unique(array_merge($ids, $additionalIds));
     }
 }

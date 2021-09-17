@@ -21,23 +21,17 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
  */
 class CartLoadRoute extends AbstractCartLoadRoute
 {
-    /**
-     * @var CartPersisterInterface
-     */
-    private $persister;
+    private CartPersisterInterface $persister;
 
-    /**
-     * @var EventDispatcherInterface
-     */
-    private $eventDispatcher;
+    private EventDispatcherInterface $eventDispatcher;
 
-    /**
-     * @var CartCalculator
-     */
-    private $cartCalculator;
+    private CartCalculator $cartCalculator;
 
-    public function __construct(CartPersisterInterface $persister, EventDispatcherInterface $eventDispatcher, CartCalculator $cartCalculator)
-    {
+    public function __construct(
+        CartPersisterInterface $persister,
+        EventDispatcherInterface $eventDispatcher,
+        CartCalculator $cartCalculator
+    ) {
         $this->persister = $persister;
         $this->eventDispatcher = $eventDispatcher;
         $this->cartCalculator = $cartCalculator;
@@ -52,16 +46,23 @@ class CartLoadRoute extends AbstractCartLoadRoute
      * @Since("6.3.0.0")
      * @OA\Get(
      *      path="/checkout/cart",
-     *      summary="Fetch current cart",
+     *      summary="Fetch or create a cart",
+     *      description="Used to fetch the current cart or for creating a new one.",
      *      operationId="readCart",
      *      tags={"Store API", "Cart"},
+     *      @OA\Parameter(
+     *          name="name",
+     *          description="The name of the new cart. This parameter will only be used when creating a new cart.",
+     *          @OA\Schema(type="string"),
+     *          in="query",
+     *      ),
      *      @OA\Response(
      *          response="200",
      *          description="Cart",
      *          @OA\JsonContent(ref="#/components/schemas/Cart")
      *     )
      * )
-     * @Route("/store-api/v{version}/checkout/cart", name="store-api.checkout.cart.read", methods={"GET", "POST"})
+     * @Route("/store-api/checkout/cart", name="store-api.checkout.cart.read", methods={"GET", "POST"})
      */
     public function load(Request $request, SalesChannelContext $context): CartResponse
     {
@@ -77,7 +78,7 @@ class CartLoadRoute extends AbstractCartLoadRoute
         return new CartResponse($this->cartCalculator->calculate($cart, $context));
     }
 
-    private function createNew($token, $name): Cart
+    private function createNew(string $token, string $name): Cart
     {
         $cart = new Cart($name, $token);
 

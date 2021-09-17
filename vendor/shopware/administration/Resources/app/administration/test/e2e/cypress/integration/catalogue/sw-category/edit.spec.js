@@ -1,8 +1,9 @@
-/// <reference types="Cypress" />
+// / <reference types="Cypress" />
 
 import CategoryPageObject from '../../../support/pages/module/sw-category.page-object';
 
 describe('Category: Edit categories', () => {
+    // eslint-disable-next-line no-undef
     before(() => {
         // Clean previous state and prepare Administration
         cy.setToInitialState();
@@ -66,7 +67,7 @@ describe('Category: Edit categories', () => {
     it('@catalogue: assign dynamic product group', () => {
         cy.server();
         cy.route({
-            url: '/api/v*/category/*',
+            url: `${Cypress.env('apiPath')}/category/*`,
             method: 'patch'
         }).as('saveData');
 
@@ -75,14 +76,15 @@ describe('Category: Edit categories', () => {
             .contains('Home')
             .click();
 
-        // Scroll to product assignment
-        cy.get('.sw-category-detail-base__products')
-            .scrollIntoView();
+        // Switch to products tab
+        cy.get('.sw-category-detail__tab-products')
+            .contains('Products')
+            .click();
 
         // Change product assignment type to dynamic product group
-        cy.get('.sw-category-detail__product-assignment-type-select').typeSingleSelect(
+        cy.get('.sw-category-detail-products__product-assignment-type-select').typeSingleSelect(
             'Dynamic product group',
-            '.sw-category-detail__product-assignment-type-select'
+            '.sw-category-detail-products__product-assignment-type-select'
         );
 
         // Verify that the preview shows an empty state first
@@ -90,9 +92,9 @@ describe('Category: Edit categories', () => {
             .should('contain', 'No dynamic product group selected');
 
         // Select product stream
-        cy.get('.sw-category-detail__product-stream-select').typeSingleSelect(
+        cy.get('.sw-category-detail-products__product-stream-select').typeSingleSelect(
             '2nd Product stream',
-            '.sw-category-detail__product-stream-select'
+            '.sw-category-detail-products__product-stream-select'
         );
 
         // Save the category
@@ -106,10 +108,10 @@ describe('Category: Edit categories', () => {
         });
 
         // Verify configured data is correct after save action
-        cy.get('.sw-category-detail__product-assignment-type-select .sw-single-select__selection-text')
+        cy.get('.sw-category-detail-products__product-assignment-type-select .sw-single-select__selection-text')
             .should('contain', 'Dynamic product group');
 
-        cy.get('.sw-category-detail__product-stream-select .sw-entity-single-select__selection-text')
+        cy.get('.sw-category-detail-products__product-stream-select .sw-entity-single-select__selection-text')
             .should('contain', '2nd Product stream');
     });
 
@@ -148,4 +150,40 @@ describe('Category: Edit categories', () => {
             cy.get('#categoryName').should('have.value', 'New Home');
         });
     });
+
+    it('@catalogue: saving the data when changing content language', () => {
+        cy.server();
+        cy.route({
+            url: `${Cypress.env('apiPath')}/category/*`,
+            method: 'patch'
+        }).as('saveData');
+
+        const page = new CategoryPageObject();
+
+        // Select a category
+        cy.get('.sw-tree-item__label')
+            .contains('Home')
+            .click();
+
+        cy.get('#categoryName').clearTypeAndCheck('Home - English');
+
+        page.changeTranslation('Deutsch', 0);
+        cy.get('.sw-modal__dialog').should('be.visible');
+        cy.get('#sw-language-switch-save-changes-button').click();
+
+        // Wait for category request with correct data to be successful
+        cy.wait('@saveData').then((xhr) => {
+            expect(xhr).to.have.property('status', 204);
+
+            cy.get('.sw-tree-item__label')
+                .should('be.visible')
+                .contains('Home');
+        });
+
+        page.changeTranslation('English', 1);
+        cy.get('.sw-tree-item__label').should('be.visible');
+        cy.get('.sw-tree-item__label')
+            .should('be.visible')
+            .contains('Home - English');
+    })
 });

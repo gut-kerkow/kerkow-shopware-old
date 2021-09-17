@@ -8,7 +8,6 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const WebpackCopyAfterBuildPlugin = require('@shopware-ag/webpack-copy-after-build');
-const dotenv = require('dotenv');
 const path = require('path');
 const fs = require('fs');
 const chalk = require('chalk');
@@ -30,24 +29,19 @@ if (isDev) {
 }
 
 // Error Handling when something is not defined
-if (isDev && !process.env.ENV_FILE) {
-    console.error(chalk.red('\n \u{26A0}️  You need to add the "ENV_FILE" as an environment variable for compiling the code. \u{26A0}️\n'));
-    process.exit(1);
-}
-
 if (isDev && !process.env.APP_URL) {
     console.error(chalk.red('\n \u{26A0}️  You need to add the "APP_URL" as an environment variable for compiling the code. \u{26A0}️\n'));
     process.exit(1);
 }
 
 if (isDev && !process.env.HOST) {
-    console.error(chalk.red('\n \u{26A0}️  You need to add the "HOST" as an environment variable for compiling the code. \u{26A0}️\n'));
-    process.exit(1);
+    process.env.HOST = '0.0.0.0';
+    console.debug(`HOST not defined. Using 0.0.0.0 as default`);
 }
 
 if (isDev && !process.env.PORT) {
-    console.error(chalk.red('\n \u{26A0}️  You need to add the "PORT" as an environment variable for compiling the code. \u{26A0}️\n'));
-    process.exit(1);
+    process.env.PORT = 8080;
+    console.debug(`PORT not defined. Using ${process.env.PORT} as default`);
 }
 
 if (!process.env.PROJECT_ROOT) {
@@ -85,7 +79,7 @@ console.log();
 
 const webpackConfig = {
     mode: isDev ? 'development' : 'production',
-    bail: isDev ? false : true,
+    bail: !isDev,
     stats: {
         all: false,
         colors: true,
@@ -108,6 +102,7 @@ const webpackConfig = {
                 devServer: {
                     host: process.env.HOST,
                     port: process.env.PORT,
+                    disableHostCheck: true,
                     open: true,
                     proxy: {
                         '/api': {
@@ -197,6 +192,7 @@ const webpackConfig = {
         alias: {
             vue$: 'vue/dist/vue.esm.js',
             src: path.join(__dirname, 'src'),
+            // ???
             // deprecated tag:v6.4.0.0
             module: path.join(__dirname, 'src/module'),
             scss: path.join(__dirname, 'src/app/assets/scss'),
@@ -215,7 +211,7 @@ const webpackConfig = {
                     include: [
                         path.resolve(__dirname, 'src'),
                         path.resolve(__dirname, 'test'),
-                        ...pluginEntries.map(plugin => plugin.filePath)
+                        ...pluginEntries.map(plugin => fs.realpathSync(plugin.filePath))
                     ],
                     options: {
                         configFile: path.join(__dirname, '.eslintrc.js'),
@@ -233,7 +229,7 @@ const webpackConfig = {
                 include: [
                     path.resolve(__dirname, 'src'),
                     path.resolve(__dirname, 'test'),
-                    ...pluginEntries.map(plugin => plugin.filePath)
+                    ...pluginEntries.map(plugin => fs.realpathSync(plugin.path))
                 ],
                 options: {
                     compact: true,
@@ -453,13 +449,17 @@ const webpackConfig = {
                 if (fs.existsSync(assetPath)) {
                     acc.push(
                         // copy custom static assets
-                        new CopyWebpackPlugin([
-                            {
-                                from: assetPath,
-                                to: path.resolve(plugin.basePath, 'Resources/public/static/'),
-                                ignore: ['.*']
-                            }
-                        ])
+                        new CopyWebpackPlugin({
+                            patterns: [
+                                {
+                                    from: assetPath,
+                                    to: path.resolve(plugin.basePath, 'Resources/public/static/'),
+                                    globOptions: {
+                                        ignore: ['.*']
+                                    }
+                                }
+                            ]
+                        })
                     );
                 }
 
@@ -472,13 +472,17 @@ const webpackConfig = {
             if (isProd) {
                 return [
                 // copy custom static assets
-                    new CopyWebpackPlugin([
-                        {
-                            from: path.resolve('.', 'static'),
-                            to: 'static',
-                            ignore: ['.*']
-                        }
-                    ])
+                    new CopyWebpackPlugin({
+                        patterns: [
+                            {
+                                from: path.resolve('.', 'static'),
+                                to: 'static',
+                                globOptions: {
+                                    ignore: ['.*']
+                                }
+                            }
+                        ]
+                    })
                 ];
             }
 
@@ -493,9 +497,7 @@ const webpackConfig = {
                         template: 'index.html.tpl',
                         templateParameters: {
                             featureFlags: (() => {
-                                const getFeatureFlagNames = (sourceFolder) => {
-                                    const flagsPath = path.join(sourceFolder, '/config_js_features.json');
-
+                                const getFeatureFlagNames = (flagsPath) => {
                                     if (!fs.existsSync(flagsPath)) {
                                         return '{}';
                                     }
@@ -503,10 +505,8 @@ const webpackConfig = {
                                     return fs.readFileSync(flagsPath);
                                 }
 
-                                return getFeatureFlagNames(path.join(__dirname, '../../../../../../var'));
+                                return getFeatureFlagNames(path.join(process.env.PROJECT_ROOT, 'var', 'config_js_features.json'));
                             })(),
-                            // TODO: NEXT-7581 - Implement a version dump in the backend and read here the version file
-                            apiVersion: 3
                         },
                         inject: false
                     }),

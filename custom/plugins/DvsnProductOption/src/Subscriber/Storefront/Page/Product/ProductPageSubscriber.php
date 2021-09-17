@@ -113,6 +113,9 @@ class ProductPageSubscriber implements EventSubscriberInterface
             $salesChannelContext
         )->getElements();
 
+        // is every option hidden
+        $allHidden = true;
+
         /** @var ProductOptionEntity $option */
         foreach ($options as $option) {
             $price = 0.0;
@@ -131,11 +134,16 @@ class ProductPageSubscriber implements EventSubscriberInterface
             }
 
             $option->setPrice($price);
+
+            if ($option->getHidden() === false) {
+                $allHidden = false;
+            }
         }
 
         // assign to page
         $event->getPage()->assign([
             'dvsnProductOptions' => $options,
+            'dvsnProductOptionsHidden' => $allHidden,
             'dvsnProductOptionConfiguration' => $this->systemConfigService->get('DvsnProductOption.config', $salesChannelContext->getSalesChannel()->getId())
         ]);
     }

@@ -7,28 +7,12 @@ Component.register('sw-cms-el-vimeo-video', {
     template,
 
     mixins: [
-        Mixin.getByName('cms-element')
+        Mixin.getByName('cms-element'),
     ],
-
-    created() {
-        this.createdComponent();
-    },
 
     computed: {
         videoID() {
             return this.element.config.videoID.value;
-        },
-
-        /**
-         * @deprecated tag:v6.4.0 - This computed prop will be removed because videos should never have autoplay
-         * in the administration
-         */
-        autoplay() {
-            if (!this.element.config.autoplay.value) {
-                return '';
-            }
-
-            return `autoplay=${this.element.config.autoplay.value}&`;
         },
 
         byLine() {
@@ -105,13 +89,17 @@ Component.register('sw-cms-el-vimeo-video', {
             ${this.controls}\
             ${this.title}\
             ${this.portrait}`.replace(/ /g, '');
-        }
+        },
+    },
+
+    created() {
+        this.createdComponent();
     },
 
     methods: {
         createdComponent() {
             this.initElementConfig('vimeo-video');
             this.initElementData('vimeo-video');
-        }
-    }
+        },
+    },
 });

@@ -4,20 +4,25 @@ namespace Shopware\Core\Content\Test\Product\SalesChannel;
 
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
+use Shopware\Core\Content\Test\Product\ProductBuilder;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour;
 use Shopware\Core\Framework\Test\TestDataCollection;
-use Shopware\Core\PlatformRequest;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 
+/**
+ * @group store-api
+ */
 class ProductListRouteTest extends TestCase
 {
     use IntegrationTestBehaviour;
     use SalesChannelApiTestBehaviour;
 
     /**
-     * @var \Symfony\Bundle\FrameworkBundle\KernelBrowser
+     * @var KernelBrowser
      */
     private $browser;
 
@@ -44,7 +49,7 @@ class ProductListRouteTest extends TestCase
     {
         $this->browser->request(
             'GET',
-            '/store-api/v' . PlatformRequest::API_VERSION . '/product',
+            '/store-api/product',
             [
             ]
         );
@@ -63,7 +68,7 @@ class ProductListRouteTest extends TestCase
     {
         $this->browser->request(
             'GET',
-            '/store-api/v' . PlatformRequest::API_VERSION . '/product?limit=1',
+            '/store-api/product?limit=1',
             [
             ]
         );
@@ -79,7 +84,7 @@ class ProductListRouteTest extends TestCase
     {
         $this->browser->request(
             'POST',
-            '/store-api/v' . PlatformRequest::API_VERSION . '/product',
+            '/store-api/product',
             [
                 'ids' => [
                     $this->ids->get('product1'),
@@ -98,7 +103,7 @@ class ProductListRouteTest extends TestCase
     {
         $this->browser->request(
             'POST',
-            '/store-api/v' . PlatformRequest::API_VERSION . '/product',
+            '/store-api/product',
             [
                 'includes' => [
                     'product' => ['id'],
@@ -113,6 +118,87 @@ class ProductListRouteTest extends TestCase
         static::assertArrayHasKey('id', $response['elements'][0]);
         static::assertArrayHasKey('apiAlias', $response['elements'][0]);
         static::assertArrayNotHasKey('name', $response['elements'][0]);
+    }
+
+    public function testListingProductsIncludesOnlyPublicReviews(): void
+    {
+        $product = (new ProductBuilder($this->ids, 'p1'))
+            ->visibility($this->ids->get('sales-channel'))
+            ->price(10)
+            ->review('test public review', 'this is a public review', 3, $this->ids->get('sales-channel'))
+            ->review('test hidden review', 'this is a hidden review', 0, $this->ids->get('sales-channel'), Defaults::LANGUAGE_SYSTEM, false)
+            ->build();
+
+        $this->getContainer()->get('product.repository')
+            ->upsert([$product], $this->ids->context);
+
+        $this->browser->request(
+            'POST',
+            '/store-api/product',
+            [
+                'filter' => [[
+                    'type' => 'equals',
+                    'field' => 'productNumber',
+                    'value' => 'p1',
+                ]],
+                'associations' => [
+                    'productReviews' => [],
+                ],
+            ],
+        );
+
+        $response = json_decode($this->browser->getResponse()->getContent(), true);
+
+        static::assertSame(1, $response['total']);
+        static::assertSame('product', $response['elements'][0]['apiAlias']);
+        static::assertArrayHasKey('id', $response['elements'][0]);
+        static::assertArrayHasKey('productReviews', $response['elements'][0]);
+        $reviews = $response['elements'][0]['productReviews'];
+        static::assertCount(1, $reviews);
+        static::assertSame('test public review', $reviews[0]['title']);
+    }
+
+    public function testListingProductsIncludesOwnInactiveReviews(): void
+    {
+        $customerId = $this->login();
+
+        $product = (new ProductBuilder($this->ids, 'p1'))
+            ->visibility($this->ids->get('sales-channel'))
+            ->price(10)
+            ->review('test public review', 'this is a public review', 3, $this->ids->get('sales-channel'))
+            ->review('test hidden own review', 'this is a hidden review', 0, $this->ids->get('sales-channel'), Defaults::LANGUAGE_SYSTEM, false, $customerId)
+            ->build();
+
+        $this->getContainer()->get('product.repository')
+            ->upsert([$product], $this->ids->context);
+
+        $this->browser->request(
+            'POST',
+            '/store-api/product',
+            [
+                'filter' => [[
+                    'type' => 'equals',
+                    'field' => 'productNumber',
+                    'value' => 'p1',
+                ]],
+                'associations' => [
+                    'productReviews' => [
+                        'sort' => [['field' => 'points', 'order' => FieldSorting::DESCENDING]],
+                    ],
+                ],
+            ],
+        );
+
+        $response = json_decode($this->browser->getResponse()->getContent(), true);
+
+        static::assertSame(1, $response['total']);
+        static::assertSame('product', $response['elements'][0]['apiAlias']);
+        static::assertArrayHasKey('id', $response['elements'][0]);
+        static::assertArrayHasKey('productReviews', $response['elements'][0]);
+        $reviews = $response['elements'][0]['productReviews'];
+        static::assertCount(2, $reviews);
+        static::assertSame('test public review', $reviews[0]['title']);
+        static::assertSame('test hidden own review', $reviews[1]['title']);
     }
 
     private function createData(): void

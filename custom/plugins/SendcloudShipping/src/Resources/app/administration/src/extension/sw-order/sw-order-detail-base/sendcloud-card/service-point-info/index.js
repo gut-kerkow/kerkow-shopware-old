@@ -1,13 +1,13 @@
 import template from './service-point-info.html.twig';
 import './service-point-info.scss';
 
-const { Component } = Shopware;
+const {Component} = Shopware;
 
 Component.register('service-point-info', {
     template,
 
     inject: [
-        'pluginService'
+        'sendcloudService'
     ],
 
     props: {
@@ -69,19 +69,17 @@ Component.register('service-point-info', {
         openServicePointPicker: function () {
             var config = this.getConfigParameters();
             var me = this;
-            var postHeader = this.pluginService.getBasicHeaders();
             sendcloud.servicePoints.open(
                 config,
                 function (servicePointObject) {
-                    me.pluginService.httpClient
-                        .post('/sendcloud/shipment/save/' + me.order.orderNumber, servicePointObject, {postHeader})
-                        .then((response) => {
-                            let result = Shopware.Classes.ApiService.handleResponse(response);
+                    me.sendcloudService.saveShipping(me.order.orderNumber, servicePointObject)
+                        .then((result) => {
                             if (result.success) {
                                 me.servicePointInfo = servicePointObject;
                                 me.linkLabel = me.$tc('send-cloud.shipment.changeServicePoint');
                             }
-                        }).catch(error => {});
+                        })
+                        .catch(error => {});
                 },
                 function (errors) {
                     errors.forEach(function (error) {
@@ -90,7 +88,7 @@ Component.register('service-point-info', {
                 }
             );
         },
-        
+
         getConfigParameters: function () {
             let deliveries = this.order.deliveries;
             let zipCode = '';

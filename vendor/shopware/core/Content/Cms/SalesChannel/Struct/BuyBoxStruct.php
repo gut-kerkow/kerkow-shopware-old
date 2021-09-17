@@ -6,9 +6,6 @@ use Shopware\Core\Content\Product\SalesChannel\SalesChannelProductEntity;
 use Shopware\Core\Content\Property\PropertyGroupCollection;
 use Shopware\Core\Framework\Struct\Struct;
 
-/**
- * @internal (flag:FEATURE_NEXT_10078)
- */
 class BuyBoxStruct extends Struct
 {
     /**
@@ -41,7 +38,7 @@ class BuyBoxStruct extends Struct
         return $this->configuratorSettings;
     }
 
-    public function setConfiguratorSettings(PropertyGroupCollection $configuratorSettings): void
+    public function setConfiguratorSettings(?PropertyGroupCollection $configuratorSettings): void
     {
         $this->configuratorSettings = $configuratorSettings;
     }

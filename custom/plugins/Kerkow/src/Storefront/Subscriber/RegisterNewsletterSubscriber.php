@@ -98,7 +98,7 @@ class RegisterNewsletterSubscriber implements EventSubscriberInterface
         $context = $event->getSalesChannelContext();
         $customer = $context->getCustomer();
         $subscribed = $customer->getNewsletter();
-        $persistedData = $this->contextPersister->load($context->getToken());
+        $persistedData = $this->contextPersister->load($context->getToken(), $context->getSalesChannelId());
         $optinSent = array_key_exists("optinSent", $persistedData) ? true : false;
 
 

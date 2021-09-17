@@ -17,19 +17,19 @@ class StoreContextService extends ApiService {
         salesChannelId,
         contextToken,
         additionalParams = {},
-        additionalHeaders = {}
+        additionalHeaders = {},
     ) {
         const route = '_proxy/switch-customer';
         const headers = {
             ...this.getBasicHeaders(additionalHeaders),
-            'sw-context-token': contextToken
+            'sw-context-token': contextToken,
         };
 
         return this.httpClient
             .patch(
                 route,
                 { customerId: customerId, salesChannelId: salesChannelId },
-                { additionalParams, headers }
+                { additionalParams, headers },
             );
     }
 
@@ -38,24 +38,24 @@ class StoreContextService extends ApiService {
         salesChannelId,
         contextToken,
         additionalParams = {},
-        additionalHeaders = {}
+        additionalHeaders = {},
     ) {
-        const route = `_proxy/store-api/${salesChannelId}/v${this.getApiVersion()}/context`;
+        const route = `_proxy/store-api/${salesChannelId}/context`;
         const headers = {
             ...this.getBasicHeaders(additionalHeaders),
-            'sw-context-token': contextToken
+            'sw-context-token': contextToken,
         };
 
         return this.httpClient
             .patch(
                 route,
                 context,
-                { additionalParams, headers }
+                { additionalParams, headers },
             );
     }
 
     getContext(salesChannelId, source, additionalParams = {}, additionalHeaders = {}) {
-        const route = `_proxy/store-api/${salesChannelId}/v${this.getApiVersion()}/${source}`;
+        const route = `_proxy/store-api/${salesChannelId}/${source}`;
         const headers = this.getBasicHeaders(additionalHeaders);
 
         return this.httpClient.post(route, {}, { additionalParams, headers });

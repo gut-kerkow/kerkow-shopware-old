@@ -15,8 +15,10 @@ use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour;
 use Shopware\Core\Framework\Test\TestDataCollection;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\PlatformRequest;
 
+/**
+ * @group store-api
+ */
 class ResetPasswordRouteTest extends TestCase
 {
     use IntegrationTestBehaviour;
@@ -53,7 +55,7 @@ class ResetPasswordRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/account/recovery-password-confirm',
+                '/store-api/account/recovery-password-confirm',
                 [
                     'hash' => 'lol@lol.de',
                     'newPassword' => 'password123456',
@@ -74,7 +76,7 @@ class ResetPasswordRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/account/recovery-password',
+                '/store-api/account/recovery-password',
                 [
                     'email' => 'foo-test@test.de',
                     'storefrontUrl' => 'http://localhost',
@@ -97,7 +99,7 @@ class ResetPasswordRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/account/recovery-password-confirm',
+                '/store-api/account/recovery-password-confirm',
                 [
                     'hash' => $recovery->getHash(),
                     'newPassword' => 'password123456',
@@ -110,7 +112,7 @@ class ResetPasswordRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/account/login',
+                '/store-api/account/login',
                 [
                     'email' => 'foo-test@test.de',
                     'password' => 'password123456',
@@ -129,7 +131,7 @@ class ResetPasswordRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/account/recovery-password',
+                '/store-api/account/recovery-password',
                 [
                     'email' => 'foo-test@test.de',
                     'storefrontUrl' => 'http://localhost',
@@ -152,7 +154,7 @@ class ResetPasswordRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/account/recovery-password-confirm',
+                '/store-api/account/recovery-password-confirm',
                 [
                     'hash' => $recovery->getHash(),
                     'newPassword' => 'password123456',
@@ -165,7 +167,7 @@ class ResetPasswordRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/account/login',
+                '/store-api/account/login',
                 [
                     'email' => 'foo-test@test.de',
                     'password' => 'password123456',
@@ -199,7 +201,6 @@ class ResetPasswordRouteTest extends TestCase
                 'street' => 'Musterstraße 1',
                 'city' => 'Schoöppingen',
                 'zipcode' => '12345',
-                'salutationId' => $this->getValidSalutationId(),
                 'countryId' => $this->getValidCountryId(),
             ],
             'defaultBillingAddressId' => $addressId,
@@ -233,7 +234,6 @@ class ResetPasswordRouteTest extends TestCase
             'password' => $password,
             'firstName' => 'Max',
             'lastName' => 'Mustermann',
-            'salutationId' => $this->getValidSalutationId(),
             'customerNumber' => '12345',
         ];
 

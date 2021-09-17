@@ -14,14 +14,11 @@ use Symfony\Component\Validator\Constraints\NotBlank;
 class LineItemOfManufacturerRule extends Rule
 {
     /**
-     * @var array
+     * @var string[]
      */
-    protected $manufacturerIds;
+    protected array $manufacturerIds;
 
-    /**
-     * @var string
-     */
-    protected $operator;
+    protected string $operator;
 
     public function __construct(string $operator = self::OPERATOR_EQ, array $manufacturerIds = [])
     {
@@ -50,7 +47,7 @@ class LineItemOfManufacturerRule extends Rule
             return false;
         }
 
-        foreach ($scope->getCart()->getLineItems() as $lineItem) {
+        foreach ($scope->getCart()->getLineItems()->getFlat() as $lineItem) {
             if ($this->matchesOneOfManufacturers($lineItem)) {
                 return true;
             }
@@ -61,16 +58,24 @@ class LineItemOfManufacturerRule extends Rule
 
     public function getConstraints(): array
     {
-        return [
-            'manufacturerIds' => [new NotBlank(), new ArrayOfUuid()],
+        $constraints = [
             'operator' => [
                 new NotBlank(),
                 new Choice([
                     self::OPERATOR_EQ,
                     self::OPERATOR_NEQ,
+                    self::OPERATOR_EMPTY,
                 ]),
             ],
         ];
+
+        if ($this->operator === self::OPERATOR_EMPTY) {
+            return $constraints;
+        }
+
+        $constraints['manufacturerIds'] = [new NotBlank(), new ArrayOfUuid()];
+
+        return $constraints;
     }
 
     /**
@@ -87,6 +92,9 @@ class LineItemOfManufacturerRule extends Rule
 
             case self::OPERATOR_NEQ:
                 return !\in_array($manufacturerId, $this->manufacturerIds, true);
+
+            case self::OPERATOR_EMPTY:
+                return empty($manufacturerId);
 
             default:
                 throw new UnsupportedOperatorException($this->operator, self::class);

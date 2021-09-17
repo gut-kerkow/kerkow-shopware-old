@@ -33,8 +33,12 @@ class SalesChannelContextService implements SalesChannelContextServiceInterface
 
     public const PERMISSIONS = 'permissions';
 
+    public const DOMAIN_ID = 'domainId';
+
+    public const ORIGINAL_CONTEXT = 'originalContext';
+
     /**
-     * @var SalesChannelContextFactory
+     * @var AbstractSalesChannelContextFactory
      */
     private $factory;
 
@@ -54,7 +58,7 @@ class SalesChannelContextService implements SalesChannelContextServiceInterface
     private $cartService;
 
     public function __construct(
-        SalesChannelContextFactory $factory,
+        AbstractSalesChannelContextFactory $factory,
         CartRuleLoader $ruleLoader,
         SalesChannelContextPersister $contextPersister,
         CartService $cartService
@@ -65,30 +69,33 @@ class SalesChannelContextService implements SalesChannelContextServiceInterface
         $this->cartService = $cartService;
     }
 
-    /**
-     * @deprecated tag:v6.4.0 - Parameter $currencyId will be mandatory in future implementation
-     */
-    public function get(string $salesChannelId, string $token, ?string $languageId = null/*, ?string $currencyId */): SalesChannelContext
+    public function get(SalesChannelContextServiceParameters $parameters): SalesChannelContext
     {
-        $parameters = $this->contextPersister->load($token, $salesChannelId);
+        $token = $parameters->getToken();
 
-        if ($parameters['expired'] ?? false) {
+        $session = $this->contextPersister->load($token, $parameters->getSalesChannelId());
+
+        if ($session['expired'] ?? false) {
             $token = Random::getAlphanumericString(32);
         }
 
-        if ($languageId) {
-            $parameters[self::LANGUAGE_ID] = $languageId;
+        if ($parameters->getLanguageId() !== null) {
+            $session[self::LANGUAGE_ID] = $parameters->getLanguageId();
         }
 
-        if (\func_num_args() >= 4 && !\array_key_exists(self::CURRENCY_ID, $parameters)) {
-            $currencyId = func_get_arg(3);
-
-            if ($currencyId !== null) {
-                $parameters[self::CURRENCY_ID] = $currencyId;
-            }
+        if ($parameters->getCurrencyId() !== null && !\array_key_exists(self::CURRENCY_ID, $session)) {
+            $session[self::CURRENCY_ID] = $parameters->getCurrencyId();
         }
 
-        $context = $this->factory->create($token, $salesChannelId, $parameters);
+        if ($parameters->getDomainId() !== null) {
+            $session[self::DOMAIN_ID] = $parameters->getDomainId();
+        }
+
+        if ($parameters->getOriginalContext() !== null) {
+            $session[self::ORIGINAL_CONTEXT] = $parameters->getOriginalContext();
+        }
+
+        $context = $this->factory->create($token, $parameters->getSalesChannelId(), $session);
 
         $result = $this->ruleLoader->loadByToken($context, $token);
 

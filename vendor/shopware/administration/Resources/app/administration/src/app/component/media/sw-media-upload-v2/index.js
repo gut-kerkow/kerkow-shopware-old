@@ -2,7 +2,7 @@ import template from './sw-media-upload-v2.html.twig';
 import './sw-media-upload-v2.scss';
 
 const { Component, Mixin, Context } = Shopware;
-const { fileReader, debug } = Shopware.Utils;
+const { fileReader } = Shopware.Utils;
 const { Criteria } = Shopware.Data;
 const INPUT_TYPE_FILE_UPLOAD = 'file-upload';
 const INPUT_TYPE_URL_UPLOAD = 'url-upload';
@@ -14,13 +14,11 @@ const INPUT_TYPE_URL_UPLOAD = 'url-upload';
  * @example-type code-only
  * @component-example
  * <sw-media-upload-v2
- *     uploadTag="my-upload-tag"
+ *     upload-tag="my-upload-tag"
  *     variant="regular"
- *     allowMultiSelect="false"
- *     variant="regular"
- *     autoUpload="true"
- *     label="My image-upload">
- * </sw-media-upload-v2>
+ *     :allow-multi-select="false"
+ *     label="My image-upload"
+ * ></sw-media-upload-v2>
  */
 Component.register('sw-media-upload-v2', {
     template,
@@ -28,14 +26,14 @@ Component.register('sw-media-upload-v2', {
     inject: ['repositoryFactory', 'mediaService', 'configService'],
 
     mixins: [
-        Mixin.getByName('notification')
+        Mixin.getByName('notification'),
     ],
 
     props: {
         source: {
             type: [Object, String],
             required: false,
-            default: null
+            default: null,
         },
 
         variant: {
@@ -45,23 +43,25 @@ Component.register('sw-media-upload-v2', {
             validator(value) {
                 return ['compact', 'regular'].includes(value);
             },
-            default: 'regular'
+            default: 'regular',
         },
 
         uploadTag: {
             type: String,
-            required: true
+            required: true,
         },
 
         allowMultiSelect: {
             type: Boolean,
             required: false,
-            default: true
+            default: true,
         },
 
+        // eslint-disable-next-line vue/require-default-prop
         label: {
             type: String,
-            required: false
+            required: false,
+            default: null,
         },
 
         defaultFolder: {
@@ -70,38 +70,38 @@ Component.register('sw-media-upload-v2', {
             validator(value) {
                 return value.length > 0;
             },
-            default: null
+            default: null,
         },
 
         targetFolderId: {
             type: String,
             required: false,
-            default: null
+            default: null,
         },
 
         helpText: {
             type: String,
             required: false,
-            default: null
+            default: null,
         },
 
         sourceContext: {
             type: Object,
             required: false,
-            default: null
+            default: null,
         },
 
         fileAccept: {
             type: String,
             required: false,
-            default: 'image/*'
+            default: 'image/*',
         },
 
         disabled: {
             type: Boolean,
             required: false,
-            default: false
-        }
+            default: false,
+        },
     },
 
     data() {
@@ -111,7 +111,7 @@ Component.register('sw-media-upload-v2', {
             preview: null,
             isDragActive: false,
             defaultFolderId: null,
-            isUploadUrlFeatureEnabled: false
+            isUploadUrlFeatureEnabled: false,
         };
     },
 
@@ -138,14 +138,14 @@ Component.register('sw-media-upload-v2', {
 
         previewClass() {
             return {
-                'has--preview': this.showPreview
+                'has--preview': this.showPreview,
             };
         },
 
         isDragActiveClass() {
             return {
                 'is--active': this.isDragActive,
-                'is--multi': this.variant === 'regular' && !!this.multiSelect
+                'is--multi': this.variant === 'regular' && !!this.multiSelect,
             };
         },
 
@@ -161,40 +161,15 @@ Component.register('sw-media-upload-v2', {
             return this.inputType === INPUT_TYPE_FILE_UPLOAD;
         },
 
-        // @deprecated tag:v6.4.0
-        showUrlInput: {
-            get() {
-                debug.warn(
-                    'sw-media-upload-v2',
-                    'showUrlInput is deprecated and will be removed in 6.4.0. Use isFileUpload or isUrlUpload instead'
-                );
-
-                return this.isUrlUpload;
-            },
-
-            set(value) {
-                debug.warn(
-                    'sw-media-upload-v2',
-                    'showUrlInput is deprecated and will be removed in 6.4.0. Use useFileUpload or useUrlUpload instead'
-                );
-
-                if (value) {
-                    return this.useUrlUpload;
-                }
-
-                return this.useFileUpload;
-            }
-        },
-
         uploadUrlFeatureEnabled() {
             return this.isUploadUrlFeatureEnabled;
-        }
+        },
     },
 
     watch: {
         async defaultFolder() {
             this.defaultFolderId = await this.getDefaultFolderId();
-        }
+        },
     },
 
     created() {
@@ -297,40 +272,6 @@ Component.register('sw-media-upload-v2', {
             this.$refs.fileInput.click();
         },
 
-        // @deprecated tag:v6.4.0
-        closeUrlModal() {
-            debug.warn(
-                'sw-media-upload-v2',
-                'closeUrlModal is deprecated and will be removed in 6.4.0. Use useUrlUpload instead'
-            );
-
-            return this.useFileUpload();
-        },
-
-        // @deprecated tag:v6.4.0
-        openUrlModal() {
-            debug.warn(
-                'sw-media-upload-v2',
-                'openUrlModal is deprecated and will be removed in 6.4.0. Use useFileUpload instead'
-            );
-
-            return this.useUrlUpload();
-        },
-
-        // @deprecated tag:v6.4.0
-        toggleShowUrlFields() {
-            debug.warn(
-                'sw-media-upload-v2',
-                'toggleShowUrlFields is deprecated and will be removed in 6.4.0. Use useUrlUpload or useFileUpload instead'
-            );
-
-            if (this.isUrlUpload()) {
-                return this.useFileUpload();
-            }
-
-            return this.useUrlUpload();
-        },
-
         useUrlUpload() {
             this.inputType = INPUT_TYPE_URL_UPLOAD;
         },
@@ -371,7 +312,7 @@ Component.register('sw-media-upload-v2', {
             await this.mediaRepository.save(targetEntity, Context.api);
             this.mediaService.addUpload(this.uploadTag, { src: url, targetId: targetEntity.id, ...fileInfo });
 
-            this.closeUrlModal();
+            this.useFileUpload();
         },
 
         onFileInputChange() {
@@ -425,7 +366,7 @@ Component.register('sw-media-upload-v2', {
             }
             const defaultFolder = items[0];
 
-            if (defaultFolder.folder && defaultFolder.folder.id) {
+            if (defaultFolder.folder?.id) {
                 return defaultFolder.folder.id;
             }
 
@@ -436,6 +377,6 @@ Component.register('sw-media-upload-v2', {
             if (action === 'media-upload-fail') {
                 this.onRemoveMediaItem();
             }
-        }
-    }
+        },
+    },
 });

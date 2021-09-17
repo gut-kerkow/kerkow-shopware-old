@@ -3,18 +3,22 @@
 namespace Shopware\Storefront\Test\Controller;
 
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\Checkout\Cart\Rule\GoodsPriceRule;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\Rule\Rule;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory;
+use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\CartLineItemController;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Session\Flash\FlashBagInterface;
+use Symfony\Component\HttpFoundation\Session\Session;
+use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 
 class CartLineItemControllerTest extends TestCase
 {
@@ -30,25 +34,6 @@ class CartLineItemControllerTest extends TestCase
         $this->getFlashBag()->clear();
     }
 
-    public function testErrorBehaviourInFlashMessages(): void
-    {
-        $productId = Uuid::randomHex();
-
-        $data = $this->getLineItemAddPayload($productId);
-
-        $response = $this->request(
-            'POST',
-            '/checkout/line-item/add',
-            $this->tokenize('frontend.checkout.line-item.add', $data)
-        );
-
-        static::assertSame(
-            ['warning' => [$this->getContainer()->get('translator')->trans('checkout.product-not-found')]],
-            $this->getFlashBag()->all()
-        );
-        static::assertTrue($response->isRedirect(), $response->getContent());
-    }
-
     /**
      * @dataProvider productNumbers
      */
@@ -56,13 +41,11 @@ class CartLineItemControllerTest extends TestCase
     {
         $contextToken = Uuid::randomHex();
 
-        /** @var CartService $cartService */
         $cartService = $this->getContainer()->get(CartService::class);
         $this->createProduct($productId, $productNumber);
         $request = $this->createRequest(['number' => $productNumber]);
 
         $salesChannelContext = $this->createSalesChannelContext($contextToken);
-        /** @var Response $response */
         $response = $this->getContainer()->get(CartLineItemController::class)->addProductByNumber($request, $salesChannelContext);
 
         $cartLineItem = $cartService->getCart($contextToken, $salesChannelContext)->getLineItems()->get($productId);
@@ -84,6 +67,47 @@ class CartLineItemControllerTest extends TestCase
         ];
     }
 
+    public function testDeleteLineItemWithPaymentRule(): void
+    {
+        $contextToken = Uuid::randomHex();
+        $cartService = $this->getContainer()->get(CartService::class);
+
+        $products = [
+            Uuid::randomHex() => Uuid::randomHex(),
+            Uuid::randomHex() => Uuid::randomHex(),
+        ];
+
+        $salesChannelContext = $this->createSalesChannelContext($contextToken);
+        $paymentMethodId = $this->createPaymentWithRule($salesChannelContext);
+
+        foreach ($products as $productId => $productNumber) {
+            $this->createProduct($productId, $productNumber);
+            $salesChannelContext = $this->createSalesChannelContext($contextToken, $paymentMethodId);
+            $request = $this->createRequest(['number' => $productNumber]);
+            $this->getContainer()->get(CartLineItemController::class)->addProductByNumber($request, $salesChannelContext);
+        }
+
+        // two products should surpass the threshold of the total goods price condition and block the payment method
+        $flashBags = $this->getFlashBag()->all();
+        static::assertArrayHasKey('warning', $flashBags);
+        static::assertMatchesRegularExpression(
+            '/(checkout.payment-method-blocked|Test Payment with Rule)/',
+            json_encode($flashBags['warning'])
+        );
+
+        $cart = $cartService->getCart($contextToken, $salesChannelContext);
+        $cartLineItemId = $cart->getLineItems()->get($productId)->getId();
+
+        // removing one product from cart should allow the payment method, flashbag should not contain warning
+        $response = $this->getContainer()->get(CartLineItemController::class)
+            ->deleteLineItem($cart, $cartLineItemId, $this->createRequest(), $salesChannelContext);
+
+        static::assertSame(200, $response->getStatusCode());
+        $flashBags = $this->getFlashBag()->all();
+        static::assertArrayNotHasKey('warning', $flashBags);
+        static::assertArrayHasKey('success', $flashBags);
+    }
+
     private function getLineItemAddPayload(string $productId): array
     {
         return [
@@ -103,7 +127,19 @@ class CartLineItemControllerTest extends TestCase
 
     private function getFlashBag(): FlashBagInterface
     {
-        return $this->getContainer()->get('session')->getFlashBag();
+        $request = $this->getContainer()->get('request_stack')->getMainRequest();
+        if ($request === null) {
+            $request = new Request();
+            $request->setSession(new Session(new MockArraySessionStorage()));
+
+            $this->getContainer()->get('request_stack')->push($request);
+        }
+
+        $session = $request->getSession();
+
+        \assert($session instanceof Session);
+
+        return $session->getFlashBag();
     }
 
     private function createProduct(string $productId, string $productNumber): void
@@ -134,11 +170,12 @@ class CartLineItemControllerTest extends TestCase
         $this->getContainer()->get('product.repository')->create([$product], $context);
     }
 
-    private function createSalesChannelContext(string $contextToken): SalesChannelContext
+    private function createSalesChannelContext(string $contextToken, ?string $paymentMethodId = null): SalesChannelContext
     {
         return $this->getContainer()->get(SalesChannelContextFactory::class)->create(
             $contextToken,
-            Defaults::SALES_CHANNEL
+            Defaults::SALES_CHANNEL,
+            $paymentMethodId ? [SalesChannelContextService::PAYMENT_METHOD_ID => $paymentMethodId] : []
         );
     }
 
@@ -148,5 +185,53 @@ class CartLineItemControllerTest extends TestCase
         $request->setSession($this->getContainer()->get('session'));
 
         return $request;
+    }
+
+    private function createPaymentWithRule(SalesChannelContext $context): string
+    {
+        $ruleId = Uuid::randomHex();
+
+        $this->getContainer()->get('rule.repository')->create(
+            [['id' => $ruleId, 'name' => 'Demo rule', 'priority' => 1, 'moduleTypes' => ['types' => ['payment']]]],
+            $context->getContext()
+        );
+
+        $this->getContainer()->get('rule_condition.repository')->create(
+            [
+                [
+                    'id' => Uuid::randomHex(),
+                    'type' => (new GoodsPriceRule())->getName(),
+                    'ruleId' => $ruleId,
+                    'value' => [
+                        'amount' => 20.0,
+                        'operator' => Rule::OPERATOR_LTE,
+                    ],
+                ],
+            ],
+            $context->getContext()
+        );
+
+        $paymentId = Uuid::randomHex();
+
+        $this->getContainer()->get('payment_method.repository')->create(
+            [
+                [
+                    'id' => $paymentId,
+                    'name' => 'Test Payment with Rule',
+                    'description' => 'Payment rule test',
+                    'active' => true,
+                    'afterOrderEnabled' => true,
+                    'availabilityRuleId' => $ruleId,
+                    'salesChannels' => [
+                        [
+                            'id' => $context->getSalesChannelId(),
+                        ],
+                    ],
+                ],
+            ],
+            $context->getContext()
+        );
+
+        return $paymentId;
     }
 }

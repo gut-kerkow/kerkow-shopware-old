@@ -4,6 +4,7 @@ namespace Shopware\Core\Framework\App\Aggregate\AppTranslation;
 
 use Shopware\Core\Framework\App\AppEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopware\Core\System\Language\LanguageEntity;
 
@@ -13,6 +14,7 @@ use Shopware\Core\System\Language\LanguageEntity;
 class AppTranslationEntity extends Entity
 {
     use EntityIdTrait;
+    use EntityCustomFieldsTrait;
 
     /**
      * @var string|null
@@ -28,16 +30,6 @@ class AppTranslationEntity extends Entity
      * @var string|null
      */
     protected $privacyPolicyExtensions;
-
-    /**
-     * @var \DateTimeInterface
-     */
-    protected $createdAt;
-
-    /**
-     * @var \DateTimeInterface|null
-     */
-    protected $updatedAt;
 
     /**
      * @var string
@@ -87,26 +79,6 @@ class AppTranslationEntity extends Entity
     public function setPrivacyPolicyExtensions(?string $privacyPolicyExtensions): void
     {
         $this->privacyPolicyExtensions = $privacyPolicyExtensions;
-    }
-
-    public function getCreatedAt(): ?\DateTimeInterface
-    {
-        return $this->createdAt;
-    }
-
-    public function setCreatedAt(\DateTimeInterface $createdAt): void
-    {
-        $this->createdAt = $createdAt;
-    }
-
-    public function getUpdatedAt(): ?\DateTimeInterface
-    {
-        return $this->updatedAt;
-    }
-
-    public function setUpdatedAt(\DateTimeInterface $updatedAt): void
-    {
-        $this->updatedAt = $updatedAt;
     }
 
     public function getAppId(): string

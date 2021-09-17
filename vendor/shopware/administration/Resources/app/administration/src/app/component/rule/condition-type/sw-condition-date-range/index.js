@@ -20,12 +20,12 @@ Component.extend('sw-condition-date-range', 'sw-condition-base', {
             return [
                 {
                     label: this.$tc('global.sw-condition.condition.withTime'),
-                    value: true
+                    value: true,
                 },
                 {
                     label: this.$tc('global.sw-condition.condition.withoutTime'),
-                    value: false
-                }
+                    value: false,
+                },
             ];
         },
 
@@ -33,7 +33,11 @@ Component.extend('sw-condition-date-range', 'sw-condition-base', {
             get() {
                 this.ensureValueExist();
                 if (typeof this.condition.value.useTime === 'undefined') {
-                    this.condition.value = { ...this.condition.value, useTime: false };
+                    // eslint-disable-next-line vue/no-side-effects-in-computed-properties
+                    this.condition.value = {
+                        ...this.condition.value,
+                        useTime: false,
+                    };
                 }
 
                 return this.condition.value.useTime;
@@ -41,7 +45,7 @@ Component.extend('sw-condition-date-range', 'sw-condition-base', {
             set(useTime) {
                 this.ensureValueExist();
                 this.condition.value = { ...this.condition.value, useTime };
-            }
+            },
         },
 
         fromDate: {
@@ -51,8 +55,10 @@ Component.extend('sw-condition-date-range', 'sw-condition-base', {
             },
             set(fromDate) {
                 this.ensureValueExist();
-                this.condition.value = { ...this.condition.value, fromDate };
-            }
+
+                const date = (fromDate && this.isDateTime) ? fromDate.replace('.000Z', '+00:00') : fromDate;
+                this.condition.value = { ...this.condition.value, fromDate: date };
+            },
         },
 
         toDate: {
@@ -62,18 +68,20 @@ Component.extend('sw-condition-date-range', 'sw-condition-base', {
             },
             set(toDate) {
                 this.ensureValueExist();
-                this.condition.value = { ...this.condition.value, toDate };
-            }
+
+                const date = (toDate && this.isDateTime) ? toDate.replace('.000Z', '+00:00') : toDate;
+                this.condition.value = { ...this.condition.value, toDate: date };
+            },
         },
 
         isDateTime() {
-            return this.useTime ? 'datetime' : 'date';
+            return this.useTime ? 'datetime-local' : 'date';
         },
 
         ...mapPropertyErrors('condition', ['value.useTime', 'value.fromDate', 'value.toDate']),
 
         currentError() {
             return this.conditionValueUseTimeError || this.conditionValueFromDateError || this.conditionValueToDateError;
-        }
-    }
+        },
+    },
 });

@@ -7,10 +7,8 @@ const criteria = new Criteria();
 criteria.addAssociation('deliveryTime');
 
 Shopware.Service('cmsService').registerCmsElement({
-    flag: Shopware.Service('feature').isActive('FEATURE_NEXT_10078'),
     name: 'buy-box',
     label: 'sw-cms.elements.buyBox.label',
-    hidden: !Shopware.Service('feature').isActive('FEATURE_NEXT_10078'),
     component: 'sw-cms-el-buy-box',
     configComponent: 'sw-cms-el-config-buy-box',
     previewComponent: 'sw-cms-el-preview-buy-box',
@@ -22,13 +20,13 @@ Shopware.Service('cmsService').registerCmsElement({
             required: true,
             entity: {
                 name: 'product',
-                criteria: criteria
-            }
+                criteria: criteria,
+            },
         },
         alignment: {
             source: 'static',
-            value: null
-        }
+            value: null,
+        },
     },
     defaultData: {
         product: {
@@ -36,17 +34,17 @@ Shopware.Service('cmsService').registerCmsElement({
             productNumber: 'XXXXXX',
             minPurchase: 1,
             deliveryTime: {
-                name: '1-3 days'
+                name: '1-3 days',
             },
             price: [
-                { gross: 0.00 }
-            ]
-        }
+                { gross: 0.00 },
+            ],
+        },
     },
     collect: function collect(elem) {
         const context = {
             ...Shopware.Context.api,
-            inheritance: true
+            inheritance: true,
         };
 
         const criteriaList = {};
@@ -70,7 +68,7 @@ Shopware.Service('cmsService').registerCmsElement({
                 value: [configValue],
                 key: configKey,
                 searchCriteria: configEntity.criteria ? configEntity.criteria : new Criteria(),
-                ...configEntity
+                ...configEntity,
             };
 
             entityData.searchCriteria.setIds(entityData.value);
@@ -80,5 +78,5 @@ Shopware.Service('cmsService').registerCmsElement({
         });
 
         return criteriaList;
-    }
+    },
 });

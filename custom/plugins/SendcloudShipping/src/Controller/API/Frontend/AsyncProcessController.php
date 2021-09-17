@@ -41,12 +41,14 @@ class AsyncProcessController extends AbstractController
      *
      * @RouteScope(scopes={"api"})
      * @Route(path="/api/v{version}/sendcloud/async/{guid}", name="api.sendcloud.async", defaults={"auth_required"=false}, methods={"GET", "POST"})
+     * @Route(path="/api/sendcloud/async/{guid}", name="api.sendcloud.async.new", defaults={"auth_required"=false}, methods={"GET", "POST"})
      * @param string $guid
      *
      * @return JsonResponse
      */
     public function run(string $guid): JsonResponse
     {
+        Logger::logError('**********async');
         try {
             $processEntity = $this->processRepository->getProcessByGuid($guid);
             if ($processEntity) {

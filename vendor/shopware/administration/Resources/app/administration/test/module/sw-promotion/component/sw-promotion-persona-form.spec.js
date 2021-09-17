@@ -1,13 +1,13 @@
-import { createLocalVue, shallowMount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import 'src/module/sw-promotion/component/sw-promotion-persona-form';
 import promotionState from 'src/module/sw-promotion/page/sw-promotion-detail/state';
 
+/**
+ * @deprecated tag:v6.5.0 - will be removed, use `sw-promotion-v2` instead
+ * @feature-deprecated (flag:FEATURE_NEXT_13810)
+ */
 function createWrapper(privileges = []) {
-    const localVue = createLocalVue();
-    localVue.directive('tooltip', {});
-
     return shallowMount(Shopware.Component.build('sw-promotion-persona-form'), {
-        localVue,
         stubs: {
             'sw-entity-single-select': {
                 template: '<div class="sw-entity-single-select"></div>'
@@ -46,9 +46,6 @@ function createWrapper(privileges = []) {
                     } };
                 }
             }
-        },
-        mocks: {
-            $tc: v => v
         },
         propsData: {
             promotion: {
@@ -118,8 +115,6 @@ describe('src/module/sw-promotion/component/sw-promotion-persona-form', () => {
 
     it('should have disabled form fields', async () => {
         expect(wrapper.vm.isEditingDisabled).toBe(true);
-
-        console.log('wrapper.htm() : ', wrapper.html());
 
         const elements = wrapper.findAll('.sw-promotion-rule-select');
         expect(elements.wrappers.length).toBeGreaterThan(0);

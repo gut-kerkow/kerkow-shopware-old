@@ -15,17 +15,17 @@ Module.register('sw-my-apps', {
     routes: {
         index: {
             component: 'sw-my-apps-page',
-            path: ':appName/:moduleName',
+            path: ':appName/:moduleName?',
             props: {
                 default(route) {
                     const { appName, moduleName } = route.params;
                     return {
                         appName,
-                        moduleName
+                        moduleName,
                     };
-                }
-            }
-        }
+                },
+            },
+        },
     },
 
     navigation: [{
@@ -33,7 +33,7 @@ Module.register('sw-my-apps', {
         label: 'sw-my-apps.general.mainMenuItemGeneral',
         icon: 'default-view-grid',
         color: '#9AA8B5',
-        position: 100
-    }]
+        position: 100,
+    }],
 });
 

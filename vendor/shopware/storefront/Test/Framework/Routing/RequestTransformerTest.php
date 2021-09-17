@@ -8,13 +8,13 @@ use Shopware\Core\Content\Seo\SeoResolver;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Api\Util\AccessKeyHelper;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator;
 use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
 use Shopware\Core\Framework\Routing\RequestTransformer as CoreRequestTransformer;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\PlatformRequest;
 use Shopware\Core\SalesChannelRequest;
+use Shopware\Storefront\Framework\Routing\DomainLoader;
 use Shopware\Storefront\Framework\Routing\Exception\SalesChannelMappingException;
 use Shopware\Storefront\Framework\Routing\RequestTransformer;
 use Shopware\Storefront\Test\Framework\Routing\Helper\ExpectedRequest;
@@ -41,11 +41,9 @@ class RequestTransformerTest extends TestCase
     {
         $this->requestTransformer = new RequestTransformer(
             new CoreRequestTransformer(),
-            $this->getContainer()->get(Connection::class),
             $this->getContainer()->get(SeoResolver::class),
-            $this->getContainer()->get('cache.object'),
-            $this->getContainer()->get(EntityCacheKeyGenerator::class),
-            $this->getContainer()->getParameter('shopware.routing.registered_api_prefixes')
+            $this->getContainer()->getParameter('shopware.routing.registered_api_prefixes'),
+            $this->getContainer()->get(DomainLoader::class)
         );
 
         $this->deLanguageId = $this->getDeDeLanguageId();
@@ -221,6 +219,74 @@ class RequestTransformerTest extends TestCase
                     new ExpectedRequest('http://xn--wrmer-kva.test/foobar', '', '/foobar', $gerDomainId, $germanId, true, self::LOCALE_DE_DE_ISO, Defaults::CURRENCY, $this->deLanguageId, $snippetSetDE),
                 ],
             ],
+        ];
+    }
+
+    /**
+     * @dataProvider seoRedirectProvider
+     */
+    public function testRedirectLinksUsesSalesChannelPath(string $baseUrl, string $virtualUrl, string $resolvedUrl): void
+    {
+        $gerUkId = Uuid::randomHex();
+
+        $gerDomainId = Uuid::randomHex();
+        $ukDomainId = Uuid::randomHex();
+
+        $salesChannels = $this->getSalesChannelWithGerAndUkDomain($gerUkId, $gerDomainId, 'http://base.test' . $virtualUrl, $ukDomainId, 'http://base.test/public/en');
+
+        $this->createSalesChannels([$salesChannels]);
+
+        $con = $this->getContainer()->get(Connection::class);
+        $con->insert(
+            'seo_url',
+            [
+                'id' => Uuid::randomBytes(),
+                'language_id' => Uuid::fromHexToBytes($this->deLanguageId),
+                'sales_channel_id' => Uuid::fromHexToBytes($gerUkId),
+                'foreign_key' => Uuid::randomBytes(),
+                'route_name' => 'test',
+                'path_info' => '/detail/87a78cf58f114d5587ae23c140825694',
+                'seo_path_info' => 'Test',
+                'is_canonical' => 1,
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ]
+        );
+
+        $request = Request::create('http://base.test' . $virtualUrl . '/detail/87a78cf58f114d5587ae23c140825694');
+        $ref = new \ReflectionClass($request);
+        $prob = $ref->getProperty('baseUrl');
+        $prob->setAccessible(true);
+        $prob->setValue($request, $baseUrl);
+
+        $resolved = $this->requestTransformer->transform($request);
+
+        static::assertSame('http://base.test' . $resolvedUrl, $resolved->attributes->get(SalesChannelRequest::ATTRIBUTE_CANONICAL_LINK));
+    }
+
+    public function seoRedirectProvider(): iterable
+    {
+        yield 'Use with base url' => [
+            '/public', // baseUrl
+            '/public/de', // Virtual URL
+            '/public/de/Test', // Resolved seo url
+        ];
+
+        yield 'Use with base url in subfolder' => [
+            '/sw6/public', // baseUrl
+            '/sw6/public/de', // Virtual URL
+            '/sw6/public/de/Test', // Resolved seo url
+        ];
+
+        yield 'With Virtual url' => [
+            '', // baseUrl
+            '/de', // Virtual URL
+            '/de/Test', // Resolved seo url
+        ];
+
+        yield 'Without virtual URL' => [
+            '', // baseUrl
+            '', // Virtual URL
+            '/Test', // Resolved seo url
         ];
     }
 

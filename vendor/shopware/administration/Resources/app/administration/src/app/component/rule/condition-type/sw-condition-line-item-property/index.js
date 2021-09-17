@@ -20,7 +20,7 @@ Component.extend('sw-condition-line-item-property', 'sw-condition-base', {
     data() {
         return {
             options: null,
-            searchTerm: ''
+            searchTerm: '',
         };
     },
 
@@ -41,7 +41,7 @@ Component.extend('sw-condition-line-item-property', 'sw-condition-base', {
             set(identifiers) {
                 this.ensureValueExist();
                 this.condition.value = { ...this.condition.value, identifiers };
-            }
+            },
         },
 
         ...mapPropertyErrors('condition', ['value.operator', 'value.identifiers']),
@@ -53,16 +53,14 @@ Component.extend('sw-condition-line-item-property', 'sw-condition-base', {
         optionCriteria() {
             const criteria = new Criteria();
             criteria.setIds(this.identifiers);
-            if (this.feature.isActive('FEATURE_NEXT_12108')) {
-                criteria.addAssociation('group');
+            criteria.addAssociation('group');
 
-                if (typeof this.searchTerm === 'string' && this.searchTerm.length > 0) {
-                    criteria.addQuery(Criteria.contains('group.name', this.searchTerm), 500);
-                }
+            if (typeof this.searchTerm === 'string' && this.searchTerm.length > 0) {
+                criteria.addQuery(Criteria.contains('group.name', this.searchTerm), 500);
             }
 
             return criteria;
-        }
+        },
     },
 
     created() {
@@ -75,7 +73,7 @@ Component.extend('sw-condition-line-item-property', 'sw-condition-base', {
                 this.optionRepository.route,
                 this.optionRepository.entityName,
                 Context.api,
-                this.optionCriteria
+                this.optionCriteria,
             );
 
             if (this.identifiers.length <= 0) {
@@ -98,6 +96,6 @@ Component.extend('sw-condition-line-item-property', 'sw-condition-base', {
 
         onSelectCollapsed() {
             this.searchTerm = '';
-        }
-    }
+        },
+    },
 });

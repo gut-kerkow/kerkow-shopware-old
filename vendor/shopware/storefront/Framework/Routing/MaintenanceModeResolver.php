@@ -26,11 +26,11 @@ class MaintenanceModeResolver
      */
     public function shouldRedirect(Request $request): bool
     {
-        return $this->isSalesChannelRequest($this->requestStack->getMasterRequest())
+        return $this->isSalesChannelRequest($this->requestStack->getMainRequest())
             && !$this->isMaintenancePageRequest($request)
             && !$this->isXmlHttpRequest($request)
             && !$this->isErrorControllerRequest($request)
-            && $this->isMaintenanceModeActive($this->requestStack->getMasterRequest())
+            && $this->isMaintenanceModeActive($this->requestStack->getMainRequest())
             && !$this->isClientAllowed($request);
     }
 
@@ -38,8 +38,13 @@ class MaintenanceModeResolver
     {
         return !$this->isXmlHttpRequest($request)
             && !$this->isErrorControllerRequest($request)
-            && (!$this->isMaintenanceModeActive($this->requestStack->getMasterRequest())
+            && (!$this->isMaintenanceModeActive($this->requestStack->getMainRequest())
                 || $this->isClientAllowed($request));
+    }
+
+    public function isMaintenanceRequest(Request $request): bool
+    {
+        return $this->isMaintenanceModeActive($request) && $this->isClientAllowed($request);
     }
 
     private function isSalesChannelRequest(?Request $master): bool
@@ -57,14 +62,7 @@ class MaintenanceModeResolver
             return true;
         }
 
-        $route = $request->attributes->get('_route');
-
-        if (!$route) {
-            return false;
-        }
-
-        // @deprecated tag:v6.4.0 - Use defaults={"allow_maintenance"=true} in Route definition instead
-        return mb_strpos($route, 'frontend.maintenance') !== false;
+        return false;
     }
 
     private function isXmlHttpRequest(Request $request): bool
@@ -91,7 +89,7 @@ class MaintenanceModeResolver
     {
         return IpUtils::checkIp(
             (string) $request->getClientIp(),
-            $this->getMaintenanceWhitelist($this->requestStack->getMasterRequest())
+            $this->getMaintenanceWhitelist($this->requestStack->getMainRequest())
         );
     }
 

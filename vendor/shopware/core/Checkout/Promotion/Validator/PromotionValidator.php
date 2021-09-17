@@ -31,16 +31,11 @@ class PromotionValidator implements EventSubscriberInterface
      */
     private const DISCOUNT_PERCENTAGE_MAX_VALUE = 100.0;
 
-    /**
-     * @var Connection
-     */
-    private $connection;
+    private Connection $connection;
 
-    /** @var array */
-    private $databasePromotions;
+    private array $databasePromotions;
 
-    /** @var array */
-    private $databaseDiscounts;
+    private array $databaseDiscounts;
 
     public function __construct(Connection $connection)
     {
@@ -165,7 +160,7 @@ class PromotionValidator implements EventSubscriberInterface
             ['ids' => Connection::PARAM_STR_ARRAY]
         );
 
-        $this->databasePromotions = $promotionQuery->fetchAll() ?? [];
+        $this->databasePromotions = $promotionQuery->fetchAll();
 
         $discountQuery = $this->connection->executeQuery(
             'SELECT * FROM `promotion_discount` WHERE `id` IN (:ids)',
@@ -173,7 +168,7 @@ class PromotionValidator implements EventSubscriberInterface
             ['ids' => Connection::PARAM_STR_ARRAY]
         );
 
-        $this->databaseDiscounts = $discountQuery->fetchAll() ?? [];
+        $this->databaseDiscounts = $discountQuery->fetchAll();
     }
 
     /**
@@ -423,7 +418,7 @@ class PromotionValidator implements EventSubscriberInterface
     }
 
     /**
-     * Gets if the provided pattern is already used in another promotion.
+     * True, if the provided pattern is already used in another promotion.
      */
     private function isCodePatternAlreadyUsed(string $pattern, ?string $promotionId): bool
     {
@@ -450,7 +445,7 @@ class PromotionValidator implements EventSubscriberInterface
     }
 
     /**
-     * Gets if the provided code is already used as global
+     * True, if the provided code is already used as global
      * or individual code in another promotion.
      */
     private function isCodeAlreadyUsed(string $code, ?string $promotionId): bool
@@ -460,7 +455,7 @@ class PromotionValidator implements EventSubscriberInterface
         // check if individual code.
         // if we dont have a promotion Id only
         // check if its existing somewhere,
-        // if we have an Id, verify if its existing in another promotion
+        // if we have an Id, verify if it's existing in another promotion
         $query = $qb
             ->select('id')
             ->from('promotion_individual_code')

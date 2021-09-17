@@ -36,6 +36,10 @@ class Migration1609140710AddCmsPdpLayoutTest extends TestCase
 
     public function testMigrationFields(): void
     {
+        $this->connection->rollBack();
+        $this->removeForeignKeyConstraintIfExists();
+        $this->connection->beginTransaction();
+
         $this->rollbackMigrationChanges();
 
         $page = $this->fetchCmsPage();
@@ -64,7 +68,7 @@ class Migration1609140710AddCmsPdpLayoutTest extends TestCase
             'type' => 'product_detail',
             'locked' => 1,
         ];
-        static::assertContains($expectedPage, $page);
+        static::assertContainsEquals($expectedPage, $page);
 
         $expectedPageTranslation = [
             [
@@ -75,14 +79,14 @@ class Migration1609140710AddCmsPdpLayoutTest extends TestCase
             ],
         ];
         foreach ($pageTranslations as $pageTranslation) {
-            static::assertContains($pageTranslation, $expectedPageTranslation);
+            static::assertContainsEquals($pageTranslation, $expectedPageTranslation);
         }
 
         $expectedSection = [
             'position' => 0,
             'type' => 'default',
         ];
-        static::assertContains($expectedSection, $section);
+        static::assertContainsEquals($expectedSection, $section);
 
         $expectedBlocks = [
             [
@@ -131,7 +135,7 @@ class Migration1609140710AddCmsPdpLayoutTest extends TestCase
             ],
         ];
         foreach ($blocks as $block) {
-            static::assertContains($block, $expectedBlocks);
+            static::assertContainsEquals($block, $expectedBlocks);
         }
 
         $versionId = Uuid::fromHexToBytes(Defaults::LIVE_VERSION);
@@ -174,7 +178,7 @@ class Migration1609140710AddCmsPdpLayoutTest extends TestCase
             ],
         ];
         foreach ($slots as $slot) {
-            static::assertContains($slot, $expectedSlots);
+            static::assertContainsEquals($slot, $expectedSlots);
         }
 
         $expectedSlotTranslations = [
@@ -218,7 +222,7 @@ class Migration1609140710AddCmsPdpLayoutTest extends TestCase
         ];
 
         foreach ($slotTranslations as $slotTranslation) {
-            static::assertContains(json_decode($slotTranslation['config'], true), $expectedSlotTranslations);
+            static::assertContainsEquals(json_decode($slotTranslation['config'], true), $expectedSlotTranslations);
         }
     }
 
@@ -284,7 +288,6 @@ class Migration1609140710AddCmsPdpLayoutTest extends TestCase
 
     private function rollbackMigrationChanges(): void
     {
-        $this->removeForeignKeyConstraintIfExists();
         $this->connection->executeUpdate('DELETE FROM `cms_page_translation`');
         $this->connection->executeUpdate('DELETE FROM `cms_page`');
         $this->connection->executeUpdate('DELETE FROM `cms_section`');
@@ -295,8 +298,9 @@ class Migration1609140710AddCmsPdpLayoutTest extends TestCase
 
     private function removeForeignKeyConstraintIfExists(): void
     {
-        $categoryKeyName = $this->getForeignKeyName(self::FK_CATEGORY_TABLE, self::FK_CMS_PAGE_TABLE, self::FK_CATEGORY_COLUMN, self::FK_CMS_PAGE_COLUMN);
-        $productKeyName = $this->getForeignKeyName(self::FK_PRODUCT_TABLE, self::FK_CMS_PAGE_TABLE, self::FK_PRODUCT_COLUMN, self::FK_CMS_PAGE_COLUMN);
+        $database = $this->connection->fetchColumn('select database();');
+        $categoryKeyName = $this->getForeignKeyName($database, self::FK_CATEGORY_TABLE, self::FK_CMS_PAGE_TABLE, self::FK_CATEGORY_COLUMN, self::FK_CMS_PAGE_COLUMN);
+        $productKeyName = $this->getForeignKeyName($database, self::FK_PRODUCT_TABLE, self::FK_CMS_PAGE_TABLE, self::FK_PRODUCT_COLUMN, self::FK_CMS_PAGE_COLUMN);
 
         if ($categoryKeyName !== null) {
             $this->connection->executeUpdate(self::dropIndexAndForeignKeyQuery(
@@ -315,9 +319,9 @@ class Migration1609140710AddCmsPdpLayoutTest extends TestCase
         }
     }
 
-    private function getForeignKeyName(string $localTable, string $referenceTable, string $localColumn, string $referenceColumn): ?string
+    private function getForeignKeyName(string $database, string $localTable, string $referenceTable, string $localColumn, string $referenceColumn): ?string
     {
-        $foreignKeyName = $this->connection->fetchColumn(self::getForeignKeyQuery($localTable, $referenceTable, $localColumn, $referenceColumn));
+        $foreignKeyName = $this->connection->fetchColumn(self::getForeignKeyQuery($database, $localTable, $referenceTable, $localColumn, $referenceColumn));
 
         if (\is_string($foreignKeyName) && !empty($foreignKeyName)) {
             return $foreignKeyName;
@@ -326,12 +330,13 @@ class Migration1609140710AddCmsPdpLayoutTest extends TestCase
         return null;
     }
 
-    private static function getForeignKeyQuery(string $localTable, string $referenceTable, string $localColumn, string $referenceColumn): string
+    private static function getForeignKeyQuery(string $database, string $localTable, string $referenceTable, string $localColumn, string $referenceColumn): string
     {
         $template = <<<'EOF'
 SELECT `CONSTRAINT_NAME`
 FROM `information_schema`.`KEY_COLUMN_USAGE`
 WHERE
+    `CONSTRAINT_SCHEMA` = '#constrain_schema#' AND
     `TABLE_NAME` = '#local_table#' AND
     `REFERENCED_TABLE_NAME` = '#referenced_table#' AND
     `COLUMN_NAME` = '#local_column#' AND
@@ -339,8 +344,9 @@ WHERE
 EOF;
 
         return str_replace(
-            ['#local_table#', '#referenced_table#', '#local_column#', '#referenced_column#'],
+            ['#constrain_schema#', '#local_table#', '#referenced_table#', '#local_column#', '#referenced_column#'],
             [
+                $database,
                 $localTable,
                 $referenceTable,
                 $localColumn,

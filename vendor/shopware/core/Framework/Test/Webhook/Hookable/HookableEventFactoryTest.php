@@ -230,16 +230,18 @@ class HookableEventFactoryTest extends TestCase
         static::assertCount(1, $hookables);
         $event = $hookables[0];
         static::assertEquals('product.written', $event->getName());
+
         static::assertEquals([[
             'entity' => 'product',
             'operation' => 'update',
             'primaryKey' => $id,
             'updatedFields' => [
+                'versionId',
                 'parentVersionId',
                 'productManufacturerVersionId',
+                'cmsPageVersionId',
                 'updatedAt',
                 'id',
-                'versionId',
                 'name',
                 'description',
             ],
@@ -249,6 +251,7 @@ class HookableEventFactoryTest extends TestCase
     public function testCreatesMultipleHookables(): void
     {
         $id = Uuid::randomHex();
+        $productPriceId = Uuid::randomHex();
 
         /** @var EntityRepositoryInterface $productRepository */
         $productRepository = $this->getContainer()->get('product.repository');
@@ -264,7 +267,7 @@ class HookableEventFactoryTest extends TestCase
                 'description' => 'a fancy description.',
                 'prices' => [
                     [
-                        'id' => $id,
+                        'id' => $productPriceId,
                         'ruleId' => $ruleId,
                         'quantityStart' => 1,
                         'price' => [
@@ -285,16 +288,18 @@ class HookableEventFactoryTest extends TestCase
         static::assertCount(2, $hookables);
         $event = $hookables[0];
         static::assertEquals('product.written', $event->getName());
+
         static::assertEquals([[
             'entity' => 'product',
             'operation' => 'update',
             'primaryKey' => $id,
             'updatedFields' => [
+                'versionId',
                 'parentVersionId',
                 'productManufacturerVersionId',
+                'cmsPageVersionId',
                 'updatedAt',
                 'id',
-                'versionId',
                 'name',
                 'description',
             ],
@@ -305,10 +310,10 @@ class HookableEventFactoryTest extends TestCase
         static::assertEquals([[
             'entity' => 'product_price',
             'operation' => 'insert',
-            'primaryKey' => $id,
+            'primaryKey' => $productPriceId,
             'updatedFields' => [
-                'versionId',
                 'id',
+                'versionId',
                 'productId',
                 'productVersionId',
                 'ruleId',
@@ -360,8 +365,8 @@ class HookableEventFactoryTest extends TestCase
             'operation' => 'insert',
             'primaryKey' => $id,
             'updatedFields' => [
-                'versionId',
                 'id',
+                'versionId',
                 'productId',
                 'productVersionId',
                 'ruleId',

@@ -5,7 +5,7 @@ namespace Shopware\Core\Content\Product\Events;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Event\NestedEvent;
 
-class ProductIndexerEvent extends NestedEvent
+class ProductIndexerEvent extends NestedEvent implements ProductChangedEventInterface
 {
     /**
      * @var Context
@@ -27,12 +27,15 @@ class ProductIndexerEvent extends NestedEvent
      */
     private $parentIds;
 
-    public function __construct(array $ids, array $childrenIds, array $parentIds, Context $context)
+    private array $skip;
+
+    public function __construct(array $ids, array $childrenIds, array $parentIds, Context $context, array $skip = [])
     {
         $this->context = $context;
         $this->ids = $ids;
         $this->childrenIds = $childrenIds;
         $this->parentIds = $parentIds;
+        $this->skip = $skip;
     }
 
     public function getContext(): Context
@@ -53,5 +56,10 @@ class ProductIndexerEvent extends NestedEvent
     public function getParentIds(): array
     {
         return $this->parentIds;
+    }
+
+    public function getSkip(): array
+    {
+        return $this->skip;
     }
 }

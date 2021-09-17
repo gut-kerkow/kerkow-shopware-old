@@ -6,7 +6,7 @@ Component.register('sendcloud-welcome', {
     template,
 
     inject: [
-        'pluginService'
+        'sendcloudService'
     ],
 
     data() {
@@ -17,12 +17,8 @@ Component.register('sendcloud-welcome', {
 
     methods: {
         startAuthProcess: function () {
-            let headers = this.pluginService.getBasicHeaders();
-
-            return this.pluginService.httpClient
-                .get('/sendcloud/redirectUrl', {headers})
-                .then((response) => {
-                    let apiResponse = Shopware.Classes.ApiService.handleResponse(response);
+            return this.sendcloudService.getRedirectUrl()
+                .then((apiResponse) => {
                     this.redirectToConnectionScreenAndStartChecking(apiResponse.redirectUrl);
                 }).catch(error => {
                     console.log(error);
@@ -37,12 +33,8 @@ Component.register('sendcloud-welcome', {
         },
 
         checkStatus: function () {
-            let headers = this.pluginService.getBasicHeaders();
-
-            this.pluginService.httpClient
-                .get('/sendcloud/connectionStatus', {headers})
-                .then((response) => {
-                    let apiResponse = Shopware.Classes.ApiService.handleResponse(response);
+            this.sendcloudService.checkConnectionStatus()
+                .then((apiResponse) => {
                     if (apiResponse.isConnected) {
                         window.location.reload();
                     } else {

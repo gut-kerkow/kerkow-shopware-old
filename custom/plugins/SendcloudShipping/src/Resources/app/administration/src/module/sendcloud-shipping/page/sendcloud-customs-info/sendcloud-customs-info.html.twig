@@ -1,0 +1,61 @@
+{% block sendcloud_customs_info %}
+    <div>
+        <sw-loader v-if="isLoading"/>
+        <sw-card :title="$tc('send-cloud.customsInfo.defaultValues.title')">
+            <sendcloud-paragraph
+                    :sendcloud-paragraph="$tc('send-cloud.customsInfo.defaultValues.paragraph')"></sendcloud-paragraph>
+            <sendcloud-form-field :sendcloud-field-model="sendcloudShipmentType" sendcloud-field-name="shipmentType"
+                                  :sendcloud-field-label="$tc('send-cloud.customsInfo.shipmentType')"
+                                  sendcloud-field-type="select"
+                                  :sendcloud-help-text="$tc('send-cloud.customsInfo.shipmentTypeHelpText')">
+                <option value="">({{ $tc('send-cloud.customsInfo.none') }})</option>
+                <option v-for="(item, itemIndex) in sendcloudShipmentTypes" :value="item.value">
+                    {{ $tc('send-cloud.customsInfo.shipmentTypes.'+item.label) }}
+                </option>
+            </sendcloud-form-field>
+
+            <sendcloud-form-field :sendcloud-field-model="hsCode" sendcloud-field-name="hsCode"
+                                  :sendcloud-field-label="$tc('send-cloud.customsInfo.hsCode')"
+                                  sendcloud-field-type="text"
+                                  :sendcloud-field-placeholder="$tc('send-cloud.customsInfo.hsCodePlaceholderText')"
+                                  :sendcloud-help-text="$tc('send-cloud.customsInfo.hsCodeHelpText')"></sendcloud-form-field>
+
+            <sendcloud-form-field :sendcloud-field-model="originCountry" sendcloud-field-name="originCountry"
+                                  :sendcloud-field-label="$tc('send-cloud.customsInfo.originCountry')"
+                                  sendcloud-field-type="select"
+                                  :sendcloud-help-text="$tc('send-cloud.customsInfo.originCountryHelpText')">
+                <option value="">{{ $tc('send-cloud.customsInfo.originCountrySelectMessage') }}</option>
+                <option v-for="(item, itemIndex) in sendcloudCountries" :value="item.value">
+                    {{ item.label }}
+                </option>
+            </sendcloud-form-field>
+        </sw-card>
+
+        <sw-card :title="$tc('send-cloud.customsInfo.dataMapping.title')">
+            <sendcloud-paragraph
+                    :sendcloud-paragraph="$tc('send-cloud.customsInfo.dataMapping.paragraph')"></sendcloud-paragraph>
+            <sendcloud-form-field :sendcloud-field-model="mappedHsCode" sendcloud-field-name="mappedHsCode"
+                                  :sendcloud-field-label="$tc('send-cloud.customsInfo.hsCode')"
+                                  sendcloud-field-type="select">
+                <option value="">{{ $tc('send-cloud.customsInfo.hsCodeMappingSelectMessage') }}</option>
+                <option v-for="(item, itemIndex) in sendcloudCustomFields" :value="item.value">
+                    {{ item.label }}
+                </option>
+            </sendcloud-form-field>
+            <sendcloud-form-field :sendcloud-field-model="mappedOriginCountry"
+                                  sendcloud-field-name="mappedOriginCountry"
+                                  :sendcloud-field-label="$tc('send-cloud.customsInfo.originCountry')"
+                                  sendcloud-field-type="select">
+                <option value="">{{ $tc('send-cloud.customsInfo.originCountryMappingSelectMessage') }}</option>
+                <option v-for="(item, itemIndex) in sendcloudCustomFields" :value="item.value">
+                    {{ item.label }}
+                </option>
+            </sendcloud-form-field>
+        </sw-card>
+
+        <sendcloud-form-button-container>
+            <sw-button variant="primary" @click="saveConfiguration">Save</sw-button>
+        </sendcloud-form-button-container>
+    </div>
+
+{% endblock %}l

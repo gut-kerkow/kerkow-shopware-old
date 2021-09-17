@@ -7,7 +7,7 @@ use Shopware\Core\Content\ProductExport\Struct\ExportBehavior;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Routing\Exception\SalesChannelNotFoundException;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory;
+use Shopware\Core\System\SalesChannel\Context\AbstractSalesChannelContextFactory;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -16,14 +16,20 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class ProductExportGenerateCommand extends Command
 {
-    /** @var SalesChannelContextFactory */
+    public static $defaultName = 'product-export:generate';
+
+    /**
+     * @var AbstractSalesChannelContextFactory
+     */
     private $salesChannelContextFactory;
 
-    /** @var ProductExporterInterface */
+    /**
+     * @var ProductExporterInterface
+     */
     private $productExportService;
 
     public function __construct(
-        SalesChannelContextFactory $salesChannelContextFactory,
+        AbstractSalesChannelContextFactory $salesChannelContextFactory,
         ProductExporterInterface $productExportService
     ) {
         parent::__construct();
@@ -35,7 +41,6 @@ class ProductExportGenerateCommand extends Command
     protected function configure(): void
     {
         $this
-            ->setName('product-export:generate')
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Ignore cache and force generation')
             ->addOption('include-inactive', 'i', InputOption::VALUE_NONE, 'Include inactive exports')
             ->addArgument('sales-channel-id', InputArgument::REQUIRED, 'Sales channel to generate exports for')
@@ -61,6 +66,6 @@ class ProductExportGenerateCommand extends Command
             $productExportId
         );
 
-        return 0;
+        return self::SUCCESS;
     }
 }

@@ -8,6 +8,7 @@ import FormSerializeUtil from 'src/utility/form/form-serialize.util';
 import Iterator from 'src/helper/iterator.helper';
 import OffCanvas from 'src/plugin/offcanvas/offcanvas.plugin';
 import ElementLoadingIndicatorUtil from 'src/utility/loading-indicator/element-loading-indicator.util';
+import ViewportDetection from 'src/helper/viewport-detection.helper';
 
 export default class OffCanvasCartPlugin extends Plugin {
 
@@ -20,7 +21,7 @@ export default class OffCanvasCartPlugin extends Plugin {
         offcanvasPosition: 'right',
         shippingContainerSelector: '.offcanvas-shipping-preference',
         shippingToggleSelector: '.js-toggle-shipping-selection',
-        additionalOffcanvasClass: 'cart-offcanvas'
+        additionalOffcanvasClass: 'cart-offcanvas',
     };
 
     init() {
@@ -36,7 +37,8 @@ export default class OffCanvasCartPlugin extends Plugin {
      * @param {function|null} callback
      */
     openOffCanvas(url, data, callback) {
-        AjaxOffCanvas.open(url, data, this._onOffCanvasOpened.bind(this, callback), this.options.offcanvasPosition);
+        const isFullwidth = ViewportDetection.isXS();
+        AjaxOffCanvas.open(url, data, this._onOffCanvasOpened.bind(this, callback), this.options.offcanvasPosition, undefined, undefined, isFullwidth);
         AjaxOffCanvas.setAdditionalClassName(this.options.additionalOffcanvasClass);
     }
 
@@ -178,7 +180,7 @@ export default class OffCanvasCartPlugin extends Plugin {
 
         this.$emitter.publish('beforeFireRequest');
 
-        this.client.post(requestUrl.toLowerCase(), data, cb);
+        this.client.post(requestUrl, data, cb);
     }
 
     /**

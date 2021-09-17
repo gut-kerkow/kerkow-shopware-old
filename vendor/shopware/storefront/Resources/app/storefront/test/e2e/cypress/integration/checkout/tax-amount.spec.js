@@ -57,7 +57,7 @@ describe('Checkout: Use different taxes in products while checkout', () => {
                 // Product detail - first product
                 cy.get('.header-search-input')
                     .should('be.visible')
-                    .type(product.name);
+                    .type(productName);
                 cy.contains('.search-suggest-product-name', productName).click();
                 cy.get('.product-detail-buy .btn-buy').click();
 

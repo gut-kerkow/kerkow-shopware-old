@@ -38,14 +38,14 @@ class SystemConfigController extends AbstractController
 
     /**
      * @Since("6.0.0.0")
-     * @Route("/api/v{version}/_action/system-config/check", name="api.action.core.system-config.check", methods={"GET"})
+     * @Route("/api/_action/system-config/check", name="api.action.core.system-config.check", methods={"GET"})
      * @Acl({"system_config:read"})
      */
     public function checkConfiguration(Request $request, Context $context): JsonResponse
     {
-        $domain = $request->query->get('domain');
+        $domain = (string) $request->query->get('domain');
 
-        if (!$domain) {
+        if ($domain === '') {
             return new JsonResponse(false);
         }
 
@@ -54,15 +54,15 @@ class SystemConfigController extends AbstractController
 
     /**
      * @Since("6.0.0.0")
-     * @Route("/api/v{version}/_action/system-config/schema", name="api.action.core.system-config", methods={"GET"})
+     * @Route("/api/_action/system-config/schema", name="api.action.core.system-config", methods={"GET"})
      *
      * @throws MissingRequestParameterException
      */
     public function getConfiguration(Request $request, Context $context): JsonResponse
     {
-        $domain = $request->query->get('domain');
+        $domain = (string) $request->query->get('domain');
 
-        if (!$domain) {
+        if ($domain === '') {
             throw new MissingRequestParameterException('domain');
         }
 
@@ -71,16 +71,19 @@ class SystemConfigController extends AbstractController
 
     /**
      * @Since("6.0.0.0")
-     * @Route("/api/v{version}/_action/system-config", name="api.action.core.system-config.value", methods={"GET"})
+     * @Route("/api/_action/system-config", name="api.action.core.system-config.value", methods={"GET"})
      * @Acl({"system_config:read"})
      */
     public function getConfigurationValues(Request $request): JsonResponse
     {
-        $domain = $request->query->get('domain');
-        $salesChannelId = $request->query->get('salesChannelId');
-
-        if (!$domain) {
+        $domain = (string) $request->query->get('domain');
+        if ($domain === '') {
             throw new MissingRequestParameterException('domain');
+        }
+
+        $salesChannelId = $request->query->get('salesChannelId');
+        if (!\is_string($salesChannelId)) {
+            $salesChannelId = null;
         }
 
         $values = $this->systemConfig->getDomain($domain, $salesChannelId);
@@ -95,12 +98,16 @@ class SystemConfigController extends AbstractController
 
     /**
      * @Since("6.0.0.0")
-     * @Route("/api/v{version}/_action/system-config", name="api.action.core.save.system-config", methods={"POST"})
+     * @Route("/api/_action/system-config", name="api.action.core.save.system-config", methods={"POST"})
      * @Acl({"system_config:update", "system_config:create", "system_config:delete"})
      */
     public function saveConfiguration(Request $request): JsonResponse
     {
         $salesChannelId = $request->query->get('salesChannelId');
+        if (!\is_string($salesChannelId)) {
+            $salesChannelId = null;
+        }
+
         $kvs = $request->request->all();
         $this->saveKeyValues($salesChannelId, $kvs);
 
@@ -109,11 +116,15 @@ class SystemConfigController extends AbstractController
 
     /**
      * @Since("6.0.0.0")
-     * @Route("/api/v{version}/_action/system-config/batch", name="api.action.core.save.system-config.batch", methods={"POST"})
+     * @Route("/api/_action/system-config/batch", name="api.action.core.save.system-config.batch", methods={"POST"})
      * @Acl({"system_config:update", "system_config:create", "system_config:delete"})
      */
     public function batchSaveConfiguration(Request $request): JsonResponse
     {
+        /**
+         * @var string $salesChannelId
+         * @var array  $kvs
+         */
         foreach ($request->request->all() as $salesChannelId => $kvs) {
             if ($salesChannelId === 'null') {
                 $salesChannelId = null;

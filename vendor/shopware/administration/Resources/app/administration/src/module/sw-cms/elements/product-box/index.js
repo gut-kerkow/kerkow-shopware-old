@@ -19,45 +19,31 @@ Shopware.Service('cmsService').registerCmsElement({
             required: true,
             entity: {
                 name: 'product',
-                criteria: criteria
-            }
+                criteria: criteria,
+            },
         },
         boxLayout: {
             source: 'static',
-            value: 'standard'
+            value: 'standard',
         },
         displayMode: {
             source: 'static',
-            value: 'standard'
+            value: 'standard',
         },
         verticalAlign: {
             source: 'static',
-            value: null
-        }
+            value: null,
+        },
     },
     defaultData: {
         boxLayout: 'standard',
-        product: Shopware.Feature.isActive('FEATURE_NEXT_10078') ? null : {
-            name: 'Lorem Ipsum dolor',
-            description: `Lorem ipsum dolor sit amet, consetetur sadipscing elitr,
-                          sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat,
-                          sed diam voluptua.`.trim(),
-            price: [
-                { gross: 19.90 }
-            ],
-            cover: {
-                media: {
-                    url: '/administration/static/img/cms/preview_glasses_large.jpg',
-                    alt: 'Lorem Ipsum dolor'
-                }
-            }
-        }
+        product: null,
     },
     collect: function collect(elem) {
         const context = Object.assign(
             {},
             Shopware.Context.api,
-            { inheritance: true }
+            { inheritance: true },
         );
 
         const criteriaList = {};
@@ -75,7 +61,7 @@ Shopware.Service('cmsService').registerCmsElement({
                     value: [elem.config[configKey].value],
                     key: configKey,
                     searchCriteria: entity.criteria ? entity.criteria : new Criteria(),
-                    ...entity
+                    ...entity,
                 };
 
                 entityData.searchCriteria.setIds(entityData.value);
@@ -86,5 +72,5 @@ Shopware.Service('cmsService').registerCmsElement({
         });
 
         return criteriaList;
-    }
+    },
 });

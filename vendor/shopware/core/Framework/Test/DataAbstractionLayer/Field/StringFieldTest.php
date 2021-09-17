@@ -13,7 +13,9 @@ use Shopware\Core\Framework\DataAbstractionLayer\FieldSerializer\StringFieldSeri
 use Shopware\Core\Framework\DataAbstractionLayer\Write\DataStack\KeyValuePair;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\EntityExistence;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\WriteParameterBag;
+use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
+use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\Framework\Validation\WriteConstraintViolationException;
 
 class StringFieldTest extends TestCase
@@ -23,28 +25,28 @@ class StringFieldTest extends TestCase
     /**
      * @dataProvider stringFieldDataProvider
      *
-     * @param string|null $input
-     * @param string|null $expected
-     * @param Flag[]      $flags
+     * @param bool|string|null $input
+     * @param Flag[]           $flags
      */
-    public function testStringFieldSerializer(string $type, $input, $expected, array $flags = []): void
+    public function testStringFieldSerializer(string $type, $input, ?string $expected, array $flags = []): void
     {
         $serializer = $this->getContainer()->get(StringFieldSerializer::class);
 
-        $data = new KeyValuePair('string', $input, false);
+        $name = 'string_' . Uuid::randomHex();
+        $data = new KeyValuePair($name, $input, false);
 
         if ($type === 'writeException') {
             $this->expectException(WriteConstraintViolationException::class);
 
             try {
                 $serializer->encode(
-                    $this->getStringField($flags),
+                    $this->getStringField($name, $flags),
                     $this->getEntityExisting(),
                     $data,
                     $this->getWriteParameterBagMock()
                 )->current();
             } catch (WriteConstraintViolationException $e) {
-                static::assertSame('/string', $e->getViolations()->get(0)->getPropertyPath());
+                static::assertSame('/' . $name, $e->getViolations()->get(0)->getPropertyPath());
                 /* Unexpected language has to be fixed NEXT-9419 */
                 //static::assertSame($expected, $e->getViolations()->get(0)->getMessage());
 
@@ -56,7 +58,7 @@ class StringFieldTest extends TestCase
             static::assertSame(
                 $expected,
                 $serializer->encode(
-                    $this->getStringField($flags),
+                    $this->getStringField($name, $flags),
                     $this->getEntityExisting(),
                     $data,
                     $this->getWriteParameterBagMock()
@@ -72,18 +74,24 @@ class StringFieldTest extends TestCase
      */
     public function stringFieldDataProvider()
     {
-        return [
+        $data = [
             ['writeException', '<test>', 'This value should not be blank.', [new Required()]],
             ['writeException', null, 'This value should not be blank.', [new Required()]],
             ['writeException', '', 'This value should not be blank.', [new Required()]],
             ['writeException', true, 'This value should be of type string.', [new Required()]],
             ['assertion', 'test12-B', 'test12-B', [new Required()]],
             ['assertion', null, null, []],
-            ['assertion', '<test>', '<test>', [new Required(), new AllowHtml()]],
+            ['assertion', '<test>', '<test>', [new Required(), new AllowHtml(false)]],
             ['assertion', '', null, []],
             ['assertion', '', '', [new AllowEmptyString()]],
             ['assertion', '', '', [new Required(), new AllowEmptyString()]],
         ];
+
+        if (Feature::isActive('FEATURE_NEXT_15172')) {
+            $data[] = ['assertion', '<script></script>test12-B', 'test12-B', [new Required(), new AllowHtml()]];
+        }
+
+        return $data;
     }
 
     private function getWriteParameterBagMock(): WriteParameterBag
@@ -102,9 +110,9 @@ class StringFieldTest extends TestCase
     /**
      * @param Flag[] $flags
      */
-    private function getStringField(array $flags = []): StringField
+    private function getStringField(string $name, array $flags = []): StringField
     {
-        $field = new StringField('string', 'string');
+        $field = new StringField($name, $name);
 
         if ($flags) {
             $field->addFlags(new ApiAware(), ...$flags);

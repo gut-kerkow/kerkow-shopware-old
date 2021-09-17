@@ -4,20 +4,24 @@ namespace Shopware\Core\Framework\App;
 
 use Shopware\Core\Framework\Api\Acl\Role\AclRoleEntity;
 use Shopware\Core\Framework\App\Aggregate\ActionButton\ActionButtonCollection;
+use Shopware\Core\Framework\App\Aggregate\AppPaymentMethod\AppPaymentMethodCollection;
 use Shopware\Core\Framework\App\Aggregate\AppTranslation\AppTranslationCollection;
+use Shopware\Core\Framework\App\Aggregate\CmsBlock\AppCmsBlockCollection;
 use Shopware\Core\Framework\App\Template\TemplateCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopware\Core\Framework\Webhook\WebhookCollection;
 use Shopware\Core\System\CustomField\Aggregate\CustomFieldSet\CustomFieldSetCollection;
 use Shopware\Core\System\Integration\IntegrationEntity;
 
 /**
- * @internal only for use by the app-system, will be considered internal from v6.4.0 onward
+ * @internal
  */
 class AppEntity extends Entity
 {
     use EntityIdTrait;
+    use EntityCustomFieldsTrait;
 
     /**
      * @var string
@@ -66,6 +70,11 @@ class AppEntity extends Entity
 
     /**
      * @var array|null
+     */
+    protected $mainModule;
+
+    /**
+     * @var array
      */
     protected $cookies;
 
@@ -140,16 +149,6 @@ class AppEntity extends Entity
     protected $templates;
 
     /**
-     * @var \DateTimeInterface
-     */
-    protected $createdAt;
-
-    /**
-     * @var \DateTimeInterface|null
-     */
-    protected $updatedAt;
-
-    /**
      * @var CustomFieldSetCollection|null
      */
     protected $customFieldSets;
@@ -163,6 +162,18 @@ class AppEntity extends Entity
      * @var WebhookCollection|null
      */
     protected $webhooks;
+
+    /**
+     * @var AppPaymentMethodCollection|null
+     */
+    protected $paymentMethods;
+
+    /**
+     * @internal
+     *
+     * @var AppCmsBlockCollection|null
+     */
+    protected $cmsBlocks;
 
     public function getId(): string
     {
@@ -257,12 +268,22 @@ class AppEntity extends Entity
         $this->modules = $modules;
     }
 
-    public function getCookies(): ?array
+    public function getMainModule(): ?array
+    {
+        return $this->mainModule;
+    }
+
+    public function setMainModule(array $mainModule): void
+    {
+        $this->mainModule = $mainModule;
+    }
+
+    public function getCookies(): array
     {
         return $this->cookies;
     }
 
-    public function setCookies(?array $cookies): void
+    public function setCookies(array $cookies): void
     {
         $this->cookies = $cookies;
     }
@@ -297,12 +318,12 @@ class AppEntity extends Entity
         $this->translations = $translations;
     }
 
-    public function getLabel(): string
+    public function getLabel(): ?string
     {
         return $this->label;
     }
 
-    public function setLabel(string $label): void
+    public function setLabel(?string $label): void
     {
         $this->label = $label;
     }
@@ -355,26 +376,6 @@ class AppEntity extends Entity
     public function setAclRole(?AclRoleEntity $aclRole): void
     {
         $this->aclRole = $aclRole;
-    }
-
-    public function getCreatedAt(): \DateTimeInterface
-    {
-        return $this->createdAt;
-    }
-
-    public function setCreatedAt(\DateTimeInterface $createdAt): void
-    {
-        $this->createdAt = $createdAt;
-    }
-
-    public function getUpdatedAt(): \DateTimeInterface
-    {
-        return $this->updatedAt;
-    }
-
-    public function setUpdatedAt(\DateTimeInterface $updatedAt): void
-    {
-        $this->updatedAt = $updatedAt;
     }
 
     public function getCustomFieldSets(): ?CustomFieldSetCollection
@@ -455,5 +456,39 @@ class AppEntity extends Entity
     public function setPrivacyPolicyExtensions(?string $privacyPolicyExtensions): void
     {
         $this->privacyPolicyExtensions = $privacyPolicyExtensions;
+    }
+
+    public function getPaymentMethods(): ?AppPaymentMethodCollection
+    {
+        return $this->paymentMethods;
+    }
+
+    public function setPaymentMethods(AppPaymentMethodCollection $paymentMethods): void
+    {
+        $this->paymentMethods = $paymentMethods;
+    }
+
+    /**
+     * @internal
+     */
+    public function getCmsBlocks(): ?AppCmsBlockCollection
+    {
+        return $this->cmsBlocks;
+    }
+
+    /**
+     * @internal
+     */
+    public function setCmsBlocks(AppCmsBlockCollection $cmsBlocks): void
+    {
+        $this->cmsBlocks = $cmsBlocks;
+    }
+
+    public function jsonSerialize(): array
+    {
+        $serializedData = parent::jsonSerialize();
+        unset($serializedData['iconRaw']);
+
+        return $serializedData;
     }
 }

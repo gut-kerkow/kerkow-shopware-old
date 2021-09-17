@@ -21,15 +21,18 @@ class NumberRangeApiService extends ApiService {
      * @returns {Promise<T>}
      */
     reserve(typeName, salesChannelId = '', preview = false, additionalHeaders = {}) {
+        const urlSuffix = salesChannelId ? `/${salesChannelId}` : '';
+        const url = `_action/number-range/reserve/${typeName}${urlSuffix}`;
+
         const headers = this.getBasicHeaders(additionalHeaders);
         const params = {
-            preview: preview
+            preview: preview,
         };
 
         return this.httpClient
-            .get(`_action/number-range/reserve/${typeName}/${salesChannelId}`, {
+            .get(url, {
                 params,
-                headers
+                headers,
             })
             .then((response) => {
                 return ApiService.handleResponse(response);
@@ -49,13 +52,13 @@ class NumberRangeApiService extends ApiService {
         const headers = this.getBasicHeaders(additionalHeaders);
         const params = {
             pattern: pattern,
-            start: start
+            start: start,
         };
 
         return this.httpClient
             .get(`_action/number-range/preview-pattern/${typeName}`, {
                 params,
-                headers
+                headers,
             })
             .then((response) => {
                 return ApiService.handleResponse(response);

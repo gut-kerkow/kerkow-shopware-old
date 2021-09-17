@@ -3,7 +3,6 @@
 namespace Shopware\Storefront\Theme\StorefrontPluginConfiguration;
 
 use Shopware\Core\Framework\Bundle;
-use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopware\Storefront\Framework\ThemeInterface;
 use Shopware\Storefront\Theme\Exception\InvalidThemeBundleException;
@@ -46,22 +45,15 @@ class StorefrontPluginConfigurationFactory extends AbstractStorefrontPluginConfi
         return $this->createPluginConfig($appName, $absolutePath);
     }
 
-    /**
-     * @deprecated tag:v6.4.0 will be private in the future, use `createFromBundle()` or `createFromApp()`
-     */
-    public function createPluginConfig(string $name, string $path): StorefrontPluginConfiguration
+    private function createPluginConfig(string $name, string $path): StorefrontPluginConfiguration
     {
         $config = new StorefrontPluginConfiguration($name);
         $config->setIsTheme(false);
         $config->setStorefrontEntryFilepath($this->getEntryFile($path));
-        $config->setBasePath($path);
+        $config->setBasePath($this->stripProjectDir($path));
 
         $stylesPath = $path . \DIRECTORY_SEPARATOR . 'Resources/app/storefront/src/scss';
-        if (Feature::isActive('FEATURE_NEXT_7365')) {
-            $config->setStyleFiles(FileCollection::createFromArray($this->getScssEntryFileInDir($stylesPath)));
-        } else {
-            $config->setStyleFiles(FileCollection::createFromArray($this->getFilesInDir($stylesPath)));
-        }
+        $config->setStyleFiles(FileCollection::createFromArray($this->getScssEntryFileInDir($stylesPath)));
 
         $scriptPath = $path . \DIRECTORY_SEPARATOR . 'Resources/app/storefront/dist/storefront/js';
         $config->setScriptFiles(FileCollection::createFromArray($this->getFilesInDir($scriptPath)));
@@ -69,10 +61,7 @@ class StorefrontPluginConfigurationFactory extends AbstractStorefrontPluginConfi
         return $config;
     }
 
-    /**
-     * @deprecated tag:v6.4.0 will be private in the future, use `createFromBundle()` or `createFromApp()`
-     */
-    public function createThemeConfig(string $name, string $path): StorefrontPluginConfiguration
+    private function createThemeConfig(string $name, string $path): StorefrontPluginConfiguration
     {
         $pathname = $path . \DIRECTORY_SEPARATOR . 'Resources/theme.json';
 
@@ -83,7 +72,15 @@ class StorefrontPluginConfigurationFactory extends AbstractStorefrontPluginConfi
         $config = new StorefrontPluginConfiguration($name);
 
         try {
-            $data = json_decode(file_get_contents($pathname), true);
+            $fileContent = file_get_contents($pathname);
+            if ($fileContent === false) {
+                throw new ThemeCompileException(
+                    $name,
+                    'Unable to read theme.json'
+                );
+            }
+
+            $data = json_decode($fileContent, true);
             if (json_last_error() !== \JSON_ERROR_NONE) {
                 throw new ThemeCompileException(
                     $name,
@@ -92,8 +89,11 @@ class StorefrontPluginConfigurationFactory extends AbstractStorefrontPluginConfi
             }
 
             $basePath = realpath(pathinfo($pathname, \PATHINFO_DIRNAME));
+            \assert(\is_string($basePath));
 
-            $config->setBasePath($basePath);
+            $basePath = $this->stripProjectDir($basePath);
+
+            $config->setBasePath($this->stripProjectDir($basePath));
             $config->setStorefrontEntryFilepath($this->getEntryFile($path));
             $config->setIsTheme(true);
             $config->setName($data['name']);
@@ -103,24 +103,24 @@ class StorefrontPluginConfigurationFactory extends AbstractStorefrontPluginConfi
                 $fileCollection = new FileCollection();
                 foreach ($data['style'] as $style) {
                     if (!\is_array($style)) {
-                        $fileCollection->add(new File($style));
+                        $fileCollection->add(new File($this->stripProjectDir($style)));
 
                         continue;
                     }
 
                     foreach ($style as $filename => $additional) {
                         if (!\array_key_exists('resolve', $additional)) {
-                            $fileCollection->add(new File($filename));
+                            $fileCollection->add(new File($this->stripProjectDir($filename)));
 
                             continue;
                         }
 
-                        foreach ($additional['resolve'] as $resolve => &$resolvePath) {
+                        foreach ($additional['resolve'] as &$resolvePath) {
                             $resolvePath = $this->addBasePath($resolvePath, $basePath);
                         }
                         unset($resolvePath);
 
-                        $fileCollection->add(new File($filename, $additional['resolve'] ?? []));
+                        $fileCollection->add(new File($this->stripProjectDir($filename), $additional['resolve'] ?? []));
                     }
                 }
                 $config->setStyleFiles($this->addBasePathToCollection($fileCollection, $basePath));
@@ -146,6 +146,10 @@ class StorefrontPluginConfigurationFactory extends AbstractStorefrontPluginConfi
             if (\array_key_exists('views', $data)) {
                 $config->setViewInheritance($data['views']);
             }
+
+            if (\array_key_exists('iconSets', $data)) {
+                $config->setIconSets($data['iconSets']);
+            }
         } catch (ThemeCompileException $e) {
             throw $e;
         } catch (\Exception $e) {
@@ -166,11 +170,11 @@ class StorefrontPluginConfigurationFactory extends AbstractStorefrontPluginConfi
         $path = rtrim($path, \DIRECTORY_SEPARATOR) . \DIRECTORY_SEPARATOR . 'Resources/app/storefront/src';
 
         if (file_exists($path . \DIRECTORY_SEPARATOR . 'main.ts')) {
-            return $path . \DIRECTORY_SEPARATOR . 'main.ts';
+            return $this->stripProjectDir($path . \DIRECTORY_SEPARATOR . 'main.ts');
         }
 
         if (file_exists($path . \DIRECTORY_SEPARATOR . 'main.js')) {
-            return $path . \DIRECTORY_SEPARATOR . 'main.js';
+            return $this->stripProjectDir($path . \DIRECTORY_SEPARATOR . 'main.js');
         }
 
         return null;
@@ -215,7 +219,7 @@ class StorefrontPluginConfigurationFactory extends AbstractStorefrontPluginConfi
 
         $files = [];
         foreach ($finder as $file) {
-            $files[] = $file->getPathname();
+            $files[] = $this->stripProjectDir($file->getPathname());
         }
 
         return $files;
@@ -231,9 +235,18 @@ class StorefrontPluginConfigurationFactory extends AbstractStorefrontPluginConfi
 
         $files = [];
         foreach ($finder as $file) {
-            $files[] = $file->getPathname();
+            $files[] = $this->stripProjectDir($file->getPathname());
         }
 
         return $files;
+    }
+
+    private function stripProjectDir(string $path): string
+    {
+        if (\strpos($path, $this->projectDir) === 0) {
+            return substr($path, \strlen($this->projectDir) + 1);
+        }
+
+        return $path;
     }
 }

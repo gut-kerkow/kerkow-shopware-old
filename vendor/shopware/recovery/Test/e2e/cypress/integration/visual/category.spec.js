@@ -16,7 +16,7 @@ describe('Category: Visual tests', () => {
         // Request we want to wait for later
         cy.server();
         cy.route({
-            url: '/api/v*/search/category',
+            url: '/api/search/category',
             method: 'POST'
         }).as('dataRequest');
 
@@ -28,12 +28,14 @@ describe('Category: Visual tests', () => {
             expect(xhr).to.have.property('status', 200);
         });
 
-        // Take snapshot for visual testing
+        // Change visibility of the element to ensure consistent snapshots
         cy.changeElementStyling(
-            '.sw-category-sales-channel-card__list',
+            '.sw-category-entry-point-card__navigation-list',
             'visibility: hidden'
         );
         cy.prepareAdminForScreenshot();
+
+        // Take snapshot for visual testing
         cy.takeSnapshot('Category - detail', '.sw-category-detail-base');
     });
 });

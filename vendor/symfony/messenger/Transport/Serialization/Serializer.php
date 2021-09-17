@@ -30,6 +30,7 @@ use Symfony\Component\Serializer\SerializerInterface as SymfonySerializerInterfa
  */
 class Serializer implements SerializerInterface
 {
+    public const MESSENGER_SERIALIZATION_CONTEXT = 'messenger_serialization';
     private const STAMP_HEADER_PREFIX = 'X-Message-Stamp-';
 
     private $serializer;
@@ -40,7 +41,7 @@ class Serializer implements SerializerInterface
     {
         $this->serializer = $serializer ?? self::create()->serializer;
         $this->format = $format;
-        $this->context = $context;
+        $this->context = $context + [self::MESSENGER_SERIALIZATION_CONTEXT => true];
     }
 
     public static function create(): self
@@ -111,7 +112,7 @@ class Serializer implements SerializerInterface
     {
         $stamps = [];
         foreach ($encodedEnvelope['headers'] as $name => $value) {
-            if (0 !== strpos($name, self::STAMP_HEADER_PREFIX)) {
+            if (!str_starts_with($name, self::STAMP_HEADER_PREFIX)) {
                 continue;
             }
 

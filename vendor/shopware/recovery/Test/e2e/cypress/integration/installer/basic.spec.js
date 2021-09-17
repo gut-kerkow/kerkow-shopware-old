@@ -77,7 +77,7 @@ describe('Minimal install', () => {
         cy.get('#c_database_user').clear().type(Cypress.env('dbUser'));
         cy.get('#c_database_password').clear().type(Cypress.env('dbPassword'));
 
-        cy.get('.custom-checkbox').click();
+        cy.get('.c_create_database').click();
 
         cy.get('#c_database_schema_new').clear().type(Cypress.env('dbName'));
         cy.get('.btn.btn-primary').contains('Start installation').click();
@@ -85,7 +85,7 @@ describe('Minimal install', () => {
         // @install: installation
         cy.get('section.content--main').should('be.visible');
         cy.get('.navigation--list .navigation--entry span').contains('Installation');
-        cy.get('.database-import-finish', { timeout: 120000 }).should('be.visible');
+        cy.get('.database-import-finish', { timeout: 300000 }).should('be.visible');
 
         // Take snapshot for visual testing
         cy.takeSnapshot(`Database migration finished`, 'section.content--main');
@@ -125,12 +125,11 @@ describe('Minimal install', () => {
 
         cy.get('.btn.btn-primary').contains('Next').click();
 
+        // See if return to Admin was successful
+        cy.get('.sw-desktop').should('be.visible');
+
         // @frw in Administration: welcome
         cy.get('.sw-modal.sw-first-run-wizard-modal').should('be.visible');
-
-        cy.location().should((loc) => {
-            expect(loc.hash).to.eq('#/sw/first/run/wizard/index');
-        });
 
         // Take snapshot for visual testing
         cy.prepareAdminForScreenshot();
@@ -142,9 +141,6 @@ describe('Minimal install', () => {
         // @frw: skip data-import
         cy.get('.sw-modal.sw-first-run-wizard-modal').should('be.visible');
 
-        cy.location().should((loc) => {
-            expect(loc.hash).to.eq('#/sw/first/run/wizard/index/data-import');
-        });
         cy.get('.sw-step-display').should('be.visible');
         cy.get('.sw-step-display .sw-step-item.sw-step-item--active span').contains('Data import');
 
@@ -157,9 +153,6 @@ describe('Minimal install', () => {
         cy.get('.sw-modal.sw-first-run-wizard-modal').should('be.visible');
 
 
-        cy.location().should((loc) => {
-            expect(loc.hash).to.eq('#/sw/first/run/wizard/index/mailer/selection');
-        });
         cy.get('.sw-step-display').should('be.visible');
         cy.get('.sw-step-display .sw-step-item.sw-step-item--active span').contains('Mailer configuration');
 
@@ -170,9 +163,6 @@ describe('Minimal install', () => {
 
         // @frw: skip paypal
         cy.get('.sw-modal.sw-first-run-wizard-modal').should('be.visible');
-        cy.location().should((loc) => {
-            expect(loc.hash).to.eq('#/sw/first/run/wizard/index/paypal/info');
-        });
         cy.get('.sw-step-display').should('be.visible');
         cy.get('.sw-step-display .sw-step-item.sw-step-item--active span').contains('PayPal setup');
 
@@ -181,35 +171,41 @@ describe('Minimal install', () => {
         cy.takeSnapshot('FRW - PayPal', '.sw-modal.sw-first-run-wizard-modal');
         cy.get('.sw-button span').contains('Skip').click();
 
+        // @frw: Shopware Markets
+        cy.get('.sw-modal.sw-first-run-wizard-modal').should('be.visible');
+        cy.get('.sw-step-display').should('be.visible');
+        cy.get('.sw-step-display .sw-step-item.sw-step-item--active span').contains('Shopware Markets');
+        cy.get('.sw-button span').contains('Next').click();
+
         // @frw: plugins
         cy.get('.sw-modal.sw-first-run-wizard-modal').should('be.visible');
-        cy.location().should((loc) => {
-            expect(loc.hash).to.eq('#/sw/first/run/wizard/index/plugins');
-        });
         cy.get('.sw-step-display').should('be.visible');
-        cy.get('.sw-step-display .sw-step-item.sw-step-item--active span').contains('Plugins');
+        cy.get('.sw-step-display .sw-step-item.sw-step-item--active span').contains('Extensions');
         cy.get('.sw-button span').contains('Next').click();
 
         // @frw: skip account login
         cy.get('.sw-modal.sw-first-run-wizard-modal').should('be.visible');
-        cy.location().should((loc) => {
-            expect(loc.hash).to.eq('#/sw/first/run/wizard/index/shopware/account');
-        });
         cy.get('.sw-step-display').should('be.visible');
-        cy.get('.sw-step-display .sw-step-item.sw-step-item--disabled span').contains('Shopware');
+        cy.get('.sw-step-display .sw-step-item.sw-step-item--active span').contains('Shopware Account');
+        cy.get('.sw-button span').contains('Skip').click();
+
+        // @frw: skip store page
+        cy.get('.sw-modal.sw-first-run-wizard-modal').should('be.visible');
+        cy.get('.sw-step-display').should('be.visible');
+        cy.get('.sw-first-run-wizard-store').should('be.visible');
+        cy.get('.sw-step-display .sw-step-item.sw-step-item--active span').contains('Shopware Store');
+        cy.get('.sw-button').should('not.be.disabled');
         cy.get('.sw-button span').contains('Skip').click();
 
         // @frw: finish
         cy.get('.sw-modal.sw-first-run-wizard-modal').should('be.visible');
-        cy.location().should((loc) => {
-            expect(loc.hash).to.eq('#/sw/first/run/wizard/index/finish');
-        });
         cy.get('.sw-step-display').should('be.visible');
-        cy.get('.sw-step-display .sw-step-item.sw-step-item--disabled span').contains('Shopware');
+        cy.get('.sw-first-run-wizard-finish').should('be.visible');
+        cy.get('.sw-step-display .sw-step-item.sw-step-item--success span').contains('Shopware Store');
 
         cy.server();
         cy.route({
-            url: '/api/v2/_action/store/frw/finish',
+            url: '/api/_action/store/frw/finish',
             method: 'post'
         }).as('finishCall');
 
@@ -220,8 +216,10 @@ describe('Minimal install', () => {
         }, { responseTimeout: 60000 });
 
         cy.location().should((loc) => {
-            expect(loc.hash).to.eq('#/');
             expect(loc.pathname).to.eq(`${Cypress.env('admin')}`);
         });
+
+        // Verify dashboard module
+        cy.get('.sw-dashboard-index__content').should('be.visible');
     });
 });

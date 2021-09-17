@@ -2,6 +2,7 @@
 
 namespace Shopware\Core\Content\Media\Commands;
 
+use Shopware\Core\Content\Media\MediaEntity;
 use Shopware\Core\Content\Media\Message\UpdateThumbnailsMessage;
 use Shopware\Core\Content\Media\Thumbnail\ThumbnailService;
 use Shopware\Core\Framework\Adapter\Console\ShopwareStyle;
@@ -124,7 +125,7 @@ class GenerateThumbnailsCommand extends Command
             $this->generateAsynchronous($mediaIterator, $context);
         }
 
-        return 0;
+        return self::SUCCESS;
     }
 
     private function initializeCommand(InputInterface $input, Context $context): void
@@ -138,21 +139,18 @@ class GenerateThumbnailsCommand extends Command
     {
         $rawInput = $input->getOption('batch-size');
 
-        if (\is_array($rawInput) || !is_numeric($rawInput)) {
+        if (!is_numeric($rawInput)) {
             throw new \UnexpectedValueException('Batch size must be numeric');
         }
 
         return (int) $rawInput;
     }
 
-    private function getFolderFilterFromInput(InputInterface $input, Context $context)
+    private function getFolderFilterFromInput(InputInterface $input, Context $context): ?EqualsAnyFilter
     {
         $rawInput = $input->getOption('folder-name');
         if (empty($rawInput)) {
             return null;
-        }
-        if (\is_array($rawInput)) {
-            $rawInput = implode(' ', $rawInput);
         }
 
         $criteria = (new Criteria())
@@ -176,13 +174,21 @@ class GenerateThumbnailsCommand extends Command
     {
         $generated = 0;
         $skipped = 0;
+        $errored = 0;
+        $errors = [];
 
         while (($result = $iterator->fetch()) !== null) {
+            /** @var MediaEntity $media */
             foreach ($result->getEntities() as $media) {
-                if ($this->thumbnailService->updateThumbnails($media, $context) > 0) {
-                    ++$generated;
-                } else {
-                    ++$skipped;
+                try {
+                    if ($this->thumbnailService->updateThumbnails($media, $context) > 0) {
+                        ++$generated;
+                    } else {
+                        ++$skipped;
+                    }
+                } catch (\Throwable $e) {
+                    ++$errored;
+                    $errors[] = [sprintf('Cannot process file %s (id: %s) due error: %s', $media->getFileName(), $media->getId(), $e->getMessage())];
                 }
             }
             $this->io->progressAdvance($result->count());
@@ -191,6 +197,8 @@ class GenerateThumbnailsCommand extends Command
         return [
             'generated' => $generated,
             'skipped' => $skipped,
+            'errored' => $errored,
+            'errors' => $errors,
         ];
     }
 
@@ -224,8 +232,20 @@ class GenerateThumbnailsCommand extends Command
             [
                 ['Generated', $result['generated']],
                 ['Skipped', $result['skipped']],
+                ['Errors', $result['errored']],
             ]
         );
+
+        if (\count($result['errors'])) {
+            if ($this->io->isVerbose()) {
+                $this->io->table(
+                    ['Error messages'],
+                    $result['errors']
+                );
+            } else {
+                $this->io->warning(\sprintf('Thumbnail generation for %d file(s) failed. Use -v to show the files', \count($result['errors'])));
+            }
+        }
     }
 
     private function generateAsynchronous(RepositoryIterator $mediaIterator, Context $context): void

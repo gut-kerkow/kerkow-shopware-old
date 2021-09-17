@@ -6,7 +6,7 @@
  * 2. Status colors
  * 3. Module colors
  * 4. Generic colors
- * 5. Legacy colors
+ * 5. Gradients
  * 6. Typography
  * 7. Miscellaneous
  * 8. z-index
@@ -79,16 +79,16 @@ $color-emerald-900: #16b320;
 
 // Pumpkin Spice
 // Color description: Light orange
-$color-pumpkin-spice-50: #fff6ec;
-$color-pumpkin-spice-100: #ffe9ce;
-$color-pumpkin-spice-200: #ffdbae;
-$color-pumpkin-spice-300: #ffcd8e;
-$color-pumpkin-spice-400: #ffc275;
-$color-pumpkin-spice-500: #ffb75d;
-$color-pumpkin-spice-600: #ffb055;
-$color-pumpkin-spice-700: #ffa74b;
-$color-pumpkin-spice-800: #ff9f41;
-$color-pumpkin-spice-900: #ff9030;
+$color-pumpkin-spice-50: #fff3e0;
+$color-pumpkin-spice-100: #ffe0b2;
+$color-pumpkin-spice-200: #ffcc80;
+$color-pumpkin-spice-300: #ffb74d;
+$color-pumpkin-spice-400: #ffa726;
+$color-pumpkin-spice-500: #ff9800;
+$color-pumpkin-spice-600: #fb8c00;
+$color-pumpkin-spice-700: #f57c00;
+$color-pumpkin-spice-800: #ef6c00;
+$color-pumpkin-spice-900: #e65100;
 
 // Crimson
 // Color description: Bright red
@@ -200,32 +200,9 @@ $color-black: #000;
 $color-drag-select-box: rgba(0, 162, 255, 0.4);
 
 /* ------------------------------------
- * 5. Legacy colors
- * @deprecated tag:v6.4.0 - Will be removed
+ * 5. Gradients
  * ------------------------------------ */
 
-// Base colors
-$color-shopware-blue: $color-shopware-brand-500;
-$color-biscay: $color-menu-end;
-$color-kashmir: $color-darkgray-200; // Old color #54698d
-$color-deep-cove: $color-menu-start;
-$color-iron: $color-gray-50; // Old color: #fafbfc
-$color-crimson: $color-crimson-500;
-$color-pumpkin-spice: $color-pumpkin-spice-500;
-$color-contrast: $color-module-yellow-500;
-$color-emerald: $color-emerald-500;
-$color-cadet-blue: $color-shopware-brand-50; // Old color: #e8f6ff
-$color-gutenberg: $color-darkgray-200; // Old color #607182
-$color-steam-cloud: $color-gray-300; // Old color #d8dde6
-$color-link-water: $color-gray-50; // Old color #fcfcfc
-$color-light-gray: $color-gray-100; // Old color #f4f7fa
-$color-gray: $color-gray-700; // Old color #9aa7be
-$color-purple: $color-module-purple-900;
-
-// Gradients
-$color-gradient-dark-gray-start: $color-menu-start;
-$color-gradient-dark-gray-end: $color-menu-end;
-$gradient-dark-gray: linear-gradient(to bottom, $color-gradient-dark-gray-start, $color-gradient-dark-gray-end);
 $gradient-action-button: linear-gradient(to bottom, #7793ae 0%, #6a849c 100%);
 
 /* ------------------------------------
@@ -261,6 +238,7 @@ $z-index-overlay: 300;
 $z-index-over-overlay: 350;
 $z-index-drag-select-box: 100;
 $z-index-sidebar: 200;
+$z-index-page-header: 550;
 $z-index-select-results: 600;
 $z-index-flyout: 700;
 $z-index-off-canvas: 750;

@@ -59,6 +59,9 @@ class MailBeforeValidateEvent extends Event implements BusinessEventInterface, L
         $this->data = $data;
     }
 
+    /**
+     * @param float|int|string|array|object $value
+     */
     public function addData(string $key, $value): void
     {
         $this->data[$key] = $value;
@@ -79,6 +82,9 @@ class MailBeforeValidateEvent extends Event implements BusinessEventInterface, L
         $this->templateData = $templateData;
     }
 
+    /**
+     * @param float|int|string|array|object $value
+     */
     public function addTemplateData(string $key, $value): void
     {
         $this->templateData[$key] = $value;

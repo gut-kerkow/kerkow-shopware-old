@@ -8,7 +8,6 @@ function createWrapper(privileges = []) {
     return shallowMount(Shopware.Component.build('sw-settings-tax-list'), {
         localVue,
         mocks: {
-            $tc: key => key,
             $route: {
                 query: {
                     page: 1,
@@ -171,7 +170,7 @@ describe('module/sw-settings-tax/page/sw-settings-tax-list', () => {
         const entityListing = wrapper.find('.sw-settings-tax-list-grid');
 
         expect(entityListing.exists()).toBeTruthy();
-        expect(entityListing.attributes().allowinlineedit).toBeTruthy();
+        expect(entityListing.attributes()['allow-inline-edit']).toBeTruthy();
     });
 
     it('should not be able to inline edit a tax', async () => {
@@ -181,6 +180,6 @@ describe('module/sw-settings-tax/page/sw-settings-tax-list', () => {
         const entityListing = wrapper.find('.sw-settings-tax-list-grid');
 
         expect(entityListing.exists()).toBeTruthy();
-        expect(entityListing.attributes().allowinlineedit).toBeFalsy();
+        expect(entityListing.attributes()['allow-inline-edit']).toBeFalsy();
     });
 });

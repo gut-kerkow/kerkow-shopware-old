@@ -4,7 +4,9 @@ namespace Shopware\Core\Content\LandingPage;
 
 use Shopware\Core\Content\Cms\CmsPageEntity;
 use Shopware\Core\Content\LandingPage\Aggregate\LandingPageTranslation\LandingPageTranslationCollection;
+use Shopware\Core\Content\Seo\SeoUrl\SeoUrlCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopware\Core\System\SalesChannel\SalesChannelCollection;
 use Shopware\Core\System\Tag\TagCollection;
@@ -12,6 +14,7 @@ use Shopware\Core\System\Tag\TagCollection;
 class LandingPageEntity extends Entity
 {
     use EntityIdTrait;
+    use EntityCustomFieldsTrait;
 
     /**
      * @var bool
@@ -64,14 +67,19 @@ class LandingPageEntity extends Entity
     protected $keywords;
 
     /**
-     * @var array|null
+     * @var string|null
      */
-    protected $customFields;
+    protected $url;
 
     /**
      * @var array|null
      */
     protected $slotConfig;
+
+    /**
+     * @var SeoUrlCollection|null
+     */
+    protected $seoUrls;
 
     public function isActive(): bool
     {
@@ -173,14 +181,14 @@ class LandingPageEntity extends Entity
         $this->keywords = $keywords;
     }
 
-    public function getCustomFields(): ?array
+    public function getUrl(): ?string
     {
-        return $this->customFields;
+        return $this->url;
     }
 
-    public function setCustomFields(?array $customFields): void
+    public function setUrl(?string $url): void
     {
-        $this->customFields = $customFields;
+        $this->url = $url;
     }
 
     public function getSlotConfig(): ?array
@@ -191,5 +199,15 @@ class LandingPageEntity extends Entity
     public function setSlotConfig(?array $slotConfig): void
     {
         $this->slotConfig = $slotConfig;
+    }
+
+    public function getSeoUrls(): ?SeoUrlCollection
+    {
+        return $this->seoUrls;
+    }
+
+    public function setSeoUrls(SeoUrlCollection $seoUrls): void
+    {
+        $this->seoUrls = $seoUrls;
     }
 }

@@ -11,9 +11,6 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 class ChangelogCheckCommand extends Command
 {
-    /**
-     * @var string
-     */
     protected static $defaultName = 'changelog:check';
 
     /**
@@ -39,30 +36,29 @@ class ChangelogCheckCommand extends Command
         $IOHelper = new SymfonyStyle($input, $output);
         $IOHelper->title('Check the validation of changelog files');
 
-        /** @var string $path */
         $path = $input->getArgument('changelog') ?: '';
-        if (!empty($path) && !file_exists($path)) {
+        if (\is_string($path) && $path !== '' && !file_exists($path)) {
             $IOHelper->error('The given file NOT found');
 
-            return 1;
+            return self::FAILURE;
         }
 
-        $output = $this->validator->check($path);
-        if (\count($output)) {
-            foreach ($output as $file => $violations) {
+        $outputArray = $this->validator->check($path);
+        if (\count($outputArray)) {
+            foreach ($outputArray as $file => $violations) {
                 $IOHelper->writeln((string) $file);
-                $IOHelper->writeln(array_map(function ($message) {
+                $IOHelper->writeln(array_map(static function ($message) {
                     return '* ' . $message;
                 }, $violations));
                 $IOHelper->newLine();
             }
             $IOHelper->error('You have some syntax errors in changelog files.');
 
-            return 1;
+            return self::FAILURE;
         }
 
         $IOHelper->success('Done');
 
-        return 0;
+        return self::SUCCESS;
     }
 }

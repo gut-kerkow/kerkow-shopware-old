@@ -6,26 +6,29 @@ const { mapPropertyErrors } = Shopware.Component.getComponentHelper();
 const { Criteria, EntityCollection } = Shopware.Data;
 const types = Shopware.Utils.types;
 
+/**
+ * @deprecated tag:v6.5.0 - will be removed, use `sw-promotion-v2` instead
+ */
 Component.register('sw-promotion-basic-form', {
     template,
 
     inject: ['repositoryFactory', 'acl'],
 
     mixins: [
-        Mixin.getByName('placeholder')
+        Mixin.getByName('placeholder'),
     ],
 
     props: {
         promotion: {
             type: Object,
             required: false,
-            default: null
-        }
+            default: null,
+        },
     },
 
     data() {
         return {
-            excludedPromotions: null
+            excludedPromotions: null,
         };
     },
 
@@ -35,7 +38,7 @@ Component.register('sw-promotion-basic-form', {
             const criteria = new Criteria();
             criteria.addFilter(Criteria.not('and', [Criteria.equals('id', this.promotion.id)]));
             return criteria;
-        }
+        },
     },
 
     watch: {
@@ -43,7 +46,7 @@ Component.register('sw-promotion-basic-form', {
             if (this.promotion) {
                 this.loadExclusions();
             }
-        }
+        },
     },
 
     created() {
@@ -60,7 +63,7 @@ Component.register('sw-promotion-basic-form', {
             const promotionRepository = this.repositoryFactory.create('promotion');
             const criteria = (new Criteria()).addFilter(Criteria.equalsAny('id', this.promotion.exclusionIds));
 
-            promotionRepository.search(criteria, Shopware.Context.api).then((excluded) => {
+            promotionRepository.search(criteria).then((excluded) => {
                 this.excludedPromotions = excluded;
             });
         },
@@ -85,6 +88,6 @@ Component.register('sw-promotion-basic-form', {
 
         createPromotionCollection() {
             return new EntityCollection('/promotion', 'promotion', Shopware.Context.api, new Criteria());
-        }
-    }
+        },
+    },
 });

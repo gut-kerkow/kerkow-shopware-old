@@ -1,8 +1,13 @@
-import { createLocalVue, shallowMount } from '@vue/test-utils';
+import { config, createLocalVue, shallowMount } from '@vue/test-utils';
 import 'src/module/sw-category/component/sw-category-tree';
 import VueRouter from 'vue-router';
+import swCategoryState from 'src/module/sw-category/page/sw-category-detail/state';
 
 function createWrapper() {
+    // delete global $router and $routes mocks
+    delete config.mocks.$router;
+    delete config.mocks.$route;
+
     const localVue = createLocalVue();
     localVue.use(VueRouter);
 
@@ -30,9 +35,6 @@ function createWrapper() {
             },
             'sw-tree-item': true
         },
-        mocks: {
-            $tc: v => v
-        },
         provide: {
             syncService: {},
             repositoryFactory: {
@@ -41,7 +43,9 @@ function createWrapper() {
                         {
                             id: '1a'
                         }
-                    ])
+                    ]),
+                    delete: () => Promise.resolve(),
+                    get: () => Promise.resolve()
                 })
             }
         },
@@ -53,7 +57,7 @@ function createWrapper() {
 
 describe('src/module/sw-category/component/sw-category-tree', () => {
     beforeAll(() => {
-        Shopware.State.registerModule('swCategoryDetail', {});
+        Shopware.State.registerModule('swCategoryDetail', swCategoryState);
     });
 
     it('should be a Vue.js component', async () => {
@@ -102,7 +106,7 @@ describe('src/module/sw-category/component/sw-category-tree', () => {
         await wrapper.vm.$nextTick();
 
         const tree = wrapper.find('.sw-tree');
-        expect(tree.attributes().allowdeletecategories).toBeDefined();
+        expect(tree.attributes()['allow-delete-categories']).toBeDefined();
     });
 
     it('should not be able to delete the items in sw-tree', async () => {
@@ -119,7 +123,7 @@ describe('src/module/sw-category/component/sw-category-tree', () => {
         await wrapper.vm.$nextTick();
 
         const tree = wrapper.find('.sw-tree');
-        expect(tree.attributes().allowdeletecategories).toBeUndefined();
+        expect(tree.attributes()['allow-delete-categories']).toBeUndefined();
     });
 
     it('should be able to create new categories in sw-tree-item', async () => {
@@ -132,7 +136,7 @@ describe('src/module/sw-category/component/sw-category-tree', () => {
         await wrapper.vm.$nextTick();
 
         const treeItem = wrapper.find('sw-tree-item-stub');
-        expect(treeItem.attributes().allownewcategories).toBeDefined();
+        expect(treeItem.attributes()['allow-new-categories']).toBeDefined();
     });
 
     it('should not be able to create new categories in sw-tree-item', async () => {
@@ -149,7 +153,7 @@ describe('src/module/sw-category/component/sw-category-tree', () => {
         await wrapper.vm.$nextTick();
 
         const treeItem = wrapper.find('sw-tree-item-stub');
-        expect(treeItem.attributes().allownewcategories).toBeUndefined();
+        expect(treeItem.attributes()['allow-new-categories']).toBeUndefined();
     });
 
     it('should be able to delete categories in sw-tree-item', async () => {
@@ -162,7 +166,7 @@ describe('src/module/sw-category/component/sw-category-tree', () => {
         await wrapper.vm.$nextTick();
 
         const treeItem = wrapper.find('sw-tree-item-stub');
-        expect(treeItem.attributes().allowdeletecategories).toBeDefined();
+        expect(treeItem.attributes()['allow-delete-categories']).toBeDefined();
     });
 
     it('should not be able to delete categories in sw-tree-item', async () => {
@@ -179,7 +183,7 @@ describe('src/module/sw-category/component/sw-category-tree', () => {
         await wrapper.vm.$nextTick();
 
         const treeItem = wrapper.find('sw-tree-item-stub');
-        expect(treeItem.attributes().allowdeletecategories).toBeUndefined();
+        expect(treeItem.attributes()['allow-delete-categories']).toBeUndefined();
     });
 
     it('should show the checkbox in sw-tree-item', async () => {
@@ -192,7 +196,7 @@ describe('src/module/sw-category/component/sw-category-tree', () => {
         await wrapper.vm.$nextTick();
 
         const treeItem = wrapper.find('sw-tree-item-stub');
-        expect(treeItem.attributes().displaycheckbox).toBeDefined();
+        expect(treeItem.attributes()['display-checkbox']).toBeDefined();
     });
 
     it('should not show the checkbox in sw-tree-item', async () => {
@@ -209,7 +213,7 @@ describe('src/module/sw-category/component/sw-category-tree', () => {
         await wrapper.vm.$nextTick();
 
         const treeItem = wrapper.find('sw-tree-item-stub');
-        expect(treeItem.attributes().displaycheckbox).toBeUndefined();
+        expect(treeItem.attributes()['display-checkbox']).toBeUndefined();
     });
 
     it('should show the custom tooltip text in sw-tree-item', async () => {
@@ -226,7 +230,7 @@ describe('src/module/sw-category/component/sw-category-tree', () => {
         await wrapper.vm.$nextTick();
 
         const treeItem = wrapper.find('sw-tree-item-stub');
-        expect(treeItem.attributes().contextmenutooltiptext).toBe('sw-privileges.tooltip.warning');
+        expect(treeItem.attributes()['context-menu-tooltip-text']).toBe('sw-privileges.tooltip.warning');
     });
 
     it('should not show the custom tooltip text in sw-tree-item', async () => {
@@ -239,7 +243,7 @@ describe('src/module/sw-category/component/sw-category-tree', () => {
         await wrapper.vm.$nextTick();
 
         const treeItem = wrapper.find('sw-tree-item-stub');
-        expect(treeItem.attributes().contextmenutooltiptext).toBeUndefined();
+        expect(treeItem.attributes()['context-menu-tooltip-text']).toBeUndefined();
     });
 
     it('should get right category url', async () => {
@@ -264,5 +268,60 @@ describe('src/module/sw-category/component/sw-category-tree', () => {
 
         const itemUrl = wrapper.vm.getCategoryUrl({ id: '1a2b' });
         expect(itemUrl).not.toEqual('#/detail/1a2b');
+    });
+
+    [
+        { serviceSalesChannels: [{ id: '4d9ef75adbb149aa99785a0a969b3b7a' }] },
+        { navigationSalesChannels: [{ id: '4d9ef75adbb149aa99785a0a969b3b7b' }] },
+        { footerSalesChannels: [{ id: '4d9ef75adbb149aa99785a0a969b3b7c' }] }
+
+    ].forEach(entryPoint => {
+        it(`should not be able to delete a category having ${Object.keys(entryPoint)[0]} as initial entry point`, async () => {
+            const wrapper = createWrapper();
+            wrapper.vm.createNotificationError = jest.fn();
+
+            await wrapper.setData({
+                isLoadingInitialData: false
+            });
+
+            const category = {
+                id: '1a',
+                isNew: () => false,
+                ...entryPoint
+            };
+
+            await wrapper.vm.onDeleteCategory({ data: category, children: [] });
+
+            const notificationMock = wrapper.vm.createNotificationError;
+
+            expect(notificationMock).toBeCalledTimes(1);
+            expect(notificationMock).toHaveBeenCalledWith({
+                message: 'sw-category.general.errorNavigationEntryPoint'
+            });
+
+            wrapper.vm.createNotificationError.mockRestore();
+        });
+    });
+
+    it('should be able to delete a category having an empty entry point', async () => {
+        const wrapper = createWrapper();
+        wrapper.vm.createNotificationError = jest.fn();
+
+        await wrapper.setData({
+            isLoadingInitialData: false
+        });
+
+        const category = {
+            id: '1a',
+            isNew: () => false
+        };
+
+        await wrapper.vm.onDeleteCategory({ data: category, children: [] });
+
+        const notificationMock = wrapper.vm.createNotificationError;
+
+        expect(notificationMock).toHaveBeenCalledTimes(0);
+
+        wrapper.vm.createNotificationError.mockRestore();
     });
 });

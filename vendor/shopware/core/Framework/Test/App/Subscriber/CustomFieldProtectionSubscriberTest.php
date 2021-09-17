@@ -15,7 +15,6 @@ use Shopware\Core\Framework\Test\App\AppSystemTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\AdminApiTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\PlatformRequest;
 use Shopware\Core\System\CustomField\Aggregate\CustomFieldSet\CustomFieldSetEntity;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\HttpFoundation\Response;
@@ -67,9 +66,9 @@ class CustomFieldProtectionSubscriberTest extends TestCase
 
         $data = ['id' => $id, 'active' => false];
 
-        $client->request('PATCH', '/api/v' . PlatformRequest::API_VERSION . '/custom-field-set/' . $id, $data, [], [
+        $client->request('PATCH', '/api/custom-field-set/' . $id, [], [], [
             'HTTP_ACCEPT' => 'application/json',
-        ]);
+        ], json_encode($data));
 
         static::assertEquals(Response::HTTP_NO_CONTENT, $client->getResponse()->getStatusCode());
     }
@@ -87,7 +86,7 @@ class CustomFieldProtectionSubscriberTest extends TestCase
 
         $data = ['id' => $id, 'active' => false];
 
-        $client->request('PATCH', '/api/v' . PlatformRequest::API_VERSION . '/custom-field-set/' . $id, $data, [], [
+        $client->request('PATCH', '/api/custom-field-set/' . $id, $data, [], [
             'HTTP_ACCEPT' => 'application/json',
         ]);
         static::assertEquals(Response::HTTP_BAD_REQUEST, $client->getResponse()->getStatusCode());
@@ -122,9 +121,9 @@ class CustomFieldProtectionSubscriberTest extends TestCase
 
         $data = ['id' => $id, 'active' => false];
 
-        $client->request('PATCH', '/api/v' . PlatformRequest::API_VERSION . '/custom-field-set/' . $id, $data, [], [
+        $client->request('PATCH', '/api/custom-field-set/' . $id, [], [], [
             'HTTP_ACCEPT' => 'application/json',
-        ]);
+        ], json_encode($data));
 
         static::assertEquals(Response::HTTP_NO_CONTENT, $client->getResponse()->getStatusCode());
     }
@@ -135,13 +134,12 @@ class CustomFieldProtectionSubscriberTest extends TestCase
         $secretAccessKey = AccessKeyHelper::generateSecretAccessKey();
         $id = Uuid::fromHexToBytes($this->appRepo->search(new Criteria([$appId]), Context::createDefaultContext())->first()->getIntegrationId());
 
-        /** @var Connection $connection */
         $connection = $browser->getContainer()->get(Connection::class);
 
         $connection->update('integration', [
             'write_access' => true,
             'access_key' => $accessKey,
-            'secret_access_key' => password_hash($secretAccessKey, PASSWORD_BCRYPT),
+            'secret_access_key' => password_hash($secretAccessKey, \PASSWORD_BCRYPT),
         ], ['id' => $id]);
 
         $this->apiIntegrations[] = $id;

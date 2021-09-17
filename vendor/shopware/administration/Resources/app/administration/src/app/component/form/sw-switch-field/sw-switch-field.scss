@@ -1,11 +1,11 @@
 
 @import "~scss/variables";
 
-$sw-field--switch-color-border: $color-steam-cloud;
+$sw-field--switch-color-border: $color-gray-300;
 $sw-field--switch-color-background: $color-white;
-$sw-field--switch-color-text: $color-gutenberg;
-$sw-field--switch-color-focus: $color-shopware-blue;
-$sw-field--switch-color-error: $color-crimson;
+$sw-field--switch-color-text: $color-darkgray-200;
+$sw-field--switch-color-focus: $color-shopware-brand-500;
+$sw-field--switch-color-error: $color-crimson-500;
 
 .sw-field--switch {
     margin-top: 24px;
@@ -34,7 +34,6 @@ $sw-field--switch-color-error: $color-crimson;
         display: grid;
         grid-template-columns: 24px 1fr auto;
         align-items: center;
-        background: $sw-field--switch-color-background;
         color: $sw-field--switch-color-text;
     }
 
@@ -69,7 +68,7 @@ $sw-field--switch-color-error: $color-crimson;
             }
 
             &:disabled ~ .sw-field__switch-state {
-                background: $color-light-gray;
+                background: $color-gray-100;
 
                 .sw-field__switch-state-knob {
                     background: $sw-field--switch-color-border;
@@ -85,7 +84,7 @@ $sw-field--switch-color-error: $color-crimson;
             }
 
             &:checked:disabled ~ .sw-field__switch-state {
-                background: $color-light-gray;
+                background: $color-gray-100;
             }
         }
 

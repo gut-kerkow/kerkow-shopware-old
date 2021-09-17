@@ -6,15 +6,12 @@ use OpenApi\Annotations as OA;
 use Shopware\Core\Content\Category\CategoryDefinition;
 use Shopware\Core\Content\Category\CategoryEntity;
 use Shopware\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
-use Shopware\Core\Content\Product\Events\ProductListingCriteriaEvent;
 use Shopware\Core\Content\Product\Events\ProductListingResultEvent;
-use Shopware\Core\Content\Product\ProductDefinition;
 use Shopware\Core\Content\Product\SalesChannel\ProductAvailableFilter;
 use Shopware\Core\Content\ProductStream\Service\ProductStreamBuilderInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\RequestCriteriaBuilder;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopware\Core\Framework\Routing\Annotation\Entity;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
@@ -40,16 +37,6 @@ class ProductListingRoute extends AbstractProductListingRoute
     private $eventDispatcher;
 
     /**
-     * @var ProductDefinition
-     */
-    private $definition;
-
-    /**
-     * @var RequestCriteriaBuilder
-     */
-    private $criteriaBuilder;
-
-    /**
      * @var EntityRepositoryInterface
      */
     private $categoryRepository;
@@ -62,15 +49,11 @@ class ProductListingRoute extends AbstractProductListingRoute
     public function __construct(
         ProductListingLoader $listingLoader,
         EventDispatcherInterface $eventDispatcher,
-        ProductDefinition $definition,
-        RequestCriteriaBuilder $criteriaBuilder,
         EntityRepositoryInterface $categoryRepository,
         ProductStreamBuilderInterface $productStreamBuilder
     ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->listingLoader = $listingLoader;
-        $this->definition = $definition;
-        $this->criteriaBuilder = $criteriaBuilder;
         $this->categoryRepository = $categoryRepository;
         $this->productStreamBuilder = $productStreamBuilder;
     }
@@ -85,31 +68,54 @@ class ProductListingRoute extends AbstractProductListingRoute
      * @Entity("product")
      * @OA\Post(
      *      path="/product-listing/{categoryId}",
-     *      summary="Loads products from listing",
+     *      summary="Fetch a product listing by category",
+     *      description="Fetches a product listing for a specific category. It also provides filters, sortings and property aggregations, analogous to the /search endpoint.",
      *      operationId="readProductListing",
      *      tags={"Store API","Product"},
-     *      @OA\Parameter(name="categoryId", description="Category ID", @OA\Schema(type="string"), in="path", required=true),
+     *      @OA\Parameter(
+     *          name="categoryId",
+     *          description="Identifier of a category.",
+     *          @OA\Schema(type="string"),
+     *          in="path",
+     *          required=true
+     *      ),
      *      @OA\Response(
      *          response="200",
-     *          description="Found products",
+     *          description="Returns a product listing containing all products and additional fields to display a listing.",
      *          @OA\JsonContent(ref="#/components/schemas/ProductListingResult")
      *     )
      * )
-     * @Route("/store-api/v{version}/product-listing/{categoryId}", name="store-api.product.listing", methods={"POST"})
+     * @Route("/store-api/product-listing/{categoryId}", name="store-api.product.listing", methods={"POST"})
      */
-    public function load(string $categoryId, Request $request, SalesChannelContext $salesChannelContext, ?Criteria $criteria = null): ProductListingRouteResponse
+    public function load(string $categoryId, Request $request, SalesChannelContext $context, Criteria $criteria): ProductListingRouteResponse
     {
-        // @deprecated tag:v6.4.0 - Criteria will be required
-        if (!$criteria) {
-            $criteria = $this->criteriaBuilder->handleRequest($request, new Criteria(), $this->definition, $salesChannelContext->getContext());
-        }
         $criteria->addFilter(
-            new ProductAvailableFilter($salesChannelContext->getSalesChannel()->getId(), ProductVisibilityDefinition::VISIBILITY_ALL)
+            new ProductAvailableFilter($context->getSalesChannel()->getId(), ProductVisibilityDefinition::VISIBILITY_ALL)
         );
 
-        $categoryCriteria = new Criteria([$categoryId]);
         /** @var CategoryEntity $category */
-        $category = $this->categoryRepository->search($categoryCriteria, $salesChannelContext->getContext())->first();
+        $category = $this->categoryRepository->search(new Criteria([$categoryId]), $context->getContext())->first();
+
+        $streamId = $this->extendCriteria($context, $criteria, $category);
+
+        $entities = $this->listingLoader->load($criteria, $context);
+
+        $result = ProductListingResult::createFrom($entities);
+        $result->addState(...$entities->getStates());
+
+        $result->addCurrentFilter('navigationId', $categoryId);
+
+        $this->eventDispatcher->dispatch(
+            new ProductListingResultEvent($request, $result, $context)
+        );
+
+        $result->setStreamId($streamId);
+
+        return new ProductListingRouteResponse($result);
+    }
+
+    private function extendCriteria(SalesChannelContext $salesChannelContext, Criteria $criteria, CategoryEntity $category): ?string
+    {
         if ($category->getProductAssignmentType() === CategoryDefinition::PRODUCT_ASSIGNMENT_TYPE_PRODUCT_STREAM && $category->getProductStreamId() !== null) {
             $filters = $this->productStreamBuilder->buildFilters(
                 $category->getProductStreamId(),
@@ -117,26 +123,14 @@ class ProductListingRoute extends AbstractProductListingRoute
             );
 
             $criteria->addFilter(...$filters);
-        } else {
-            $criteria->addFilter(
-                new EqualsFilter('product.categoriesRo.id', $categoryId)
-            );
+
+            return $category->getProductStreamId();
         }
 
-        $this->eventDispatcher->dispatch(
-            new ProductListingCriteriaEvent($request, $criteria, $salesChannelContext)
+        $criteria->addFilter(
+            new EqualsFilter('product.categoriesRo.id', $category->getId())
         );
 
-        $result = $this->listingLoader->load($criteria, $salesChannelContext);
-
-        $result = ProductListingResult::createFrom($result);
-
-        $result->addCurrentFilter('navigationId', $categoryId);
-
-        $this->eventDispatcher->dispatch(
-            new ProductListingResultEvent($request, $result, $salesChannelContext)
-        );
-
-        return new ProductListingRouteResponse($result);
+        return null;
     }
 }

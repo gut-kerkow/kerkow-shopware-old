@@ -7,15 +7,16 @@ use Shopware\Core\Checkout\Customer\CustomerEntity;
 use Shopware\Core\Checkout\Customer\SalesChannel\AbstractCustomerRoute;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Order\SalesChannel\AbstractOrderRoute;
-use Shopware\Core\Checkout\Order\SalesChannel\OrderRouteResponseStruct;
 use Shopware\Core\Content\Category\Exception\CategoryNotFoundException;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
+use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Routing\Exception\MissingRequestParameterException;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Event\RouteRequest\OrderRouteRequestEvent;
 use Shopware\Storefront\Page\GenericPageLoaderInterface;
+use Shopware\Storefront\Pagelet\Newsletter\Account\NewsletterAccountPageletLoader;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -41,16 +42,23 @@ class AccountOverviewPageLoader
      */
     private $customerRoute;
 
+    /**
+     * @internal (flag:FEATURE_NEXT_14001) remove comment on feature release
+     */
+    private NewsletterAccountPageletLoader $newsletterAccountPageletLoader;
+
     public function __construct(
         GenericPageLoaderInterface $genericLoader,
         EventDispatcherInterface $eventDispatcher,
         AbstractOrderRoute $orderRoute,
-        AbstractCustomerRoute $customerRoute
+        AbstractCustomerRoute $customerRoute,
+        NewsletterAccountPageletLoader $newsletterAccountPageletLoader
     ) {
         $this->genericLoader = $genericLoader;
         $this->eventDispatcher = $eventDispatcher;
         $this->orderRoute = $orderRoute;
         $this->customerRoute = $customerRoute;
+        $this->newsletterAccountPageletLoader = $newsletterAccountPageletLoader;
     }
 
     /**
@@ -59,20 +67,11 @@ class AccountOverviewPageLoader
      * @throws InconsistentCriteriaIdsException
      * @throws MissingRequestParameterException
      */
-    public function load(Request $request, SalesChannelContext $salesChannelContext, ?CustomerEntity $customer = null): AccountOverviewPage
+    public function load(Request $request, SalesChannelContext $salesChannelContext, CustomerEntity $customer): AccountOverviewPage
     {
-        /* @deprecated tag:v6.4.0 - remove validate customer block*/
-        if (!$salesChannelContext->getCustomer() instanceof CustomerEntity) {
-            throw new CustomerNotLoggedInException();
-        }
-
-        /* @deprecated tag:v6.4.0 - Parameter $customer will be mandatory*/
-        if (!$customer) {
-            $customer = $salesChannelContext->getCustomer();
-        }
-
         $page = $this->genericLoader->load($request, $salesChannelContext);
 
+        /** @var AccountOverviewPage $page */
         $page = AccountOverviewPage::createFrom($page);
         $page->setCustomer($this->loadCustomer($salesChannelContext, $customer));
 
@@ -84,6 +83,12 @@ class AccountOverviewPageLoader
 
         if ($order !== null) {
             $page->setNewestOrder($order);
+        }
+
+        if (Feature::isActive('FEATURE_NEXT_14001')) {
+            $newslAccountPagelet = $this->newsletterAccountPageletLoader->load($request, $salesChannelContext, $customer);
+
+            $page->setNewsletterAccountPagelet($newslAccountPagelet);
         }
 
         $this->eventDispatcher->dispatch(
@@ -107,15 +112,16 @@ class AccountOverviewPageLoader
             ->setLimit(1)
             ->addAssociation('orderCustomer');
 
+        $criteria->getAssociation('transactions')
+            ->addSorting(new FieldSorting('createdAt'));
+
         $apiRequest = new Request();
 
-        $event = new OrderRouteRequestEvent($request, $apiRequest, $context);
+        $event = new OrderRouteRequestEvent($request, $apiRequest, $context, $criteria);
         $this->eventDispatcher->dispatch($event);
 
-        /** @var OrderRouteResponseStruct $responseStruct */
         $responseStruct = $this->orderRoute
-            ->load($event->getStoreApiRequest(), $context, $criteria)
-            ->getObject();
+            ->load($event->getStoreApiRequest(), $context, $criteria);
 
         return $responseStruct->getOrders()->first();
     }

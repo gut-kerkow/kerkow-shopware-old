@@ -1,8 +1,7 @@
 import template from './sw-users-permissions-user-listing.html.twig';
 import './sw-users-permissions-user-listing.scss';
 
-// @deprecated tag:v6.4.0.0 for StateDeprecated
-const { Component, Data, Mixin, State, StateDeprecated } = Shopware;
+const { Component, Data, Mixin, State } = Shopware;
 const { Criteria } = Data;
 
 Component.register('sw-users-permissions-user-listing', {
@@ -12,13 +11,13 @@ Component.register('sw-users-permissions-user-listing', {
         'userService',
         'loginService',
         'repositoryFactory',
-        'acl'
+        'acl',
     ],
 
     mixins: [
         Mixin.getByName('listing'),
         Mixin.getByName('notification'),
-        Mixin.getByName('salutation')
+        Mixin.getByName('salutation'),
     ],
 
     data() {
@@ -28,22 +27,17 @@ Component.register('sw-users-permissions-user-listing', {
             itemToDelete: null,
             disableRouteParams: true,
             confirmPassword: '',
-            sortBy: 'username'
+            sortBy: 'username',
         };
     },
 
     metaInfo() {
         return {
-            title: this.$createTitle()
+            title: this.$createTitle(),
         };
     },
 
     computed: {
-        /** @deprecated tag:6.4.0 will be removed in v.6.4.0 */
-        userStore() {
-            return StateDeprecated.getStore('user');
-        },
-
         userRepository() {
             return this.repositoryFactory.create('user');
         },
@@ -52,9 +46,6 @@ Component.register('sw-users-permissions-user-listing', {
             get() {
                 return State.get('session').currentUser;
             },
-            /** deprecated tag:v6.4.0 will be read only in v.6.4.0 */
-            set() {}
-
         },
 
         userCriteria() {
@@ -76,27 +67,25 @@ Component.register('sw-users-permissions-user-listing', {
         userColumns() {
             return [{
                 property: 'username',
-                label: this.$tc('sw-users-permissions.users.user-grid.labelUsername')
+                label: this.$tc('sw-users-permissions.users.user-grid.labelUsername'),
             }, {
                 property: 'firstName',
-                label: this.$tc('sw-users-permissions.users.user-grid.labelFirstName')
+                label: this.$tc('sw-users-permissions.users.user-grid.labelFirstName'),
             }, {
                 property: 'lastName',
-                label: this.$tc('sw-users-permissions.users.user-grid.labelLastName')
+                label: this.$tc('sw-users-permissions.users.user-grid.labelLastName'),
             }, {
                 property: 'aclRoles',
-                label: this.$tc('sw-users-permissions.users.user-grid.labelRoles')
+                sortable: false,
+                label: this.$tc('sw-users-permissions.users.user-grid.labelRoles'),
             }, {
                 property: 'email',
-                label: this.$tc('sw-users-permissions.users.user-grid.labelEmail')
+                label: this.$tc('sw-users-permissions.users.user-grid.labelEmail'),
             }];
-        }
+        },
     },
 
     methods: {
-        /** @deprecated tag:6.4.0 will be removed in v.6.4.0 */
-        createdComponent() { /* nth because deprecated */ },
-
         getItemToDelete(item) {
             if (!this.itemToDelete) {
                 return false;
@@ -115,7 +104,8 @@ Component.register('sw-users-permissions-user-listing', {
 
             this.$emit('get-list');
 
-            return this.userRepository.search(this.userCriteria, Shopware.Context.api).then((users) => {
+            return this.userRepository.search(this.userCriteria).then((users) => {
+                this.total = users.total;
                 this.user = users;
             }).finally(() => {
                 this.isLoading = false;
@@ -134,12 +124,12 @@ Component.register('sw-users-permissions-user-listing', {
                 { name: username });
             const titleDeleteError = this.$tc('global.default.error');
             const messageDeleteError = this.$tc(
-                'sw-users-permissions.users.user-grid.notification.deleteError.message', 0, { name: username }
+                'sw-users-permissions.users.user-grid.notification.deleteError.message', 0, { name: username },
             );
             if (user.id === this.currentUser.id) {
                 this.createNotificationError({
                     title: this.$tc('global.default.error'),
-                    message: this.$tc('sw-users-permissions.users.user-grid.notification.deleteUserLoggedInError.message')
+                    message: this.$tc('sw-users-permissions.users.user-grid.notification.deleteUserLoggedInError.message'),
                 });
                 return;
             }
@@ -149,8 +139,12 @@ Component.register('sw-users-permissions-user-listing', {
                 verifiedToken = await this.loginService.verifyUserToken(this.confirmPassword);
             } catch (e) {
                 this.createNotificationError({
-                    title: this.$tc('sw-settings-user.user-detail.passwordConfirmation.notificationPasswordErrorTitle'),
-                    message: this.$tc('sw-settings-user.user-detail.passwordConfirmation.notificationPasswordErrorMessage')
+                    title: this.$tc(
+                        'sw-users-permissions.users.user-detail.passwordConfirmation.notificationPasswordErrorTitle',
+                    ),
+                    message: this.$tc(
+                        'sw-users-permissions.users.user-detail.passwordConfirmation.notificationPasswordErrorMessage',
+                    ),
                 });
             } finally {
                 this.confirmPassword = '';
@@ -167,13 +161,13 @@ Component.register('sw-users-permissions-user-listing', {
             this.userRepository.delete(user.id, context).then(() => {
                 this.createNotificationSuccess({
                     title: titleDeleteSuccess,
-                    message: messageDeleteSuccess
+                    message: messageDeleteSuccess,
                 });
                 this.getList();
             }).catch(() => {
                 this.createNotificationError({
                     title: titleDeleteError,
-                    message: messageDeleteError
+                    message: messageDeleteError,
                 });
             });
             this.onCloseDeleteModal();
@@ -182,19 +176,5 @@ Component.register('sw-users-permissions-user-listing', {
         onCloseDeleteModal() {
             this.itemToDelete = null;
         },
-
-        // @deprecated tag:v6.4.0 use loginService.verifyUserToken() instead
-        verifyUserToken() {
-            let verifiedToken;
-            try {
-                verifiedToken = this.loginService.verifyUserToken(this.confirmPassword);
-            } catch (e) {
-                this.createNotificationError({
-                    title: this.$tc('sw-settings-user.user-detail.passwordConfirmation.notificationPasswordErrorTitle'),
-                    message: this.$tc('sw-settings-user.user-detail.passwordConfirmation.notificationPasswordErrorMessage')
-                });
-            }
-            return verifiedToken;
-        }
-    }
+    },
 });

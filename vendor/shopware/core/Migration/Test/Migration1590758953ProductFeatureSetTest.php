@@ -40,9 +40,10 @@ class Migration1590758953ProductFeatureSetTest extends TestCase
      */
     public function initialise(): void
     {
-        /* @var Connection $connection */
         $connection = $this->getContainer()->get(Connection::class);
         $migration = new Migration1590758953ProductFeatureSet();
+
+        $connection->rollBack();
 
         if ($this->hasColumn($connection, 'product', 'featureSet')) {
             $connection->executeUpdate('ALTER TABLE `product` DROP COLUMN `featureSet`;');
@@ -58,6 +59,8 @@ class Migration1590758953ProductFeatureSetTest extends TestCase
         $connection->executeUpdate('DROP TABLE IF EXISTS `product_feature_set`;');
 
         $migration->update($connection);
+
+        $connection->beginTransaction();
     }
 
     /**
@@ -75,7 +78,6 @@ class Migration1590758953ProductFeatureSetTest extends TestCase
 
     public function testProductTableExtensionIsComplete(): void
     {
-        /* @var Column[] $columns */
         $columns = array_filter(
             $this->connection->getSchemaManager()->listTableColumns('product'),
             static function (Column $column): bool {

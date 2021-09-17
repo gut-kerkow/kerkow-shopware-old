@@ -46,6 +46,9 @@ export default class DvsnProductOption extends Plugin {
             // call listener
             me.onContentClick($(this), event);
         });
+
+        // start with parsing for mandatory options
+        me.parseOptions();
     }
 
     // ...

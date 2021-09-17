@@ -1,3 +1,4 @@
+// merge 16.11.2020
 /*
 import polyfills
  */
@@ -29,12 +30,14 @@ import plugins
 import CartWidgetPlugin from 'src/plugin/header/cart-widget.plugin';
 import SearchWidgetPlugin from 'src/plugin/header/search-widget.plugin';
 import AccountMenuPlugin from 'src/plugin/header/account-menu.plugin';
+import AccountGuestAbortButtonPlugin from 'src/plugin/header/account-guest-abort-button.plugin';
 import OffCanvasCartPlugin from 'src/plugin/offcanvas-cart/offcanvas-cart.plugin';
 import AddToCartPlugin from 'src/plugin/add-to-cart/add-to-cart.plugin';
 import CookiePermissionPlugin from 'src/plugin/cookie/cookie-permission.plugin';
 import CookieConfigurationPlugin from 'src/plugin/cookie/cookie-configuration.plugin';
 import ScrollUpPlugin from 'src/plugin/scroll-up/scroll-up.plugin';
 import CollapseFooterColumnsPlugin from 'src/plugin/collapse/collapse-footer-columns.plugin';
+import CollapseCheckoutConfirmMethodsPlugin from 'src/plugin/collapse/collapse-checkout-confirm-methods.plugin';
 import FlyoutMenuPlugin from 'src/plugin/main-menu/flyout-menu.plugin';
 import OffcanvasMenuPlugin from 'src/plugin/main-menu/offcanvas-menu.plugin';
 import FormAutoSubmitPlugin from 'src/plugin/forms/form-auto-submit.plugin';
@@ -61,8 +64,7 @@ import FilterMultiSelectPlugin from 'src/plugin/listing/filter-multi-select.plug
 import FilterPropertySelectPlugin from 'src/plugin/listing/filter-property-select.plugin';
 import FilterBooleanPlugin from 'src/plugin/listing/filter-boolean.plugin';
 import FilterRangePlugin from 'src/plugin/listing/filter-range.plugin';
-// @deprecated tag:v6.4.0 - Will be replaced with new rating plugin
-import FilterRatingPlugin from 'src/plugin/listing/filter-rating.plugin';
+import FilterRatingSelectPlugin from 'src/plugin/listing/filter-rating-select.plugin';
 import ListingPlugin from 'src/plugin/listing/listing.plugin';
 import OffCanvasFilterPlugin from 'src/plugin/offcanvas-filter/offcanvas-filter.plugin';
 import RatingSystemPlugin from 'src/plugin/rating-system/rating-system.plugin';
@@ -75,6 +77,8 @@ import CrossSellingPlugin from 'src/plugin/cross-selling/cross-selling.plugin';
 import CountryStateSelectPlugin from 'src/plugin/forms/form-country-state-select.plugin';
 import EllipsisPlugin from 'src/plugin/ellipsis/ellipsis.plugin';
 import GoogleAnalyticsPlugin from 'src/plugin/google-analytics/google-analytics.plugin';
+import GoogleReCaptchaV2Plugin from 'src/plugin/captcha/google-re-captcha/google-re-captcha-v2.plugin';
+import GoogleReCaptchaV3Plugin from 'src/plugin/captcha/google-re-captcha/google-re-captcha-v3.plugin';
 import SwagBlockLink from 'src/helper/block-link.helper';
 import StoreApiClient from 'src/service/store-api-client.service';
 import ClearInputPlugin from 'src/plugin/clear-input-button/clear-input.plugin';
@@ -85,6 +89,8 @@ import WishlistPersistStoragePlugin from 'src/plugin/wishlist/persist-wishlist.p
 import AddToWishlistPlugin from 'src/plugin/wishlist/add-to-wishlist.plugin';
 import BuyBoxPlugin from 'src/plugin/buy-box/buy-box.plugin';
 import GuestWishlistPagePlugin from 'src/plugin/wishlist/guest-wishlist-page.plugin';
+import FadingPlugin from 'src/plugin/fading/fading.plugin';
+import BasicCaptchaPlugin from 'src/plugin/captcha/basic-captcha.plugin';
 
 window.eventEmitter = new NativeEventEmitter();
 
@@ -107,9 +113,13 @@ PluginManager.register('CookieConfiguration', CookieConfigurationPlugin, '[data-
 PluginManager.register('ScrollUp', ScrollUpPlugin, '[data-scroll-up]');
 PluginManager.register('SearchWidget', SearchWidgetPlugin, '[data-search-form]');
 PluginManager.register('CartWidget', CartWidgetPlugin, '[data-cart-widget]');
+
+PluginManager.register('AccountGuestAbortButton', AccountGuestAbortButtonPlugin, '[data-account-guest-abort-button]')
+
 PluginManager.register('OffCanvasCart', OffCanvasCartPlugin, '[data-offcanvas-cart]');
 PluginManager.register('AddToCart', AddToCartPlugin, '[data-add-to-cart]');
 PluginManager.register('CollapseFooterColumns', CollapseFooterColumnsPlugin, '[data-collapse-footer]');
+PluginManager.register('CollapseCheckoutConfirmMethods', CollapseCheckoutConfirmMethodsPlugin, '[data-collapse-checkout-confirm-methods]');
 PluginManager.register('FlyoutMenu', FlyoutMenuPlugin, '[data-flyout-menu]');
 PluginManager.register('OffcanvasMenu', OffcanvasMenuPlugin, '[data-offcanvas-menu]');
 PluginManager.register('FormValidation', FormValidationPlugin, '[data-form-validation]');
@@ -139,8 +149,7 @@ PluginManager.register('FilterBoolean', FilterBooleanPlugin, '[data-filter-boole
 PluginManager.register('FilterRange', FilterRangePlugin, '[data-filter-range]');
 PluginManager.register('FilterMultiSelect', FilterMultiSelectPlugin, '[data-filter-multi-select]');
 PluginManager.register('FilterPropertySelect', FilterPropertySelectPlugin, '[data-filter-property-select]');
-// @deprecated tag:v6.4.0 - Will be replaced with new rating plugin
-PluginManager.register('FilterRating', FilterRatingPlugin, '[data-filter-rating]');
+PluginManager.register('FilterRatingSelect', FilterRatingSelectPlugin, '[data-filter-rating-select]');
 PluginManager.register('ListingPagination', ListingPaginationPlugin, '[data-listing-pagination]');
 PluginManager.register('ListingSorting', ListingSortingPlugin, '[data-listing-sorting]');
 PluginManager.register('CrossSelling', CrossSellingPlugin, '[data-cross-selling]');
@@ -151,6 +160,9 @@ PluginManager.register('Ellipsis', EllipsisPlugin, '[data-ellipsis]');
 PluginManager.register('SwagBlockLink', SwagBlockLink, '[href="#not-found"]');
 PluginManager.register('ClearInput', ClearInputPlugin, '[data-clear-input]');
 PluginManager.register('CmsGdprVideoElement', CmsGdprVideoElement, '[data-cms-gdpr-video-element]');
+PluginManager.register('BuyBox', BuyBoxPlugin, '[data-buy-box]');
+PluginManager.register('Fading', FadingPlugin, '[data-fading]');
+PluginManager.register('BasicCaptcha', BasicCaptchaPlugin, '[data-basic-captcha]');
 
 if (window.wishlistEnabled) {
     if (window.customerLoggedInState) {
@@ -164,17 +176,20 @@ if (window.wishlistEnabled) {
     PluginManager.register('WishlistWidget', WishlistWidgetPlugin, '[data-wishlist-widget]');
 }
 
-if (Feature.isActive('FEATURE_NEXT_10078')) {
-    PluginManager.register('BuyBox', BuyBoxPlugin, '[data-buy-box]');
-}
-
 if (window.csrf.enabled && window.csrf.mode === 'ajax') {
     PluginManager.register('FormCsrfHandler', FormCsrfHandlerPlugin, '[data-form-csrf-handler]');
 }
 
-
 if (window.gtagActive) {
     PluginManager.register('GoogleAnalytics', GoogleAnalyticsPlugin);
+}
+
+if (window.googleReCaptchaV2Active) {
+    PluginManager.register('GoogleReCaptchaV2', GoogleReCaptchaV2Plugin, '[data-google-re-captcha-v2]');
+}
+
+if (window.googleReCaptchaV3Active) {
+    PluginManager.register('GoogleReCaptchaV3', GoogleReCaptchaV3Plugin, '[data-google-re-captcha-v3]');
 }
 
 window.storeApiClient = StoreApiClient;
@@ -184,11 +199,7 @@ window.Feature = Feature;
 /*
 run plugins
 */
-document.addEventListener('readystatechange', (event) => {
-    if (event.target.readyState === 'complete') {
-        PluginManager.initializePlugins();
-    }
-}, false);
+document.addEventListener('DOMContentLoaded', () => PluginManager.initializePlugins(), false);
 
 /*
 run utils

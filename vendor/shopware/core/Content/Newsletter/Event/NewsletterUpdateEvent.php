@@ -13,6 +13,9 @@ use Shopware\Core\Framework\Event\MailActionInterface;
 use Shopware\Core\Framework\Event\SalesChannelAware;
 use Symfony\Contracts\EventDispatcher\Event;
 
+/**
+ * @deprecated tag:v6.5.0 will be removed as it was not thrown
+ */
 class NewsletterUpdateEvent extends Event implements MailActionInterface, SalesChannelAware
 {
     public const EVENT_NAME = NewsletterEvents::NEWSLETTER_UPDATE_EVENT;
@@ -31,13 +34,6 @@ class NewsletterUpdateEvent extends Event implements MailActionInterface, SalesC
      * @var MailRecipientStruct|null
      */
     private $mailRecipientStruct;
-
-    /**
-     * @deprecated tag:v6.4.0 - Will be removed without replacement as the property is never written
-     *
-     * @var string
-     */
-    private $url = '';
 
     /**
      * @var string
@@ -70,14 +66,6 @@ class NewsletterUpdateEvent extends Event implements MailActionInterface, SalesC
     public function getNewsletterRecipient(): NewsletterRecipientEntity
     {
         return $this->newsletterRecipient;
-    }
-
-    /**
-     * @deprecated tag:v6.4.0 - Will be removed without replacement as the property is never written
-     */
-    public function getUrl(): string
-    {
-        return $this->url;
     }
 
     public function getMailStruct(): MailRecipientStruct

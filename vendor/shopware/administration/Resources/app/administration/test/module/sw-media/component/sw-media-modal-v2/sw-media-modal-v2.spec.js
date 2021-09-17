@@ -1,15 +1,11 @@
-import { createLocalVue, shallowMount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import 'src/module/sw-media/component/sw-media-modal-v2';
 
 describe('src/module/sw-media/component/sw-media-modal-v2', () => {
     let wrapper;
 
     beforeEach(() => {
-        const localVue = createLocalVue();
-        localVue.directive('droppable', {});
-
         wrapper = shallowMount(Shopware.Component.build('sw-media-modal-v2'), {
-            localVue,
             stubs: {
                 'sw-modal': true,
                 'sw-tabs': {
@@ -20,10 +16,6 @@ describe('src/module/sw-media/component/sw-media-modal-v2', () => {
                 'sw-media-upload-v2': true,
                 'sw-upload-listener': true,
                 'sw-media-grid': true
-            },
-            mocks: {
-                $t: v => v,
-                $tc: v => v
             },
             provide: {
                 repositoryFactory: {},
@@ -42,7 +34,7 @@ describe('src/module/sw-media/component/sw-media-modal-v2', () => {
 
     it('should contain the default accept value', async () => {
         const fileInput = wrapper.find('sw-media-upload-v2-stub');
-        expect(fileInput.attributes().fileaccept).toBe('image/*');
+        expect(fileInput.attributes()['file-accept']).toBe('image/*');
     });
 
     it('should contain "application/pdf" value', async () => {
@@ -50,6 +42,6 @@ describe('src/module/sw-media/component/sw-media-modal-v2', () => {
             fileAccept: 'application/pdf'
         });
         const fileInput = wrapper.find('sw-media-upload-v2-stub');
-        expect(fileInput.attributes().fileaccept).toBe('application/pdf');
+        expect(fileInput.attributes()['file-accept']).toBe('application/pdf');
     });
 });

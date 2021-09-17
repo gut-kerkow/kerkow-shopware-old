@@ -12,9 +12,11 @@ use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\KernelLifecycleManager;
 use Shopware\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\PlatformRequest;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * @group store-api
+ */
 class ContextSwitchRouteTest extends TestCase
 {
     use SalesChannelApiTestBehaviour;
@@ -50,7 +52,7 @@ class ContextSwitchRouteTest extends TestCase
         /*
          * Shipping method
          */
-        $this->getSalesChannelBrowser()->request('PATCH', '/store-api/v' . PlatformRequest::API_VERSION . '/context', ['shippingMethodId' => $testId]);
+        $this->getSalesChannelBrowser()->request('PATCH', '/store-api/context', ['shippingMethodId' => $testId]);
         $content = json_decode($this->getSalesChannelBrowser()->getResponse()->getContent(), true);
 
         static::assertEquals(
@@ -61,7 +63,7 @@ class ContextSwitchRouteTest extends TestCase
         /*
          * Payment method
          */
-        $this->getSalesChannelBrowser()->request('PATCH', '/store-api/v' . PlatformRequest::API_VERSION . '/context', ['paymentMethodId' => $testId]);
+        $this->getSalesChannelBrowser()->request('PATCH', '/store-api/context', ['paymentMethodId' => $testId]);
         $content = json_decode($this->getSalesChannelBrowser()->getResponse()->getContent(), true);
 
         static::assertEquals(
@@ -77,7 +79,7 @@ class ContextSwitchRouteTest extends TestCase
         /*
          * Billing address
          */
-        $this->getSalesChannelBrowser()->request('PATCH', '/store-api/v' . PlatformRequest::API_VERSION . '/context', ['billingAddressId' => $testId]);
+        $this->getSalesChannelBrowser()->request('PATCH', '/store-api/context', ['billingAddressId' => $testId]);
         $content = json_decode($this->getSalesChannelBrowser()->getResponse()->getContent(), true);
         static::assertSame(Response::HTTP_FORBIDDEN, $this->getSalesChannelBrowser()->getResponse()->getStatusCode());
 
@@ -89,7 +91,7 @@ class ContextSwitchRouteTest extends TestCase
         /*
          * Shipping address
          */
-        $this->getSalesChannelBrowser()->request('PATCH', '/store-api/v' . PlatformRequest::API_VERSION . '/context', ['shippingAddressId' => $testId]);
+        $this->getSalesChannelBrowser()->request('PATCH', '/store-api/context', ['shippingAddressId' => $testId]);
         $content = json_decode($this->getSalesChannelBrowser()->getResponse()->getContent(), true);
         static::assertSame(Response::HTTP_FORBIDDEN, $this->getSalesChannelBrowser()->getResponse()->getStatusCode());
 
@@ -108,7 +110,7 @@ class ContextSwitchRouteTest extends TestCase
         /*
          * Billing address
          */
-        $this->getSalesChannelBrowser()->request('PATCH', '/store-api/v' . PlatformRequest::API_VERSION . '/context', ['billingAddressId' => $testId]);
+        $this->getSalesChannelBrowser()->request('PATCH', '/store-api/context', ['billingAddressId' => $testId]);
 
         static::assertSame(Response::HTTP_BAD_REQUEST, $this->getSalesChannelBrowser()->getResponse()->getStatusCode());
         $content = json_decode($this->getSalesChannelBrowser()->getResponse()->getContent(), true);
@@ -121,7 +123,7 @@ class ContextSwitchRouteTest extends TestCase
         /*
          * Shipping address
          */
-        $this->getSalesChannelBrowser()->request('PATCH', '/store-api/v' . PlatformRequest::API_VERSION . '/context', ['shippingAddressId' => $testId]);
+        $this->getSalesChannelBrowser()->request('PATCH', '/store-api/context', ['shippingAddressId' => $testId]);
         static::assertSame(Response::HTTP_BAD_REQUEST, $this->getSalesChannelBrowser()->getResponse()->getStatusCode());
         $content = json_decode($this->getSalesChannelBrowser()->getResponse()->getContent(), true);
 
@@ -141,14 +143,14 @@ class ContextSwitchRouteTest extends TestCase
          * Billing address
          */
         $this->getSalesChannelBrowser()
-            ->request('PATCH', '/store-api/v' . PlatformRequest::API_VERSION . '/context', ['billingAddressId' => $billingId]);
+            ->request('PATCH', '/store-api/context', ['billingAddressId' => $billingId]);
         static::assertSame(Response::HTTP_OK, $this->getSalesChannelBrowser()->getResponse()->getStatusCode());
 
         /*
          * Shipping address
          */
         $this->getSalesChannelBrowser()
-            ->request('PATCH', '/store-api/v' . PlatformRequest::API_VERSION . '/context', ['shippingAddressId' => $shippingId]);
+            ->request('PATCH', '/store-api/context', ['shippingAddressId' => $shippingId]);
         static::assertSame(Response::HTTP_OK, $this->getSalesChannelBrowser()->getResponse()->getStatusCode());
     }
 
@@ -157,7 +159,7 @@ class ContextSwitchRouteTest extends TestCase
         $id = Uuid::randomHex();
 
         $this->getSalesChannelBrowser()
-            ->request('PATCH', '/store-api/v' . PlatformRequest::API_VERSION . '/context', ['languageId' => $id]);
+            ->request('PATCH', '/store-api/context', ['languageId' => $id]);
 
         $response = $this->getSalesChannelBrowser()->getResponse();
 
@@ -176,7 +178,7 @@ class ContextSwitchRouteTest extends TestCase
         $id = Defaults::LANGUAGE_SYSTEM;
 
         $this->getSalesChannelBrowser()
-            ->request('PATCH', '/store-api/v' . PlatformRequest::API_VERSION . '/context', ['languageId' => $id]);
+            ->request('PATCH', '/store-api/context', ['languageId' => $id]);
 
         $response = $this->getSalesChannelBrowser()->getResponse();
         $content = json_decode($response->getContent(), true);
@@ -189,7 +191,7 @@ class ContextSwitchRouteTest extends TestCase
         $id = Defaults::CURRENCY;
 
         $this->getSalesChannelBrowser()
-            ->request('PATCH', '/store-api/v' . PlatformRequest::API_VERSION . '/context', ['currencyId' => $id]);
+            ->request('PATCH', '/store-api/context', ['currencyId' => $id]);
 
         $response = $this->getSalesChannelBrowser()->getResponse();
         $content = json_decode($response->getContent(), true);
@@ -202,7 +204,7 @@ class ContextSwitchRouteTest extends TestCase
         $id = Uuid::randomHex();
 
         $this->getSalesChannelBrowser()
-            ->request('PATCH', '/store-api/v' . PlatformRequest::API_VERSION . '/context', ['currencyId' => $id]);
+            ->request('PATCH', '/store-api/context', ['currencyId' => $id]);
 
         $response = $this->getSalesChannelBrowser()->getResponse();
 
@@ -223,7 +225,7 @@ class ContextSwitchRouteTest extends TestCase
 
         $this->assignSalesChannelContext();
 
-        $this->getSalesChannelBrowser()->request('POST', '/store-api/v' . PlatformRequest::API_VERSION . '/account/login', [
+        $this->getSalesChannelBrowser()->request('POST', '/store-api/account/login', [
             'username' => $email,
             'password' => $password,
         ]);

@@ -5,7 +5,9 @@ import './sw-promotion-order-condition-form.scss';
 const { Component } = Shopware;
 const { Criteria } = Shopware.Data;
 
-
+/**
+ * @deprecated tag:v6.5.0 - will be removed, use `sw-promotion-v2` instead
+ */
 Component.register('sw-promotion-order-condition-form', {
     template,
 
@@ -15,8 +17,8 @@ Component.register('sw-promotion-order-condition-form', {
         promotion: {
             type: Object,
             required: false,
-            default: null
-        }
+            default: null,
+        },
     },
 
     computed: {
@@ -29,9 +31,9 @@ Component.register('sw-promotion-order-condition-form', {
                     'customerBillingStreet', 'customerBillingZipCode', 'customerCustomerGroup',
                     'customerCustomerNumber', 'customerDifferentAddresses', 'customerIsNewCustomer',
                     'customerLastName', 'customerShippingCountry', 'customerShippingStreet',
-                    'customerShippingZipCode'
+                    'customerShippingZipCode',
                 ]),
-                Criteria.not('AND', [Criteria.equalsAny('conditions.type', ['cartCartAmount'])])
+                Criteria.not('AND', [Criteria.equalsAny('conditions.type', ['cartCartAmount'])]),
             ]));
 
             criteria.addSorting(Criteria.sort('name', 'ASC', false));
@@ -45,6 +47,6 @@ Component.register('sw-promotion-order-condition-form', {
             }
 
             return !PromotionPermissions.isEditingAllowed(this.promotion);
-        }
-    }
+        },
+    },
 });

@@ -8,9 +8,9 @@
             <argument type="tagged" tag="shopware.sitemap_url_provider"/>
             <argument type="service" id="cache.system"/>
             <argument>%shopware.sitemap.batchsize%</argument>
-            <argument type="service" id="Shopware\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface"/>
             <argument type="service" id="shopware.filesystem.sitemap"/>
             <argument type="service" id="Shopware\Core\Content\Sitemap\Service\SitemapHandleFactoryInterface"/>
+            <argument type="service" id="event_dispatcher"/>
         </service>
 
         <service id="Shopware\Core\Content\Sitemap\Service\SitemapLister">
@@ -30,15 +30,28 @@
             <argument type="service" id="Shopware\Core\Content\Sitemap\Service\SitemapExporter"/>
         </service>
 
+        <service id="Shopware\Core\Content\Sitemap\SalesChannel\CachedSitemapRoute" decorates="Shopware\Core\Content\Sitemap\SalesChannel\SitemapRoute" decoration-priority="-1000" public="true">
+            <argument type="service" id="Shopware\Core\Content\Sitemap\SalesChannel\CachedSitemapRoute.inner"/>
+            <argument type="service" id="cache.object"/>
+            <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator"/>
+            <argument type="service" id="Shopware\Core\Framework\Adapter\Cache\CacheTracer"/>
+            <argument type="service" id="event_dispatcher"/>
+            <argument>%shopware.cache.invalidation.sitemap_route%</argument>
+            <argument type="service" id="logger" />
+            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
+        </service>
+
         <!-- UrlProviders -->
         <service id="Shopware\Core\Content\Sitemap\Provider\HomeUrlProvider">
             <tag name="shopware.sitemap_url_provider"/>
         </service>
 
         <service id="Shopware\Core\Content\Sitemap\Provider\CategoryUrlProvider">
-            <argument type="service" id="sales_channel.category.repository"/>
             <argument type="service" id="Shopware\Core\Content\Sitemap\Service\ConfigHandler"/>
-            <argument type="service" id="Shopware\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface"/>
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <argument type="service" id="Shopware\Core\Content\Category\CategoryDefinition"/>
+            <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory"/>
+            <argument type="service" id="router"/>
 
             <tag name="shopware.sitemap_url_provider"/>
         </service>
@@ -50,9 +63,11 @@
         </service>
 
         <service id="Shopware\Core\Content\Sitemap\Provider\ProductUrlProvider">
-            <argument type="service" id="sales_channel.product.repository"/>
             <argument type="service" id="Shopware\Core\Content\Sitemap\Service\ConfigHandler"/>
-            <argument type="service" id="Shopware\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface"/>
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <argument type="service" id="Shopware\Core\Content\Product\ProductDefinition"/>
+            <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory"/>
+            <argument type="service" id="router"/>
 
             <tag name="shopware.sitemap_url_provider"/>
         </service>
@@ -68,6 +83,7 @@
             <argument type="service" id="sales_channel.repository"/>
             <argument type="service" id="Shopware\Core\Content\Sitemap\Service\SitemapExporter"/>
             <argument type="service" id="Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory"/>
+            <argument type="service" id="event_dispatcher"/>
 
             <tag name="console.command"/>
         </service>
@@ -85,6 +101,7 @@
             <argument type="service" id="logger"/>
             <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
             <argument type="service" id="messenger.bus.shopware"/>
+            <argument type="service" id="event_dispatcher"/>
 
             <tag name="messenger.message_handler"/>
         </service>

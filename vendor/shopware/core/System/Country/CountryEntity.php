@@ -5,15 +5,20 @@ namespace Shopware\Core\System\Country;
 use Shopware\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressCollection;
 use Shopware\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
+use Shopware\Core\Framework\DataAbstractionLayer\TaxFreeConfig;
+use Shopware\Core\Framework\Feature;
 use Shopware\Core\System\Country\Aggregate\CountryState\CountryStateCollection;
 use Shopware\Core\System\Country\Aggregate\CountryTranslation\CountryTranslationCollection;
+use Shopware\Core\System\Currency\Aggregate\CurrencyCountryRounding\CurrencyCountryRoundingCollection;
 use Shopware\Core\System\SalesChannel\SalesChannelCollection;
 use Shopware\Core\System\Tax\Aggregate\TaxRule\TaxRuleCollection;
 
 class CountryEntity extends Entity
 {
     use EntityIdTrait;
+    use EntityCustomFieldsTrait;
 
     /**
      * @var string|null
@@ -32,6 +37,8 @@ class CountryEntity extends Entity
 
     /**
      * @var bool
+     *
+     * @deprecated tag:v6.5.0 - Will be removed, use $customerTax->getEnabled() instead
      */
     protected $taxFree;
 
@@ -62,6 +69,8 @@ class CountryEntity extends Entity
 
     /**
      * @var bool
+     *
+     * @deprecated tag:v6.5.0 - Will be removed, use $companyTax->getEnabled() instead
      */
     protected $companyTaxFree;
 
@@ -74,6 +83,15 @@ class CountryEntity extends Entity
      * @var string|null
      */
     protected $vatIdPattern;
+
+    /**
+     * @var bool|null
+     */
+    protected $vatIdRequired;
+
+    protected TaxFreeConfig $customerTax;
+
+    protected TaxFreeConfig $companyTax;
 
     /**
      * @var CountryStateCollection|null
@@ -106,14 +124,14 @@ class CountryEntity extends Entity
     protected $salesChannels;
 
     /**
-     * @var array|null
-     */
-    protected $customFields;
-
-    /**
      * @var TaxRuleCollection|null
      */
     protected $taxRules;
+
+    /**
+     * @var CurrencyCountryRoundingCollection|null
+     */
+    protected $currencyCountryRoundings;
 
     public function getName(): ?string
     {
@@ -145,13 +163,23 @@ class CountryEntity extends Entity
         $this->position = $position;
     }
 
+    /**
+     * @deprecated tag:v6.5.0 - Will be removed in version 6.5.0
+     */
     public function getTaxFree(): bool
     {
+        Feature::triggerDeprecated('FEATURE_NEXT_14114', '6.4.0', '6.5.0', 'Will be removed in version 6.5.0, use $customerTax->getEnabled() instead.');
+
         return $this->taxFree;
     }
 
+    /**
+     * @deprecated tag:v6.5.0 - Will be removed in version 6.5.0
+     */
     public function setTaxFree(bool $taxFree): void
     {
+        Feature::triggerDeprecated('FEATURE_NEXT_14114', '6.4.0', '6.5.0', 'Will be removed in version 6.5.0.');
+
         $this->taxFree = $taxFree;
     }
 
@@ -205,13 +233,23 @@ class CountryEntity extends Entity
         $this->forceStateInRegistration = $forceStateInRegistration;
     }
 
+    /**
+     * @deprecated tag:v6.5.0 - Will be removed in version 6.5.0
+     */
     public function getCompanyTaxFree(): bool
     {
+        Feature::triggerDeprecated('FEATURE_NEXT_14114', '6.4.0', '6.5.0', 'Will be removed in version 6.5.0, use $companyTax->getEnabled() instead.');
+
         return $this->companyTaxFree;
     }
 
+    /**
+     * @deprecated tag:v6.5.0 - Will be removed in version 6.5.0
+     */
     public function setCompanyTaxFree(bool $companyTaxFree): void
     {
+        Feature::triggerDeprecated('FEATURE_NEXT_14114', '6.4.0', '6.5.0', 'Will be removed in version 6.5.0.');
+
         $this->companyTaxFree = $companyTaxFree;
     }
 
@@ -295,16 +333,6 @@ class CountryEntity extends Entity
         $this->salesChannels = $salesChannels;
     }
 
-    public function getCustomFields(): ?array
-    {
-        return $this->customFields;
-    }
-
-    public function setCustomFields(?array $customFields): void
-    {
-        $this->customFields = $customFields;
-    }
-
     public function getTaxRules(): ?TaxRuleCollection
     {
         return $this->taxRules;
@@ -313,5 +341,45 @@ class CountryEntity extends Entity
     public function setTaxRules(TaxRuleCollection $taxRules): void
     {
         $this->taxRules = $taxRules;
+    }
+
+    public function getCurrencyCountryRoundings(): ?CurrencyCountryRoundingCollection
+    {
+        return $this->currencyCountryRoundings;
+    }
+
+    public function setCurrencyCountryRoundings(CurrencyCountryRoundingCollection $currencyCountryRoundings): void
+    {
+        $this->currencyCountryRoundings = $currencyCountryRoundings;
+    }
+
+    public function getVatIdRequired(): bool
+    {
+        return (bool) $this->vatIdRequired;
+    }
+
+    public function setVatIdRequired(bool $vatIdRequired): void
+    {
+        $this->vatIdRequired = $vatIdRequired;
+    }
+
+    public function getCustomerTax(): TaxFreeConfig
+    {
+        return $this->customerTax;
+    }
+
+    public function setCustomerTax(TaxFreeConfig $customerTax): void
+    {
+        $this->customerTax = $customerTax;
+    }
+
+    public function getCompanyTax(): TaxFreeConfig
+    {
+        return $this->companyTax;
+    }
+
+    public function setCompanyTax(TaxFreeConfig $companyTax): void
+    {
+        $this->companyTax = $companyTax;
     }
 }

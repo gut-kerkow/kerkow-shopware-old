@@ -1,14 +1,18 @@
-import { shallowMount, createLocalVue } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import 'src/app/component/structure/sw-admin-menu';
 import 'src/module/sw-sales-channel/component/structure/sw-admin-menu-extension';
+import createMenuService from 'src/app/service/menu.service';
+
+// Turn off known errors
+import { missingGetListMethod } from 'src/../test/_helper_/allowedErrors';
+
+global.allowedErrors = [missingGetListMethod];
+
+const menuService = createMenuService(Shopware.Module);
+Shopware.Service().register('menuService', () => menuService);
 
 function createWrapper(privileges = []) {
-    const localVue = createLocalVue();
-
-    localVue.directive('tooltip', {});
-
     return shallowMount(Shopware.Component.build('sw-admin-menu'), {
-        localVue,
         stubs: {
             'sw-version': true,
             'sw-icon': true,
@@ -24,9 +28,7 @@ function createWrapper(privileges = []) {
             userService: {
                 getUser: () => Promise.resolve({})
             },
-            menuService: {
-                getMainMenu: () => []
-            },
+            menuService,
             acl: {
                 can: (privilegeKey) => {
                     if (!privilegeKey) { return true; }
@@ -34,26 +36,17 @@ function createWrapper(privileges = []) {
                     return privileges.includes(privilegeKey);
                 }
             },
-            feature: {
-                isActive: () => true
-            }
-        },
-        mocks: {
-            $tc: v => v,
-            $device: {
-                onResize: () => {},
-                getViewportWidth: () => 1920
+            appModulesService: {
+                fetchAppModules: () => Promise.resolve([])
             }
         },
         methods: {
-            refreshApps: () => {}
         }
     });
 }
 
 describe('module/sw-sales-channel/component/structure/sw-admin-menu-extension', () => {
     beforeAll(() => {
-        Shopware.Feature.isActive = () => true;
         Shopware.State.get('session').currentUser = {};
     });
 

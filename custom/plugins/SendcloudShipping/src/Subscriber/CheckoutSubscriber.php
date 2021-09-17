@@ -22,6 +22,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaI
 use Shopware\Core\PlatformRequest;
 use Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoadedEvent;
 use Shopware\Storefront\Page\Checkout\Finish\CheckoutFinishPageLoadedEvent;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -66,6 +67,10 @@ class CheckoutSubscriber implements EventSubscriberInterface
      * @var RequestStack
      */
     private $requestStack;
+    /**
+     * @var ParameterBagInterface
+     */
+    private $params;
 
     /**
      * CheckoutSubscriber constructor.
@@ -78,6 +83,7 @@ class CheckoutSubscriber implements EventSubscriberInterface
      * @param CustomerRepository $customerRepository
      * @param OrderService $orderService
      * @param RequestStack $requestStack
+     * @param ParameterBagInterface $params
      */
     public function __construct(
         Initializer $initializer,
@@ -87,7 +93,8 @@ class CheckoutSubscriber implements EventSubscriberInterface
         ServicePointEntityRepository $servicePointRepository,
         CustomerRepository $customerRepository,
         OrderService $orderService,
-        RequestStack $requestStack
+        RequestStack $requestStack,
+        ParameterBagInterface $params
     ) {
         $initializer->registerServices();
         $this->configService = $configService;
@@ -97,6 +104,7 @@ class CheckoutSubscriber implements EventSubscriberInterface
         $this->customerRepository = $customerRepository;
         $this->orderService = $orderService;
         $this->requestStack = $requestStack;
+        $this->params = $params;
     }
 
     /**
@@ -254,18 +262,17 @@ class CheckoutSubscriber implements EventSubscriberInterface
         /** @var ShippingMethodEntity $shippingMethod */
         foreach ($shippingMethods as $shippingMethod) {
             if ($shippingMethod->getId() === $servicePointDeliveryId) {
-                $shippingMethod->addExtension('sendcloud', new ServicePointConfig([
+                $extensions = $shippingMethod->getExtensions();
+                $extensions['sendcloud'] = new ServicePointConfig([
                     'isServicePointDelivery' => true,
                     'servicePointDeliveryId' => $servicePointDeliveryId,
-                    'servicePointEndpointUrl' => $this->urlGenerator->generate(
-                        'api.sendcloud.servicepoint',
-                        ['version' => PlatformRequest::API_VERSION],
-                        UrlGeneratorInterface::ABSOLUTE_URL
-                    ),
+                    'servicePointEndpointUrl' => $this->generateServicePointUrl(),
                     'apiKey' => $this->configService->getPublicKey(),
                     'carriers' => implode(',', $this->configService->getCarriers()),
                     'weight' => $this->orderService->calculateTotalWeight($event->getPage()->getCart()->getLineItems()),
-                ]));
+                ]);
+
+                $shippingMethod->setExtensions($extensions);
                 $shippingMethod->jsonSerialize();
             }
         }
@@ -283,5 +290,20 @@ class CheckoutSubscriber implements EventSubscriberInterface
                 }
             }
         }
+    }
+
+    /**
+     * @return string
+     */
+    private function generateServicePointUrl(): string
+    {
+        $routeName = 'api.sendcloud.servicepoint.new';
+        $params = [];
+        if (version_compare($this->params->get('kernel.shopware_version'), '6.4.0', 'lt')) {
+            $routeName = 'api.sendcloud.servicepoint';
+            $params['version'] = PlatformRequest::API_VERSION;
+        }
+
+        return $this->urlGenerator->generate($routeName, $params, UrlGeneratorInterface::ABSOLUTE_URL);
     }
 }

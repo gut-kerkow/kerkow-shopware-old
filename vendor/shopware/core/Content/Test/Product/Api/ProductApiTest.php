@@ -13,7 +13,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Test\TestCaseBase\AdminFunctionalTestBehaviour;
 use Shopware\Core\Framework\Test\TestDataCollection;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\PlatformRequest;
 use Symfony\Component\HttpFoundation\Response;
 
 class ProductApiTest extends TestCase
@@ -60,7 +59,7 @@ class ProductApiTest extends TestCase
             ],
         ];
 
-        $this->getBrowser()->request('POST', '/api/v' . PlatformRequest::API_VERSION . '/product', $data);
+        $this->getBrowser()->request('POST', '/api/product', [], [], [], json_encode($data));
         static::assertSame(Response::HTTP_NO_CONTENT, $this->getBrowser()->getResponse()->getStatusCode(), $this->getBrowser()->getResponse()->getContent());
 
         $context = Context::createDefaultContext();
@@ -99,7 +98,7 @@ class ProductApiTest extends TestCase
             ],
         ];
 
-        $this->getBrowser()->request('PATCH', '/api/v' . PlatformRequest::API_VERSION . '/product/' . $id, $data);
+        $this->getBrowser()->request('PATCH', '/api/product/' . $id, [], [], [], json_encode($data));
         static::assertSame(Response::HTTP_NO_CONTENT, $this->getBrowser()->getResponse()->getStatusCode(), $this->getBrowser()->getResponse()->getContent());
 
         $criteria = new Criteria([$id]);
@@ -135,7 +134,7 @@ class ProductApiTest extends TestCase
             ],
         ];
 
-        $this->getBrowser()->request('PATCH', '/api/v' . PlatformRequest::API_VERSION . '/product/' . $id, $data);
+        $this->getBrowser()->request('PATCH', '/api/product/' . $id, [], [], [], json_encode($data));
         static::assertSame(Response::HTTP_NO_CONTENT, $this->getBrowser()->getResponse()->getStatusCode(), $this->getBrowser()->getResponse()->getContent());
 
         $criteria = new Criteria([$id]);
@@ -175,10 +174,10 @@ class ProductApiTest extends TestCase
             'description' => $description,
         ];
 
-        $this->getBrowser()->request('POST', '/api/v' . PlatformRequest::API_VERSION . '/product', $data);
+        $this->getBrowser()->request('POST', '/api/product', [], [], [], json_encode($data));
         static::assertSame(Response::HTTP_NO_CONTENT, $this->getBrowser()->getResponse()->getStatusCode(), $this->getBrowser()->getResponse()->getContent());
 
-        $this->getBrowser()->request('GET', '/api/v' . PlatformRequest::API_VERSION . '/product/' . $id, [], [], [
+        $this->getBrowser()->request('GET', '/api/product/' . $id, [], [], [
             'HTTP_ACCEPT' => 'application/json',
         ]);
 
@@ -211,11 +210,11 @@ class ProductApiTest extends TestCase
         $this->getContainer()->get('product.repository')
             ->create([$data], Context::createDefaultContext());
 
-        $this->getBrowser()->request('POST', '/api/v' . PlatformRequest::API_VERSION . '/search/product', [
+        $this->getBrowser()->request('POST', '/api/search/product', [], [], [], json_encode([
             'includes' => [
                 'product' => ['id', 'name'],
             ],
-        ]);
+        ]));
 
         $response = $this->getBrowser()->getResponse();
         static::assertSame(Response::HTTP_OK, $response->getStatusCode());
@@ -253,12 +252,12 @@ class ProductApiTest extends TestCase
         $this->getContainer()->get('product.repository')
             ->create([$data], Context::createDefaultContext());
 
-        $this->getBrowser()->request('POST', '/api/v' . PlatformRequest::API_VERSION . '/search/product', [
+        $this->getBrowser()->request('POST', '/api/search/product', [], [], [], json_encode([
             'includes' => [
                 'product' => ['id', 'name', 'tax'],
                 'tax' => ['id', 'name'],
             ],
-        ]);
+        ]));
 
         $response = $this->getBrowser()->getResponse();
         static::assertSame(Response::HTTP_OK, $response->getStatusCode());
@@ -277,5 +276,35 @@ class ProductApiTest extends TestCase
 
         static::assertCount(1, $products['included']);
         static::assertEquals('tax', $products['included'][0]['type']);
+    }
+
+    public function testInvalidCrossSelling(): void
+    {
+        $id = Uuid::randomHex();
+
+        $data = [
+            'id' => $id,
+            'productNumber' => Uuid::randomHex(),
+            'stock' => 1,
+            'name' => 'price test',
+            'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 15, 'net' => 10, 'linked' => false]],
+            'manufacturer' => ['name' => 'test'],
+            'tax' => ['name' => 'test', 'taxRate' => 15],
+        ];
+
+        $this->getBrowser()->request('POST', '/api/product', [], [], [], json_encode($data));
+        static::assertSame(Response::HTTP_NO_CONTENT, $this->getBrowser()->getResponse()->getStatusCode(), $this->getBrowser()->getResponse()->getContent());
+
+        $crossSellingPatch = [
+            'crossSellings' => [
+                [
+                    'active' => true,
+                ],
+            ],
+        ];
+
+        $this->getBrowser()->request('PATCH', '/api/product/' . $id, [], [], [], json_encode($crossSellingPatch));
+
+        static::assertSame(Response::HTTP_BAD_REQUEST, $this->getBrowser()->getResponse()->getStatusCode());
     }
 }

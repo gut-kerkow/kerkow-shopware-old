@@ -1,9 +1,16 @@
-import { createLocalVue, shallowMount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import 'src/module/sw-settings-document/page/sw-settings-document-detail';
 
 const documentBaseConfigRepositoryMock = {
+    create: () => {
+        return Promise.resolve({});
+    },
     get: (id) => {
-        const salesChannels = new Shopware.Data.EntityCollection('source', 'entity', Shopware.Context.api);
+        const salesChannels = new Shopware.Data.EntityCollection(
+            'source',
+            'entity',
+            Shopware.Context.api
+        );
         if (id === 'documentConfigWithSalesChannels') {
             salesChannels.push({
                 id: 'associationId1',
@@ -74,11 +81,7 @@ const repositoryMockFactory = (entity) => {
 };
 
 const createWrapper = (customOptions, privileges = []) => {
-    const localVue = createLocalVue();
-    localVue.directive('tooltip', {});
-
     const options = {
-        localVue,
         stubs: {
             'sw-page': true,
             'sw-entity-single-select': true,
@@ -109,10 +112,6 @@ const createWrapper = (customOptions, privileges = []) => {
             'sw-media-field': { template: '<div id="sw-media-field"/>', props: ['disabled'] },
             'sw-multi-select': { template: '<div id="documentSalesChannel"/>', props: ['disabled'] }
         },
-        mocks: {
-            $tc: snippetPath => snippetPath,
-            $device: { getSystemKey: () => {} }
-        },
         provide: {
             repositoryFactory: {
                 create: (entity) => repositoryMockFactory(entity)
@@ -120,8 +119,8 @@ const createWrapper = (customOptions, privileges = []) => {
             acl: {
                 can: key => (key ? privileges.includes(key) : true)
             },
-            feature: {
-                isActive: () => true
+            customFieldDataProviderService: {
+                getCustomFieldSets: () => Promise.resolve([])
             }
         }
     };
@@ -142,8 +141,11 @@ describe('src/module/sw-settings-document/page/sw-settings-document-detail', () 
         expect(wrapper.vm).toBeTruthy();
     });
 
+    // eslint-disable-next-line max-len
     it('should create an array with sales channel ids from the document config sales channels association', async () => {
-        const wrapper = createWrapper({ propsData: { documentConfigId: 'documentConfigWithSalesChannels' } });
+        const wrapper = createWrapper({
+            propsData: { documentConfigId: 'documentConfigWithSalesChannels' }
+        });
 
         await wrapper.vm.$nextTick();
         await wrapper.vm.$nextTick();
@@ -152,7 +154,9 @@ describe('src/module/sw-settings-document/page/sw-settings-document-detail', () 
     });
 
     it('should create an entity collection with document config sales channels associations', async () => {
-        const wrapper = createWrapper({ propsData: { documentConfigId: 'documentConfigWithDocumentType' } });
+        const wrapper = createWrapper({
+            propsData: { documentConfigId: 'documentConfigWithDocumentType' }
+        });
 
         await wrapper.vm.$nextTick();
         await wrapper.vm.$nextTick();
@@ -175,7 +179,9 @@ describe('src/module/sw-settings-document/page/sw-settings-document-detail', () 
 
     it('should create an entity collection with document config sales channels associations with ' +
         'actual sales channels associations inside', async () => {
-        const wrapper = createWrapper({ propsData: { documentConfigId: 'documentConfigWithDocumentTypeAndSalesChannels' } });
+        const wrapper = createWrapper({
+            propsData: { documentConfigId: 'documentConfigWithDocumentTypeAndSalesChannels' }
+        });
 
         await wrapper.vm.$nextTick();
         await wrapper.vm.$nextTick();
@@ -194,7 +200,11 @@ describe('src/module/sw-settings-document/page/sw-settings-document-detail', () 
     });
 
     it('should recreate sales channel options collection when type changes', async () => {
-        const wrapper = createWrapper({ propsData: { documentConfigId: 'documentConfigWithDocumentTypeAndSalesChannels' } });
+        const wrapper = createWrapper({
+            propsData: {
+                documentConfigId: 'documentConfigWithDocumentTypeAndSalesChannels'
+            }
+        });
 
         await wrapper.vm.$nextTick();
         await wrapper.vm.$nextTick();
@@ -230,21 +240,27 @@ describe('src/module/sw-settings-document/page/sw-settings-document-detail', () 
         await wrapper.vm.$nextTick();
 
 
-        expect(wrapper.find('.sw-settings-document-detail__save-action').attributes().disabled).toBeUndefined();
+        expect(wrapper.find('.sw-settings-document-detail__save-action')
+            .attributes().disabled).toBeUndefined();
         expect(wrapper.find('#sw-media-field').props().disabled).toEqual(false);
-        expect(wrapper.findAll('.sw-field').wrappers.every(field => !field.props().disabled)).toEqual(true);
+        expect(wrapper.findAll('.sw-field')
+            .wrappers.every(field => !field.props().disabled)).toEqual(true);
         expect(wrapper.find('#documentSalesChannel').props().disabled).toEqual(false);
     });
 
     it('should not be able to edit', async () => {
-        const wrapper = createWrapper({ propsData: { documentConfigId: 'documentConfigWithDocumentTypeAndSalesChannels' } });
+        const wrapper = createWrapper({
+            propsData: { documentConfigId: 'documentConfigWithDocumentTypeAndSalesChannels' }
+        });
 
         await wrapper.vm.$nextTick();
         await wrapper.vm.$nextTick();
 
-        expect(wrapper.find('.sw-settings-document-detail__save-action').attributes().disabled).toBe('true');
+        expect(wrapper.find('.sw-settings-document-detail__save-action')
+            .attributes().disabled).toBe('true');
         expect(wrapper.find('#sw-media-field').props().disabled).toEqual(true);
-        expect(wrapper.findAll('.sw-field').wrappers.every(field => field.props().disabled)).toEqual(true);
+        expect(wrapper.findAll('.sw-field')
+            .wrappers.every(field => field.props().disabled)).toEqual(true);
         expect(wrapper.find('#documentSalesChannel').props().disabled).toEqual(true);
     });
 
@@ -269,9 +285,12 @@ describe('src/module/sw-settings-document/page/sw-settings-document-detail', () 
         );
 
         expect(displayAdditionalNoteDeliveryCheckbox.attributes('value')).toBe('true');
-        expect(displayAdditionalNoteDeliveryCheckbox.attributes('label')).toBe('sw-settings-document.detail.labelDisplayAdditionalNoteDelivery');
-        expect(deliveryCountriesSelect.attributes('helptext')).toBe('sw-settings-document.detail.helpTextDisplayDeliveryCountries');
-        expect(deliveryCountriesSelect.attributes('label')).toBe('sw-settings-document.detail.labelDeliveryCountries');
+        expect(displayAdditionalNoteDeliveryCheckbox.attributes('label'))
+            .toBe('sw-settings-document.detail.labelDisplayAdditionalNoteDelivery');
+        expect(deliveryCountriesSelect.attributes('help-text'))
+            .toBe('sw-settings-document.detail.helpTextDisplayDeliveryCountries');
+        expect(deliveryCountriesSelect.attributes('label'))
+            .toBe('sw-settings-document.detail.labelDeliveryCountries');
     });
 
     it('should contain field "display divergent delivery address" in invoice form field', async () => {
@@ -286,9 +305,11 @@ describe('src/module/sw-settings-document/page/sw-settings-document-detail', () 
             '.sw-settings-document-detail__field_divergent_delivery_address'
         );
         expect(displayDivergentDeliveryAddress).toBeDefined();
-        expect(displayDivergentDeliveryAddress.attributes('label')).toBe('sw-settings-document.detail.labelDisplayDivergentDeliveryAddress');
+        expect(displayDivergentDeliveryAddress.attributes('label'))
+            .toBe('sw-settings-document.detail.labelDisplayDivergentDeliveryAddress');
     });
 
+    // eslint-disable-next-line max-len
     it('should not exist "display divergent delivery address" in general form field and company form field', async () => {
         const wrapper = createWrapper({}, ['document.editor']);
 
@@ -334,6 +355,7 @@ describe('src/module/sw-settings-document/page/sw-settings-document-detail', () 
         );
     });
 
+    // eslint-disable-next-line max-len
     it('should be have countries in country select when have toggle display intra-community delivery checkbox', async () => {
         const wrapper = createWrapper({}, ['document.editor']);
 

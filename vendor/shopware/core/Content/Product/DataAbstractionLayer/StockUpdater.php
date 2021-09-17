@@ -8,11 +8,9 @@ use Shopware\Core\Checkout\Cart\LineItem\LineItem;
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemDefinition;
 use Shopware\Core\Checkout\Order\OrderEvents;
 use Shopware\Core\Checkout\Order\OrderStates;
-use Shopware\Core\Content\Product\ProductDefinition;
+use Shopware\Core\Content\Product\Events\ProductNoLongerAvailableEvent;
 use Shopware\Core\Defaults;
-use Shopware\Core\Framework\Adapter\Cache\CacheClearer;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator;
 use Shopware\Core\Framework\DataAbstractionLayer\Doctrine\RetryableQuery;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityWriteResult;
 use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
@@ -24,39 +22,20 @@ use Shopware\Core\Framework\DataAbstractionLayer\Write\Validation\PreWriteValida
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\StateMachine\Event\StateMachineTransitionEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 class StockUpdater implements EventSubscriberInterface
 {
-    /**
-     * @var Connection
-     */
-    private $connection;
+    private Connection $connection;
 
-    /**
-     * @var ProductDefinition
-     */
-    private $definition;
-
-    /**
-     * @var CacheClearer
-     */
-    private $cache;
-
-    /**
-     * @var EntityCacheKeyGenerator
-     */
-    private $cacheKeyGenerator;
+    private EventDispatcherInterface $dispatcher;
 
     public function __construct(
         Connection $connection,
-        ProductDefinition $definition,
-        CacheClearer $cache,
-        EntityCacheKeyGenerator $cacheKeyGenerator
+        EventDispatcherInterface $dispatcher
     ) {
         $this->connection = $connection;
-        $this->definition = $definition;
-        $this->cache = $cache;
-        $this->cacheKeyGenerator = $cacheKeyGenerator;
+        $this->dispatcher = $dispatcher;
     }
 
     /**
@@ -142,8 +121,6 @@ class StockUpdater implements EventSubscriberInterface
         }
 
         $this->update($ids, $event->getContext());
-
-        $this->clearCache($ids);
     }
 
     public function stateChanged(StateMachineTransitionEvent $event): void
@@ -177,8 +154,6 @@ class StockUpdater implements EventSubscriberInterface
 
             $this->updateAvailableFlag($ids, $event->getContext());
 
-            $this->clearCache($ids);
-
             return;
         }
     }
@@ -205,8 +180,6 @@ class StockUpdater implements EventSubscriberInterface
         }
 
         $this->update($ids, $event->getContext());
-
-        $this->clearCache($ids);
     }
 
     private function increaseStock(StateMachineTransitionEvent $event): void
@@ -220,8 +193,6 @@ class StockUpdater implements EventSubscriberInterface
         $this->updateAvailableStockAndSales($ids, $event->getContext());
 
         $this->updateAvailableFlag($ids, $event->getContext());
-
-        $this->clearCache($ids);
     }
 
     private function decreaseStock(StateMachineTransitionEvent $event): void
@@ -235,8 +206,6 @@ class StockUpdater implements EventSubscriberInterface
         $this->updateAvailableStockAndSales($ids, $event->getContext());
 
         $this->updateAvailableFlag($ids, $event->getContext());
-
-        $this->clearCache($ids);
     }
 
     private function updateAvailableStockAndSales(array $ids, Context $context): void
@@ -267,21 +236,21 @@ FROM order_line_item
         ON state_machine_state.id = `order`.state_id
         AND state_machine_state.technical_name <> :cancelled_state
 
-WHERE LOWER(order_line_item.referenced_id) IN (:ids)
+WHERE order_line_item.product_id IN (:ids)
     AND order_line_item.type = :type
     AND order_line_item.version_id = :version
     AND order_line_item.product_id IS NOT NULL
 GROUP BY product_id;
         ';
 
-        $rows = $this->connection->fetchAll(
+        $rows = $this->connection->fetchAllAssociative(
             $sql,
             [
                 'type' => LineItem::PRODUCT_LINE_ITEM_TYPE,
                 'version' => Uuid::fromHexToBytes($context->getVersionId()),
                 'completed_state' => OrderStates::STATE_COMPLETED,
                 'cancelled_state' => OrderStates::STATE_CANCELLED,
-                'ids' => $ids,
+                'ids' => Uuid::fromHexToBytesList($ids),
             ],
             [
                 'ids' => Connection::PARAM_STR_ARRAY,
@@ -293,7 +262,7 @@ GROUP BY product_id;
         $fallback = array_diff($ids, $fallback);
 
         $update = new RetryableQuery(
-            $this->connection->prepare('UPDATE product SET available_stock = stock - :open_quantity, sales = :sales_quantity WHERE id = :id')
+            $this->connection->prepare('UPDATE product SET available_stock = stock - :open_quantity, sales = :sales_quantity, updated_at = :now WHERE id = :id')
         );
 
         foreach ($fallback as $id) {
@@ -301,6 +270,7 @@ GROUP BY product_id;
                 'id' => Uuid::fromHexToBytes((string) $id),
                 'open_quantity' => 0,
                 'sales_quantity' => 0,
+                'now' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
             ]);
         }
 
@@ -309,13 +279,14 @@ GROUP BY product_id;
                 'id' => Uuid::fromHexToBytes($row['product_id']),
                 'open_quantity' => $row['open_quantity'],
                 'sales_quantity' => $row['sales_quantity'],
+                'now' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
             ]);
         }
     }
 
     private function updateAvailableFlag(array $ids, Context $context): void
     {
-        $ids = array_filter(array_keys(array_flip($ids)));
+        $ids = array_filter(array_unique($ids));
 
         if (empty($ids)) {
             return;
@@ -345,6 +316,16 @@ GROUP BY product_id;
                 ['ids' => Connection::PARAM_STR_ARRAY]
             );
         });
+
+        $updated = $this->connection->fetchFirstColumn(
+            'SELECT LOWER(HEX(id)) FROM product WHERE available = 0 AND id IN (:ids) AND product.version_id = :version',
+            ['ids' => $bytes, 'version' => Uuid::fromHexToBytes($context->getVersionId())],
+            ['ids' => Connection::PARAM_STR_ARRAY]
+        );
+
+        if (!empty($updated)) {
+            $this->dispatcher->dispatch(new ProductNoLongerAvailableEvent($updated, $context));
+        }
     }
 
     private function updateStock(array $products, int $multiplier): void
@@ -375,20 +356,5 @@ GROUP BY product_id;
         $query->setParameter('type', LineItem::PRODUCT_LINE_ITEM_TYPE);
 
         return $query->execute()->fetchAll(\PDO::FETCH_ASSOC);
-    }
-
-    private function clearCache(array $ids): void
-    {
-        $tags = [];
-        foreach ($ids as $id) {
-            $tags[] = $this->cacheKeyGenerator->getEntityTag($id, $this->definition->getEntityName());
-        }
-
-        $tags[] = $this->cacheKeyGenerator->getFieldTag($this->definition, 'id');
-        $tags[] = $this->cacheKeyGenerator->getFieldTag($this->definition, 'available');
-        $tags[] = $this->cacheKeyGenerator->getFieldTag($this->definition, 'availableStock');
-        $tags[] = $this->cacheKeyGenerator->getFieldTag($this->definition, 'stock');
-
-        $this->cache->invalidateTags($tags);
     }
 }

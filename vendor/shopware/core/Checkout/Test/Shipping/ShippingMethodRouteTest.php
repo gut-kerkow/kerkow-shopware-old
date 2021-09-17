@@ -8,23 +8,20 @@ use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour;
 use Shopware\Core\Framework\Test\TestDataCollection;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\PlatformRequest;
 use Shopware\Core\System\DeliveryTime\DeliveryTimeEntity;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 
+/**
+ * @group store-api
+ */
 class ShippingMethodRouteTest extends TestCase
 {
     use IntegrationTestBehaviour;
     use SalesChannelApiTestBehaviour;
 
-    /**
-     * @var \Symfony\Bundle\FrameworkBundle\KernelBrowser
-     */
-    private $browser;
+    private KernelBrowser $browser;
 
-    /**
-     * @var TestDataCollection
-     */
-    private $ids;
+    private TestDataCollection $ids;
 
     protected function setUp(): void
     {
@@ -54,6 +51,14 @@ class ShippingMethodRouteTest extends TestCase
                     ],
                 ],
             ],
+            [
+                'id' => $this->ids->get('shipping3'),
+                'salesChannels' => [
+                    [
+                        'id' => $this->ids->get('sales-channel'),
+                    ],
+                ],
+            ],
         ];
 
         $this->getContainer()->get('shipping_method.repository')
@@ -65,19 +70,19 @@ class ShippingMethodRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/shipping-method',
+                '/store-api/shipping-method',
                 [
                 ]
             );
 
         $response = json_decode($this->browser->getResponse()->getContent(), true);
 
-        $ids = array_column($response, 'id');
+        $ids = array_column($response['elements'], 'id');
 
-        static::assertCount(2, $response);
+        static::assertSame(3, $response['total']);
         static::assertContains($this->ids->get('shipping'), $ids);
         static::assertContains($this->ids->get('shipping2'), $ids);
-        static::assertEmpty($response[0]['availabilityRule']);
+        static::assertEmpty($response['elements'][0]['availabilityRule']);
     }
 
     public function testIncludes(): void
@@ -85,7 +90,7 @@ class ShippingMethodRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/shipping-method',
+                '/store-api/shipping-method',
                 [
                     'includes' => [
                         'shipping_method' => [
@@ -97,9 +102,9 @@ class ShippingMethodRouteTest extends TestCase
 
         $response = json_decode($this->browser->getResponse()->getContent(), true);
 
-        static::assertCount(2, $response);
-        static::assertArrayHasKey('name', $response[0]);
-        static::assertArrayNotHasKey('id', $response[0]);
+        static::assertSame(3, $response['total']);
+        static::assertArrayHasKey('name', $response['elements'][0]);
+        static::assertArrayNotHasKey('id', $response['elements'][0]);
     }
 
     public function testAssociations(): void
@@ -107,7 +112,7 @@ class ShippingMethodRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/shipping-method',
+                '/store-api/shipping-method',
                 [
                     'associations' => [
                         'availabilityRule' => [],
@@ -117,8 +122,23 @@ class ShippingMethodRouteTest extends TestCase
 
         $response = json_decode($this->browser->getResponse()->getContent(), true);
 
-        static::assertCount(2, $response);
-        static::assertNotEmpty($response[0]['availabilityRule']);
+        static::assertSame(3, $response['total']);
+        static::assertNotEmpty($response['elements'][0]['availabilityRule']);
+    }
+
+    public function testOnlyAvailable(): void
+    {
+        $this->browser
+            ->request(
+                'POST',
+                '/store-api/shipping-method?onlyAvailable=1',
+            );
+
+        $response = json_decode($this->browser->getResponse()->getContent(), true);
+
+        static::assertSame(2, $response['total']);
+        static::assertCount(2, $response['elements']);
+        static::assertNotContains($this->ids->get('shipping3'), array_column($response['elements'], 'id'));
     }
 
     private function createData(): void
@@ -133,6 +153,16 @@ class ShippingMethodRouteTest extends TestCase
                     'id' => $this->ids->create('rule'),
                     'name' => 'asd',
                     'priority' => 2,
+                    'conditions' => [
+                        [
+                            'type' => 'dateRange',
+                            'value' => [
+                                'fromDate' => '2000-06-07T11:37:51+02:00',
+                                'toDate' => '2099-06-07T11:37:51+02:00',
+                                'useTime' => false,
+                            ],
+                        ],
+                    ],
                 ],
                 'deliveryTime' => [
                     'id' => Uuid::randomHex(),
@@ -151,6 +181,44 @@ class ShippingMethodRouteTest extends TestCase
                     'id' => $this->ids->create('rule2'),
                     'name' => 'asd',
                     'priority' => 2,
+                    'conditions' => [
+                        [
+                            'type' => 'dateRange',
+                            'value' => [
+                                'fromDate' => '2000-06-07T11:37:51+02:00',
+                                'toDate' => '2099-06-07T11:37:51+02:00',
+                                'useTime' => false,
+                            ],
+                        ],
+                    ],
+                ],
+                'deliveryTime' => [
+                    'id' => Uuid::randomHex(),
+                    'name' => 'testDeliveryTime',
+                    'min' => 1,
+                    'max' => 90,
+                    'unit' => DeliveryTimeEntity::DELIVERY_TIME_DAY,
+                ],
+            ],
+            [
+                'id' => $this->ids->create('shipping3'),
+                'active' => true,
+                'bindShippingfree' => false,
+                'name' => 'test',
+                'availabilityRule' => [
+                    'id' => $this->ids->create('rule3'),
+                    'name' => 'asd',
+                    'priority' => 2,
+                    'conditions' => [
+                        [
+                            'type' => 'dateRange',
+                            'value' => [
+                                'fromDate' => '2000-06-07T11:37:51+02:00',
+                                'toDate' => '2000-06-07T11:37:51+02:00',
+                                'useTime' => false,
+                            ],
+                        ],
+                    ],
                 ],
                 'deliveryTime' => [
                     'id' => Uuid::randomHex(),

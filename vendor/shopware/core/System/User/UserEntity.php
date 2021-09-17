@@ -8,6 +8,7 @@ use Shopware\Core\Content\Media\MediaCollection;
 use Shopware\Core\Content\Media\MediaEntity;
 use Shopware\Core\Framework\Api\Acl\Role\AclRoleCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopware\Core\System\Locale\LocaleEntity;
 use Shopware\Core\System\StateMachine\Aggregation\StateMachineHistory\StateMachineHistoryCollection;
@@ -18,6 +19,7 @@ use Shopware\Core\System\User\Aggregate\UserRecovery\UserRecoveryEntity;
 class UserEntity extends Entity
 {
     use EntityIdTrait;
+    use EntityCustomFieldsTrait;
 
     /**
      * @var string
@@ -125,11 +127,6 @@ class UserEntity extends Entity
     protected $lastUpdatedPasswordAt;
 
     /**
-     * @var array|null
-     */
-    protected $customFields;
-
-    /**
      * @var OrderCollection|null
      */
     protected $createdOrders;
@@ -138,6 +135,8 @@ class UserEntity extends Entity
      * @var OrderCollection|null
      */
     protected $updatedOrders;
+
+    protected string $timeZone;
 
     public function getStateMachineHistoryEntries(): ?StateMachineHistoryCollection
     {
@@ -289,16 +288,6 @@ class UserEntity extends Entity
         $this->configs = $configs;
     }
 
-    public function getCustomFields(): ?array
-    {
-        return $this->customFields;
-    }
-
-    public function setCustomFields(?array $customFields): void
-    {
-        $this->customFields = $customFields;
-    }
-
     public function getRecoveryUser(): ?UserRecoveryEntity
     {
         return $this->recoveryUser;
@@ -377,5 +366,15 @@ class UserEntity extends Entity
     public function setLastUpdatedPasswordAt(\DateTimeInterface $lastUpdatedPasswordAt): void
     {
         $this->lastUpdatedPasswordAt = $lastUpdatedPasswordAt;
+    }
+
+    public function getTimeZone(): string
+    {
+        return $this->timeZone;
+    }
+
+    public function setTimeZone(string $timeZone): void
+    {
+        $this->timeZone = $timeZone;
     }
 }

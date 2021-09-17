@@ -12,11 +12,6 @@ function createWrapper(privileges = []) {
                 params: {
                     id: 'id'
                 }
-            },
-            $tc: (translationPath) => translationPath,
-            $t: () => {},
-            $device: {
-                getSystemKey: () => 'CTRL'
             }
         },
         provide: {
@@ -47,6 +42,9 @@ function createWrapper(privileges = []) {
             },
             acl: {
                 can: key => (key ? privileges.includes(key) : true)
+            },
+            customFieldDataProviderService: {
+                getCustomFieldSets: () => Promise.resolve([])
             }
         },
         stubs: {
@@ -73,7 +71,8 @@ function createWrapper(privileges = []) {
             'sw-language-info': true,
             'sw-help-text': true,
             'sw-multi-select': true,
-            'sw-entity-single-select': true
+            'sw-entity-single-select': true,
+            'sw-alert': true
         }
     });
 }
@@ -147,6 +146,9 @@ describe('src/module/sw-settings-number-range/page/sw-settings-number-range-deta
 
             expect(el.attributes().disabled).toBeUndefined();
         });
+
+        const numberRangeType = wrapper.find('#numberRangeTypes');
+        expect(numberRangeType.attributes().disabled).toBeTruthy();
     });
 
     it('should not be able to edit the number range', async () => {

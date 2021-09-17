@@ -9,29 +9,39 @@ Component.register('sw-extension-permissions-modal', {
     props: {
         permissions: {
             type: Object,
-            required: true
+            required: true,
+        },
+        domains: {
+            type: Array,
+            required: false,
+            default: () => [],
         },
         extensionLabel: {
             type: String,
-            required: true
+            required: true,
         },
         actionLabel: {
             type: String,
             required: false,
-            default: null
-        }
+            default: null,
+        },
     },
 
     data() {
         return {
             showDetailsModal: false,
-            selectedEntity: ''
+            showDomainsModal: false,
+            selectedEntity: '',
         };
     },
 
     computed: {
         modalTitle() {
-            return this.$t('sw-extension-store.component.sw-extension-permissions-modal.title', { extensionLabel: this.extensionLabel });
+            return this.$tc(
+                'sw-extension-store.component.sw-extension-permissions-modal.title',
+                1,
+                { extensionLabel: this.extensionLabel },
+            );
         },
 
         permissionsWithGroupedOperations() {
@@ -45,7 +55,15 @@ Component.register('sw-extension-permissions-modal', {
                     }, {});
                     return [category, permissions];
                 }));
-        }
+        },
+
+        domainsList() {
+            if (this.domains && Array.isArray(this.domains)) {
+                return this.domains;
+            }
+
+            return [];
+        },
     },
 
     methods: {
@@ -69,6 +87,10 @@ Component.register('sw-extension-permissions-modal', {
         closeDetailsModal() {
             this.selectedEntity = '';
             this.showDetailsModal = false;
-        }
-    }
+        },
+
+        toggleDomainsModal(shouldOpen) {
+            this.showDomainsModal = !!shouldOpen;
+        },
+    },
 });

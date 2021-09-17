@@ -1,8 +1,17 @@
-/// <reference types="Cypress" />
+// / <reference types="Cypress" />
 
 import ProductPageObject from '../../../support/pages/module/sw-product.page-object';
 
+/**
+ * @deprecated tag:v6.5.0 - will be removed, use `sw-promotion-v2` instead
+ * @feature-deprecated (flag:FEATURE_NEXT_13810)
+ */
 describe('Promotion: Test crud operations', () => {
+    // eslint-disable-next-line no-undef
+    before(() => {
+        cy.onlyOnFeature('FEATURE_NEXT_13810');
+    });
+
     beforeEach(() => {
         cy.setToInitialState()
             .then(() => {
@@ -32,9 +41,9 @@ describe('Promotion: Test crud operations', () => {
             method: 'post'
         }).as('saveData');
         cy.route({
-            url: `${Cypress.env('apiPath')}/search/promotion/**/discounts`,
-            method: 'post'
-        }).as('saveDiscount');
+            url: `${Cypress.env('apiPath')}/promotion/**`,
+            method: 'patch'
+        }).as('patchPromotion');
 
         cy.get('a[href="#/sw/promotion/create"]').click();
 
@@ -78,7 +87,7 @@ describe('Promotion: Test crud operations', () => {
 
         // Save final promotion
         cy.get('.sw-promotion-detail__save-action').click();
-        cy.wait('@saveDiscount').then((xhr) => {
+        cy.wait('@patchPromotion').then((xhr) => {
             expect(xhr).to.have.property('status', 200);
         });
 

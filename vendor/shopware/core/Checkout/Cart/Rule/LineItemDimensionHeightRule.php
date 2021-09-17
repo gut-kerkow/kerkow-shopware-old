@@ -14,15 +14,9 @@ use Symfony\Component\Validator\Constraints\Type;
 
 class LineItemDimensionHeightRule extends Rule
 {
-    /**
-     * @var float
-     */
-    protected $amount;
+    protected ?float $amount;
 
-    /**
-     * @var string
-     */
-    protected $operator;
+    protected string $operator;
 
     public function __construct(string $operator = self::OPERATOR_EQ, ?float $amount = null)
     {
@@ -47,7 +41,7 @@ class LineItemDimensionHeightRule extends Rule
             return false;
         }
 
-        foreach ($scope->getCart()->getLineItems() as $lineItem) {
+        foreach ($scope->getCart()->getLineItems()->getFlat() as $lineItem) {
             if ($this->matchWeightDimension($lineItem)) {
                 return true;
             }
@@ -58,8 +52,7 @@ class LineItemDimensionHeightRule extends Rule
 
     public function getConstraints(): array
     {
-        return [
-            'amount' => [new NotBlank(), new Type('numeric')],
+        $constraints = [
             'operator' => [
                 new NotBlank(),
                 new Choice(
@@ -70,10 +63,19 @@ class LineItemDimensionHeightRule extends Rule
                         self::OPERATOR_EQ,
                         self::OPERATOR_GT,
                         self::OPERATOR_LT,
+                        self::OPERATOR_EMPTY,
                     ]
                 ),
             ],
         ];
+
+        if ($this->operator === self::OPERATOR_EMPTY) {
+            return $constraints;
+        }
+
+        $constraints['amount'] = [new NotBlank(), new Type('numeric')];
+
+        return $constraints;
     }
 
     /**
@@ -90,12 +92,11 @@ class LineItemDimensionHeightRule extends Rule
         $height = $deliveryInformation->getHeight();
 
         if ($height === null) {
-            return false;
+            return $this->operator === self::OPERATOR_EMPTY;
         }
 
         $this->amount = (float) $this->amount;
 
-        /* @var float $height */
         switch ($this->operator) {
             case self::OPERATOR_GTE:
                 return FloatComparator::greaterThanOrEquals($height, $this->amount);
@@ -114,6 +115,9 @@ class LineItemDimensionHeightRule extends Rule
 
             case self::OPERATOR_NEQ:
                 return FloatComparator::notEquals($height, $this->amount);
+
+            case self::OPERATOR_EMPTY:
+                return false;
 
             default:
                 throw new UnsupportedOperatorException($this->operator, self::class);

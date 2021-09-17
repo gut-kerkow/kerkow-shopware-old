@@ -4,18 +4,19 @@ import errorConfiguration from './error.cfg.json';
 import './sw-product-detail.scss';
 
 const { Component, Mixin } = Shopware;
-const { Criteria } = Shopware.Data;
-const { hasOwnProperty } = Shopware.Utils.object;
+const { Criteria, ChangesetGenerator } = Shopware.Data;
+const { hasOwnProperty, cloneDeep } = Shopware.Utils.object;
 const { mapPageErrors, mapState, mapGetters } = Shopware.Component.getComponentHelper();
+const type = Shopware.Utils.types;
 
 Component.register('sw-product-detail', {
     template,
 
-    inject: ['mediaService', 'repositoryFactory', 'numberRangeService', 'seoUrlService', 'acl', 'feature'],
+    inject: ['mediaService', 'repositoryFactory', 'numberRangeService', 'seoUrlService', 'acl'],
 
     mixins: [
         Mixin.getByName('notification'),
-        Mixin.getByName('placeholder')
+        Mixin.getByName('placeholder'),
     ],
 
     shortcuts: {
@@ -23,30 +24,30 @@ Component.register('sw-product-detail', {
             active() {
                 return this.acl.can('product.editor');
             },
-            method: 'onSave'
+            method: 'onSave',
         },
-        ESCAPE: 'onCancel'
+        ESCAPE: 'onCancel',
     },
 
     props: {
         productId: {
             type: String,
             required: false,
-            default: null
-        }
+            default: null,
+        },
     },
 
     data() {
         return {
             productNumberPreview: '',
             isSaveSuccessful: false,
-            cloning: false
+            cloning: false,
         };
     },
 
     metaInfo() {
         return {
-            title: this.$createTitle(this.identifier)
+            title: this.$createTitle(this.identifier),
         };
     },
 
@@ -54,7 +55,9 @@ Component.register('sw-product-detail', {
         ...mapState('swProductDetail', [
             'product',
             'parentProduct',
-            'localMode'
+            'localMode',
+            'advancedModeSetting',
+            'modeSettings',
         ]),
 
         ...mapGetters('swProductDetail', [
@@ -62,10 +65,16 @@ Component.register('sw-product-detail', {
             'isLoading',
             'isChild',
             'defaultCurrency',
-            'defaultFeatureSet'
+            'defaultFeatureSet',
+            'showModeSetting',
+            'advanceModeEnabled',
         ]),
 
         ...mapPageErrors(errorConfiguration),
+
+        ...mapState('cmsPageState', [
+            'currentPage',
+        ]),
 
         identifier() {
             return this.productTitle;
@@ -77,12 +86,20 @@ Component.register('sw-product-detail', {
                 return this.getInheritTitle();
             }
 
+            if (!this.$i18n) {
+                return '';
+            }
+
             // return name
             return this.placeholder(this.product, 'name', this.$tc('sw-product.detail.textHeadline'));
         },
 
         productRepository() {
             return this.repositoryFactory.create('product');
+        },
+
+        syncRepository() {
+            return this.repositoryFactory.create('product', null, { useSync: true });
         },
 
         currencyRepository() {
@@ -101,7 +118,7 @@ Component.register('sw-product-detail', {
             if (this.product && this.product.media) {
                 return this.repositoryFactory.create(
                     this.product.media.entity,
-                    this.product.media.source
+                    this.product.media.source,
                 );
             }
             return null;
@@ -111,6 +128,22 @@ Component.register('sw-product-detail', {
             return this.repositoryFactory.create('product_feature_set');
         },
 
+        currentUser() {
+            return Shopware.State.get('session').currentUser;
+        },
+
+        userModeSettingsRepository() {
+            return this.repositoryFactory.create('user_config');
+        },
+
+        userModeSettingsCriteria() {
+            const criteria = new Criteria();
+            criteria.addFilter(Criteria.equals('key', 'mode.setting.advancedModeSettings'));
+            criteria.addFilter(Criteria.equals('userId', this.currentUser && this.currentUser.id));
+
+            return criteria;
+        },
+
         productCriteria() {
             const criteria = new Criteria();
 
@@ -118,7 +151,7 @@ Component.register('sw-product-detail', {
                 .addSorting(Criteria.sort('position', 'ASC'));
 
             criteria.getAssociation('properties')
-                .addSorting(Criteria.sort('name', 'ASC'));
+                .addSorting(Criteria.sort('name', 'ASC', true));
 
             criteria.getAssociation('prices')
                 .addSorting(Criteria.sort('quantityStart', 'ASC', true));
@@ -149,11 +182,12 @@ Component.register('sw-product-detail', {
                 .addAssociation('mainCategories')
                 .addAssociation('options.group')
                 .addAssociation('customFieldSets')
+                .addAssociation('featureSet')
+                .addAssociation('cmsPage')
                 .addAssociation('featureSet');
 
-            if (this.feature.isActive('FEATURE_NEXT_10078')) {
-                criteria.addAssociation('cmsPage');
-            }
+            criteria.getAssociation('manufacturer')
+                .addAssociation('media');
 
             return criteria;
         },
@@ -179,21 +213,118 @@ Component.register('sw-product-detail', {
             return criteria;
         },
 
+        taxCriteria() {
+            const criteria = new Criteria(1, 500);
+            criteria.addSorting(Criteria.sort('position'));
+
+            return criteria;
+        },
+
         tooltipSave() {
             const systemKey = this.$device.getSystemKey();
 
             return {
                 message: `${systemKey} + S`,
-                appearance: 'light'
+                appearance: 'light',
             };
         },
 
         tooltipCancel() {
             return {
                 message: 'ESC',
-                appearance: 'light'
+                appearance: 'light',
             };
-        }
+        },
+
+        getModeSettingGeneralTab() {
+            return [
+                {
+                    key: 'general_information',
+                    label: 'sw-product.detailBase.cardTitleProductInfo',
+                    enabled: true,
+                    name: 'general',
+                },
+                {
+                    key: 'prices',
+                    label: 'sw-product.detailBase.cardTitlePrices',
+                    enabled: true,
+                    name: 'general',
+                },
+                {
+                    key: 'deliverability',
+                    label: 'sw-product.detailBase.cardTitleDeliverabilityInfo',
+                    enabled: true,
+                    name: 'general',
+                },
+                {
+                    key: 'visibility_structure',
+                    label: 'sw-product.detailBase.cardTitleAssignment',
+                    enabled: true,
+                    name: 'general',
+                },
+                {
+                    key: 'media',
+                    label: 'sw-product.detailBase.cardTitleMedia',
+                    enabled: true,
+                    name: 'general',
+                },
+                {
+                    key: 'labelling',
+                    label: 'sw-product.detailBase.cardTitleSettings',
+                    enabled: true,
+                    name: 'general',
+                },
+            ];
+        },
+
+        getModeSettingSpecificationsTab() {
+            return [
+                {
+                    key: 'measures_packaging',
+                    label: 'sw-product.specifications.cardTitleMeasuresPackaging',
+                    enabled: true,
+                    name: 'specifications',
+                },
+                {
+                    key: 'properties',
+                    label: 'sw-product.specifications.cardTitleProperties',
+                    enabled: true,
+                    name: 'specifications',
+                },
+                {
+                    key: 'essential_characteristics',
+                    label: 'sw-product.specifications.cardTitleEssentialCharacteristics',
+                    enabled: true,
+                    name: 'specifications',
+                },
+                {
+                    key: 'custom_fields',
+                    label: 'sw-product.specifications.cardTitleCustomFields',
+                    enabled: true,
+                    name: 'specifications',
+                },
+            ];
+        },
+
+        showAdvanceModeSetting() {
+            if (this.isChild) {
+                return false;
+            }
+
+            const routes = [
+                'sw.product.detail.base',
+                'sw.product.detail.specifications',
+            ];
+
+            return routes.includes(this.$route.name);
+        },
+    },
+
+    watch: {
+        productId() {
+            this.destroyedComponent();
+            this.createdComponent();
+        },
     },
 
     beforeCreate() {
@@ -212,13 +343,6 @@ Component.register('sw-product-detail', {
         this.destroyedComponent();
     },
 
-    watch: {
-        productId() {
-            this.destroyedComponent();
-            this.createdComponent();
-        }
-    },
-
     methods: {
         createdComponent() {
             Shopware.State.dispatch('cmsPageState/resetCmsPageState');
@@ -234,17 +358,29 @@ Component.register('sw-product-detail', {
             // initialize default state
             this.initState();
 
+            /**
+             * @deprecated tag:v6.5.0 - The event listener "sidebar-toggle-open" will be removed because
+             * the function that called it was deleted.
+             */
             this.$root.$on('sidebar-toggle-open', this.openMediaSidebar);
+
             this.$root.$on('media-remove', (mediaId) => {
                 this.removeMediaItem(mediaId);
             });
             this.$root.$on('product-reload', () => {
                 this.loadAll();
             });
+
+            this.initAdvancedModeSettings();
         },
 
         destroyedComponent() {
+            /**
+             * @deprecated tag:v6.5.0 - The event listener "sidebar-toggle-open" will be removed because
+             * the function that called it was deleted.
+             */
             this.$root.$off('sidebar-toggle-open');
+
             this.$root.$off('media-remove');
             this.$root.$off('product-reload');
         },
@@ -267,6 +403,80 @@ Component.register('sw-product-detail', {
             });
         },
 
+        initAdvancedModeSettings() {
+            Shopware.State.commit('swProductDetail/setAdvancedModeSetting', this.getAdvancedModeDefaultSetting());
+
+            this.getAdvancedModeSetting();
+        },
+
+        createUserModeSetting() {
+            const newModeSettings = this.userModeSettingsRepository.create();
+            newModeSettings.key = 'mode.setting.advancedModeSettings';
+            newModeSettings.userId = this.currentUser && this.currentUser.id;
+            return newModeSettings;
+        },
+
+        getAdvancedModeDefaultSetting() {
+            const defaultSettings = this.createUserModeSetting();
+            defaultSettings.value = {
+                advancedMode: {
+                    label: 'sw-product.general.textAdvancedMode',
+                    enabled: true,
+                },
+                settings: [
+                    ...this.getModeSettingGeneralTab,
+                    ...this.getModeSettingSpecificationsTab,
+                ],
+            };
+            return defaultSettings;
+        },
+
+        getAdvancedModeSetting() {
+            return this.userModeSettingsRepository.search(this.userModeSettingsCriteria)
+                .then((items) => {
+                    if (!items.total) {
+                        return;
+                    }
+
+                    Shopware.State.commit('swProductDetail/setAdvancedModeSetting', items.first());
+                    Shopware.State.commit('swProductDetail/setModeSettings', this.changeModeSettings());
+                });
+        },
+
+        saveAdvancedMode() {
+            Shopware.State.commit('swProductDetail/setLoading', ['advancedMode', true]);
+            this.userModeSettingsRepository.save(this.advancedModeSetting)
+                .then(() => {
+                    this.getAdvancedModeSetting().then(() => {
+                        Shopware.State.commit('swProductDetail/setLoading', ['advancedMode', false]);
+                    });
+                })
+                .catch(() => {
+                    this.createNotificationError({
+                        message: this.$tc('global.notification.unspecifiedSaveErrorMessage'),
+                    });
+                });
+        },
+
+        onChangeSetting() {
+            Shopware.State.commit('swProductDetail/setAdvancedModeSetting', this.advancedModeSetting);
+            this.saveAdvancedMode();
+        },
+
+        changeModeSettings() {
+            const enabledModeItems = this.advancedModeSetting.value.settings.filter((item) => item.enabled);
+            if (!enabledModeItems.length) {
+                return [];
+            }
+
+            return enabledModeItems.map(item => item.key);
+        },
+
+        onChangeSettingItem() {
+            Shopware.State.commit('swProductDetail/setModeSettings', this.changeModeSettings());
+            this.saveAdvancedMode();
+        },
+
         loadState() {
             Shopware.State.commit('swProductDetail/setLocalMode', false);
             Shopware.State.commit('swProductDetail/setProductId', this.productId);
@@ -280,7 +490,7 @@ Component.register('sw-product-detail', {
                 this.loadProduct(),
                 this.loadCurrencies(),
                 this.loadTaxes(),
-                this.loadAttributeSet()
+                this.loadAttributeSet(),
             ]);
         },
 
@@ -292,7 +502,7 @@ Component.register('sw-product-detail', {
             Shopware.State.commit('swProductDetail/setLoading', ['product', true]);
 
             // create empty product
-            Shopware.State.commit('swProductDetail/setProduct', this.productRepository.create(Shopware.Context.api));
+            Shopware.State.commit('swProductDetail/setProduct', this.productRepository.create());
             Shopware.State.commit('swProductDetail/setProductId', this.product.id);
 
             // fill empty data
@@ -306,21 +516,21 @@ Component.register('sw-product-detail', {
                 this.loadCurrencies(),
                 this.loadTaxes(),
                 this.loadAttributeSet(),
-                this.loadDefaultFeatureSet()
+                this.loadDefaultFeatureSet(),
             ]).then(() => {
                 // set default product price and empty purchase price
                 this.product.price = [{
                     currencyId: this.defaultCurrency.id,
                     net: null,
                     linked: true,
-                    gross: null
+                    gross: null,
                 }];
 
                 this.product.purchasePrices = [{
                     currencyId: this.defaultCurrency.id,
                     net: 0,
                     linked: true,
-                    gross: 0
+                    gross: 0,
                 }];
 
                 if (this.defaultFeatureSet && this.defaultFeatureSet.length > 0) {
@@ -337,7 +547,7 @@ Component.register('sw-product-detail', {
             this.productRepository.get(
                 this.productId || this.product.id,
                 Shopware.Context.api,
-                this.productCriteria
+                this.productCriteria,
             ).then((res) => {
                 Shopware.State.commit('swProductDetail/setProduct', res);
 
@@ -365,7 +575,7 @@ Component.register('sw-product-detail', {
         loadCurrencies() {
             Shopware.State.commit('swProductDetail/setLoading', ['currencies', true]);
 
-            return this.currencyRepository.search(new Criteria(1, 500), Shopware.Context.api).then((res) => {
+            return this.currencyRepository.search(new Criteria(1, 500)).then((res) => {
                 Shopware.State.commit('swProductDetail/setCurrencies', res);
             }).then(() => {
                 Shopware.State.commit('swProductDetail/setLoading', ['currencies', false]);
@@ -375,7 +585,7 @@ Component.register('sw-product-detail', {
         loadTaxes() {
             Shopware.State.commit('swProductDetail/setLoading', ['taxes', true]);
 
-            return this.taxRepository.search(new Criteria(1, 500), Shopware.Context.api).then((res) => {
+            return this.taxRepository.search(this.taxCriteria).then((res) => {
                 Shopware.State.commit('swProductDetail/setTaxes', res);
             }).then(() => {
                 Shopware.State.commit('swProductDetail/setLoading', ['taxes', false]);
@@ -385,9 +595,9 @@ Component.register('sw-product-detail', {
         loadAttributeSet() {
             Shopware.State.commit('swProductDetail/setLoading', ['customFieldSets', true]);
 
-            return this.customFieldSetRepository.search(this.customFieldSetCriteria, Shopware.Context.api).then((res) => {
+            return this.customFieldSetRepository.search(this.customFieldSetCriteria).then((res) => {
                 Shopware.State.commit('swProductDetail/setAttributeSet', res);
-            }).then(() => {
+            }).finally(() => {
                 Shopware.State.commit('swProductDetail/setLoading', ['customFieldSets', false]);
             });
         },
@@ -395,7 +605,7 @@ Component.register('sw-product-detail', {
         loadDefaultFeatureSet() {
             Shopware.State.commit('swProductDetail/setLoading', ['defaultFeatureSet', true]);
 
-            return this.featureSetRepository.search(this.defaultFeatureSetCriteria, Shopware.Context.api).then((res) => {
+            return this.featureSetRepository.search(this.defaultFeatureSetCriteria).then((res) => {
                 Shopware.State.commit('swProductDetail/setDefaultFeatureSet', res);
             }).then(() => {
                 Shopware.State.commit('swProductDetail/setLoading', ['defaultFeatureSet', false]);
@@ -403,7 +613,7 @@ Component.register('sw-product-detail', {
         },
 
         abortOnLanguageChange() {
-            return Shopware.State.getters['swProductDetail/hasChanges'];
+            return this.productRepository.hasChanges(this.product);
         },
 
         saveOnLanguageChange() {
@@ -415,6 +625,10 @@ Component.register('sw-product-detail', {
             this.initState();
         },
 
+        /**
+         * @deprecated tag:v6.5.0 - The method "openMediaSidebar" will be removed because
+         * the function that called it was deleted.
+         */
         openMediaSidebar() {
             // Check if we have a reference to the component before calling a method
             if (!hasOwnProperty(this.$refs, 'mediaSidebarItem')
@@ -435,7 +649,7 @@ Component.register('sw-product-detail', {
         onSave() {
             if (!this.validateProductPurchase()) {
                 this.createNotificationError({
-                    message: this.$tc('sw-product.detail.errorMinMaxPurchase')
+                    message: this.$tc('sw-product.detail.errorMinMaxPurchase'),
                 });
 
                 return new Promise((res) => res());
@@ -454,6 +668,12 @@ Component.register('sw-product-detail', {
 
 
             this.isSaveSuccessful = false;
+
+            const pageOverrides = this.getCmsPageOverrides();
+
+            if (type.isPlainObject(pageOverrides)) {
+                this.product.slotConfig = cloneDeep(pageOverrides);
+            }
 
             return this.saveProduct().then(this.onSaveFinished);
         },
@@ -533,14 +753,32 @@ Component.register('sw-product-detail', {
                     }
 
                     default: {
+                        const errorCode = response?.response?.data?.errors?.[0]?.code;
+
+                        if (errorCode === 'CONTENT__DUPLICATE_PRODUCT_NUMBER') {
+                            const titleSaveError = this.$tc('global.default.error');
+                            const messageSaveError = this.$t(
+                                'sw-product.notification.notificationSaveErrorProductNoAlreadyExists', {
+                                    productNo: response.response.data.errors[0].meta.parameters.number,
+                                },
+                            );
+
+                            this.createNotificationError({
+                                title: titleSaveError,
+                                message: messageSaveError,
+                            });
+                            break;
+                        }
+
+                        const errorDetail = response?.response?.data?.errors?.[0]?.detail;
                         const titleSaveError = this.$tc('global.default.error');
-                        const messageSaveError = this.$tc(
-                            'global.notification.notificationSaveErrorMessageRequiredFieldsInvalid'
+                        const messageSaveError = errorDetail ?? this.$tc(
+                            'global.notification.notificationSaveErrorMessageRequiredFieldsInvalid',
                         );
 
                         this.createNotificationError({
                             title: titleSaveError,
-                            message: messageSaveError
+                            message: messageSaveError,
                         });
                         break;
                     }
@@ -565,7 +803,7 @@ Component.register('sw-product-detail', {
                 }
 
                 // save product
-                this.productRepository.save(this.product, Shopware.Context.api).then(() => {
+                this.syncRepository.save(this.product).then(() => {
                     this.loadAll().then(() => {
                         Shopware.State.commit('swProductDetail/setLoading', ['product', false]);
 
@@ -578,10 +816,14 @@ Component.register('sw-product-detail', {
             });
         },
 
+        /**
+         * @deprecated tag:v6.5.0 - The method "onAddItemToProduct" will be removed because
+         * its relevant view was removed
+         */
         onAddItemToProduct(mediaItem) {
             if (this._checkIfMediaIsAlreadyUsed(mediaItem.id)) {
                 this.createNotificationInfo({
-                    message: this.$tc('sw-product.mediaForm.errorMediaItemDuplicated')
+                    message: this.$tc('sw-product.mediaForm.errorMediaItemDuplicated'),
                 });
                 return false;
             }
@@ -592,7 +834,7 @@ Component.register('sw-product-detail', {
             }).catch(() => {
                 this.createNotificationError({
                     title: this.$tc('sw-product.mediaForm.errorHeadline'),
-                    message: this.$tc('sw-product.mediaForm.errorMediaItemDuplicated')
+                    message: this.$tc('sw-product.mediaForm.errorMediaItemDuplicated'),
                 });
 
                 return false;
@@ -600,6 +842,10 @@ Component.register('sw-product-detail', {
             return true;
         },
 
+        /**
+         * @deprecated tag:v6.5.0 - The method "addMedia" will be removed because
+         * the function that called it was deleted.
+         */
         addMedia(mediaItem) {
             Shopware.State.commit('swProductDetail/setLoading', ['media', true]);
 
@@ -610,8 +856,12 @@ Component.register('sw-product-detail', {
                 return Promise.reject('A media item with this id exists');
             }
 
-            const newMedia = this.mediaRepository.create(Shopware.Context.api);
+            const newMedia = this.mediaRepository.create();
             newMedia.mediaId = mediaItem.id;
+            newMedia.media = {
+                url: mediaItem.url,
+                id: mediaItem.id,
+            };
 
             return new Promise((resolve) => {
                 // if no other media exists
@@ -652,6 +902,10 @@ Component.register('sw-product-detail', {
             }
         },
 
+        /**
+         * @deprecated tag:v6.5.0 - The method "_checkIfMediaIsAlreadyUsed" will be removed because
+         * the function that called it was deleted.
+         */
         _checkIfMediaIsAlreadyUsed(mediaId) {
             return this.product.media.some((productMedia) => {
                 return productMedia.mediaId === mediaId;
@@ -691,6 +945,74 @@ Component.register('sw-product-detail', {
             }
 
             return true;
-        }
-    }
+        },
+
+        getCmsPageOverrides() {
+            if (this.currentPage === null) {
+                return null;
+            }
+
+            this.deleteSpecifcKeys(this.currentPage.sections);
+
+            const changesetGenerator = new ChangesetGenerator();
+            const { changes } = changesetGenerator.generate(this.currentPage);
+
+            const slotOverrides = {};
+            if (changes === null) {
+                return slotOverrides;
+            }
+
+            if (type.isArray(changes.sections)) {
+                changes.sections.forEach((section) => {
+                    if (type.isArray(section.blocks)) {
+                        section.blocks.forEach((block) => {
+                            if (type.isArray(block.slots)) {
+                                block.slots.forEach((slot) => {
+                                    slotOverrides[slot.id] = slot.config;
+                                });
+                            }
+                        });
+                    }
+                });
+            }
+
+            return slotOverrides;
+        },
+
+        deleteSpecifcKeys(sections) {
+            if (!sections) {
+                return;
+            }
+
+            sections.forEach((section) => {
+                if (!section.blocks) {
+                    return;
+                }
+
+                section.blocks.forEach((block) => {
+                    if (!block.slots) {
+                        return;
+                    }
+
+                    block.slots.forEach((slot) => {
+                        if (!slot.config) {
+                            return;
+                        }
+
+                        Object.values(slot.config).forEach((configField) => {
+                            if (configField.entity) {
+                                delete configField.entity;
+                            }
+                            if (configField.required) {
+                                delete configField.required;
+                            }
+                            if (configField.type) {
+                                delete configField.type;
+                            }
+                        });
+                    });
+                });
+            });
+        },
+    },
 });

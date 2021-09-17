@@ -69,33 +69,43 @@ class ChangeEmailRoute extends AbstractChangeEmailRoute
      * @Since("6.2.0.0")
      * @OA\Post(
      *      path="/account/change-email",
-     *      summary="Change email",
+     *      summary="Change the customer's email address",
+     *      description="Changes a customer's email address to a new email address, using their current password as a validation.",
      *      operationId="changeEmail",
-     *      tags={"Store API", "Account"},
+     *      tags={"Store API", "Profile"},
      *      @OA\RequestBody(
      *          required=true,
      *          @OA\JsonContent(
-     *              @OA\Property(property="email", description="New Email", type="string"),
-     *              @OA\Property(property="emailConfirmation", description="New Email", type="string"),
-     *              @OA\Property(property="password", description="Current password", type="string")
+     *              required={
+     *                  "email",
+     *                  "emailConfirmation",
+     *                  "password"
+     *              },
+     *              @OA\Property(
+     *                  property="email",
+     *                  description="New email address. Has to be unique amongst all customers",
+     *                  type="string"),
+     *              @OA\Property(
+     *                  property="emailConfirmation",
+     *                  description="Confirmation of the new email address.",
+     *                  type="string"),
+     *              @OA\Property(
+     *                  property="password",
+     *                  description="Customer's current password",
+     *                  type="string")
      *          )
      *      ),
      *      @OA\Response(
      *          response="200",
-     *          description="Successfully saved",
+     *          description="Returns a success response indicating a successful update",
      *          @OA\JsonContent(ref="#/components/schemas/SuccessResponse")
      *     )
      * )
      * @LoginRequired()
-     * @Route(path="/store-api/v{version}/account/change-email", name="store-api.account.change-email", methods={"POST"})
+     * @Route(path="/store-api/account/change-email", name="store-api.account.change-email", methods={"POST"})
      */
-    public function change(RequestDataBag $requestDataBag, SalesChannelContext $context, ?CustomerEntity $customer = null): SuccessResponse
+    public function change(RequestDataBag $requestDataBag, SalesChannelContext $context, CustomerEntity $customer): SuccessResponse
     {
-        /* @deprecated tag:v6.4.0 - Parameter $customer will be mandatory when using with @LoginRequired() */
-        if (!$customer) {
-            $customer = $context->getCustomer();
-        }
-
         $this->validateEmail($requestDataBag, $context);
 
         $customerData = [
@@ -123,16 +133,16 @@ class ChangeEmailRoute extends AbstractChangeEmailRoute
             )
             ->add('password', new CustomerPasswordMatches(['context' => $context]));
 
-        $this->dispatchValidationEvent($validation, $context->getContext());
+        $this->dispatchValidationEvent($validation, $data, $context->getContext());
 
         $this->validator->validate($data->all(), $validation);
 
         $this->tryValidateEqualtoConstraint($data->all(), 'email', $validation);
     }
 
-    private function dispatchValidationEvent(DataValidationDefinition $definition, Context $context): void
+    private function dispatchValidationEvent(DataValidationDefinition $definition, DataBag $data, Context $context): void
     {
-        $validationEvent = new BuildValidationEvent($definition, $context);
+        $validationEvent = new BuildValidationEvent($definition, $data, $context);
         $this->eventDispatcher->dispatch($validationEvent, $validationEvent->getName());
     }
 

@@ -1,11 +1,12 @@
 .offcanvas-cart {
   .cart-item-details {
     margin-bottom: 0;
+    padding-top: 0;
   }
   .cart-item-price {
     color: $kerkow-blue;
     text-align: left;
-    margin-left: 0;
+    margin-left: 1rem;
     @include alright-regular;
     font-variant-numeric: lining-nums;
   }

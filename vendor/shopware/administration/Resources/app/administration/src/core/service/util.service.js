@@ -9,6 +9,8 @@ import uuidV4 from 'uuid/v4';
 import remove from 'lodash/remove';
 import slice from 'lodash/slice';
 import uniqBy from 'lodash/uniqBy';
+import chunk from 'lodash/chunk';
+import intersectionBy from 'lodash/intersectionBy';
 
 import {
     deepCopyObject,
@@ -21,7 +23,7 @@ import {
     deepMergeObject,
     get,
     set,
-    pick
+    pick,
 } from './utils/object.utils';
 import { warn, error } from './utils/debug.utils';
 import { currency, date, fileSize, md5 } from './utils/format.utils';
@@ -42,25 +44,25 @@ export const object = {
     deepMergeObject: deepMergeObject,
     get: get,
     set: set,
-    pick: pick
+    pick: pick,
 };
 
 export const debug = {
     warn: warn,
-    error: error
+    error: error,
 };
 
 export const format = {
     currency: currency,
     date: date,
     fileSize: fileSize,
-    md5: md5
+    md5: md5,
 };
 
 export const dom = {
     getScrollbarHeight: domUtils.getScrollbarHeight,
     getScrollbarWidth: domUtils.getScrollbarWidth,
-    copyToClipboard: domUtils.copyToClipboard
+    copyToClipboard: domUtils.copyToClipboard,
 };
 
 export const string = {
@@ -71,7 +73,7 @@ export const string = {
     md5: md5,
     isEmptyOrSpaces: stringUtils.isEmptyOrSpaces,
     isUrl: stringUtils.isUrl,
-    isValidIp: stringUtils.isValidIp
+    isValidIp: stringUtils.isValidIp,
 };
 
 export const types = {
@@ -86,7 +88,7 @@ export const types = {
     isBoolean: typesUtils.isBoolean,
     isEqual: typesUtils.isEqual,
     isNumber: typesUtils.isNumber,
-    isUndefined: isUndefined
+    isUndefined: isUndefined,
 };
 
 export const fileReader = {
@@ -94,18 +96,20 @@ export const fileReader = {
     readAsDataURL: fileReaderUtils.readFileAsDataURL,
     readAsText: fileReaderUtils.readFileAsText,
     getNameAndExtensionFromFile: fileReaderUtils.getNameAndExtensionFromFile,
-    getNameAndExtensionFromUrl: fileReaderUtils.getNameAndExtensionFromUrl
+    getNameAndExtensionFromUrl: fileReaderUtils.getNameAndExtensionFromUrl,
 };
 
 export const sort = {
-    afterSort: sortUtils.afterSort
+    afterSort: sortUtils.afterSort,
 };
 
 export const array = {
     flattenDeep: flattenDeep,
     remove: remove,
     slice: slice,
-    uniqBy: uniqBy
+    uniqBy: uniqBy,
+    chunk: chunk,
+    intersectionBy: intersectionBy,
 };
 
 export default {
@@ -122,7 +126,7 @@ export default {
     types,
     fileReader,
     sort,
-    array
+    array,
 };
 
 /**

@@ -15,46 +15,57 @@ const { Component } = Shopware;
 Component.register('sw-search-bar-item', {
     template,
 
+    inject: ['feature'],
+
     props: {
         item: {
             type: Object,
             required: false,
-            default: () => ({})
+            default: () => ({}),
         },
         type: {
             required: true,
-            type: String
+            type: String,
         },
         index: {
             type: Number,
-            required: true
+            required: true,
         },
         column: {
             type: Number,
-            required: true
+            required: true,
         },
         searchTerm: {
             type: String,
             required: false,
-            default: null
-        }
+            default: null,
+        },
+        entityIconColor: {
+            type: String,
+            required: true,
+        },
+        entityIconName: {
+            type: String,
+            required: true,
+        },
+    },
+
+    data() {
+        return {
+            isActive: false,
+            searchTypes: null,
+        };
     },
 
     computed: {
         componentClasses() {
             return [
                 {
-                    'is--active': this.isActive
-                }
+                    'is--active': this.isActive,
+                    'sw-search-bar-item--v2': this.feature.isActive('FEATURE_NEXT_6040'),
+                },
             ];
-        }
-    },
-
-    data() {
-        return {
-            isActive: false,
-            searchTypes: null
-        };
+        },
     },
 
     created() {
@@ -112,9 +123,9 @@ Component.register('sw-search-bar-item', {
             this.$parent.$emit('mouse-over', {
                 originalDomEvent,
                 index: this.index,
-                column: this.column
+                column: this.column,
             });
             this.isActive = true;
-        }
-    }
+        },
+    },
 });

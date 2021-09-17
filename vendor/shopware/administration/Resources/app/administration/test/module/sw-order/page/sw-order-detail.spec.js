@@ -1,14 +1,23 @@
-import { createLocalVue, shallowMount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import 'src/module/sw-order/page/sw-order-detail';
 
 function createWrapper(privileges = []) {
-    const localVue = createLocalVue();
-    localVue.directive('tooltip', {});
-
     return shallowMount(Shopware.Component.build('sw-order-detail'), {
-        localVue,
-        propsData: {
-            orderId: Shopware.Utils.createId()
+        mocks: {
+            $route: {
+                meta: {
+                    $module: {
+                        routes: {
+                            detail: {
+                                children: {
+                                    base: {},
+                                    other: {}
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         },
         stubs: {
             'sw-page': {
@@ -20,6 +29,9 @@ function createWrapper(privileges = []) {
             },
             'sw-button': true,
             'sw-label': true
+        },
+        propsData: {
+            orderId: Shopware.Utils.createId()
         },
         provide: {
             acl: {
@@ -34,9 +46,6 @@ function createWrapper(privileges = []) {
                     search: () => Promise.resolve([])
                 })
             }
-        },
-        mocks: {
-            $tc: v => v
         }
     });
 }

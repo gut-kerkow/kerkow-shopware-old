@@ -12,7 +12,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
-use Shopware\Elasticsearch\Exception\NoIndexedDocumentsException;
 use Shopware\Elasticsearch\Exception\ServerNotAvailableException;
 use Shopware\Elasticsearch\Exception\UnsupportedElasticsearchDefinitionException;
 use Shopware\Elasticsearch\Framework\DataAbstractionLayer\CriteriaParser;
@@ -22,50 +21,23 @@ class ElasticsearchHelper
     // max for default configuration
     public const MAX_SIZE_VALUE = 10000;
 
-    /**
-     * @var Client
-     */
-    private $client;
+    private Client $client;
 
-    /**
-     * @var ElasticsearchRegistry
-     */
-    private $registry;
+    private ElasticsearchRegistry $registry;
 
-    /**
-     * @var CriteriaParser
-     */
-    private $parser;
+    private CriteriaParser $parser;
 
-    /**
-     * @var bool
-     */
-    private $searchEnabled;
+    private bool $searchEnabled;
 
-    /**
-     * @var bool
-     */
-    private $indexingEnabled;
+    private bool $indexingEnabled;
 
-    /**
-     * @var string
-     */
-    private $environment;
+    private string $environment;
 
-    /**
-     * @var LoggerInterface
-     */
-    private $logger;
+    private LoggerInterface $logger;
 
-    /**
-     * @var string
-     */
-    private $prefix;
+    private string $prefix;
 
-    /**
-     * @var bool
-     */
-    private $throwException;
+    private bool $throwException;
 
     public function __construct(
         string $environment,
@@ -142,20 +114,11 @@ class ElasticsearchHelper
             return false;
         }
 
-        // while indexing or not cacheable call?
-        if (!$context->getUseCache()) {
+        if (!$context->hasState(Context::STATE_ELASTICSEARCH_AWARE)) {
             return false;
         }
 
-        if (!$this->client->ping()) {
-            return $this->logOrThrowException(new ServerNotAvailableException());
-        }
-
-        if ($this->hasIndexDocuments($definition, $context)) {
-            return true;
-        }
-
-        return $this->logOrThrowException(new NoIndexedDocumentsException($definition->getEntityName()));
+        return true;
     }
 
     public function handleIds(EntityDefinition $definition, Criteria $criteria, Search $search, Context $context): void
@@ -241,7 +204,7 @@ class ElasticsearchHelper
 
             if ($parsed instanceof MatchQuery) {
                 $score = (string) $query->getScore();
-                /* @var MatchQuery $parsed */
+
                 $parsed->addParameter('boost', $score);
                 $parsed->addParameter('fuzziness', '2');
             }
@@ -299,22 +262,5 @@ class ElasticsearchHelper
         $entityName = $definition->getEntityName();
 
         return $this->registry->has($entityName);
-    }
-
-    private function hasIndexDocuments(EntityDefinition $definition, Context $context): bool
-    {
-        $index = $this->getIndexName($definition, $context->getLanguageId());
-
-        $exists = $this->client->indices()->exists(['index' => $index]);
-        if (!$exists) {
-            return false;
-        }
-
-        $count = $this->client->count(['index' => $index]);
-        if (!\array_key_exists('count', $count)) {
-            return false;
-        }
-
-        return $count['count'] > 0;
     }
 }

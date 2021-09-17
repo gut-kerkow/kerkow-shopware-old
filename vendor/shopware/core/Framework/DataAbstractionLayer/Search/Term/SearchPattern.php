@@ -4,6 +4,9 @@ namespace Shopware\Core\Framework\DataAbstractionLayer\Search\Term;
 
 class SearchPattern
 {
+    public const BOOLEAN_CLAUSE_AND = 'boolean_clause_and';
+    public const BOOLEAN_CLAUSE_OR = 'boolean_clause_or';
+
     /**
      * @var SearchTerm
      */
@@ -13,6 +16,16 @@ class SearchPattern
      * @var SearchTerm[]
      */
     protected $terms = [];
+
+    /**
+     * @var array
+     */
+    protected $tokenTerms = [];
+
+    /**
+     * @var string|null
+     */
+    protected $booleanClause;
 
     public function __construct(SearchTerm $original)
     {
@@ -37,6 +50,26 @@ class SearchPattern
         $this->terms[] = $term;
     }
 
+    public function setBooleanClause(bool $booleanClauseAnd): void
+    {
+        $this->booleanClause = $this->getBooleanClauseMapping($booleanClauseAnd);
+    }
+
+    public function getBooleanClause(): string
+    {
+        return $this->booleanClause ?? self::BOOLEAN_CLAUSE_OR;
+    }
+
+    public function setTokenTerms(array $tokenTerms): void
+    {
+        $this->tokenTerms = $tokenTerms;
+    }
+
+    public function getTokenTerms(): array
+    {
+        return $this->tokenTerms;
+    }
+
     public function getAllTerms(): array
     {
         $terms = [$this->original->getTerm()];
@@ -45,5 +78,10 @@ class SearchPattern
         }
 
         return $terms;
+    }
+
+    private function getBooleanClauseMapping(bool $booleanClauseAnd): string
+    {
+        return $booleanClauseAnd ? self::BOOLEAN_CLAUSE_AND : self::BOOLEAN_CLAUSE_OR;
     }
 }

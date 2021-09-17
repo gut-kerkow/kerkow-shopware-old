@@ -4,7 +4,43 @@ import flushPromises from 'flush-promises';
 import 'src/app/component/structure/sw-search-bar';
 
 const swSearchBarComponent = Shopware.Component.build('sw-search-bar');
-function createWrapper(props) {
+const searchTypeServiceTypes = {
+    product: {
+        entityName: 'product',
+        entityService: 'productService',
+        placeholderSnippet: 'sw-product.general.placeholderSearchBar',
+        listingRoute: 'sw.product.index'
+    },
+    category: {
+        entityName: 'category',
+        entityService: 'categoryService',
+        placeholderSnippet: 'sw-category.general.placeholderSearchBar',
+        listingRoute: 'sw.category.index'
+    },
+    customer: {
+        entityName: 'customer',
+        entityService: 'customerService',
+        placeholderSnippet: 'sw-customer.general.placeholderSearchBar',
+        listingRoute: 'sw.customer.index'
+    },
+    order: {
+        entityName: 'order',
+        entityService: 'orderService',
+        placeholderSnippet: 'sw-order.general.placeholderSearchBar',
+        listingRoute: 'sw.order.index'
+    },
+    media: {
+        entityName: 'media',
+        entityService: 'mediaService',
+        placeholderSnippet: 'sw-media.general.placeholderSearchBar',
+        listingRoute: 'sw.media.index'
+    }
+};
+
+const spyLoadTypeSearchResults = jest.spyOn(swSearchBarComponent.methods, 'loadTypeSearchResults');
+const spyLoadTypeSearchResultsByService = jest.spyOn(swSearchBarComponent.methods, 'loadTypeSearchResultsByService');
+
+function createWrapper(props, searchTypes = searchTypeServiceTypes) {
     const localVue = createLocalVue();
 
     return shallowMount(swSearchBarComponent, {
@@ -12,15 +48,11 @@ function createWrapper(props) {
         stubs: {
             'sw-icon': true,
             'sw-version': true,
-            'sw-loader': true
+            'sw-loader': true,
+            'sw-search-more-results': true,
+            'sw-search-bar-item': true
         },
         mocks: {
-            $tc: key => key,
-            $te: () => true,
-            $device: {
-                onResize: () => {},
-                getViewportWidth: () => 1920
-            },
             $route: {
                 query: {
                     term: ''
@@ -29,41 +61,26 @@ function createWrapper(props) {
         },
         provide: {
             searchService: {},
+            repositoryFactory: {
+                create: () => ({
+                    search: () => {
+                        const result = [
+                            {
+                                name: 'Home',
+                                id: '12345'
+                            }, {
+                                name: 'Electronics',
+                                id: '55523'
+                            }
+                        ];
+                        result.total = 2;
+
+                        return Promise.resolve(result);
+                    }
+                })
+            },
             searchTypeService: {
-                getTypes: () => {
-                    return {
-                        product: {
-                            entityName: 'product',
-                            entityService: 'productService',
-                            placeholderSnippet: 'sw-product.general.placeholderSearchBar',
-                            listingRoute: 'sw.product.index'
-                        },
-                        category: {
-                            entityName: 'category',
-                            entityService: 'categoryService',
-                            placeholderSnippet: 'sw-category.general.placeholderSearchBar',
-                            listingRoute: 'sw.category.index'
-                        },
-                        customer: {
-                            entityName: 'customer',
-                            entityService: 'customerService',
-                            placeholderSnippet: 'sw-customer.general.placeholderSearchBar',
-                            listingRoute: 'sw.customer.index'
-                        },
-                        order: {
-                            entityName: 'order',
-                            entityService: 'orderService',
-                            placeholderSnippet: 'sw-order.general.placeholderSearchBar',
-                            listingRoute: 'sw.order.index'
-                        },
-                        media: {
-                            entityName: 'media',
-                            entityService: 'mediaService',
-                            placeholderSnippet: 'sw-media.general.placeholderSearchBar',
-                            listingRoute: 'sw.media.index'
-                        }
-                    };
-                }
+                getTypes: () => searchTypes
             }
         },
         propsData: props
@@ -204,5 +221,256 @@ describe('src/app/component/structure/sw-search-bar', () => {
 
         // check if search result is empty
         expect(searchResults.find('.sw-search-bar__results-empty-message').exists()).toBe(true);
+    });
+
+    it('should not modify search term in $route watcher when focus is on input', async () => {
+        wrapper = await createWrapper({
+            initialSearchType: 'product'
+        });
+
+        // open search
+        const searchInput = wrapper.find('.sw-search-bar__input');
+        await searchInput.trigger('focus');
+
+        const route = {
+            query: {
+                term: 'Foo product'
+            }
+        };
+
+        wrapper.vm.$options.watch.$route.call(wrapper.vm, route);
+
+        expect(wrapper.vm.searchTerm).toBe('');
+    });
+
+    it('should modify search term in $route watcher when focus is not on input', async () => {
+        wrapper = await createWrapper({
+            initialSearchType: 'product'
+        });
+
+        const route = {
+            query: {
+                term: 'Foo product'
+            }
+        };
+
+        wrapper.vm.$options.watch.$route.call(wrapper.vm, route);
+
+        expect(wrapper.vm.searchTerm).toBe('Foo product');
+    });
+
+    it('should search with repository when no service is set in searchTypeService', async () => {
+        wrapper = await createWrapper(
+            {
+                initialSearchType: 'product'
+            },
+            {
+                product: {
+                    entityName: 'product',
+                    placeholderSnippet: 'sw-product.general.placeholderSearchBar',
+                    listingRoute: 'sw.product.index'
+                },
+                category: {
+                    entityName: 'category',
+                    placeholderSnippet: 'sw-category.general.placeholderSearchBar',
+                    listingRoute: 'sw.category.index'
+                },
+                customer: {
+                    entityName: 'customer',
+                    placeholderSnippet: 'sw-customer.general.placeholderSearchBar',
+                    listingRoute: 'sw.customer.index'
+                },
+                order: {
+                    entityName: 'order',
+                    placeholderSnippet: 'sw-order.general.placeholderSearchBar',
+                    listingRoute: 'sw.order.index'
+                },
+                media: {
+                    entityName: 'media',
+                    placeholderSnippet: 'sw-media.general.placeholderSearchBar',
+                    listingRoute: 'sw.media.index'
+                }
+            }
+        );
+
+        const searchInput = wrapper.find('.sw-search-bar__input');
+
+        // open search
+        await searchInput.trigger('focus');
+
+        // set categories as active type
+        const typeItems = wrapper.findAll('.sw-search-bar__types_container .sw-search-bar__type-item');
+        const secondTypeItem = typeItems.at(1);
+        await secondTypeItem.trigger('click');
+
+        // open search again
+        await searchInput.trigger('focus');
+
+        // check if new type is set
+        const activeType = wrapper.find('.sw-search-bar__field .sw-search-bar__type');
+        expect(activeType.text()).toBe('global.entities.category');
+
+        // type search value
+        await searchInput.setValue('shorts');
+        await flushPromises();
+
+        const debouncedDoListSearchWithContainer = swSearchBarComponent.methods.doListSearchWithContainer;
+        await debouncedDoListSearchWithContainer.flush();
+
+        await flushPromises();
+
+        // Make sure only repository method was called
+        expect(spyLoadTypeSearchResults).toHaveBeenCalledTimes(1);
+        expect(spyLoadTypeSearchResultsByService).toHaveBeenCalledTimes(0);
+
+        // Verify result was applied correctly from repository
+        expect(wrapper.vm.results).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    total: 2,
+                    entities: expect.arrayContaining([
+                        expect.objectContaining({
+                            name: 'Home',
+                            id: '12345'
+                        }),
+                        expect.objectContaining({
+                            name: 'Electronics',
+                            id: '55523'
+                        })
+                    ]),
+                    entity: 'category'
+                })
+            ])
+        );
+    });
+
+    it('should show module filters container when clicking on type dropdown', async () => {
+        global.activeFeatureFlags = ['FEATURE_NEXT_6040'];
+        searchTypeServiceTypes.all = {
+            entityName: '',
+            placeholderSnippet: '',
+            listingRoute: ''
+        };
+        wrapper = await createWrapper();
+
+        const searchInput = wrapper.find('.sw-search-bar__type--v2');
+        await searchInput.trigger('click');
+
+        // check if search results are hidden and types container are visible
+        const moduleFiltersContainer = wrapper.find('.sw-search-bar__types_module-filters-container');
+        const typesContainer = wrapper.find('.sw-search-bar__types_container');
+
+        expect(moduleFiltersContainer.exists()).toBe(true);
+        expect(typesContainer.exists()).toBe(false);
+    });
+
+    it('should change search bar type when selecting module filters from type dropdown', async () => {
+        global.activeFeatureFlags = ['FEATURE_NEXT_6040'];
+        wrapper = await createWrapper({
+            initialSearchType: ''
+        }, {
+            all: {
+                entityName: '',
+                placeholderSnippet: '',
+                listingRoute: ''
+            },
+            ...searchTypeServiceTypes
+        });
+
+        const moduleFilterSelect = wrapper.find('.sw-search-bar__type--v2');
+        await moduleFilterSelect.trigger('click');
+
+        const moduleFilterItems = wrapper.findAll('.sw-search-bar__type-item');
+        await moduleFilterItems.at(1).trigger('click');
+
+        expect(moduleFilterSelect.text()).toBe('global.entities.product');
+    });
+
+    it('should search with repository after selecting module filter', async () => {
+        global.activeFeatureFlags = ['FEATURE_NEXT_6040'];
+        wrapper = await createWrapper(
+            {
+                initialSearchType: 'product'
+            },
+            {
+                all: {
+                    entityName: '',
+                    placeholderSnippet: '',
+                    listingRoute: ''
+                },
+                product: {
+                    entityName: 'product',
+                    placeholderSnippet: 'sw-product.general.placeholderSearchBar',
+                    listingRoute: 'sw.product.index'
+                },
+                category: {
+                    entityName: 'category',
+                    placeholderSnippet: 'sw-category.general.placeholderSearchBar',
+                    listingRoute: 'sw.category.index'
+                },
+                customer: {
+                    entityName: 'customer',
+                    placeholderSnippet: 'sw-customer.general.placeholderSearchBar',
+                    listingRoute: 'sw.customer.index'
+                },
+                order: {
+                    entityName: 'order',
+                    placeholderSnippet: 'sw-order.general.placeholderSearchBar',
+                    listingRoute: 'sw.order.index'
+                },
+                media: {
+                    entityName: 'media',
+                    placeholderSnippet: 'sw-media.general.placeholderSearchBar',
+                    listingRoute: 'sw.media.index'
+                }
+            }
+        );
+
+        const moduleFilterSelect = wrapper.find('.sw-search-bar__type--v2');
+        await moduleFilterSelect.trigger('click');
+
+        const moduleFilterItems = wrapper.findAll('.sw-search-bar__type-item');
+        await moduleFilterItems.at(2).trigger('click');
+
+        // open search again
+        const searchInput = wrapper.find('.sw-search-bar__input');
+        await searchInput.trigger('focus');
+
+        // check if new type is set
+        const activeType = wrapper.find('.sw-search-bar__field .sw-search-bar__type--v2');
+        expect(activeType.text()).toBe('global.entities.category');
+
+        // type search value
+        await searchInput.setValue('shorts');
+        await flushPromises();
+
+        const debouncedDoListSearchWithContainer = swSearchBarComponent.methods.doListSearchWithContainer;
+        await debouncedDoListSearchWithContainer.flush();
+
+        await flushPromises();
+
+        // Make sure only repository method was called
+        expect(spyLoadTypeSearchResults).toHaveBeenCalledTimes(1);
+        expect(spyLoadTypeSearchResultsByService).toHaveBeenCalledTimes(0);
+
+        // Verify result was applied correctly from repository
+        expect(wrapper.vm.results).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    total: 2,
+                    entities: expect.arrayContaining([
+                        expect.objectContaining({
+                            name: 'Home',
+                            id: '12345'
+                        }),
+                        expect.objectContaining({
+                            name: 'Electronics',
+                            id: '55523'
+                        })
+                    ]),
+                    entity: 'category'
+                })
+            ])
+        );
     });
 });

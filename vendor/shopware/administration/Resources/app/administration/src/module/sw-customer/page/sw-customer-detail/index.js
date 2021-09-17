@@ -13,25 +13,26 @@ Component.register('sw-customer-detail', {
         'systemConfigApiService',
         'repositoryFactory',
         'customerGroupRegistrationService',
-        'acl'
+        'acl',
+        'customerValidationService',
     ],
 
     mixins: [
         Mixin.getByName('notification'),
         Mixin.getByName('salutation'),
-        Mixin.getByName('discard-detail-page-changes')('customer')
+        Mixin.getByName('discard-detail-page-changes')('customer'),
     ],
 
     shortcuts: {
         'SYSTEMKEY+S': 'onSave',
-        ESCAPE: 'onAbortButtonClick'
+        ESCAPE: 'onAbortButtonClick',
     },
 
     props: {
         customerId: {
             type: String,
-            required: true
-        }
+            required: true,
+        },
     },
 
     data() {
@@ -40,13 +41,14 @@ Component.register('sw-customer-detail', {
             isSaveSuccessful: false,
             customer: null,
             customerAddressCustomFieldSets: [],
-            customerCustomFieldSets: []
+            customerCustomFieldSets: [],
+            errorEmailCustomer: null,
         };
     },
 
     metaInfo() {
         return {
-            title: this.$createTitle(this.identifier)
+            title: this.$createTitle(this.identifier),
         };
     },
 
@@ -69,7 +71,7 @@ Component.register('sw-customer-detail', {
             },
             set(editMode) {
                 this.$router.push({ name: this.$route.name, query: { edit: editMode } });
-            }
+            },
         },
 
         defaultCriteria() {
@@ -90,6 +92,10 @@ Component.register('sw-customer-detail', {
                 .addAssociation('tags')
                 .addAssociation('requestedGroup');
 
+            criteria
+                .getAssociation('addresses')
+                .addSorting(Criteria.sort('firstName'), 'ASC', false);
+
             return criteria;
         },
 
@@ -97,7 +103,7 @@ Component.register('sw-customer-detail', {
             return {
                 name: 'sw.customer.detail.base',
                 params: { id: this.customerId },
-                query: { edit: this.editMode }
+                query: { edit: this.editMode },
             };
         },
 
@@ -105,7 +111,7 @@ Component.register('sw-customer-detail', {
             return {
                 name: 'sw.customer.detail.addresses',
                 params: { id: this.customerId },
-                query: { edit: this.editMode }
+                query: { edit: this.editMode },
             };
         },
 
@@ -113,21 +119,30 @@ Component.register('sw-customer-detail', {
             return {
                 name: 'sw.customer.detail.order',
                 params: { id: this.customerId },
-                query: { edit: this.editMode }
+                query: { edit: this.editMode },
             };
         },
 
-        ...mapPageErrors(errorConfig)
-    },
+        emailHasChanged() {
+            const origin = this.customer.getOrigin();
+            if (this.customer.isNew() || !origin.email) {
+                return true;
+            }
 
-    created() {
-        this.createdComponent();
+            return origin.email !== this.customer.email;
+        },
+
+        ...mapPageErrors(errorConfig),
     },
 
     watch: {
         customerId() {
             this.createdComponent();
-        }
+        },
+    },
+
+    created() {
+        this.createdComponent();
     },
 
     methods: {
@@ -137,7 +152,7 @@ Component.register('sw-customer-detail', {
             this.customerRepository.get(
                 this.customerId,
                 Shopware.Context.api,
-                this.defaultCriteria
+                this.defaultCriteria,
             ).then((customer) => {
                 this.customer = customer;
                 this.customer.vatIds = this.customer.vatIds || [];
@@ -150,19 +165,56 @@ Component.register('sw-customer-detail', {
             this.editMode = false;
         },
 
+        validateEmail() {
+            const { id, email, boundSalesChannelId } = this.customer;
+
+            return this.customerValidationService.checkCustomerEmail({
+                id,
+                email,
+                boundSalesChannelId,
+            }).then((emailIsValid) => {
+                if (this.errorEmailCustomer) {
+                    Shopware.State.dispatch('error/addApiError',
+                        {
+                            expression: `customer.${this.customer.id}.email`,
+                            error: null,
+                        });
+                }
+
+                return emailIsValid;
+            }).catch((exception) => {
+                this.emailIsValid = false;
+                Shopware.State.dispatch('error/addApiError',
+                    {
+                        expression: `customer.${this.customer.id}.email`,
+                        error: exception.response.data.errors[0],
+                    });
+            });
+        },
+
         async onSave() {
+            this.isLoading = true;
+
             if (!this.editMode) {
                 return false;
             }
 
-            this.isLoading = true;
+            if (this.customer.email && this.emailHasChanged) {
+                const response = await this.validateEmail();
+
+                if (!response || !response.isValid) {
+                    this.isLoading = false;
+                    return false;
+                }
+            }
+
             this.isSaveSuccessful = false;
 
             if (!this.customer.birthday) {
                 this.customer.birthday = null;
             }
 
-            if (!await this.validPassword(this.customer)) {
+            if (!(await this.validPassword(this.customer))) {
                 this.isLoading = false;
                 return false;
             }
@@ -171,18 +223,18 @@ Component.register('sw-customer-detail', {
                 this.customer.password = this.customer.passwordNew;
             }
 
-            return this.customerRepository.save(this.customer, Shopware.Context.api).then(() => {
+            return this.customerRepository.save(this.customer).then(() => {
                 this.isLoading = false;
                 this.isSaveSuccessful = true;
                 this.createdComponent();
                 this.createNotificationSuccess({
                     message: this.$tc('sw-customer.detail.messageSaveSuccess', 0, {
-                        name: `${this.customer.firstName} ${this.customer.lastName}`
-                    })
+                        name: `${this.customer.firstName} ${this.customer.lastName}`,
+                    }),
                 });
             }).catch((exception) => {
                 this.createNotificationError({
-                    message: this.$tc('sw-customer.detail.messageSaveError')
+                    message: this.$tc('sw-customer.detail.messageSaveError'),
                 });
                 this.isLoading = false;
                 throw exception;
@@ -209,7 +261,7 @@ Component.register('sw-customer-detail', {
             if (passwordSet) {
                 if (passwordNotEquals) {
                     this.createNotificationError({
-                        message: this.$tc('sw-customer.detail.notificationPasswordErrorMessage')
+                        message: this.$tc('sw-customer.detail.notificationPasswordErrorMessage'),
                     });
 
                     return false;
@@ -217,7 +269,7 @@ Component.register('sw-customer-detail', {
 
                 if (invalidLength) {
                     this.createNotificationError({
-                        message: this.$tc('sw-customer.detail.notificationPasswordLengthErrorMessage')
+                        message: this.$tc('sw-customer.detail.notificationPasswordLengthErrorMessage'),
                     });
 
                     return false;
@@ -230,11 +282,11 @@ Component.register('sw-customer-detail', {
         acceptCustomerGroupRegistration() {
             this.customerGroupRegistrationService.accept(this.customer.id).then(() => {
                 this.createNotificationSuccess({
-                    message: this.$tc('sw-customer.customerGroupRegistration.acceptMessage')
+                    message: this.$tc('sw-customer.customerGroupRegistration.acceptMessage'),
                 });
             }).catch(() => {
                 this.createNotificationError({
-                    message: this.$tc('sw-customer.customerGroupRegistration.errorMessage')
+                    message: this.$tc('sw-customer.customerGroupRegistration.errorMessage'),
                 });
             }).finally(() => {
                 this.createdComponent();
@@ -244,15 +296,15 @@ Component.register('sw-customer-detail', {
         declineCustomerGroupRegistration() {
             this.customerGroupRegistrationService.decline(this.customer.id).then(() => {
                 this.createNotificationSuccess({
-                    message: this.$tc('sw-customer.customerGroupRegistration.declineMessage')
+                    message: this.$tc('sw-customer.customerGroupRegistration.declineMessage'),
                 });
             }).catch(() => {
                 this.createNotificationError({
-                    message: this.$tc('sw-customer.customerGroupRegistration.errorMessage')
+                    message: this.$tc('sw-customer.customerGroupRegistration.errorMessage'),
                 });
             }).finally(() => {
                 this.createdComponent();
             });
-        }
-    }
+        },
+    },
 });

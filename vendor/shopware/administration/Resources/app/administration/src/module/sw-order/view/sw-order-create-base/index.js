@@ -9,7 +9,7 @@ Component.register('sw-order-create-base', {
     template,
 
     mixins: [
-        Mixin.getByName('notification')
+        Mixin.getByName('notification'),
     ],
 
     data() {
@@ -17,64 +17,20 @@ Component.register('sw-order-create-base', {
             isLoading: false,
             isLoadingDetail: false,
             address: {
-                data: null
+                data: null,
             },
             showAddressModal: false,
             addAddressModalTitle: null,
             editAddressModalTitle: null,
             promotionError: null,
             showPromotionModal: false,
-            disabledAutoPromotionChecked: false
+            disabledAutoPromotionChecked: false,
         };
-    },
-
-    watch: {
-        cart: {
-            deep: true,
-            handler: 'updatePromotionList'
-        },
-
-        promotionCodeTags: {
-            handler: 'handlePromotionCodeTags'
-        },
-
-        cartErrors: {
-            handler(newValue) {
-                if (!newValue || newValue.length === 0) {
-                    return;
-                }
-
-                Object.values(newValue).forEach((value) => {
-                    switch (value.level) {
-                        case 0: {
-                            this.createNotificationSuccess({
-                                message: value.message
-                            });
-                            break;
-                        }
-
-                        case 10: {
-                            this.createNotificationWarning({
-                                message: value.message
-                            });
-                            break;
-                        }
-
-                        default: {
-                            this.createNotificationError({
-                                message: value.message
-                            });
-                            break;
-                        }
-                    }
-                });
-            }
-        }
     },
 
     computed: {
         ...mapGetters('swOrder', [
-            'cartErrors'
+            'cartErrors',
         ]),
 
         customerRepository() {
@@ -129,7 +85,7 @@ Component.register('sw-order-create-base', {
         },
 
         salesChannelId() {
-            return Utils.get(this.customer, 'salesChannelId', '');
+            return this.customer?.salesChannelId ?? '';
         },
 
         isCustomerActive() {
@@ -167,7 +123,7 @@ Component.register('sw-order-create-base', {
 
             set(promotionCodeTags) {
                 State.commit('swOrder/setPromotionCodes', promotionCodeTags);
-            }
+            },
         },
 
         cartDeliveryDiscounts() {
@@ -199,7 +155,7 @@ Component.register('sw-order-create-base', {
             const decorateCalcTaxes = calcTaxes.map((item) => {
                 return this.$tc('sw-order.createBase.shippingCostsTax', 0, {
                     taxRate: item.taxRate,
-                    tax: format.currency(item.tax, this.currency.shortName)
+                    tax: format.currency(item.tax, this.currency.shortName),
                 });
             });
 
@@ -212,12 +168,75 @@ Component.register('sw-order-create-base', {
             },
             set(visibility) {
                 this.switchAutomaticPromotions(visibility);
-            }
+            },
         },
 
         taxStatus() {
             return get(this.cart, 'price.taxStatus', '');
-        }
+        },
+
+        displayRounded() {
+            if (!this.cartPrice) {
+                return false;
+            }
+            return this.cartPrice.rawTotal !== this.cartPrice.totalPrice;
+        },
+
+        orderTotal() {
+            if (!this.cartPrice) {
+                return 0;
+            }
+
+            if (this.displayRounded) {
+                return this.cartPrice.rawTotal;
+            }
+
+            return this.cartPrice.totalPrice;
+        },
+    },
+
+    watch: {
+        cart: {
+            deep: true,
+            handler: 'updatePromotionList',
+        },
+
+        promotionCodeTags: {
+            handler: 'handlePromotionCodeTags',
+        },
+
+        cartErrors: {
+            handler(newValue) {
+                if (!newValue || newValue.length === 0) {
+                    return;
+                }
+
+                Object.values(newValue).forEach((value) => {
+                    switch (value.level) {
+                        case 0: {
+                            this.createNotificationSuccess({
+                                message: value.message,
+                            });
+                            break;
+                        }
+
+                        case 10: {
+                            this.createNotificationWarning({
+                                message: value.message,
+                            });
+                            break;
+                        }
+
+                        default: {
+                            this.createNotificationError({
+                                message: value.message,
+                            });
+                            break;
+                        }
+                    }
+                });
+            },
+        },
     },
 
     methods: {
@@ -231,7 +250,7 @@ Component.register('sw-order-create-base', {
 
             State.dispatch('swOrder/getCart', {
                 salesChannelId: this.customer.salesChannelId,
-                contextToken: this.cart.token
+                contextToken: this.cart.token,
             }).finally(() => this.updateLoading(false));
         },
 
@@ -251,7 +270,7 @@ Component.register('sw-order-create-base', {
                 await this.updateCustomerContext();
             } catch {
                 this.createNotificationError({
-                    message: this.$tc('sw-order.create.messageSwitchCustomerError')
+                    message: this.$tc('sw-order.create.messageSwitchCustomerError'),
                 });
             } finally {
                 this.isLoadingDetail = false;
@@ -262,7 +281,7 @@ Component.register('sw-order-create-base', {
             await State.dispatch('swOrder/updateCustomerContext', {
                 customerId: this.customer.id,
                 salesChannelId: this.customer.salesChannelId,
-                contextToken: this.cart.token
+                contextToken: this.cart.token,
             });
         },
 
@@ -271,7 +290,7 @@ Component.register('sw-order-create-base', {
         },
 
         setCurrency(customer) {
-            this.currencyRepository.get(customer.salesChannel.currencyId, Shopware.Context.api).then((currency) => {
+            this.currencyRepository.get(customer.salesChannel.currencyId).then((currency) => {
                 State.commit('swOrder/setCurrency', currency);
             });
         },
@@ -309,20 +328,20 @@ Component.register('sw-order-create-base', {
             const availableCustomerAddresses = [
                 {
                     id: this.customer.billingAddressId,
-                    dataKey: 'billingAddress'
+                    dataKey: 'billingAddress',
                 },
                 {
                     id: this.customer.shippingAddressId,
-                    dataKey: 'shippingAddress'
+                    dataKey: 'shippingAddress',
                 },
                 {
                     id: this.customer.defaultBillingAddressId,
-                    dataKey: 'defaultBillingAddress'
+                    dataKey: 'defaultBillingAddress',
                 },
                 {
                     id: this.customer.defaultShippingAddressId,
-                    dataKey: 'defaultShippingAddress'
-                }
+                    dataKey: 'defaultShippingAddress',
+                },
             ];
 
             this.customerAddressRepository
@@ -353,7 +372,7 @@ Component.register('sw-order-create-base', {
             State.dispatch('swOrder/saveLineItem', {
                 salesChannelId: this.customer.salesChannelId,
                 contextToken: this.cart.token,
-                item
+                item,
             })
                 .finally(() => this.updateLoading(false));
         },
@@ -364,7 +383,7 @@ Component.register('sw-order-create-base', {
             State.dispatch('swOrder/removeLineItems', {
                 salesChannelId: this.customer.salesChannelId,
                 contextToken: this.cart.token,
-                lineItemKeys: lineItemKeys
+                lineItemKeys: lineItemKeys,
             })
                 .then(() => {
                     // Remove promotion code tag if corresponding line item removed
@@ -396,7 +415,7 @@ Component.register('sw-order-create-base', {
             State.dispatch('swOrder/addPromotionCode', {
                 salesChannelId: this.customer.salesChannelId,
                 contextToken: this.cart.token,
-                code
+                code,
             })
                 .finally(() => this.updateLoading(false));
         },
@@ -459,7 +478,7 @@ Component.register('sw-order-create-base', {
             State.dispatch('swOrder/modifyShippingCosts', {
                 salesChannelId: this.customer.salesChannelId,
                 contextToken: this.cart.token,
-                shippingCosts: this.cartDelivery.shippingCosts
+                shippingCosts: this.cartDelivery.shippingCosts,
             }).catch((error) => {
                 this.$emit('error', error);
             }).finally(() => {
@@ -493,6 +512,6 @@ Component.register('sw-order-create-base', {
             this.disabledAutoPromotionChecked = true;
 
             this.loadCart();
-        }
-    }
+        },
+    },
 });

@@ -36,11 +36,10 @@ class TestBrowser extends KernelBrowser
      */
     private $eventDispatcher;
 
-    public function __construct($kernel, array $server = [], ?History $history = null, ?CookieJar $cookieJar = null, EventDispatcherInterface $eventDispatcher)
+    public function __construct($kernel, EventDispatcherInterface $eventDispatcher, array $server = [], ?History $history = null, ?CookieJar $cookieJar = null)
     {
         parent::__construct($kernel, $server, $history, $cookieJar);
 
-        /** @var RequestTransformerInterface $transformer */
         $transformer = $this->getContainer()->get(RequestTransformerInterface::class);
         $this->requestTransformer = $transformer;
         $this->eventDispatcher = $eventDispatcher;
@@ -54,6 +53,15 @@ class TestBrowser extends KernelBrowser
     public function enableCsrf(): void
     {
         $this->csrfDisabled = false;
+    }
+
+    /**
+     * @param string
+     * @param string|object|array $value
+     */
+    public function setServerParameter($key, $value): void
+    {
+        $this->server[$key] = $value;
     }
 
     protected function filterRequest(DomRequest $request): Request

@@ -9,7 +9,6 @@
             <argument type="service" id="product.repository" />
             <argument type="service" id="sales_channel.product.repository" />
             <argument type="service" id="Shopware\Core\Checkout\Cart\Price\QuantityPriceCalculator" />
-            <argument type="service" id="Shopware\Core\Content\Product\SalesChannel\Price\ProductPriceDefinitionBuilderInterface" />
             <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService" />
             <tag name="shopware.cart.collector" priority="4950"/>
         </service>

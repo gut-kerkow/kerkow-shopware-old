@@ -1,6 +1,6 @@
 import template from './sw-settings-product-feature-sets-detail.html.twig';
 
-const { Component, Mixin, StateDeprecated } = Shopware;
+const { Component, Mixin } = Shopware;
 const { mapPropertyErrors } = Shopware.Component.getComponentHelper();
 
 Component.register('sw-settings-product-feature-sets-detail', {
@@ -10,44 +10,39 @@ Component.register('sw-settings-product-feature-sets-detail', {
 
     mixins: [
         Mixin.getByName('notification'),
-        Mixin.getByName('placeholder')
+        Mixin.getByName('placeholder'),
     ],
 
     props: {
         productFeatureSetId: {
             type: String,
             required: false,
-            default: null
-        }
+            default: null,
+        },
     },
 
     shortcuts: {
         'SYSTEMKEY+S': 'onSave',
-        ESCAPE: 'onCancel'
+        ESCAPE: 'onCancel',
     },
 
     data() {
         return {
             productFeatureSet: {},
             isLoading: false,
-            isSaveSuccessful: false
+            isSaveSuccessful: false,
         };
     },
 
     metaInfo() {
         return {
-            title: this.$createTitle(this.identifier)
+            title: this.$createTitle(this.identifier),
         };
     },
 
     computed: {
         identifier() {
             return this.placeholder(this.productFeatureSet, 'name');
-        },
-
-        // @deprecated tag:v6.4.0.0
-        languageStore() {
-            return StateDeprecated.getStore('language');
         },
 
         productFeatureSetsRepository() {
@@ -59,7 +54,7 @@ Component.register('sw-settings-product-feature-sets-detail', {
                 return {
                     message: this.$tc('sw-privileges.tooltip.warning'),
                     disabled: this.acl.can('product_feature_sets.editor'),
-                    showOnDisabledElements: true
+                    showOnDisabledElements: true,
                 };
             }
 
@@ -67,21 +62,21 @@ Component.register('sw-settings-product-feature-sets-detail', {
 
             return {
                 message: `${systemKey} + S`,
-                appearance: 'light'
+                appearance: 'light',
             };
         },
 
         tooltipCancel() {
             return {
                 message: 'ESC',
-                appearance: 'light'
+                appearance: 'light',
             };
         },
 
         ...mapPropertyErrors(
-            'product_feature_set',
-            ['name', 'description', 'features.id']
-        )
+            'productFeatureSet',
+            ['name', 'description', 'features.id'],
+        ),
     },
 
     watch: {
@@ -89,7 +84,7 @@ Component.register('sw-settings-product-feature-sets-detail', {
             if (!this.productFeatureSetId) {
                 this.createdComponent();
             }
-        }
+        },
     },
 
     created() {
@@ -102,22 +97,29 @@ Component.register('sw-settings-product-feature-sets-detail', {
 
             if (this.productFeatureSetId) {
                 this.productFeatureSetId = this.$route.params.id;
-                this.productFeatureSetsRepository
-                    .get(this.productFeatureSetId, Shopware.Context.api)
+                this.productFeatureSetsRepository.get(this.productFeatureSetId)
                     .then((productFeatureSet) => {
+                        if (productFeatureSet.features && !productFeatureSet.features.length) {
+                            productFeatureSet.features = [];
+                        }
+
                         this.productFeatureSet = productFeatureSet;
                         this.isLoading = false;
                     });
                 return;
             }
 
-            this.productFeatureSet = this.productFeatureSetsRepository.create(Shopware.Context.api);
+            this.productFeatureSet = this.productFeatureSetsRepository.create();
             this.isLoading = false;
         },
 
         loadEntityData() {
-            this.productFeatureSetsRepository.get(this.productFeatureSetId, Shopware.Context.api)
+            this.productFeatureSetsRepository.get(this.productFeatureSetId)
                 .then((productFeatureSet) => {
+                    if (productFeatureSet.features && !productFeatureSet.features.length) {
+                        productFeatureSet.features = [];
+                    }
+
                     this.productFeatureSet = productFeatureSet;
                 });
         },
@@ -130,13 +132,13 @@ Component.register('sw-settings-product-feature-sets-detail', {
             this.isSaveSuccessful = false;
             this.isLoading = true;
 
-            return this.productFeatureSetsRepository.save(this.productFeatureSet, Shopware.Context.api)
+            return this.productFeatureSetsRepository.save(this.productFeatureSet)
                 .then(() => {
                     this.isSaveSuccessful = true;
                     if (!this.productFeatureSetId) {
                         this.$router.push({
                             name: 'sw.settings.product.feature.sets.detail',
-                            params: { id: this.productFeatureSet.id }
+                            params: { id: this.productFeatureSet.id },
                         });
                     }
                 })
@@ -145,7 +147,7 @@ Component.register('sw-settings-product-feature-sets-detail', {
                 })
                 .catch(() => {
                     this.createNotificationError({
-                        message: this.$tc('sw-settings-product-feature-sets.detail.notificationErrorMessage')
+                        message: this.$tc('sw-settings-product-feature-sets.detail.notificationErrorMessage'),
                     });
                 })
                 .finally(() => {
@@ -167,6 +169,6 @@ Component.register('sw-settings-product-feature-sets-detail', {
 
         onChangeLanguage() {
             this.loadEntityData();
-        }
-    }
+        },
+    },
 });

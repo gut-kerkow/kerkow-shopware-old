@@ -1,4 +1,4 @@
-import { createLocalVue, shallowMount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import 'src/module/sw-integration/page/sw-integration-list';
 import 'src/app/component/form/sw-field';
 import 'src/app/component/form/sw-text-field';
@@ -10,14 +10,8 @@ import 'src/app/component/base/sw-modal';
 import 'src/app/component/base/sw-button';
 
 function createWrapper(privileges = []) {
-    const localVue = createLocalVue();
-    localVue.directive('tooltip', {});
-
     return shallowMount(Shopware.Component.build('sw-integration-list'), {
-        localVue,
-
         mocks: {
-            $tc: key => key,
             $route: {
                 query: {
                     page: 1,
@@ -26,38 +20,33 @@ function createWrapper(privileges = []) {
             }
         },
 
-        provide: {
-            feature: {
-                isActive: () => true
-            },
-            repositoryFactory: {
-                create: () => ({
-                    search: () => {
-                        return Promise.resolve([
-                            {
-                                id: '44de136acf314e7184401d36406c1e90'
-                            }
-                        ]);
-                    }
-                })
-            },
-
-            integrationService: {},
-            validationService: {},
-            shortcutService: {
-                stopEventListener: () => { }
-            },
-
-            acl: {
-                can: (identifier) => {
-                    if (!identifier) {
-                        return true;
-                    }
-
-                    return privileges.includes(identifier);
+        provide: { repositoryFactory: {
+            create: () => ({
+                search: () => {
+                    return Promise.resolve([
+                        {
+                            id: '44de136acf314e7184401d36406c1e90'
+                        }
+                    ]);
                 }
-            }
+            })
         },
+
+        integrationService: {},
+        validationService: {},
+        shortcutService: {
+            stopEventListener: () => { }
+        },
+
+        acl: {
+            can: (identifier) => {
+                if (!identifier) {
+                    return true;
+                }
+
+                return privileges.includes(identifier);
+            }
+        } },
 
         stubs: {
             'sw-page': {
@@ -255,5 +244,21 @@ describe('when has not privilege', () => {
 
         const deleteMenuItem = wrapper.find('.sw_integration_list__delete-action');
         expect(deleteMenuItem.attributes().disabled).toBeTruthy();
+    });
+
+    it('should not be able add an integration with admin-role as a non-admin', async () => {
+        const wrapper = await createWrapper([
+            'integration.viewer',
+            'integration.editor',
+            'integration.deleter'
+        ]);
+        await wrapper.vm.$nextTick();
+        await wrapper.setData({
+            currentIntegration: true
+        });
+
+        const adminRoleSwitch = wrapper.find('.sw-settings-user-detail__grid-is-admin');
+
+        expect(adminRoleSwitch.attributes().disabled).toBeTruthy();
     });
 });

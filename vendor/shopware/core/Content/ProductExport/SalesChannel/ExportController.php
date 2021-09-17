@@ -18,7 +18,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Core\Framework\Routing\Annotation\Since;
-use Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory;
+use Shopware\Core\System\SalesChannel\Context\AbstractSalesChannelContextFactory;
 use Shopware\Storefront\Event\ProductExportContentTypeEvent;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -30,23 +30,33 @@ use Symfony\Component\Routing\Annotation\Route;
  */
 class ExportController
 {
-    /** @var ProductExporterInterface */
+    /**
+     * @var ProductExporterInterface
+     */
     private $productExportService;
 
-    /** @var FilesystemInterface */
+    /**
+     * @var FilesystemInterface
+     */
     private $fileSystem;
 
-    /** @var EventDispatcherInterface */
+    /**
+     * @var EventDispatcherInterface
+     */
     private $eventDispatcher;
 
-    /** @var EntityRepositoryInterface */
+    /**
+     * @var EntityRepositoryInterface
+     */
     private $productExportRepository;
 
-    /** @var ProductExportFileHandlerInterface */
+    /**
+     * @var ProductExportFileHandlerInterface
+     */
     private $productExportFileHandler;
 
     /**
-     * @var SalesChannelContextFactory
+     * @var AbstractSalesChannelContextFactory
      */
     private $contextFactory;
 
@@ -56,7 +66,7 @@ class ExportController
         FilesystemInterface $fileSystem,
         EventDispatcherInterface $eventDispatcher,
         EntityRepositoryInterface $productExportRepository,
-        SalesChannelContextFactory $contextFactory
+        AbstractSalesChannelContextFactory $contextFactory
     ) {
         $this->productExportService = $productExportService;
         $this->productExportFileHandler = $productExportFileHandler;
@@ -103,8 +113,13 @@ class ExportController
 
         $context = $this->contextFactory->create('', $productExport->getSalesChannelDomain()->getSalesChannelId());
 
-        $this->productExportService->export($context, new ExportBehavior(), $productExport->getId());
         $filePath = $this->productExportFileHandler->getFilePath($productExport);
+
+        // if file not present or interval = live
+        if (!$this->fileSystem->has($filePath) || $productExport->getInterval() === 0) {
+            $this->productExportService->export($context, new ExportBehavior(), $productExport->getId());
+        }
+
         if (!$this->fileSystem->has($filePath)) {
             $exportNotGeneratedException = new ExportNotGeneratedException();
             $this->logException($context->getContext(), $exportNotGeneratedException);
@@ -116,7 +131,7 @@ class ExportController
         $contentType = $this->getContentType($productExport->getFileFormat());
         $encoding = $productExport->getEncoding();
 
-        return (new Response($content, 200, ['Content-Type' => $contentType . ';charset=' . $encoding]))
+        return (new Response($content ? $content : null, 200, ['Content-Type' => $contentType . ';charset=' . $encoding]))
             ->setCharset($encoding);
     }
 

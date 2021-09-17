@@ -106,10 +106,10 @@
 
         <service id="test.browser" class="Shopware\Core\Framework\Test\TestCaseHelper\TestBrowser" shared="false" public="true">
             <argument type="service" id="kernel" />
+            <argument type="service" id="event_dispatcher"/>
             <argument>%test.client.parameters%</argument>
             <argument type="service" id="test.client.history" />
             <argument type="service" id="test.client.cookiejar" />
-            <argument type="service" id="event_dispatcher"/>
         </service>
 
         <service id="Shopware\Core\Framework\Test\Logging\Monolog\DiscardHandler">
@@ -139,6 +139,9 @@
                         <factory class="GuzzleHttp\HandlerStack" method="create" />
                         <argument type="service" id="Shopware\Core\Framework\Test\App\TestAppServer"/>
                         <call method="push">
+                            <argument type="service" id="shopware.app_system.guzzle.middleware"/>
+                        </call>
+                        <call method="push">
                             <argument type="service" id="test.guzzle.history.middleware"/>
                         </call>
                     </service>
@@ -155,7 +158,7 @@
             </argument>
         </service>
 
-        <service id="test.guzzle.history.middleware" class="\Closure">
+        <service id="test.guzzle.history.middleware" class="callable">
             <factory service="Shopware\Core\Framework\Test\App\GuzzleHistoryCollector" method="getHistoryMiddleWare"/>
         </service>
 
@@ -163,6 +166,12 @@
         </service>
 
         <service id="Shopware\Core\Framework\Test\Api\Acl\fixtures\AclTestController" public="true"/>
+
+        <service id="test_payment_decoration" class="Shopware\Core\Framework\App\Payment\Handler\AppAsyncPaymentHandler" decorates="Shopware\Core\Framework\App\Payment\Handler\AppAsyncPaymentHandler">
+            <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="Shopware\Core\System\StateMachine\StateMachineRegistry"/>
+            <argument type="service" id="Shopware\Core\Framework\App\Payment\Payload\PayloadService"/>
+        </service>
     </services>
 
 </container>

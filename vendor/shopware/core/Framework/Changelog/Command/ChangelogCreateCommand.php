@@ -14,9 +14,6 @@ use Symfony\Component\Process\Process;
 
 class ChangelogCreateCommand extends Command
 {
-    /**
-     * @var string
-     */
     protected static $defaultName = 'changelog:create';
 
     /**
@@ -88,13 +85,13 @@ class ChangelogCreateCommand extends Command
             ->setAuthorGitHub($authorGithub);
 
         $IOHelper->section('Generating: ');
-        $target = $this->generator->generate($template, $date, (bool) $input->getOption('dry-run'));
+        $target = $this->generator->generate($template, $date, $input->getOption('dry-run'));
 
         $IOHelper->newLine();
         $IOHelper->success('The changelog was generated successfully');
         $IOHelper->note($target);
 
-        return 0;
+        return self::SUCCESS;
     }
 
     private function getDefaultData(): array

@@ -96,7 +96,6 @@ class CreditNoteGeneratorTest extends TestCase
 
     public function testGenerateWithDifferentTaxes(): void
     {
-        /** @var CreditNoteGenerator $creditNoteService */
         $creditNoteService = $this->getContainer()->get(CreditNoteGenerator::class);
         $pdfGenerator = $this->getContainer()->get(PdfGenerator::class);
 
@@ -150,13 +149,18 @@ class CreditNoteGeneratorTest extends TestCase
             );
         }
 
+        static::assertStringContainsString(
+            sprintf('€%s', number_format((float) -array_sum($creditPrices), 2)),
+            $processedTemplate
+        );
+
         $generatedDocument = new GeneratedDocument();
         $generatedDocument->setHtml($processedTemplate);
 
         $generatorOutput = $pdfGenerator->generate($generatedDocument);
         static::assertNotEmpty($generatorOutput);
 
-        $finfo = new \finfo(FILEINFO_MIME_TYPE);
+        $finfo = new \finfo(\FILEINFO_MIME_TYPE);
         static::assertEquals('application/pdf', $finfo->buffer($generatorOutput));
     }
 
@@ -218,7 +222,7 @@ class CreditNoteGeneratorTest extends TestCase
             $creditId = Uuid::randomHex();
             $creditLineItem = (new LineItem($creditId, LineItem::CREDIT_LINE_ITEM_TYPE, $creditId, 1))
                 ->setLabel('credit' . $price)
-                ->setPriceDefinition(new AbsolutePriceDefinition($price, 2));
+                ->setPriceDefinition(new AbsolutePriceDefinition($price));
             $cart->addLineItems(new LineItemCollection([$creditLineItem]));
         }
         $cart = $this->getContainer()->get(Processor::class)->process($cart, $this->salesChannelContext, new CartBehavior());

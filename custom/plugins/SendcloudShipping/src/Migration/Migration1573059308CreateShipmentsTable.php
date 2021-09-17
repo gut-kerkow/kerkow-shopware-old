@@ -48,7 +48,7 @@ class Migration1573059308CreateShipmentsTable extends MigrationStep
         DEFAULT CHARSET = utf8
         COLLATE = utf8_general_ci;';
 
-        $connection->executeQuery($sql);
+        $connection->executeUpdate($sql);
     }
 
     /**
@@ -61,6 +61,6 @@ class Migration1573059308CreateShipmentsTable extends MigrationStep
     public function updateDestructive(Connection $connection): void
     {
         $sql = 'DROP TABLE IF EXISTS `' . self::SHIPMENTS_TABLE . '`';
-        $connection->executeQuery($sql);
+        $connection->executeUpdate($sql);
     }
 }

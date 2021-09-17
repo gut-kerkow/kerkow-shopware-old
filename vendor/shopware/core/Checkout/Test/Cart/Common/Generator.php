@@ -23,6 +23,8 @@ use Shopware\Core\Checkout\Test\Payment\Handler\V630\SyncTestPaymentHandler;
 use Shopware\Core\Content\Product\Cart\ProductGateway;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\Pricing\CashRoundingConfig;
+use Shopware\Core\Framework\DataAbstractionLayer\TaxFreeConfig;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\Country\Aggregate\CountryState\CountryStateEntity;
 use Shopware\Core\System\Country\CountryEntity;
@@ -92,8 +94,8 @@ class Generator extends TestCase
         if (!$country) {
             $country = new CountryEntity();
             $country->setId('5cff02b1029741a4891c430bcd9e3603');
-            $country->setTaxFree(false);
-            $country->setCompanyTaxFree(false);
+            $country->setCustomerTax(new TaxFreeConfig(false, Defaults::CURRENCY, 0));
+            $country->setCompanyTax(new TaxFreeConfig(false, Defaults::CURRENCY, 0));
             $country->setName('Germany');
         }
         if (!$state) {
@@ -139,6 +141,7 @@ class Generator extends TestCase
         return new SalesChannelContext(
             $baseContext,
             Uuid::randomHex(),
+            Uuid::randomHex(),
             $salesChannel,
             $currency,
             $currentCustomerGroup,
@@ -148,6 +151,8 @@ class Generator extends TestCase
             $shippingMethod,
             ShippingLocation::createFromAddress($shipping),
             $customer,
+            new CashRoundingConfig(2, 0.01, true),
+            new CashRoundingConfig(2, 0.01, true),
             []
         );
     }

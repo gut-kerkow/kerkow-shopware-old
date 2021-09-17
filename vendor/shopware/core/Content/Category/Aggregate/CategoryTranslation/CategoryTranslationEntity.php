@@ -3,11 +3,14 @@
 namespace Shopware\Core\Content\Category\Aggregate\CategoryTranslation;
 
 use Shopware\Core\Content\Category\CategoryEntity;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopware\Core\Framework\DataAbstractionLayer\TranslationEntity;
 use Shopware\Core\System\Language\LanguageEntity;
 
 class CategoryTranslationEntity extends TranslationEntity
 {
+    use EntityCustomFieldsTrait;
+
     /**
      * @var string
      */
@@ -36,12 +39,22 @@ class CategoryTranslationEntity extends TranslationEntity
     /**
      * @var array|null
      */
-    protected $customFields;
+    protected $slotConfig;
 
     /**
-     * @var array|null
+     * @var string|null
      */
-    protected $slotConfig;
+    protected $linkType;
+
+    /**
+     * @var bool|null
+     */
+    protected $linkNewTab;
+
+    /**
+     * @var string|null
+     */
+    protected $internalLink;
 
     /**
      * @var string|null
@@ -98,16 +111,6 @@ class CategoryTranslationEntity extends TranslationEntity
         $this->category = $category;
     }
 
-    public function getCustomFields(): ?array
-    {
-        return $this->customFields;
-    }
-
-    public function setCustomFields(?array $customFields): void
-    {
-        $this->customFields = $customFields;
-    }
-
     public function getSlotConfig(): ?array
     {
         return $this->slotConfig;
@@ -116,6 +119,36 @@ class CategoryTranslationEntity extends TranslationEntity
     public function setSlotConfig(array $slotConfig): void
     {
         $this->slotConfig = $slotConfig;
+    }
+
+    public function getLinkType(): ?string
+    {
+        return $this->linkType;
+    }
+
+    public function setLinkType(?string $linkType): void
+    {
+        $this->linkType = $linkType;
+    }
+
+    public function getLinkNewTab(): ?bool
+    {
+        return $this->linkNewTab;
+    }
+
+    public function setLinkNewTab(?bool $linkNewTab): void
+    {
+        $this->linkNewTab = $linkNewTab;
+    }
+
+    public function getInternalLink(): ?string
+    {
+        return $this->internalLink;
+    }
+
+    public function setInternalLink(?string $internalLink): void
+    {
+        $this->internalLink = $internalLink;
     }
 
     public function getExternalLink(): ?string

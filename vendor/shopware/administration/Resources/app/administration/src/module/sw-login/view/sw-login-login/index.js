@@ -9,14 +9,25 @@ Component.register('sw-login-login', {
     inject: ['loginService', 'userService', 'licenseViolationService'],
 
     mixins: [
-        Mixin.getByName('notification')
+        Mixin.getByName('notification'),
     ],
 
     data() {
         return {
             username: '',
-            password: ''
+            password: '',
+            loginAlertMessage: '',
         };
+    },
+
+    computed: {
+        showLoginAlert() {
+            if (!Shopware.Feature.isActive('FEATURE_NEXT_13795')) {
+                return false;
+            }
+
+            return typeof this.loginAlertMessage === 'string' && this.loginAlertMessage.length >= 1;
+        },
     },
 
     created() {
@@ -51,7 +62,9 @@ Component.register('sw-login-login', {
                 setTimeout(resolve, 150);
             });
 
-            this.licenseViolationService.removeTimeFromLocalStorage(this.licenseViolationService.key.showViolationsKey);
+            if (this.licenseViolationService) {
+                this.licenseViolationService.removeTimeFromLocalStorage(this.licenseViolationService.key.showViolationsKey);
+            }
 
             return animationPromise.then(() => {
                 this.$parent.isLoginSuccess = false;
@@ -62,7 +75,7 @@ Component.register('sw-login-login', {
                 if (shouldReload) {
                     sessionStorage.removeItem('sw-login-should-reload');
                     // reload page to rebuild the administration with all dependencies
-                    this.$router.go();
+                    window.location.reload(true);
                 }
             });
         },
@@ -78,7 +91,7 @@ Component.register('sw-login-login', {
                 return;
             }
 
-            if (previousRoute && previousRoute.fullPath) {
+            if (previousRoute?.fullPath) {
                 this.$router.push(previousRoute.fullPath);
                 return;
             }
@@ -100,23 +113,33 @@ Component.register('sw-login-login', {
         createNotificationFromResponse(response) {
             if (!response.response) {
                 this.createNotificationError({
-                    message: this.$tc('sw-login.index.messageGeneralRequestError')
+                    message: this.$tc('sw-login.index.messageGeneralRequestError'),
                 });
                 return;
             }
 
             const url = response.config.url;
             let error = response.response.data.errors;
-            error = error.length > 1 ? error : error[0];
+            error = Array.isArray(error) ? error[0] : error;
 
-            if (error.code && error.code.length) {
+            if (Shopware.Feature.isActive('FEATURE_NEXT_13795') && parseInt(error.status, 10) === 429) {
+                const seconds = error?.meta?.parameters?.seconds;
+                this.loginAlertMessage = this.$tc('sw-login.index.messageAuthThrottled', 0, { seconds });
+
+                setTimeout(() => {
+                    this.loginAlertMessage = '';
+                }, seconds * 1000);
+                return;
+            }
+
+            if (error.code?.length) {
                 const { message, title } = getErrorCode(parseInt(error.code, 10));
 
                 this.createNotificationError({
                     title: this.$tc(title),
-                    message: this.$tc(message, 0, { url })
+                    message: this.$tc(message, 0, { url }),
                 });
             }
-        }
-    }
+        },
+    },
 });

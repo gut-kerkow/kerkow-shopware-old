@@ -66,8 +66,8 @@ class ShipmentController extends AbstractController
      * Returns dashboard configuration
      *
      * @RouteScope(scopes={"api"})
-     * @Route(path="/api/v{version}/sendcloud/shipment/{orderNumber}", name="api.sendcloud.shipment.get",
-     *     methods={"GET"})
+     * @Route(path="/api/v{version}/sendcloud/shipment/{orderNumber}", name="api.sendcloud.shipment.get", methods={"GET"})
+     * @Route(path="/api/sendcloud/shipment/{orderNumber}", name="api.sendcloud.shipment.get.new", methods={"GET"})
      *
      * @param string $orderNumber
      *
@@ -97,8 +97,8 @@ class ShipmentController extends AbstractController
      * Saves service point information
      *
      * @RouteScope(scopes={"api"})
-     * @Route(path="/api/v{version}/sendcloud/shipment/save/{orderNumber}", name="api.sendcloud.shipment.save",
-     *     methods={"POST"})
+     * @Route(path="/api/v{version}/sendcloud/shipment/save/{orderNumber}", name="api.sendcloud.shipment.save", methods={"POST"})
+     * @Route(path="/api/sendcloud/shipment/save/{orderNumber}", name="api.sendcloud.shipment.save.new", methods={"POST"})
      *
      * @param string $orderNumber
      * @param Request $request

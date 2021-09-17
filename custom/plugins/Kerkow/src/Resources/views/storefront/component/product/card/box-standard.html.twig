@@ -43,7 +43,7 @@
 			{% endif %}
 		</a>
 
-		{% if feature('FEATURE_NEXT_10549') and shopware.config.core.cart.wishlistEnabled %}
+		{% if config('core.cart.wishlistEnabled') %}
 			{% block component_product_box_wishlist_action %}
 				{% sw_include '@Storefront/storefront/component/product/card/wishlist.html.twig' with {
                                         appearance: 'circle',
@@ -54,6 +54,11 @@
 
 	</div>
 {% endblock %}
+
 {% block component_product_box_variant_characteristics %}
+
+{% endblock %}
+
+{% block component_product_box_action %}
 
 {% endblock %}

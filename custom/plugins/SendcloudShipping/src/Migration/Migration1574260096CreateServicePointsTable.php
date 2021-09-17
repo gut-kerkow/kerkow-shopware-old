@@ -39,7 +39,7 @@ class Migration1574260096CreateServicePointsTable extends MigrationStep
         DEFAULT CHARSET = utf8
         COLLATE = utf8_general_ci;';
 
-        $connection->executeQuery($sql);
+        $connection->executeUpdate($sql);
     }
 
     /**
@@ -52,6 +52,6 @@ class Migration1574260096CreateServicePointsTable extends MigrationStep
     public function updateDestructive(Connection $connection): void
     {
         $sql = 'DROP TABLE IF EXISTS `' . self::SERVICE_POINTS_TABLE . '`';
-        $connection->executeQuery($sql);
+        $connection->executeUpdate($sql);
     }
 }

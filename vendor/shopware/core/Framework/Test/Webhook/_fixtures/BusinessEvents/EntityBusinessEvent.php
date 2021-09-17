@@ -36,9 +36,10 @@ class EntityBusinessEvent implements BusinessEventInterface, BusinessEventEncode
                 'versionId' => null,
                 'name' => $this->tax->getName(),
                 'taxRate' => (int) $this->tax->getTaxRate(),
+                'position' => $this->tax->getPosition(),
                 'customFields' => null,
                 'translated' => [],
-                'createdAt' => $this->tax->getCreatedAt()->format(DATE_RFC3339_EXTENDED),
+                'createdAt' => $this->tax->getCreatedAt()->format(\DATE_RFC3339_EXTENDED),
                 'updatedAt' => null,
                 'extensions' => [
                     'foreignKeys' => [

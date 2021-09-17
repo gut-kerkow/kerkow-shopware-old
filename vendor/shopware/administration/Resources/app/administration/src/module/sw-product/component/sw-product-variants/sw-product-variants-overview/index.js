@@ -1,7 +1,7 @@
 import template from './sw-product-variants-overview.html.twig';
 import './sw-products-variants-overview.scss';
 
-const { Component, Mixin } = Shopware;
+const { Component, Mixin, Context } = Shopware;
 const { Criteria } = Shopware.Data;
 const { mapState, mapGetters } = Shopware.Component.getComponentHelper();
 
@@ -10,16 +10,26 @@ Component.register('sw-product-variants-overview', {
 
     inject: [
         'repositoryFactory',
-        'acl'
+        'acl',
+        'feature',
     ],
 
     mixins: [
         Mixin.getByName('notification'),
-        Mixin.getByName('listing')
+        Mixin.getByName('listing'),
     ],
+
+    props: {
+        selectedGroups: {
+            type: Array,
+            required: true,
+        },
+    },
 
     data() {
         return {
+            sortBy: 'name',
+            sortDirection: 'DESC',
             showDeleteModal: false,
             modalLoading: false,
             priceEdit: false,
@@ -27,21 +37,8 @@ Component.register('sw-product-variants-overview', {
             activeFilter: [],
             includeOptions: [],
             filterWindowOpen: false,
-            toBeDeletedVariantId: null
+            toBeDeletedVariantId: null,
         };
-    },
-
-    props: {
-        selectedGroups: {
-            type: Array,
-            required: true
-        }
-    },
-
-    watch: {
-        'selectedGroups'() {
-            this.getFilterOptions();
-        }
     },
 
     computed: {
@@ -49,18 +46,22 @@ Component.register('sw-product-variants-overview', {
             'product',
             'currencies',
             'taxes',
-            'variants'
+            'variants',
         ]),
 
         ...mapGetters('swProductDetail', [
             'isLoading',
             'defaultPrice',
             'defaultCurrency',
-            'productTaxRate'
+            'productTaxRate',
         ]),
 
         productRepository() {
             return this.repositoryFactory.create('product');
+        },
+
+        productMediaRepository() {
+            return this.repositoryFactory.create(this.product.media.entity);
         },
 
         variantColumns() {
@@ -68,7 +69,7 @@ Component.register('sw-product-variants-overview', {
                 {
                     property: 'name',
                     label: this.$tc('sw-product.variations.generatedListColumnVariation'),
-                    allowResize: true
+                    allowResize: true,
                 },
                 ...this.currencyColumns,
                 {
@@ -77,38 +78,46 @@ Component.register('sw-product-variants-overview', {
                     allowResize: true,
                     inlineEdit: 'number',
                     width: '125px',
-                    align: 'right'
+                    align: 'right',
                 },
                 {
                     property: 'productNumber',
                     label: this.$tc('sw-product.variations.generatedListColumnProductNumber'),
                     allowResize: true,
                     inlineEdit: 'string',
-                    width: '150px'
+                    width: '150px',
+                },
+                {
+                    property: 'media',
+                    label: this.$tc('sw-product.detailBase.cardTitleMedia'),
+                    allowResize: true,
+                    inlineEdit: true,
+                    sortable: false,
                 },
                 {
                     property: 'active',
                     label: this.$tc('sw-product.variations.generatedListColumnActive'),
                     allowResize: true,
                     inlineEdit: 'boolean',
-                    align: 'center'
-                }
+                    align: 'center',
+                },
             ];
         },
 
         currencyColumns() {
-            return this.currencies.sort((a, b) => {
+            // eslint-disable-next-line vue/no-side-effects-in-computed-properties
+            return this.currencies.sort((_a, b) => {
                 return b.isSystemDefault ? 1 : -1;
             }).map((currency) => {
                 return {
-                    property: `price-${currency.isoCode}`,
+                    property: `price.${currency.id}.net`,
                     label: currency.translated.name || currency.name,
                     visible: currency.isSystemDefault,
                     allowResize: true,
                     primary: false,
                     rawData: false,
                     inlineEdit: 'number',
-                    width: '250px'
+                    width: '250px',
                 };
             });
         },
@@ -118,7 +127,13 @@ Component.register('sw-product-variants-overview', {
             criteria.addFilter(Criteria.equals('canonicalProductId', this.toBeDeletedVariantId));
 
             return criteria;
-        }
+        },
+    },
+
+    watch: {
+        'selectedGroups'() {
+            this.getFilterOptions();
+        },
     },
 
     methods: {
@@ -137,6 +152,8 @@ Component.register('sw-product-variants-overview', {
                     .setLimit(this.limit)
                     .addFilter(Criteria.equals('product.parentId', this.product.id));
 
+                searchCriteria.addAssociation('media');
+
                 searchCriteria.getAssociation('options')
                     .addSorting(Criteria.sort('groupId'))
                     .addSorting(Criteria.sort('id'));
@@ -152,23 +169,17 @@ Component.register('sw-product-variants-overview', {
                 }
 
                 // check for other sort values
-                if (!this.$route.query.sortBy || this.$route.query.sortBy === 'name') {
+                if (this.sortBy === 'name') {
                     searchCriteria
                         .addSorting(Criteria.sort('product.options.groupId', this.sortDirection))
                         .addSorting(Criteria.sort('product.options.id', this.sortDirection));
                 } else {
-                    searchCriteria
-                        .addSorting(Criteria.sort(this.sortBy, this.sortDirection));
+                    searchCriteria.addSorting(Criteria.sort(this.sortBy, this.sortDirection));
                 }
-
-                // update product because childCount has been update
-                this.productRepository.get(this.product.id, Shopware.Context.api).then(res => {
-                    Shopware.State.commit('swProductDetail/setProduct', res);
-                });
 
                 // Start search
                 this.productRepository
-                    .search(searchCriteria, Shopware.Context.api)
+                    .search(searchCriteria)
                     .then((res) => {
                         this.total = res.total;
                         Shopware.State.commit('swProductDetail/setVariants', res);
@@ -209,7 +220,7 @@ Component.register('sw-product-variants-overview', {
                         childCount: children.length,
                         parentId: null,
                         afterId: index > 0 ? this.selectedGroups[index - 1].id : null,
-                        storeObject: group
+                        storeObject: group,
                     };
                 });
 
@@ -235,7 +246,7 @@ Component.register('sw-product-variants-overview', {
                         childCount: 0,
                         parentId: option.groupId,
                         afterId,
-                        storeObject: element
+                        storeObject: element,
                     };
                 });
 
@@ -261,7 +272,7 @@ Component.register('sw-product-variants-overview', {
                 // Remove from include list
                 this.includeOptions.push({
                     id: option.id,
-                    groupId: option.parentId
+                    groupId: option.parentId,
                 });
             } else {
                 // Add to include option list
@@ -289,7 +300,7 @@ Component.register('sw-product-variants-overview', {
                     // otherwise create new group with the option
                     result.push({
                         id: option.groupId,
-                        options: [option.id]
+                        options: [option.id],
                     });
                 }
 
@@ -321,6 +332,18 @@ Component.register('sw-product-variants-overview', {
 
         isActiveFieldInherited(variant) {
             return variant.active === null;
+        },
+
+        isMediaFieldInherited(variant) {
+            if (variant.forceMediaInheritanceRemove) {
+                return false;
+            }
+
+            if (variant.media) {
+                return variant.media.length <= 0;
+            }
+
+            return !!variant.media;
         },
 
         onInheritanceRestore(variant, currency) {
@@ -365,11 +388,41 @@ Component.register('sw-product-variants-overview', {
                 currencyId: currency.id,
                 gross: defaultPrice.gross * currency.factor,
                 linked: defaultPrice.linked,
-                net: defaultPrice.net * currency.factor
+                net: defaultPrice.net * currency.factor,
             };
 
             // add new price currency to variant
             this.$set(variant.price, variant.price.length, newPrice);
+        },
+
+        onMediaInheritanceRestore(variant, isInlineEdit) {
+            if (!isInlineEdit) {
+                return;
+            }
+
+            variant.forceMediaInheritanceRemove = false;
+            variant.coverId = null;
+
+            variant.media.getIds().forEach((mediaId) => {
+                variant.media.remove(mediaId);
+            });
+        },
+
+        onMediaInheritanceRemove(variant, isInlineEdit) {
+            if (!isInlineEdit) {
+                return;
+            }
+
+            variant.forceMediaInheritanceRemove = true;
+            this.product.media.forEach(({ id, mediaId, position }) => {
+                const media = this.productMediaRepository.create(Context.api);
+                Object.assign(media, { mediaId, position, productId: this.product.id });
+                if (this.product.coverId === id) {
+                    variant.coverId = media.id;
+                }
+
+                variant.media.push(media);
+            });
         },
 
         getDefaultPriceForVariant(variant) {
@@ -399,16 +452,16 @@ Component.register('sw-product-variants-overview', {
                 return `${acc}${index > 0 ? ' - ' : ''}${option.translated.name}`;
             }, '');
 
-            this.productRepository.save(variation, Shopware.Context.api).then(() => {
+            this.productRepository.save(variation).then(() => {
                 // create success notification
                 const titleSaveSuccess = this.$tc('global.default.success');
                 const messageSaveSuccess = this.$tc('sw-product.detail.messageSaveSuccess', 0, {
-                    name: productName
+                    name: productName,
                 });
 
                 this.createNotificationSuccess({
                     title: titleSaveSuccess,
-                    message: messageSaveSuccess
+                    message: messageSaveSuccess,
                 });
 
                 // update items
@@ -420,7 +473,7 @@ Component.register('sw-product-variants-overview', {
 
                 this.createNotificationError({
                     title: titleSaveError,
-                    message: messageSaveError
+                    message: messageSaveError,
                 });
             });
         },
@@ -444,18 +497,18 @@ Component.register('sw-product-variants-overview', {
                     this.toBeDeletedVariantId = null;
 
                     this.createNotificationError({
-                        message: this.$tc('sw-product.variations.generatedListMessageDeleteErrorCanonicalUrl')
+                        message: this.$tc('sw-product.variations.generatedListMessageDeleteErrorCanonicalUrl'),
                     });
 
                     return;
                 }
 
-                this.productRepository.delete(item.id, Shopware.Context.api).then(() => {
+                this.productRepository.delete(item.id).then(() => {
                     this.modalLoading = false;
                     this.toBeDeletedVariantId = null;
 
                     this.createNotificationSuccess({
-                        message: this.$tc('sw-product.variations.generatedListMessageDeleteSuccess')
+                        message: this.$tc('sw-product.variations.generatedListMessageDeleteSuccess'),
                     });
 
                     this.getList();
@@ -464,24 +517,24 @@ Component.register('sw-product-variants-overview', {
         },
 
         async canVariantBeDeleted() {
-            const products = await this.productRepository.search(this.canBeDeletedCriteria, Shopware.Context.api);
+            const products = await this.productRepository.search(this.canBeDeletedCriteria);
 
             return products.length === 0;
         },
 
         onOptionEdit(variant) {
-            if (variant && variant.id) {
+            if (variant?.id) {
                 this.$router.push({
                     name: 'sw.product.detail',
                     params: {
-                        id: variant.id
-                    }
+                        id: variant.id,
+                    },
                 });
             }
         },
 
         isPriceEditing(value) {
             this.priceEdit = value;
-        }
-    }
+        },
+    },
 });

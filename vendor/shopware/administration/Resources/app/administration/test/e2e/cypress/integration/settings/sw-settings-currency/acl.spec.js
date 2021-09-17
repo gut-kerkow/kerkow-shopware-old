@@ -24,11 +24,9 @@ describe('Currency: Test acl privileges', () => {
                 key: 'currencies',
                 role: 'viewer'
             }
-        ]);
-
-        // go to currency module
-        cy.get('.sw-admin-menu__item--sw-settings').click();
-        cy.get('#sw-settings-currency').click();
+        ]).then(() => {
+            cy.visit(`${Cypress.env('admin')}#/sw/settings/currency/index`);
+        });
 
         // click on first element in grid
         cy.get(`${page.elements.dataGridRow}--2`)
@@ -54,18 +52,16 @@ describe('Currency: Test acl privileges', () => {
                 key: 'currencies',
                 role: 'editor'
             }
-        ]);
+        ]).then(() => {
+            cy.visit(`${Cypress.env('admin')}#/sw/settings/currency/index`);
+        });
 
         // Request we want to wait for later
         cy.server();
         cy.route({
-            url: '/api/v*/currency/*',
+            url: `${Cypress.env('apiPath')}/currency/*`,
             method: 'patch'
         }).as('saveCurrency');
-
-        // go to currency module
-        cy.get('.sw-admin-menu__item--sw-settings').click();
-        cy.get('#sw-settings-currency').click();
 
         // click on first element in grid
         cy.get(`${page.elements.dataGridRow}--2`)
@@ -106,18 +102,16 @@ describe('Currency: Test acl privileges', () => {
                 key: 'currencies',
                 role: 'creator'
             }
-        ]);
+        ]).then(() => {
+            cy.visit(`${Cypress.env('admin')}#/sw/settings/currency/index`);
+        });
 
         // Request we want to wait for later
         cy.server();
         cy.route({
-            url: '/api/v*/currency',
+            url: `${Cypress.env('apiPath')}/currency`,
             method: 'post'
         }).as('saveCurrency');
-
-        // go to currency module
-        cy.get('.sw-admin-menu__item--sw-settings').click();
-        cy.get('#sw-settings-currency').click();
 
         // Create currency
         cy.get('a[href="#/sw/settings/currency/create"]').click();
@@ -126,7 +120,6 @@ describe('Currency: Test acl privileges', () => {
         cy.get('input[name=sw-field--currency-isoCode]').type('D');
         cy.get('input[name=sw-field--currency-shortName]').type('D');
         cy.get('input[name=sw-field--currency-symbol]').type('D¥');
-        cy.get('input[name=sw-field--currency-decimalPrecision]').type('2');
         cy.get('input[name=sw-field--currency-factor]').type('1.0076');
         cy.get(page.elements.currencySaveAction).click();
 
@@ -152,18 +145,16 @@ describe('Currency: Test acl privileges', () => {
                 key: 'currencies',
                 role: 'deleter'
             }
-        ]);
+        ]).then(() => {
+            cy.visit(`${Cypress.env('admin')}#/sw/settings/currency/index`);
+        });
 
         // Request we want to wait for later
         cy.server();
         cy.route({
-            url: '/api/v*/currency/*',
+            url: `${Cypress.env('apiPath')}/currency/*`,
             method: 'delete'
         }).as('deleteCurrency');
-
-        // go to currency module
-        cy.get('.sw-admin-menu__item--sw-settings').click();
-        cy.get('#sw-settings-currency').click();
 
         // filter currency via search bar
         cy.get('input.sw-search-bar__input').typeAndCheckSearchField('ZZ Yen');

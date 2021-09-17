@@ -239,9 +239,6 @@
 }
 @include media-breakpoint-up(sm) {
   .product-detail {
-    .product-buy-content-container {
-      padding-left: 0;
-    }
     .product-detail-description-short {
       margin-bottom: 0.5rem;
     }
@@ -321,7 +318,8 @@
 @include media-breakpoint-only(xl) {
   .product-detail {
     .product-buy-content-container {
-      padding: 4rem 7rem 0 7rem;
+      padding: 0;
+      padding-left: 7.5rem;
     }
     .product-detail-price {
       margin-top: 2.5rem;

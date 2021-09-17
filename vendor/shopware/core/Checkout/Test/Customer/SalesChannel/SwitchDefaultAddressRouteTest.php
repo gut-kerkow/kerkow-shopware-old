@@ -8,8 +8,10 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestDataCollection;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\PlatformRequest;
 
+/**
+ * @group store-api
+ */
 class SwitchDefaultAddressRouteTest extends TestCase
 {
     use IntegrationTestBehaviour;
@@ -57,7 +59,7 @@ class SwitchDefaultAddressRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/account/login',
+                '/store-api/account/login',
                 [
                     'email' => $email,
                     'password' => 'shopware',
@@ -76,7 +78,7 @@ class SwitchDefaultAddressRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/account/customer',
+                '/store-api/account/customer',
                 []
             );
 
@@ -86,14 +88,14 @@ class SwitchDefaultAddressRouteTest extends TestCase
         $this->browser
             ->request(
                 'PATCH',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/account/address/default-billing/' . $this->newAddressId,
+                '/store-api/account/address/default-billing/' . $this->newAddressId,
                 []
             );
 
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/account/customer',
+                '/store-api/account/customer',
                 []
             );
 
@@ -106,7 +108,7 @@ class SwitchDefaultAddressRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/account/customer',
+                '/store-api/account/customer',
                 []
             );
 
@@ -116,14 +118,14 @@ class SwitchDefaultAddressRouteTest extends TestCase
         $this->browser
             ->request(
                 'PATCH',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/account/address/default-shipping/' . $this->newAddressId,
+                '/store-api/account/address/default-shipping/' . $this->newAddressId,
                 []
             );
 
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/account/customer',
+                '/store-api/account/customer',
                 []
             );
 
@@ -147,7 +149,7 @@ class SwitchDefaultAddressRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/account/address',
+                '/store-api/account/address',
                 $data
             );
 

@@ -1,5 +1,5 @@
 import { shallowMount, createLocalVue } from '@vue/test-utils';
-import EntityCollection from 'src/core/data-new/entity-collection.data';
+import EntityCollection from 'src/core/data/entity-collection.data';
 import utils from 'src/core/service/util.service';
 import 'src/app/component/form/select/entity/sw-entity-multi-select';
 import 'src/app/component/form/select/base/sw-select-base';
@@ -91,7 +91,6 @@ const createEntityMultiSelect = (customOptions) => {
             'sw-highlight-text': Shopware.Component.build('sw-highlight-text'),
             'sw-product-variant-info': Shopware.Component.build('sw-product-variant-info')
         },
-        mocks: { $tc: key => key },
         propsData: {
             entity: 'test',
             entityCollection: getCollection()
@@ -104,9 +103,6 @@ const createEntityMultiSelect = (customOptions) => {
                         search: () => Promise.resolve(getCollection())
                     };
                 }
-            },
-            feature: {
-                isActive: () => true
             }
         }
     };
@@ -137,9 +133,6 @@ describe('components/sw-entity-multi-select', () => {
                             search: () => Promise.resolve(getPropertyCollection())
                         };
                     }
-                },
-                feature: {
-                    isActive: () => true
                 }
             }
         });

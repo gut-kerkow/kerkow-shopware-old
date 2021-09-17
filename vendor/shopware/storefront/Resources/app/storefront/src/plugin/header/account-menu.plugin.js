@@ -26,7 +26,7 @@ export default class OffCanvasAccountMenu extends Plugin {
          * from which direction the
          * offcanvas opens
          */
-        offcanvasPostion: 'left'
+        offcanvasPostion: 'left',
     };
 
     init() {
@@ -60,7 +60,8 @@ export default class OffCanvasAccountMenu extends Plugin {
 
         this._dropdown.classList.add(this.options.hiddenClass);
 
-        OffCanvas.open(this._dropdown.innerHTML, null, this.options.offcanvasPostion, true, OffCanvas.REMOVE_OFF_CANVAS_DELAY());
+        const isFullwidth = ViewportDetection.isXS();
+        OffCanvas.open(this._dropdown.innerHTML, null, this.options.offcanvasPostion, true, OffCanvas.REMOVE_OFF_CANVAS_DELAY(), isFullwidth);
         OffCanvas.setAdditionalClassName(this.options.additionalClass);
 
         this.$emitter.publish('onClickAccountMenuTrigger');

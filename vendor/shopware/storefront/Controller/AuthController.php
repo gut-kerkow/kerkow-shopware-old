@@ -4,6 +4,7 @@ namespace Shopware\Storefront\Controller;
 
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Checkout\Customer\Exception\BadCredentialsException;
+use Shopware\Core\Checkout\Customer\Exception\CustomerAuthThrottledException;
 use Shopware\Core\Checkout\Customer\Exception\CustomerNotFoundByHashException;
 use Shopware\Core\Checkout\Customer\Exception\CustomerNotFoundException;
 use Shopware\Core\Checkout\Customer\Exception\CustomerRecoveryHashExpiredException;
@@ -18,6 +19,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\RateLimiter\Exception\RateLimitExceededException;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Core\Framework\Routing\Annotation\Since;
 use Shopware\Core\Framework\Routing\Exception\MissingRequestParameterException;
@@ -36,40 +38,19 @@ use Symfony\Component\Routing\Annotation\Route;
  */
 class AuthController extends StorefrontController
 {
-    /**
-     * @var AccountLoginPageLoader
-     */
-    private $loginPageLoader;
+    private AccountLoginPageLoader $loginPageLoader;
 
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $customerRecoveryRepository;
+    private EntityRepositoryInterface $customerRecoveryRepository;
 
-    /**
-     * @var AbstractSendPasswordRecoveryMailRoute
-     */
-    private $sendPasswordRecoveryMailRoute;
+    private AbstractSendPasswordRecoveryMailRoute $sendPasswordRecoveryMailRoute;
 
-    /**
-     * @var AbstractResetPasswordRoute
-     */
-    private $resetPasswordRoute;
+    private AbstractResetPasswordRoute $resetPasswordRoute;
 
-    /**
-     * @var AbstractLoginRoute
-     */
-    private $loginRoute;
+    private AbstractLoginRoute $loginRoute;
 
-    /**
-     * @var AbstractLogoutRoute
-     */
-    private $logoutRoute;
+    private AbstractLogoutRoute $logoutRoute;
 
-    /**
-     * @var CartService
-     */
-    private $cartService;
+    private CartService $cartService;
 
     public function __construct(
         AccountLoginPageLoader $loginPageLoader,
@@ -113,6 +94,7 @@ class AuthController extends StorefrontController
             'redirectParameters' => $request->get('redirectParameters', json_encode([])),
             'page' => $page,
             'loginError' => (bool) $request->get('loginError'),
+            'waitTime' => $request->get('waitTime'),
             'errorSnippet' => $request->get('errorSnippet'),
             'data' => $data,
         ]);
@@ -135,8 +117,13 @@ class AuthController extends StorefrontController
             return $this->createActionResponse($request);
         }
 
+        $waitTime = (int) $request->get('waitTime');
+        if ($waitTime) {
+            $this->addFlash(self::INFO, $this->trans('account.loginThrottled', ['%seconds%' => $waitTime]));
+        }
+
         if ((bool) $request->get('loginError')) {
-            $this->addFlash('danger', $this->trans('account.orderGuestLoginWrongCredentials'));
+            $this->addFlash(self::DANGER, $this->trans('account.orderGuestLoginWrongCredentials'));
         }
 
         $page = $this->loginPageLoader->load($request, $context);
@@ -152,15 +139,15 @@ class AuthController extends StorefrontController
      * @Since("6.0.0.0")
      * @Route("/account/logout", name="frontend.account.logout.page", methods={"GET"})
      */
-    public function logout(Request $request, SalesChannelContext $context): Response
+    public function logout(Request $request, SalesChannelContext $context, RequestDataBag $dataBag): Response
     {
         if ($context->getCustomer() === null) {
             return $this->redirectToRoute('frontend.account.login.page');
         }
 
         try {
-            $this->logoutRoute->logout($context);
-            $this->addFlash('success', $this->trans('account.logoutSucceeded'));
+            $this->logoutRoute->logout($context, $dataBag);
+            $this->addFlash(self::SUCCESS, $this->trans('account.logoutSucceeded'));
 
             $parameters = [];
         } catch (ConstraintViolationException $formViolations) {
@@ -187,9 +174,13 @@ class AuthController extends StorefrontController
 
                 return $this->createActionResponse($request);
             }
-        } catch (BadCredentialsException | UnauthorizedHttpException | InactiveCustomerException $e) {
+        } catch (BadCredentialsException | UnauthorizedHttpException | InactiveCustomerException | CustomerAuthThrottledException $e) {
             if ($e instanceof InactiveCustomerException) {
                 $errorSnippet = $e->getSnippetKey();
+            }
+
+            if ($e instanceof CustomerAuthThrottledException) {
+                $waitTime = $e->getWaitTime();
             }
         }
 
@@ -200,6 +191,7 @@ class AuthController extends StorefrontController
             [
                 'loginError' => true,
                 'errorSnippet' => $errorSnippet ?? null,
+                'waitTime' => $waitTime ?? null,
             ]
         );
     }
@@ -237,11 +229,13 @@ class AuthController extends StorefrontController
                 false
             );
 
-            $this->addFlash('success', $this->trans('account.recoveryMailSend'));
+            $this->addFlash(self::SUCCESS, $this->trans('account.recoveryMailSend'));
         } catch (CustomerNotFoundException $e) {
-            $this->addFlash('success', $this->trans('account.recoveryMailSend'));
+            $this->addFlash(self::SUCCESS, $this->trans('account.recoveryMailSend'));
         } catch (InconsistentCriteriaIdsException $e) {
-            $this->addFlash('danger', $this->trans('error.message-default'));
+            $this->addFlash(self::DANGER, $this->trans('error.message-default'));
+        } catch (RateLimitExceededException $e) {
+            $this->addFlash(self::INFO, $this->trans('error.rateLimitExceeded', ['%seconds%' => $e->getWaitTime()]));
         }
 
         return $this->redirectToRoute('frontend.account.recover.page');
@@ -261,7 +255,7 @@ class AuthController extends StorefrontController
         $hash = $request->get('hash');
 
         if (!$hash) {
-            $this->addFlash('danger', $this->trans('account.passwordHashNotFound'));
+            $this->addFlash(self::DANGER, $this->trans('account.passwordHashNotFound'));
 
             return $this->redirectToRoute('frontend.account.recover.request');
         }
@@ -274,13 +268,13 @@ class AuthController extends StorefrontController
             ->first();
 
         if ($customerRecovery === null) {
-            $this->addFlash('danger', $this->trans('account.passwordHashNotFound'));
+            $this->addFlash(self::DANGER, $this->trans('account.passwordHashNotFound'));
 
             return $this->redirectToRoute('frontend.account.recover.request');
         }
 
         if (!$this->checkHash($hash, $context->getContext())) {
-            $this->addFlash('danger', $this->trans('account.passwordHashExpired'));
+            $this->addFlash(self::DANGER, $this->trans('account.passwordHashExpired'));
 
             return $this->redirectToRoute('frontend.account.recover.request');
         }
@@ -307,20 +301,20 @@ class AuthController extends StorefrontController
 
             $this->resetPasswordRoute->resetPassword($pw->toRequestDataBag(), $context);
 
-            $this->addFlash('success', $this->trans('account.passwordChangeSuccess'));
+            $this->addFlash(self::SUCCESS, $this->trans('account.passwordChangeSuccess'));
         } catch (ConstraintViolationException $formViolations) {
-            $this->addFlash('danger', $this->trans('account.passwordChangeNoSuccess'));
+            $this->addFlash(self::DANGER, $this->trans('account.passwordChangeNoSuccess'));
 
             return $this->forwardToRoute(
                 'frontend.account.recover.password.page',
                 ['hash' => $hash, 'formViolations' => $formViolations, 'passwordFormViolation' => true]
             );
         } catch (CustomerNotFoundByHashException $e) {
-            $this->addFlash('danger', $this->trans('account.passwordChangeNoSuccess'));
+            $this->addFlash(self::DANGER, $this->trans('account.passwordChangeNoSuccess'));
 
             return $this->forwardToRoute('frontend.account.recover.request');
         } catch (CustomerRecoveryHashExpiredException $e) {
-            $this->addFlash('danger', $this->trans('account.passwordHashExpired'));
+            $this->addFlash(self::DANGER, $this->trans('account.passwordHashExpired'));
 
             return $this->forwardToRoute('frontend.account.recover.request');
         }

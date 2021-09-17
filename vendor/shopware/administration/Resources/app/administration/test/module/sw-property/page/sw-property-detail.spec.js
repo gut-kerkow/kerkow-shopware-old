@@ -1,18 +1,8 @@
-import { createLocalVue, shallowMount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import 'src/module/sw-property/page/sw-property-detail';
 
 function createWrapper(privileges = []) {
-    const localVue = createLocalVue();
-    localVue.directive('tooltip', {});
-
     return shallowMount(Shopware.Component.build('sw-property-detail'), {
-        localVue,
-        mocks: {
-            $tc: () => {},
-            $device: {
-                getSystemKey: () => {}
-            }
-        },
         provide: {
             repositoryFactory: {
                 create: () => ({
@@ -40,6 +30,9 @@ function createWrapper(privileges = []) {
 
                     return privileges.includes(identifier);
                 }
+            },
+            customFieldDataProviderService: {
+                getCustomFieldSets: () => Promise.resolve([])
             }
         },
         stubs: {
@@ -76,7 +69,7 @@ describe('module/sw-property/page/sw-property-detail', () => {
 
         const saveButton = wrapper.find('.sw-property-detail__save-action');
 
-        expect(saveButton.attributes().isLoading).toBeFalsy();
+        expect(saveButton.attributes()['is-loading']).toBeFalsy();
         expect(saveButton.attributes().disabled).toBeTruthy();
     });
 

@@ -9,13 +9,29 @@ Component.register('sw-base-filter', {
     props: {
         title: {
             type: String,
-            required: true
-        }
+            required: true,
+        },
+        showResetButton: {
+            type: Boolean,
+            required: true,
+        },
+        active: {
+            type: Boolean,
+            required: true,
+        },
+    },
+
+    watch: {
+        active(value) {
+            if (!value) {
+                this.resetFilter();
+            }
+        },
     },
 
     methods: {
         resetFilter() {
-            this.$emit('resetFilter');
-        }
-    }
+            this.$emit('filter-reset');
+        },
+    },
 });

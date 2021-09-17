@@ -7,6 +7,7 @@ use PHPUnit\Framework\TestCase;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityLoadedEventFactory;
 use Shopware\Core\Framework\DataAbstractionLayer\Read\EntityReaderInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\EntityAggregatorInterface;
@@ -260,6 +261,44 @@ class CustomFieldTest extends TestCase
         $criteria->addFilter(new EqualsFilter('custom."foo.bar"', 'baz'));
         $result = $repo->search($criteria, Context::createDefaultContext());
         static::assertEquals([$dotId], array_values($result->getIds()));
+    }
+
+    public function testSortingHyphenatedJson(): void
+    {
+        $this->addCustomFields(['hyphenated-property' => CustomFieldTypes::JSON]);
+
+        $entities = [
+            [
+                'id' => Uuid::randomHex(),
+                'name' => 'foo',
+                'custom' => [
+                    'hyphenated-property' => [
+                        'hyphenated-child' => 'bar',
+                    ],
+                ],
+            ],
+            [
+                'id' => Uuid::randomHex(),
+                'name' => 'bar',
+                'custom' => [
+                    'hyphenated-property' => [
+                        'hyphenated-child' => 'foo',
+                    ],
+                ],
+            ],
+        ];
+        $repo = $this->getTestRepository();
+        $repo->create($entities, Context::createDefaultContext());
+
+        $criteria = new Criteria();
+        $criteria->addSorting(new FieldSorting('custom.hyphenated-property.hyphenated-child', FieldSorting::DESCENDING));
+        $result = $repo->search($criteria, Context::createDefaultContext());
+        static::assertCount(2, $result);
+
+        $first = $result->first();
+        $last = $result->last();
+        static::assertEquals('foo', $first->get('custom')['hyphenated-property']['hyphenated-child']);
+        static::assertEquals('bar', $last->get('custom')['hyphenated-property']['hyphenated-child']);
     }
 
     public function testSortingInt(): void
@@ -920,7 +959,6 @@ class CustomFieldTest extends TestCase
 
         //#####
 
-        /* @var ArrayEntity $child */
         $context->setConsiderInheritance(false);
         $child = $repo->search(new Criteria([$childId]), $context)->first();
         static::assertNotNull($child);
@@ -1107,7 +1145,8 @@ class CustomFieldTest extends TestCase
             $this->getContainer()->get(VersionManager::class),
             $this->getContainer()->get(EntitySearcherInterface::class),
             $this->getContainer()->get(EntityAggregatorInterface::class),
-            $this->getContainer()->get(EventDispatcherInterface::class)
+            $this->getContainer()->get(EventDispatcherInterface::class),
+            $this->getContainer()->get(EntityLoadedEventFactory::class)
         );
     }
 }

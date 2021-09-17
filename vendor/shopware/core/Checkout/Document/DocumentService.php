@@ -8,6 +8,7 @@ use Shopware\Core\Checkout\Document\DocumentGenerator\DocumentGeneratorInterface
 use Shopware\Core\Checkout\Document\DocumentGenerator\DocumentGeneratorRegistry;
 use Shopware\Core\Checkout\Document\Event\DocumentOrderCriteriaEvent;
 use Shopware\Core\Checkout\Document\Exception\DocumentGenerationException;
+use Shopware\Core\Checkout\Document\Exception\DocumentNumberAlreadyExistsException;
 use Shopware\Core\Checkout\Document\Exception\InvalidDocumentGeneratorTypeException;
 use Shopware\Core\Checkout\Document\Exception\InvalidFileGeneratorTypeException;
 use Shopware\Core\Checkout\Document\FileGenerator\FileGeneratorInterface;
@@ -22,6 +23,8 @@ use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaI
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
+use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Util\Random;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -30,6 +33,11 @@ use Symfony\Component\HttpFoundation\Request;
 class DocumentService
 {
     public const VERSION_NAME = 'document';
+
+    /**
+     * @internal (flag:FEATURE_NEXT_15053) should be removed again
+     */
+    public const GENERATING_PDF_STATE = 'generating-pdf';
 
     /**
      * @var DocumentGeneratorRegistry
@@ -121,6 +129,10 @@ class DocumentService
             $orderId,
             $config->jsonSerialize()
         );
+
+        if ($documentConfiguration->getDocumentNumber()) {
+            $this->checkDocumentNumberAlreadyExits($documentTypeName, $documentConfiguration->getDocumentNumber(), $context);
+        }
 
         if (property_exists($documentConfiguration, 'referencedDocumentType')) {
             if ($referencedDocumentId === null) {
@@ -218,6 +230,9 @@ class DocumentService
             $config->jsonSerialize()
         );
 
+        if (!Feature::isActive('FEATURE_NEXT_15053')) {
+            $context->addState(self::GENERATING_PDF_STATE);
+        }
         $generatedDocument = new GeneratedDocument();
         $generatedDocument->setHtml($documentGenerator->generate($order, $documentConfiguration, $context));
         $generatedDocument->setFilename(
@@ -253,7 +268,10 @@ class DocumentService
 
         $mediaFile = $this->mediaService->fetchFile($uploadedFileRequest);
 
-        $fileName = $uploadedFileRequest->query->get('fileName');
+        $fileName = (string) $uploadedFileRequest->query->get('fileName');
+        if ($fileName === '') {
+            throw new DocumentGenerationException('Parameter "fileName" is missing');
+        }
 
         $mediaService = $this->mediaService;
         $mediaId = null;
@@ -272,6 +290,7 @@ class DocumentService
                 [
                     'id' => $document->getId(),
                     'documentMediaFileId' => $document->getDocumentMediaFileId(),
+                    'orderVersionId' => $document->getOrderVersionId(),
                 ],
             ],
             $context
@@ -299,6 +318,8 @@ class DocumentService
 
         $criteria->addAssociation('deliveries.shippingOrderAddress.country');
         $criteria->addAssociation('orderCustomer.customer');
+        $criteria->getAssociation('lineItems')
+            ->addSorting(new FieldSorting('position'));
 
         $versionContext = $context->createWithVersionId($versionId);
 
@@ -321,13 +342,21 @@ class DocumentService
         return $this->documentTypeRepository->search($criteria, $context)->first();
     }
 
-    /**
-     * @throws DocumentGenerationException
-     */
-    private function validateVersion(string $versionId): void
+    private function validateVersion(DocumentEntity $document, Context $context): void
     {
-        if ($versionId === Defaults::LIVE_VERSION) {
-            throw new DocumentGenerationException('Only versioned orders can be used for document generation.');
+        if ($document->getOrderVersionId() === Defaults::LIVE_VERSION) {
+            // Only versioned orders can be used for document generation.
+            $orderVersionId = $this->orderRepository->createVersion($document->getOrderId(), $context);
+            $document->setOrderVersionId($orderVersionId);
+            $this->documentRepository->update(
+                [
+                    [
+                        'id' => $document->getId(),
+                        'orderVersionId' => $orderVersionId,
+                    ],
+                ],
+                $context
+            );
         }
     }
 
@@ -368,6 +397,9 @@ class DocumentService
         Context $context
     ): string {
         $referencedDocumentType = $documentConfiguration->__get('referencedDocumentType');
+        if (!\is_string($referencedDocumentType)) {
+            throw new \RuntimeException('referencedDocumentType should be a string');
+        }
 
         $criteria = (new Criteria([$referencedDocumentId]))
             ->addFilter(
@@ -436,6 +468,7 @@ class DocumentService
                         [
                             'id' => $document->getId(),
                             'documentMediaFileId' => $document->getDocumentMediaFileId(),
+                            'orderVersionId' => $document->getOrderVersionId(),
                         ],
                     ],
                     $context
@@ -456,10 +489,13 @@ class DocumentService
         $documentGenerator = $this->documentGeneratorRegistry->getGenerator(
             $document->getDocumentType()->getTechnicalName()
         );
-        $this->validateVersion($document->getOrderVersionId());
+        $this->validateVersion($document, $context);
 
         $order = $this->getOrderById($document->getOrderId(), $document->getOrderVersionId(), $context);
 
+        if (!Feature::isActive('FEATURE_NEXT_15053')) {
+            $context->addState(self::GENERATING_PDF_STATE);
+        }
         $generatedDocument->setHtml($documentGenerator->generate($order, $config, $context));
         $generatedDocument->setFilename($documentGenerator->getFileName($config) . '.' . $fileGenerator->getExtension());
         $fileBlob = $fileGenerator->generate($generatedDocument);
@@ -478,5 +514,19 @@ class DocumentService
             ->addAssociation('addresses.country')
             ->addAssociation('deliveries.positions')
             ->addAssociation('deliveries.shippingMethod');
+    }
+
+    private function checkDocumentNumberAlreadyExits(string $documentTypeName, ?string $documentNumber, Context $context): void
+    {
+        $criteria = new Criteria();
+        $criteria->addAssociation('documentType');
+        $criteria->addFilter(new EqualsFilter('documentType.technicalName', $documentTypeName));
+        $criteria->addFilter(new EqualsFilter('config.documentNumber', $documentNumber));
+
+        $result = $this->documentRepository->searchIds($criteria, $context);
+
+        if ($result->getTotal() !== 0) {
+            throw new DocumentNumberAlreadyExistsException($documentNumber);
+        }
     }
 }

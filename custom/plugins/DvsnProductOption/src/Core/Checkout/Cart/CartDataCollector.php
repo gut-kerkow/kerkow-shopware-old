@@ -22,7 +22,6 @@ use Shopware\Core\Checkout\Cart\LineItem\QuantityInformation;
 use Shopware\Core\Checkout\Cart\Price\QuantityPriceCalculator;
 use Shopware\Core\Checkout\Cart\Price\Struct\QuantityPriceDefinition;
 use Shopware\Core\Content\Product\Cart\ProductCartProcessor;
-use Shopware\Core\Content\Product\SalesChannel\Price\ProductPriceDefinitionBuilderInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\System\SalesChannel\Entity\SalesChannelRepositoryInterface;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -61,13 +60,6 @@ class CartDataCollector implements CartDataCollectorInterface
     /**
      * ...
      *
-     * @var ProductPriceDefinitionBuilderInterface
-     */
-    private $priceDefinitionBuilder;
-
-    /**
-     * ...
-     *
      * @var SystemConfigService
      */
     protected $systemConfigService;
@@ -79,7 +71,6 @@ class CartDataCollector implements CartDataCollectorInterface
      * @param EntityRepositoryInterface $productRepository
      * @param SalesChannelRepositoryInterface $salesChannelProductRepository
      * @param QuantityPriceCalculator $quantityPriceCalculator
-     * @param ProductPriceDefinitionBuilderInterface $priceDefinitionBuilder
      * @param SystemConfigService $systemConfigService
      */
     public function __construct(
@@ -87,7 +78,6 @@ class CartDataCollector implements CartDataCollectorInterface
         EntityRepositoryInterface $productRepository,
         SalesChannelRepositoryInterface $salesChannelProductRepository,
         QuantityPriceCalculator $quantityPriceCalculator,
-        ProductPriceDefinitionBuilderInterface $priceDefinitionBuilder,
         SystemConfigService $systemConfigService
     )
     {
@@ -96,7 +86,6 @@ class CartDataCollector implements CartDataCollectorInterface
         $this->productRepository = $productRepository;
         $this->salesChannelProductRepository = $salesChannelProductRepository;
         $this->quantityPriceCalculator = $quantityPriceCalculator;
-        $this->priceDefinitionBuilder = $priceDefinitionBuilder;
         $this->systemConfigService = $systemConfigService;
     }
 
@@ -140,12 +129,11 @@ class CartDataCollector implements CartDataCollectorInterface
                         $definition = new QuantityPriceDefinition(
                             $child->getPayloadValue('dvsnProductOptionSurcharge'),
                             $salesChannelContext->buildTaxRules($lineItem->getPayloadValue('taxId')),
-                            $salesChannelContext->getContext()->getCurrencyPrecision(),
                             ($child->getPayloadValue('dvsnProductOptionSurchargeCalculation') === ProductOptionEntity::SURCHARGE_CALCULATION_ONCE)
                                 ? 1
-                                : $child->getQuantity(),
-                            true
+                                : $child->getQuantity()
                         );
+                        
                         break;
 
                     case ProductOptionEntity::SURCHARGE_TYPE_ABSOLUTE:
@@ -155,12 +143,11 @@ class CartDataCollector implements CartDataCollectorInterface
                         $definition = new QuantityPriceDefinition(
                             $surcharge,
                             $salesChannelContext->buildTaxRules($child->getPayloadValue('dvsnProductOptionTaxId')),
-                            $salesChannelContext->getContext()->getCurrencyPrecision(),
                             ($child->getPayloadValue('dvsnProductOptionSurchargeCalculation') === ProductOptionEntity::SURCHARGE_CALCULATION_ONCE)
                                 ? 1
-                                : $child->getQuantity(),
-                            true
+                                : $child->getQuantity()
                         );
+
                         break;
 
                     default:

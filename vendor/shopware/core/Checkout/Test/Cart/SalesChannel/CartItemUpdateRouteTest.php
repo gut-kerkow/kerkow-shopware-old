@@ -13,10 +13,13 @@ use Shopware\Core\Framework\Rule\Rule;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour;
 use Shopware\Core\Framework\Test\TestDataCollection;
-use Shopware\Core\PlatformRequest;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextPersister;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
 
+/**
+ * @group store-api
+ * @group cart
+ */
 class CartItemUpdateRouteTest extends TestCase
 {
     use IntegrationTestBehaviour;
@@ -56,8 +59,11 @@ class CartItemUpdateRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/checkout/cart/line-item',
-                [
+                '/store-api/checkout/cart/line-item',
+                [],
+                [],
+                ['CONTENT_TYPE' => 'application/json'],
+                json_encode([
                     'items' => [
                         [
                             'id' => $this->ids->get('p1'),
@@ -65,7 +71,7 @@ class CartItemUpdateRouteTest extends TestCase
                             'referencedId' => $this->ids->get('p1'),
                         ],
                     ],
-                ]
+                ])
             );
 
         static::assertSame(200, $this->browser->getResponse()->getStatusCode());
@@ -80,15 +86,18 @@ class CartItemUpdateRouteTest extends TestCase
         $this->browser
             ->request(
                 'PATCH',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/checkout/cart/line-item',
-                [
+                '/store-api/checkout/cart/line-item',
+                [],
+                [],
+                ['CONTENT_TYPE' => 'application/json'],
+                json_encode([
                     'items' => [
                         [
                             'id' => $this->ids->get('p1'),
                             'quantity' => 2,
                         ],
                     ],
-                ]
+                ])
             );
 
         static::assertSame(200, $this->browser->getResponse()->getStatusCode(), $this->browser->getResponse()->getContent());
@@ -104,8 +113,11 @@ class CartItemUpdateRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/checkout/cart/line-item',
-                [
+                '/store-api/checkout/cart/line-item',
+                [],
+                [],
+                ['CONTENT_TYPE' => 'application/json'],
+                json_encode([
                     'items' => [
                         [
                             'id' => $this->ids->get('p1'),
@@ -113,7 +125,7 @@ class CartItemUpdateRouteTest extends TestCase
                             'referencedId' => $this->ids->get('p1'),
                         ],
                     ],
-                ]
+                ])
             );
 
         static::assertSame(200, $this->browser->getResponse()->getStatusCode());
@@ -128,8 +140,11 @@ class CartItemUpdateRouteTest extends TestCase
         $this->browser
             ->request(
                 'PATCH',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/checkout/cart/line-item',
-                [
+                '/store-api/checkout/cart/line-item',
+                [],
+                [],
+                ['CONTENT_TYPE' => 'application/json'],
+                json_encode([
                     'items' => [
                         [
                             'id' => $this->ids->get('p1'),
@@ -138,7 +153,7 @@ class CartItemUpdateRouteTest extends TestCase
                             ],
                         ],
                     ],
-                ]
+                ])
             );
 
         static::assertSame(200, $this->browser->getResponse()->getStatusCode());
@@ -158,8 +173,11 @@ class CartItemUpdateRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/checkout/cart/line-item',
-                [
+                '/store-api/checkout/cart/line-item',
+                [],
+                [],
+                ['CONTENT_TYPE' => 'application/json'],
+                json_encode([
                     'items' => [
                         [
                             'id' => $this->ids->get('p1'),
@@ -180,7 +198,7 @@ class CartItemUpdateRouteTest extends TestCase
                             ],
                         ],
                     ],
-                ]
+                ])
             );
 
         $response = json_decode($this->browser->getResponse()->getContent(), true);
@@ -194,15 +212,18 @@ class CartItemUpdateRouteTest extends TestCase
         $this->browser
             ->request(
                 'PATCH',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/checkout/cart/line-item',
-                [
+                '/store-api/checkout/cart/line-item',
+                [],
+                [],
+                ['CONTENT_TYPE' => 'application/json'],
+                json_encode([
                     'items' => [
                         [
                             'id' => $this->ids->get('p1'),
                             'quantity' => 2,
                         ],
                     ],
-                ]
+                ])
             );
 
         static::assertSame(400, $this->browser->getResponse()->getStatusCode());
@@ -219,8 +240,11 @@ class CartItemUpdateRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/checkout/cart/line-item',
-                [
+                '/store-api/checkout/cart/line-item',
+                [],
+                [],
+                ['CONTENT_TYPE' => 'application/json'],
+                json_encode([
                     'items' => [
                         [
                             'id' => $this->ids->get('p1'),
@@ -235,7 +259,7 @@ class CartItemUpdateRouteTest extends TestCase
                             'stackable' => true,
                         ],
                     ],
-                ]
+                ])
             );
 
         static::assertSame(200, $this->browser->getResponse()->getStatusCode());
@@ -243,15 +267,18 @@ class CartItemUpdateRouteTest extends TestCase
         $this->browser
             ->request(
                 'PATCH',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/checkout/cart/line-item',
-                [
+                '/store-api/checkout/cart/line-item',
+                [],
+                [],
+                ['CONTENT_TYPE' => 'application/json'],
+                json_encode([
                     'items' => [
                         [
                             'id' => $this->ids->get('p1'),
                             'label' => 'item update',
                         ],
                     ],
-                ]
+                ])
             );
 
         $response = json_decode($this->browser->getResponse()->getContent(), true);
@@ -267,8 +294,11 @@ class CartItemUpdateRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/checkout/cart/line-item',
-                [
+                '/store-api/checkout/cart/line-item',
+                [],
+                [],
+                ['CONTENT_TYPE' => 'application/json'],
+                json_encode([
                     'items' => [
                         [
                             'id' => $this->ids->get('p1'),
@@ -282,7 +312,7 @@ class CartItemUpdateRouteTest extends TestCase
                             'salesChannelId' => $this->ids->get('sales-channel'),
                         ],
                     ],
-                ]
+                ])
             );
 
         static::assertSame(200, $this->browser->getResponse()->getStatusCode());
@@ -290,8 +320,11 @@ class CartItemUpdateRouteTest extends TestCase
         $this->browser
             ->request(
                 'PATCH',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/checkout/cart/line-item',
-                [
+                '/store-api/checkout/cart/line-item',
+                [],
+                [],
+                ['CONTENT_TYPE' => 'application/json'],
+                json_encode([
                     'items' => [
                         [
                             'id' => $this->ids->get('p1'),
@@ -320,7 +353,7 @@ class CartItemUpdateRouteTest extends TestCase
                             'salesChannelId' => $this->ids->get('sales-channel'),
                         ],
                     ],
-                ]
+                ])
             );
 
         $response = json_decode($this->browser->getResponse()->getContent(), true);
@@ -384,8 +417,11 @@ class CartItemUpdateRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/checkout/cart/line-item',
-                [
+                '/store-api/checkout/cart/line-item',
+                [],
+                [],
+                ['CONTENT_TYPE' => 'application/json'],
+                json_encode([
                     'items' => [
                         [
                             'id' => $this->ids->get('product'),
@@ -399,16 +435,19 @@ class CartItemUpdateRouteTest extends TestCase
                             'salesChannelId' => $this->ids->get('sales-channel'),
                         ],
                     ],
-                ]
+                ])
             );
 
-        static::assertSame(200, $this->browser->getResponse()->getStatusCode());
+        static::assertSame(200, $this->browser->getResponse()->getStatusCode(), $this->browser->getResponse()->getContent());
 
         $this->browser
             ->request(
                 'PATCH',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/checkout/cart/line-item',
-                [
+                '/store-api/checkout/cart/line-item',
+                [],
+                [],
+                ['CONTENT_TYPE' => 'application/json'],
+                json_encode([
                     'items' => [
                         [
                             'id' => $this->ids->get('product'),
@@ -422,7 +461,7 @@ class CartItemUpdateRouteTest extends TestCase
                             'salesChannelId' => $this->ids->get('sales-channel'),
                         ],
                     ],
-                ]
+                ])
             );
 
         $response = json_decode($this->browser->getResponse()->getContent(), true);

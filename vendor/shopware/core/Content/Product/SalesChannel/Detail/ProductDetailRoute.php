@@ -4,13 +4,18 @@ namespace Shopware\Core\Content\Product\SalesChannel\Detail;
 
 use OpenApi\Annotations as OA;
 use Shopware\Core\Content\Category\Service\CategoryBreadcrumbBuilder;
+use Shopware\Core\Content\Cms\DataResolver\ResolverContext\EntityResolverContext;
+use Shopware\Core\Content\Cms\SalesChannel\SalesChannelCmsPageLoaderInterface;
 use Shopware\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
 use Shopware\Core\Content\Product\Exception\ProductNotFoundException;
+use Shopware\Core\Content\Product\ProductDefinition;
 use Shopware\Core\Content\Product\SalesChannel\ProductAvailableFilter;
 use Shopware\Core\Content\Product\SalesChannel\ProductCloseoutFilter;
+use Shopware\Core\Content\Product\SalesChannel\SalesChannelProductDefinition;
 use Shopware\Core\Content\Product\SalesChannel\SalesChannelProductEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
@@ -31,7 +36,7 @@ class ProductDetailRoute extends AbstractProductDetailRoute
     /**
      * @var SalesChannelRepositoryInterface
      */
-    private $repository;
+    private $productRepository;
 
     /**
      * @var SystemConfigService
@@ -48,16 +53,30 @@ class ProductDetailRoute extends AbstractProductDetailRoute
      */
     private $breadcrumbBuilder;
 
+    /**
+     * @var SalesChannelCmsPageLoaderInterface
+     */
+    private $cmsPageLoader;
+
+    /**
+     * @var ProductDefinition
+     */
+    private $productDefinition;
+
     public function __construct(
-        SalesChannelRepositoryInterface $repository,
+        SalesChannelRepositoryInterface $productRepository,
         SystemConfigService $config,
         ProductConfiguratorLoader $configuratorLoader,
-        CategoryBreadcrumbBuilder $breadcrumbBuilder
+        CategoryBreadcrumbBuilder $breadcrumbBuilder,
+        SalesChannelCmsPageLoaderInterface $cmsPageLoader,
+        SalesChannelProductDefinition $productDefinition
     ) {
-        $this->repository = $repository;
+        $this->productRepository = $productRepository;
         $this->config = $config;
         $this->configuratorLoader = $configuratorLoader;
         $this->breadcrumbBuilder = $breadcrumbBuilder;
+        $this->cmsPageLoader = $cmsPageLoader;
+        $this->productDefinition = $productDefinition;
     }
 
     public function getDecorated(): AbstractProductDetailRoute
@@ -70,17 +89,24 @@ class ProductDetailRoute extends AbstractProductDetailRoute
      * @Entity("product")
      * @OA\Post(
      *      path="/product/{productId}",
-     *      summary="This route is used to load a single product with the corresponding details. In addition to loading the data, the best variant of the product is determined when a parent id is passed.",
+     *      summary="Fetch a single product",
+     *      description="This route is used to load a single product with the corresponding details. In addition to loading the data, the best variant of the product is determined when a parent id is passed.",
      *      operationId="readProductDetail",
      *      tags={"Store API","Product"},
-     *      @OA\Parameter(name="productId", description="Product ID", @OA\Schema(type="string"), in="path", required=true),
+     *      @OA\Parameter(
+     *          name="productId",
+     *          description="Product ID",
+     *          @OA\Schema(type="string"),
+     *          in="path",
+     *          required=true
+     *      ),
      *      @OA\Response(
      *          response="200",
-     *          description="Found product",
-     *          @OA\JsonContent(ref="#/components/schemas/product_flat")
+     *          description="Product information along with variant groups and options",
+     *          @OA\JsonContent(ref="#/components/schemas/ProductDetailResponse")
      *     )
      * )
-     * @Route("/store-api/v{version}/product/{productId}", name="store-api.product.detail", methods={"POST"})
+     * @Route("/store-api/product/{productId}", name="store-api.product.detail", methods={"POST"})
      */
     public function load(string $productId, Request $request, SalesChannelContext $context, Criteria $criteria): ProductDetailRouteResponse
     {
@@ -90,7 +116,7 @@ class ProductDetailRoute extends AbstractProductDetailRoute
 
         $criteria->setIds([$productId]);
 
-        $product = $this->repository
+        $product = $this->productRepository
             ->search($criteria, $context)
             ->first();
 
@@ -103,6 +129,24 @@ class ProductDetailRoute extends AbstractProductDetailRoute
         );
 
         $configurator = $this->configuratorLoader->load($product, $context);
+
+        $pageId = $product->getCmsPageId();
+
+        if ($pageId) {
+            $resolverContext = new EntityResolverContext($context, $request, $this->productDefinition, $product);
+
+            $pages = $this->cmsPageLoader->load(
+                $request,
+                $this->createCriteria($pageId, $request),
+                $context,
+                $product->getTranslation('slotConfig'),
+                $resolverContext
+            );
+
+            if ($page = $pages->first()) {
+                $product->setCmsPage($page);
+            }
+        }
 
         return new ProductDetailRouteResponse($product, $configurator);
     }
@@ -135,12 +179,28 @@ class ProductDetailRoute extends AbstractProductDetailRoute
             ->addSorting(new FieldSorting('product.available'))
             ->setLimit(1);
 
-        $variantId = $this->repository->searchIds($criteria, $context);
+        $variantId = $this->productRepository->searchIds($criteria, $context);
 
-        if (\count($variantId->getIds()) > 0) {
-            return $variantId->getIds()[0];
+        return $variantId->firstId() ?? $productId;
+    }
+
+    private function createCriteria(string $pageId, Request $request): Criteria
+    {
+        $criteria = new Criteria([$pageId]);
+        $criteria->setTitle('product::cms-page');
+
+        $slots = $request->get('slots');
+
+        if (\is_string($slots)) {
+            $slots = explode('|', $slots);
         }
 
-        return $productId;
+        if (!empty($slots) && \is_array($slots)) {
+            $criteria
+                ->getAssociation('sections.blocks')
+                ->addFilter(new EqualsAnyFilter('slots.id', $slots));
+        }
+
+        return $criteria;
     }
 }

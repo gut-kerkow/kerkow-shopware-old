@@ -1,7 +1,5 @@
-import EntityStore from 'src/core/data/EntityStore';
 import EventEmitter from 'events';
 
-const { StateDeprecated } = Shopware;
 const { deepCopyObject } = Shopware.Utils.object;
 const { md5 } = Shopware.Utils.format;
 
@@ -13,8 +11,6 @@ export default class VariantsGenerator extends EventEmitter {
 
         // set dependencies
         this.syncService = Shopware.Service('syncService');
-        this.EntityStore = EntityStore;
-        this.StateDeprecated = StateDeprecated;
         this.httpClient = this.syncService.httpClient;
 
         // local data
@@ -47,7 +43,7 @@ export default class VariantsGenerator extends EventEmitter {
                         if (!forceGenerating) {
                             this.emit('notification', {
                                 numberOfDeletions: queues.deleteQueue.length,
-                                numberOfCreation: queues.createQueue.length
+                                numberOfCreation: queues.createQueue.length,
                             });
                             return;
                         }
@@ -108,7 +104,7 @@ export default class VariantsGenerator extends EventEmitter {
             const priceChanges = this.product.configuratorSettings.reduce((result, element) => {
                 result.push({
                     id: element.option.id,
-                    price: element.price
+                    price: element.price,
                 });
 
                 return result;
@@ -207,7 +203,7 @@ export default class VariantsGenerator extends EventEmitter {
                                 // recalculate price for currency with conversion factor
                                 refPrice = {
                                     net: defaultCurrencyPrice.net * actualCurrency.factor,
-                                    gross: defaultCurrencyPrice.gross * actualCurrency.factor
+                                    gross: defaultCurrencyPrice.gross * actualCurrency.factor,
                                 };
                             }
 
@@ -220,7 +216,7 @@ export default class VariantsGenerator extends EventEmitter {
                                 currencyId: price.currencyId,
                                 gross: grossPrice > 0 ? grossPrice : 0,
                                 linked: price.linked,
-                                net: netPrice > 0 ? netPrice : 0
+                                net: netPrice > 0 ? netPrice : 0,
                             };
                         });
                     });
@@ -235,7 +231,7 @@ export default class VariantsGenerator extends EventEmitter {
                     parentId: this.product.id,
                     options: variations,
                     stock: 0,
-                    productNumber: generated.number
+                    productNumber: generated.number,
                 };
 
                 variationPrice = Object.values(variationPrice);
@@ -314,7 +310,7 @@ export default class VariantsGenerator extends EventEmitter {
         // Return all existing variations from the server
         return this.httpClient.get(
             `/_action/product/${id}/combinations`,
-            { headers: this.syncService.getBasicHeaders() }
+            { headers: this.syncService.getBasicHeaders() },
         ).then((response) => {
             return response.data;
         });
@@ -385,22 +381,14 @@ export default class VariantsGenerator extends EventEmitter {
         const payload = [{
             action: type,
             entity: 'product',
-            payload: chunk
+            payload: chunk,
         }];
 
         // Send the payload to the server
-        const header = this.EntityStore.getLanguageHeader(Shopware.Context.api.languageId);
-        header['single-operation'] = 1;
+        const header = { 'single-operation': 1 };
 
         this.syncService.sync(payload, {}, header).then(() => {
             this.processQueue(type, queue, offset + limit, limit, resolve);
         });
-    }
-
-    /**
-     * @deprecated tag:v6.4.0
-     */
-    getLanguageId() {
-        return Shopware.Context.api.languageId;
     }
 }

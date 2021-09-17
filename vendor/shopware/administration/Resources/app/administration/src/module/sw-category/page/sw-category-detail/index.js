@@ -2,8 +2,8 @@ import pageState from './state';
 import template from './sw-category-detail.html.twig';
 import './sw-category-detail.scss';
 
-const { Component, Mixin } = Shopware;
-const { Criteria, ChangesetGenerator } = Shopware.Data;
+const { Component, Context, Mixin } = Shopware;
+const { Criteria, ChangesetGenerator, EntityCollection } = Shopware.Data;
 const { cloneDeep, merge } = Shopware.Utils.object;
 const type = Shopware.Utils.types;
 
@@ -12,21 +12,20 @@ Component.register('sw-category-detail', {
 
     inject: [
         'acl',
-        'cmsPageService',
         'cmsService',
         'repositoryFactory',
-        'seoUrlService'
+        'seoUrlService',
     ],
 
     provide() {
         return {
-            openMediaSidebar: this.openMediaSidebar
+            openMediaSidebar: this.openMediaSidebar,
         };
     },
 
     mixins: [
         Mixin.getByName('notification'),
-        Mixin.getByName('placeholder')
+        Mixin.getByName('placeholder'),
     ],
 
     shortcuts: {
@@ -34,17 +33,22 @@ Component.register('sw-category-detail', {
             active() {
                 return this.acl.can('category.editor');
             },
-            method: 'onSave'
+            method: 'onSave',
         },
-        ESCAPE: 'cancelEdit'
+        ESCAPE: 'cancelEdit',
     },
 
     props: {
         categoryId: {
             type: String,
             required: false,
-            default: null
-        }
+            default: null,
+        },
+        landingPageId: {
+            type: String,
+            required: false,
+            default: null,
+        },
     },
 
     data() {
@@ -58,24 +62,31 @@ Component.register('sw-category-detail', {
             isDisplayingLeavePageWarning: false,
             nextRoute: null,
             currentLanguageId: Shopware.Context.api.languageId,
-            /**
-             * @deprecated tag:v6.4.0 - Will be removed. This is a typo, and the data prop is unused.
-             * Please use "forceDiscardChanges" instead.
-             */
-            discardChanges: false,
-            forceDiscardChanges: false
+            forceDiscardChanges: false,
+            categoryCheckedItem: 0,
+            landingPageCheckedItem: 0,
+            entryPointOverwriteConfirmed: false,
+            entryPointOverwriteSalesChannels: null,
         };
     },
 
     metaInfo() {
         return {
-            title: this.$createTitle(this.identifier)
+            title: this.$createTitle(this.identifier),
         };
     },
 
     computed: {
+        showEmptyState() {
+            return !this.category && !this.landingPage;
+        },
+
         identifier() {
             return this.category ? this.placeholder(this.category, 'name') : '';
+        },
+
+        landingPageRepository() {
+            return this.repositoryFactory.create('landing_page');
         },
 
         categoryRepository() {
@@ -86,6 +97,14 @@ Component.register('sw-category-detail', {
             return this.repositoryFactory.create('cms_page');
         },
 
+        landingPage() {
+            if (!Shopware.State.get('swCategoryDetail')) {
+                return {};
+            }
+
+            return Shopware.State.get('swCategoryDetail').landingPage;
+        },
+
         category() {
             if (!Shopware.State.get('swCategoryDetail')) {
                 return {};
@@ -94,11 +113,19 @@ Component.register('sw-category-detail', {
             return Shopware.State.get('swCategoryDetail').category;
         },
 
+        showEntryPointOverwriteModal() {
+            return this.entryPointOverwriteSalesChannels !== null && this.entryPointOverwriteSalesChannels.length;
+        },
+
         cmsPage() {
             return Shopware.State.get('cmsPageState').currentPage;
         },
 
         cmsPageId() {
+            if (this.landingPage) {
+                return this.landingPage.cmsPageId;
+            }
+
             return this.category ? this.category.cmsPageId : null;
         },
 
@@ -117,6 +144,17 @@ Component.register('sw-category-detail', {
             return criteria;
         },
 
+        customFieldSetLandingPageCriteria() {
+            const criteria = new Criteria(1, 100);
+
+            criteria.addFilter(Criteria.equals('relations.entityName', 'landing_page'));
+            criteria
+                .getAssociation('customFields')
+                .addSorting(Criteria.sort('config.customFieldPosition', 'ASC', true));
+
+            return criteria;
+        },
+
         mediaRepository() {
             return this.repositoryFactory.create('media');
         },
@@ -124,7 +162,7 @@ Component.register('sw-category-detail', {
         pageClasses() {
             return {
                 'has--category': !!this.category,
-                'is--mobile': !!this.isMobileViewport
+                'is--mobile': !!this.isMobileViewport,
             };
         },
 
@@ -133,7 +171,7 @@ Component.register('sw-category-detail', {
                 return {
                     message: this.$tc('sw-privileges.tooltip.warning'),
                     disabled: this.acl.can('category.editor'),
-                    showOnDisabledElements: true
+                    showOnDisabledElements: true,
                 };
             }
 
@@ -141,30 +179,84 @@ Component.register('sw-category-detail', {
 
             return {
                 message: `${systemKey} + S`,
-                appearance: 'light'
+                appearance: 'light',
+            };
+        },
+
+        landingPageTooltipSave() {
+            if (!this.acl.can('landing_page.editor')) {
+                return {
+                    message: this.$tc('sw-privileges.tooltip.warning'),
+                    disabled: this.acl.can('landing_page.editor'),
+                    showOnDisabledElements: true,
+                };
+            }
+
+            const systemKey = this.$device.getSystemKey();
+
+            return {
+                message: `${systemKey} + S`,
+                appearance: 'light',
             };
         },
 
         tooltipCancel() {
             return {
                 message: 'ESC',
-                appearance: 'light'
+                appearance: 'light',
             };
-        }
+        },
+
+        categoryCriteria() {
+            const criteria = new Criteria(1, 1);
+            criteria.getAssociation('seoUrls')
+                .addFilter(Criteria.equals('isCanonical', true));
+
+            criteria.addAssociation('tags')
+                .addAssociation('media')
+                .addAssociation('navigationSalesChannels.homeCmsPage.previewMedia')
+                .addAssociation('serviceSalesChannels')
+                .addAssociation('footerSalesChannels');
+
+            return criteria;
+        },
+
+        landingPageCriteria() {
+            const criteria = new Criteria(1, 1);
+
+            criteria.addAssociation('tags');
+            criteria.addAssociation('salesChannels');
+
+            return criteria;
+        },
     },
 
     watch: {
+        landingPageId() {
+            this.setLandingPage();
+        },
+
         categoryId() {
             this.setCategory();
         },
 
         cmsPageId() {
-            if (!this.isLoading) {
+            if (this.isLoading) {
+                return;
+            }
+
+            if (this.category) {
                 this.category.slotConfig = null;
                 Shopware.State.dispatch('cmsPageState/resetCmsPageState')
                     .then(this.getAssignedCmsPage);
             }
-        }
+
+            if (this.landingPage) {
+                this.landingPage.slotConfig = null;
+                Shopware.State.dispatch('cmsPageState/resetCmsPageState')
+                    .then(this.getAssignedCmsPageForLandingPage);
+            }
+        },
     },
 
     beforeCreate() {
@@ -203,12 +295,26 @@ Component.register('sw-category-detail', {
             this.checkViewport();
             this.registerListener();
 
-            this.setCategory();
+            if (this.categoryId !== null) {
+                this.setCategory();
+
+                return;
+            }
+
+            this.setLandingPage();
+        },
+
+        categoryCheckedElementsCount(count) {
+            this.categoryCheckedItem = count;
+        },
+
+        landingPageCheckedElementsCount(count) {
+            this.landingPageCheckedItem = count;
         },
 
         registerListener() {
             this.$device.onResize({
-                listener: this.checkViewport
+                listener: this.checkViewport,
             });
         },
 
@@ -228,8 +334,9 @@ Component.register('sw-category-detail', {
                 return Promise.resolve(null);
             }
 
+            const cmsPageId = this.cmsPageId;
             const criteria = new Criteria(1, 1);
-            criteria.setIds([this.cmsPageId]);
+            criteria.setIds([cmsPageId]);
             criteria.addAssociation('previewMedia');
             criteria.addAssociation('sections');
             criteria.getAssociation('sections').addSorting(Criteria.sort('position'));
@@ -239,8 +346,13 @@ Component.register('sw-category-detail', {
                 .addSorting(Criteria.sort('position', 'ASC'))
                 .addAssociation('slots');
 
-            return this.cmsPageRepository.search(criteria, Shopware.Context.api).then((response) => {
-                const cmsPage = response.get(this.cmsPageId);
+            return this.cmsPageRepository.search(criteria).then((response) => {
+                const cmsPage = response.get(cmsPageId);
+
+                if (cmsPageId !== this.cmsPageId) {
+                    return null;
+                }
+
                 if (this.category.slotConfig !== null) {
                     cmsPage.sections.forEach((section) => {
                         section.blocks.forEach((block) => {
@@ -266,9 +378,97 @@ Component.register('sw-category-detail', {
             Shopware.State.commit('cmsPageState/setCurrentMappingEntity', 'category');
             Shopware.State.commit(
                 'cmsPageState/setCurrentMappingTypes',
-                this.cmsService.getEntityMappingTypes('category')
+                this.cmsService.getEntityMappingTypes('category'),
             );
             Shopware.State.commit('cmsPageState/setCurrentDemoEntity', this.category);
+        },
+
+        getAssignedCmsPageForLandingPage() {
+            if (this.cmsPageId === null) {
+                return Promise.resolve(null);
+            }
+
+            const cmsPageId = this.cmsPageId;
+            const criteria = new Criteria(1, 1);
+            criteria.setIds([cmsPageId]);
+            criteria.addAssociation('previewMedia');
+            criteria.addAssociation('sections');
+            criteria.getAssociation('sections').addSorting(Criteria.sort('position'));
+
+            criteria.addAssociation('sections.blocks');
+            criteria.getAssociation('sections.blocks')
+                .addSorting(Criteria.sort('position', 'ASC'))
+                .addAssociation('slots');
+
+            return this.cmsPageRepository.search(criteria).then((response) => {
+                const cmsPage = response.get(cmsPageId);
+                if (cmsPageId !== this.cmsPageId) {
+                    return null;
+                }
+
+                if (this.landingPage.slotConfig !== null) {
+                    cmsPage.sections.forEach((section) => {
+                        section.blocks.forEach((block) => {
+                            block.slots.forEach((slot) => {
+                                if (this.landingPage.slotConfig[slot.id]) {
+                                    if (slot.config === null) {
+                                        slot.config = {};
+                                    }
+                                    merge(slot.config, cloneDeep(this.landingPage.slotConfig[slot.id]));
+                                }
+                            });
+                        });
+                    });
+                }
+
+                this.updateCmsPageDataMappingForLandingPage();
+                Shopware.State.commit('cmsPageState/setCurrentPage', cmsPage);
+                return this.cmsPage;
+            });
+        },
+
+        updateCmsPageDataMappingForLandingPage() {
+            Shopware.State.commit('cmsPageState/setCurrentMappingEntity', 'landing_page');
+            Shopware.State.commit(
+                'cmsPageState/setCurrentMappingTypes',
+                this.cmsService.getEntityMappingTypes('landing_page'),
+            );
+            Shopware.State.commit('cmsPageState/setCurrentDemoEntity', this.landingPage);
+        },
+
+        async setLandingPage() {
+            this.isLoading = true;
+
+            try {
+                if (this.landingPageId === null) {
+                    Shopware.State.commit('shopwareApps/setSelectedIds', []);
+
+                    await Shopware.State.dispatch('swCategoryDetail/setActiveLandingPage', { landingPage: null });
+                    await Shopware.State.dispatch('cmsPageState/resetCmsPageState');
+
+                    return;
+                }
+
+
+                await Shopware.State.dispatch('shopwareApps/setSelectedIds', [this.landingPageId]);
+                await Shopware.State.dispatch('swCategoryDetail/loadActiveLandingPage', {
+                    repository: this.landingPageRepository,
+                    apiContext: Shopware.Context.api,
+                    id: this.landingPageId,
+                    criteria: this.landingPageCriteria,
+                });
+
+                await Shopware.State.dispatch('cmsPageState/resetCmsPageState');
+                await this.getAssignedCmsPageForLandingPage();
+                await this.loadLandingPageCustomFieldSet();
+            } catch {
+                this.createNotificationError({
+                    title: this.$tc('global.default.error'),
+                    message: this.$tc('global.notification.unspecifiedSaveErrorMessage'),
+                });
+            } finally {
+                this.isLoading = false;
+            }
         },
 
         setCategory() {
@@ -287,12 +487,13 @@ Component.register('sw-category-detail', {
 
             return Shopware.State.dispatch(
                 'shopwareApps/setSelectedIds',
-                [this.categoryId]
+                [this.categoryId],
             ).then(() => {
                 return Shopware.State.dispatch('swCategoryDetail/loadActiveCategory', {
                     repository: this.categoryRepository,
                     apiContext: Shopware.Context.api,
-                    id: this.categoryId
+                    id: this.categoryId,
+                    criteria: this.categoryCriteria,
                 });
             }).then(() => Shopware.State.dispatch('cmsPageState/resetCmsPageState'))
                 .then(this.getAssignedCmsPage)
@@ -305,16 +506,27 @@ Component.register('sw-category-detail', {
         loadCustomFieldSet() {
             this.isCustomFieldLoading = true;
 
-            return this.customFieldSetRepository.search(this.customFieldSetCriteria, Shopware.Context.api)
+            return this.customFieldSetRepository.search(this.customFieldSetCriteria)
                 .then((customFieldSet) => {
                     return this.$store.commit('swCategoryDetail/setCustomFieldSets', customFieldSet);
-                }).then(() => {
+                }).finally(() => {
+                    this.isCustomFieldLoading = true;
+                });
+        },
+
+        loadLandingPageCustomFieldSet() {
+            this.isCustomFieldLoading = true;
+
+            return this.customFieldSetRepository.search(this.customFieldSetLandingPageCriteria)
+                .then((customFieldSet) => {
+                    return this.$store.commit('swCategoryDetail/setCustomFieldSets', customFieldSet);
+                }).finally(() => {
                     this.isCustomFieldLoading = true;
                 });
         },
 
         onSaveCategories() {
-            return this.categoryRepository.save(this.category, Shopware.Context.api);
+            return this.categoryRepository.save(this.category);
         },
 
         openChangeModal(destination) {
@@ -350,7 +562,7 @@ Component.register('sw-category-detail', {
 
         setMediaItemFromSidebar(sideBarMedia) {
             // be consistent and fetch from repository
-            this.mediaRepository.get(sideBarMedia.id, Shopware.Context.api).then((media) => {
+            this.mediaRepository.get(sideBarMedia.id).then((media) => {
                 this.category.mediaId = media.id;
                 this.category.media = media;
             });
@@ -358,14 +570,27 @@ Component.register('sw-category-detail', {
 
         onChangeLanguage(newLanguageId) {
             this.currentLanguageId = newLanguageId;
+
+            if (this.landingPageId !== null) {
+                this.setLandingPage();
+            }
+
             this.setCategory();
         },
 
         abortOnLanguageChange() {
+            if (this.landingPage) {
+                return this.landingPage ? this.categoryRepository.hasChanges(this.landingPage) : false;
+            }
+
             return this.category ? this.categoryRepository.hasChanges(this.category) : false;
         },
 
         saveOnLanguageChange() {
+            if (this.landingPage) {
+                return this.onSaveLandingPage();
+            }
+
             return this.onSave();
         },
 
@@ -382,20 +607,129 @@ Component.register('sw-category-detail', {
                 this.category.slotConfig = cloneDeep(pageOverrides);
             }
 
+            if (!this.entryPointOverwriteConfirmed) {
+                this.checkForEntryPointOverwrite();
+                if (this.showEntryPointOverwriteModal) {
+                    return;
+                }
+            }
+
             this.isLoading = true;
             this.updateSeoUrls().then(() => {
-                return this.categoryRepository.save(this.category, Shopware.Context.api);
+                return this.categoryRepository.save(this.category, { ...Shopware.Context.api });
             }).then(() => {
                 this.isSaveSuccessful = true;
+                this.entryPointOverwriteConfirmed = false;
                 return this.setCategory();
             }).catch(() => {
                 this.isLoading = false;
+                this.entryPointOverwriteConfirmed = false;
 
                 this.createNotificationError({
                     message: this.$tc(
-                        'global.notification.notificationSaveErrorMessageRequiredFieldsInvalid'
-                    )
+                        'global.notification.notificationSaveErrorMessageRequiredFieldsInvalid',
+                    ),
                 });
+            });
+        },
+
+        checkForEntryPointOverwrite() {
+            this.entryPointOverwriteSalesChannels = new EntityCollection('/sales_channel', 'sales_channel', Context.api);
+
+            this.category.navigationSalesChannels.forEach((salesChannel) => {
+                if (salesChannel.navigationCategoryId !== null && salesChannel.navigationCategoryId !== this.categoryId) {
+                    this.entryPointOverwriteSalesChannels.add(salesChannel);
+                }
+            });
+
+            this.category.footerSalesChannels.forEach((salesChannel) => {
+                if (salesChannel.footerCategoryId !== null && salesChannel.footerCategoryId !== this.categoryId) {
+                    this.entryPointOverwriteSalesChannels.add(salesChannel);
+                }
+            });
+
+            this.category.serviceSalesChannels.forEach((salesChannel) => {
+                if (salesChannel.serviceCategoryId !== null && salesChannel.serviceCategoryId !== this.categoryId) {
+                    this.entryPointOverwriteSalesChannels.add(salesChannel);
+                }
+            });
+        },
+
+        cancelEntryPointOverwrite() {
+            this.entryPointOverwriteSalesChannels = null;
+        },
+
+        confirmEntryPointOverwrite() {
+            this.entryPointOverwriteSalesChannels = null;
+            this.entryPointOverwriteConfirmed = true;
+            this.$nextTick(() => {
+                this.onSave();
+            });
+        },
+
+        onSaveLandingPage() {
+            this.isSaveSuccessful = false;
+
+            const pageOverrides = this.getCmsPageOverrides();
+
+            if (type.isPlainObject(pageOverrides)) {
+                this.landingPage.slotConfig = cloneDeep(pageOverrides);
+            }
+
+            if (this.landingPageId !== 'create') {
+                if (this.landingPage.salesChannels.length === 0) {
+                    this.addLandingPageSalesChannelError();
+
+                    return;
+                }
+            }
+
+            this.isLoading = true;
+            this.landingPageRepository.save(this.landingPage).then(() => {
+                this.isSaveSuccessful = true;
+
+                if (this.landingPageId === 'create') {
+                    this.$router.push({ name: 'sw.category.landingPageDetail', params: { id: this.landingPage.id } });
+                    return Promise.resolve();
+                }
+
+                return this.setLandingPage();
+            }).catch(() => {
+                this.isLoading = false;
+
+                if (this.landingPage.salesChannels.length === 0) {
+                    this.addLandingPageSalesChannelError();
+
+                    return;
+                }
+
+                this.createNotificationError({
+                    message: this.$tc(
+                        'global.notification.notificationSaveErrorMessageRequiredFieldsInvalid',
+                    ),
+                });
+            });
+        },
+
+        addLandingPageSalesChannelError() {
+            const shopwareError = new Shopware.Classes.ShopwareError(
+                {
+                    code: 'landing_page_sales_channel_blank',
+                    detail: 'This value should not be blank.',
+                    status: '400',
+                },
+            );
+
+            Shopware.State.dispatch('error/addApiError',
+                {
+                    expression: `landing_page.${this.landingPage.id}.salesChannels`,
+                    error: shopwareError,
+                });
+
+            this.createNotificationError({
+                message: this.$tc(
+                    'global.notification.notificationSaveErrorMessageRequiredFieldsInvalid',
+                ),
             });
         },
 
@@ -403,6 +737,8 @@ Component.register('sw-category-detail', {
             if (this.cmsPage === null) {
                 return null;
             }
+
+            this.deleteSpecifcKeys(this.cmsPage.sections);
 
             const changesetGenerator = new ChangesetGenerator();
             const { changes } = changesetGenerator.generate(this.cmsPage);
@@ -418,26 +754,51 @@ Component.register('sw-category-detail', {
                         section.blocks.forEach((block) => {
                             if (type.isArray(block.slots)) {
                                 block.slots.forEach((slot) => {
-                                    if (type.isPlainObject(slot.config)) {
-                                        const slotConfig = {};
-
-                                        Object.keys(slot.config).forEach((key) => {
-                                            if (slot.config[key].value !== null) {
-                                                slotConfig[key] = slot.config[key];
-                                            }
-                                        });
-
-                                        if (Object.keys(slotConfig).length > 0) {
-                                            slotOverrides[slot.id] = slotConfig;
-                                        }
-                                    }
+                                    slotOverrides[slot.id] = slot.config;
                                 });
                             }
                         });
                     }
                 });
             }
+
             return slotOverrides;
+        },
+
+        deleteSpecifcKeys(sections) {
+            if (!sections) {
+                return;
+            }
+
+            sections.forEach((section) => {
+                if (!section.blocks) {
+                    return;
+                }
+
+                section.blocks.forEach((block) => {
+                    if (!block.slots) {
+                        return;
+                    }
+
+                    block.slots.forEach((slot) => {
+                        if (!slot.config) {
+                            return;
+                        }
+
+                        Object.values(slot.config).forEach((configField) => {
+                            if (configField.entity) {
+                                delete configField.entity;
+                            }
+                            if (configField.required) {
+                                delete configField.required;
+                            }
+                            if (configField.type) {
+                                delete configField.type;
+                            }
+                        });
+                    });
+                });
+            });
         },
 
         updateSeoUrls() {
@@ -455,6 +816,18 @@ Component.register('sw-category-detail', {
 
                 return Promise.resolve();
             }));
-        }
-    }
+        },
+
+        onLandingPageDelete() {
+            Shopware.State.commit('swCategoryDetail/setLandingPagesToDelete', {
+                landingPagesToDelete: null,
+            });
+        },
+
+        onCategoryDelete() {
+            Shopware.State.commit('swCategoryDetail/setCategoriesToDelete', {
+                categoriesToDelete: null,
+            });
+        },
+    },
 });

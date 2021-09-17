@@ -8,22 +8,18 @@ Component.register('sw-settings-rule-detail-assignments', {
     template,
 
     inject: [
-        'repositoryFactory'
+        'repositoryFactory',
     ],
 
     mixins: [
-        Mixin.getByName('notification')
+        Mixin.getByName('notification'),
     ],
 
     props: {
         rule: {
             type: Object,
-            required: true
-        }
-    },
-
-    created() {
-        this.createdComponent();
+            required: true,
+        },
     },
 
     data() {
@@ -37,7 +33,7 @@ Component.register('sw-settings-rule-detail-assignments', {
             promotions: null,
             eventActions: null,
             associationSteps: [5, 10],
-            associationEntities: null
+            associationEntities: null,
         };
     },
 
@@ -48,24 +44,33 @@ Component.register('sw-settings-rule-detail-assignments', {
             });
         },
 
+        /* eslint-disable max-len */
         /**
          * Definition of the associated entities of the current rule.
          * The component will render a sw-entity-listing for each association entity,
          * if results are given.
          *
-         * @type {[{entityName: String, criteria: Function, detailRoute: String, gridColumns: Array<Object>}]}
+         * @type {[{entityName: String, label: String, api: Function, criteria: Function, detailRoute: String, gridColumns: Array<Object>}]}
          * @returns {Array<Object>}
          */
+        /* eslint-enable max-len */
         associationEntitiesConfig() {
             return [
                 {
                     entityName: 'product',
+                    label: this.$tc('sw-settings-rule.detail.associations.products'),
                     criteria: () => {
                         const criteria = new Criteria();
                         criteria.setLimit(this.associationLimit);
                         criteria.addFilter(Criteria.equals('prices.rule.id', this.rule.id));
 
                         return criteria;
+                    },
+                    api: () => {
+                        const api = Object.assign({}, Context.api);
+                        api.inheritance = true;
+
+                        return api;
                     },
                     detailRoute: 'sw.product.detail.prices',
                     gridColumns: [
@@ -75,12 +80,13 @@ Component.register('sw-settings-rule-detail-assignments', {
                             rawData: true,
                             sortable: false,
                             routerLink: 'sw.product.detail.prices',
-                            allowEdit: false
-                        }
-                    ]
+                            allowEdit: false,
+                        },
+                    ],
                 },
                 {
                     entityName: 'shipping_method',
+                    label: this.$tc('sw-settings-rule.detail.associations.shippingMethods'),
                     criteria: () => {
                         const criteria = new Criteria();
                         criteria.setLimit(this.associationLimit);
@@ -90,9 +96,9 @@ Component.register('sw-settings-rule-detail-assignments', {
                                 [
                                     Criteria.equals('prices.ruleId', this.rule.id),
                                     Criteria.equals('prices.calculationRuleId', this.rule.id),
-                                    Criteria.equals('availabilityRuleId', this.rule.id)
-                                ]
-                            )
+                                    Criteria.equals('availabilityRuleId', this.rule.id),
+                                ],
+                            ),
                         );
 
                         return criteria;
@@ -105,12 +111,13 @@ Component.register('sw-settings-rule-detail-assignments', {
                             rawData: true,
                             sortable: false,
                             routerLink: 'sw.settings.shipping.detail',
-                            allowEdit: false
-                        }
-                    ]
+                            allowEdit: false,
+                        },
+                    ],
                 },
                 {
                     entityName: 'payment_method',
+                    label: this.$tc('sw-settings-rule.detail.associations.paymentMethods'),
                     criteria: () => {
                         const criteria = new Criteria();
                         criteria.setLimit(this.associationLimit);
@@ -126,12 +133,13 @@ Component.register('sw-settings-rule-detail-assignments', {
                             rawData: true,
                             sortable: false,
                             routerLink: 'sw.settings.payment.detail',
-                            allowEdit: false
-                        }
-                    ]
+                            allowEdit: false,
+                        },
+                    ],
                 },
                 {
                     entityName: 'promotion',
+                    label: this.$tc('sw-settings-rule.detail.associations.promotions'),
                     criteria: () => {
                         const criteria = new Criteria();
                         criteria.setLimit(this.associationLimit);
@@ -143,26 +151,27 @@ Component.register('sw-settings-rule-detail-assignments', {
                                     Criteria.equals('orderRules.id', this.rule.id),
                                     Criteria.equals('cartRules.id', this.rule.id),
                                     Criteria.equals('discounts.discountRules.id', this.rule.id),
-                                    Criteria.equals('setgroups.setGroupRules.id', this.rule.id)
-                                ]
-                            )
+                                    Criteria.equals('setgroups.setGroupRules.id', this.rule.id),
+                                ],
+                            ),
                         );
 
                         return criteria;
                     },
-                    detailRoute: 'sw.promotion.detail.restrictions',
+                    detailRoute: 'sw.promotion.v2.detail.conditions',
                     gridColumns: [
                         {
                             property: 'name',
                             label: 'Name',
                             rawData: true,
                             sortable: false,
-                            routerLink: 'sw.promotion.detail.restrictions'
-                        }
-                    ]
+                            routerLink: 'sw.promotion.v2.detail.conditions',
+                        },
+                    ],
                 },
                 {
                     entityName: 'event_action',
+                    label: this.$tc('sw-settings-rule.detail.associations.eventActions'),
                     criteria: () => {
                         const criteria = new Criteria();
                         criteria.setLimit(this.associationLimit);
@@ -178,7 +187,7 @@ Component.register('sw-settings-rule-detail-assignments', {
                             rawData: true,
                             sortable: false,
                             width: '50%',
-                            routerLink: 'sw.event.action.detail'
+                            routerLink: 'sw.event.action.detail',
                         },
                         {
                             property: 'title',
@@ -186,10 +195,10 @@ Component.register('sw-settings-rule-detail-assignments', {
                             rawData: true,
                             sortable: false,
                             width: '50%',
-                            routerLink: 'sw.event.action.detail'
-                        }
-                    ]
-                }
+                            routerLink: 'sw.event.action.detail',
+                        },
+                    ],
+                },
             ];
         },
 
@@ -197,7 +206,11 @@ Component.register('sw-settings-rule-detail-assignments', {
             return this.associationEntities.filter((item) => {
                 return item.loadedData && item.loadedData.total > 0;
             });
-        }
+        },
+    },
+
+    created() {
+        this.createdComponent();
     },
 
     methods: {
@@ -211,7 +224,7 @@ Component.register('sw-settings-rule-detail-assignments', {
                 return {
                     repository: this.repositoryFactory.create(item.entityName),
                     loadedData: null,
-                    ...item
+                    ...item,
                 };
             });
         },
@@ -221,18 +234,20 @@ Component.register('sw-settings-rule-detail-assignments', {
 
             return Promise
                 .all(this.associationEntities.map((item) => {
-                    return item.repository.search(item.criteria(), Context.api).then((result) => {
+                    const api = item.api ? item.api() : Context.api;
+
+                    return item.repository.search(item.criteria(), api).then((result) => {
                         item.loadedData = result;
                     });
                 }))
                 .catch(() => {
                     this.createNotificationError({
-                        message: this.$tc('sw-settings-rule.detail.associationsLoadingError')
+                        message: this.$tc('sw-settings-rule.detail.associationsLoadingError'),
                     });
                 })
                 .finally(() => {
                     this.isLoading = false;
                 });
-        }
-    }
+        },
+    },
 });

@@ -25,13 +25,12 @@ use Shopware\Recovery\Install\Struct\AdminUser;
 use Shopware\Recovery\Install\Struct\DatabaseConnectionInformation;
 use Shopware\Recovery\Install\Struct\Shop;
 use Slim\Container;
-use Symfony\Component\Dotenv\Dotenv;
 
 if (empty($_SESSION)) {
     $sessionPath = str_replace('index.php', '', $_SERVER['SCRIPT_NAME']);
 
     if (!headers_sent()) {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
+        if (session_status() !== \PHP_SESSION_ACTIVE) {
             session_set_cookie_params(600, $sessionPath);
         }
 
@@ -87,12 +86,17 @@ $localeForLanguage = static function (string $language): string {
             return 'sv-SE';
         case 'cs':
             return 'cs-CZ';
+        case 'da':
+            return 'da-DK';
     }
 
     return mb_strtolower($language) . '-' . mb_strtoupper($language);
 };
 
 $app->add(function (ServerRequestInterface $request, ResponseInterface $response, callable $next) use ($container, $localeForLanguage) {
+    // load .env and .env.defaults
+    $container->offsetGet('env.load')();
+
     $selectLanguage = function (array $allowedLanguages): string {
         /**
          * Load language file
@@ -137,10 +141,6 @@ $app->add(function (ServerRequestInterface $request, ResponseInterface $response
                 $_SESSION['parameters'][$key] = $value;
             }
         }
-    }
-
-    if (is_readable($container->offsetGet('env.path'))) {
-        (new Dotenv())->load($container->offsetGet('env.path'));
     }
 
     $allowedLanguages = $container->offsetGet('config')['languages'];
@@ -278,6 +278,10 @@ $app->any('/database-configuration/', function (ServerRequestInterface $request,
         'port' => $_SESSION['parameters']['c_database_port'] ?? '',
         'socket' => $_SESSION['parameters']['c_database_socket'] ?? '',
         'database' => $_SESSION['parameters']['c_database_schema'] ?? '',
+        'sslCaPath' => $_SESSION['parameters']['c_database_ssl_ca_path'] ?? '',
+        'sslCertPath' => $_SESSION['parameters']['c_database_ssl_cert_path'] ?? '',
+        'sslCertKeyPath' => $_SESSION['parameters']['c_database_ssl_cert_key_path'] ?? '',
+        'sslDontVerifyCert' => $_SESSION['parameters']['c_database_ssl_dont_verify_cert'] ?? '0',
     ];
 
     if (empty($databaseParameters['user'])
@@ -297,6 +301,10 @@ $app->any('/database-configuration/', function (ServerRequestInterface $request,
     $connectionInfo->databaseName = $databaseParameters['database'];
     $connectionInfo->password = $databaseParameters['password'];
     $connectionInfo->socket = $databaseParameters['socket'];
+    $connectionInfo->sslCaPath = $databaseParameters['sslCaPath'];
+    $connectionInfo->sslCertPath = $databaseParameters['sslCertPath'];
+    $connectionInfo->sslCertKeyPath = $databaseParameters['sslCertKeyPath'];
+    $connectionInfo->sslDontVerifyServerCert = $databaseParameters['sslDontVerifyCert'] === '1';
 
     try {
         try {
@@ -321,7 +329,7 @@ $app->any('/database-configuration/', function (ServerRequestInterface $request,
         return $this->renderer->render($response, 'database-configuration.php', ['error' => $e->getMessage()]);
     } finally {
         // Init db in container
-        $container->offsetSet('db', $connection);
+        $container->offsetSet('db', $connection ?? null);
     }
 
     $_SESSION['databaseConnectionInfo'] = $connectionInfo;
@@ -559,7 +567,7 @@ $app->any('/finish/', function (ServerRequestInterface $request, ResponseInterfa
             'url' => $schema . '://' . $_SERVER['HTTP_HOST'] . $basepath,
             'loginTokenData' => $loginTokenData,
             'basePath' => $basepath,
-            'host' => $_SERVER['HTTP_HOST'],
+            'host' => explode(':', $_SERVER['HTTP_HOST'])[0],
         ]
     );
 })->setName('finish');
@@ -572,7 +580,10 @@ $app->any('/database-import/importDatabase', function (ServerRequestInterface $r
     $migrationCollectionLoader = $container->offsetGet('migration.collection.loader');
     $_SERVER[MigrationStep::INSTALL_ENVIRONMENT_VARIABLE] = true;
 
-    $coreMigrations = $migrationCollectionLoader->collect('core');
+    $coreMigrations = $migrationCollectionLoader->collectAllForVersion(
+        $container->offsetGet('shopware.version'),
+        MigrationCollectionLoader::VERSION_SELECTION_ALL
+    );
 
     $resultMapper = new ResultMapper();
 
@@ -646,6 +657,10 @@ $app->post('/check-database-connection', function (ServerRequestInterface $reque
         'port' => $postData['c_database_port'],
         'password' => $postData['c_database_password'],
         'socket' => $postData['c_database_socket'],
+        'sslCaPath' => $postData['c_database_ssl_ca_path'],
+        'sslCertPath' => $postData['c_database_ssl_cert_path'],
+        'sslCertKeyPath' => $postData['c_database_ssl_cert_key_path'],
+        'sslDontVerifyServerCert' => isset($postData['c_database_ssl_dont_verify_cert']) ? true : false,
     ]);
 
     try {

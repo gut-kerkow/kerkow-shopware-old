@@ -3,7 +3,6 @@
 <container xmlns="http://symfony.com/schema/dic/services"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
-
     <services>
         <!--Entity Definitions-->
         <service id="Shopware\Core\Framework\MessageQueue\DeadMessage\DeadMessageDefinition">
@@ -23,6 +22,7 @@
         <service id="Shopware\Core\Framework\MessageQueue\MonitoringBusDecorator" decorates="messenger.bus.shopware">
             <argument type="service" id="Shopware\Core\Framework\MessageQueue\MonitoringBusDecorator.inner"/>
             <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <argument type="string">%messenger.default_transport_name%</argument>
         </service>
 
         <service id="encrypted.messenger.bus.shopware" class="Shopware\Core\Framework\MessageQueue\EncryptedBus">
@@ -46,9 +46,16 @@
             <tag name="messenger.message_handler"/>
         </service>
 
+        <service id="Shopware\Core\Framework\MessageQueue\Handler\SleepTaskHandler">
+            <argument type="service" id="monolog.logger.messenger"/>
+
+            <tag name="messenger.message_handler"/>
+        </service>
+
         <!--Middleware-->
         <service id="Shopware\Core\Framework\MessageQueue\Middleware\RetryMiddleware">
             <argument type="service" id="dead_message.repository"/>
+            <argument type="service" id="event_dispatcher" />
         </service>
 
         <!--Service-->
@@ -68,6 +75,8 @@
 
         <service id="Shopware\Core\Framework\MessageQueue\Subscriber\MessageFailedHandler">
             <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <argument type="string">%messenger.default_transport_name%</argument>
+
             <tag name="kernel.event_subscriber"/>
         </service>
 
@@ -92,9 +101,21 @@
             <argument type="service" id="messenger.listener.stop_worker_on_sigterm_signal_listener"/>
             <argument type="service" id="messenger.listener.dispatch_pcntl_signal_listener"/>
             <argument type="service" id="Shopware\Core\Framework\MessageQueue\Subscriber\EarlyReturnMessagesListener"/>
+            <argument type="string">%messenger.default_transport_name%</argument>
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
             </call>
+        </service>
+
+        <service id="Shopware\Core\Framework\MessageQueue\DefaultSenderLocator" decorates="messenger.senders_locator">
+            <argument type="service" id="Shopware\Core\Framework\MessageQueue\DefaultSenderLocator.inner"/>
+            <argument type="service" on-invalid="null" id="messenger.default_transport" />
+            <argument type="string">%messenger.default_transport_name%</argument>
+        </service>
+
+        <service id="Shopware\Core\Framework\MessageQueue\Command\DispatchSleepMessageCommand">
+            <argument type="service" id="messenger.bus.shopware"/>
+            <tag name="console.command"/>
         </service>
     </services>
 </container>

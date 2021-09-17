@@ -4,7 +4,9 @@ namespace Shopware\Core\Framework\App;
 
 use Shopware\Core\Framework\Api\Acl\Role\AclRoleDefinition;
 use Shopware\Core\Framework\App\Aggregate\ActionButton\ActionButtonDefinition;
+use Shopware\Core\Framework\App\Aggregate\AppPaymentMethod\AppPaymentMethodDefinition;
 use Shopware\Core\Framework\App\Aggregate\AppTranslation\AppTranslationDefinition;
+use Shopware\Core\Framework\App\Aggregate\CmsBlock\AppCmsBlockDefinition;
 use Shopware\Core\Framework\App\Template\TemplateDefinition;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
@@ -16,6 +18,8 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\CascadeDelete;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Runtime;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\SetNullOnDelete;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Since;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\WriteProtected;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\IdField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\JsonField;
@@ -31,7 +35,7 @@ use Shopware\Core\System\CustomField\Aggregate\CustomFieldSet\CustomFieldSetDefi
 use Shopware\Core\System\Integration\IntegrationDefinition;
 
 /**
- * @internal only for use by the app-system, will be considered internal from v6.4.0 onward
+ * @internal
  */
 class AppDefinition extends EntityDefinition
 {
@@ -57,6 +61,8 @@ class AppDefinition extends EntityDefinition
         return [
             'active' => false,
             'configurable' => false,
+            'modules' => [],
+            'cookies' => [],
         ];
     }
 
@@ -81,13 +87,15 @@ class AppDefinition extends EntityDefinition
             (new BlobField('icon', 'iconRaw'))->removeFlag(ApiAware::class),
             (new StringField('icon', 'icon'))->addFlags(new WriteProtected(), new Runtime()),
             (new StringField('app_secret', 'appSecret'))->removeFlag(ApiAware::class)->addFlags(new WriteProtected(Context::SYSTEM_SCOPE)),
-            new ListField('modules', 'modules', JsonField::class),
-            new ListField('cookies', 'cookies', JsonField::class),
+            (new ListField('modules', 'modules', JsonField::class))->setStrict(true),
+            new JsonField('main_module', 'mainModule'),
+            (new ListField('cookies', 'cookies', JsonField::class))->setStrict(true),
 
             (new TranslationsAssociationField(AppTranslationDefinition::class, 'app_id'))->addFlags(new Required(), new CascadeDelete()),
             new TranslatedField('label'),
             new TranslatedField('description'),
             new TranslatedField('privacyPolicyExtensions'),
+            (new TranslatedField('customFields'))->addFlags(new Since('6.4.1.0')),
 
             (new FkField('integration_id', 'integrationId', IntegrationDefinition::class))->addFlags(new Required()),
             new OneToOneAssociationField('integration', 'integration_id', 'id', IntegrationDefinition::class),
@@ -99,6 +107,8 @@ class AppDefinition extends EntityDefinition
             (new OneToManyAssociationField('actionButtons', ActionButtonDefinition::class, 'app_id'))->addFlags(new CascadeDelete()),
             (new OneToManyAssociationField('templates', TemplateDefinition::class, 'app_id'))->addFlags(new CascadeDelete()),
             (new OneToManyAssociationField('webhooks', WebhookDefinition::class, 'app_id'))->addFlags(new CascadeDelete()),
+            (new OneToManyAssociationField('paymentMethods', AppPaymentMethodDefinition::class, 'app_id'))->addFlags(new SetNullOnDelete()),
+            (new OneToManyAssociationField('cmsBlocks', AppCmsBlockDefinition::class, 'app_id'))->addFlags(new CascadeDelete()),
         ]);
     }
 }

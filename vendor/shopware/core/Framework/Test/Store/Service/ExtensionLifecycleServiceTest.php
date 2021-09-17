@@ -3,7 +3,8 @@
 namespace Shopware\Core\Framework\Test\Store\Service;
 
 use PHPUnit\Framework\TestCase;
-use Shopware\Core\Framework\Api\Context\AdminApiSource;
+use Shopware\Core\Defaults;
+use Shopware\Core\Framework\Api\Context\SystemSource;
 use Shopware\Core\Framework\App\AppCollection;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
@@ -19,41 +20,26 @@ use Shopware\Core\Framework\Test\Store\StoreClientBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
 
+/**
+ * @group skip-paratest
+ */
 class ExtensionLifecycleServiceTest extends TestCase
 {
     use IntegrationTestBehaviour;
     use ExtensionBehaviour;
     use StoreClientBehaviour;
 
-    /**
-     * @var ExtensionLifecycleService
-     */
-    private $lifecycleService;
+    private ExtensionLifecycleService $lifecycleService;
 
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $appRepository;
+    private EntityRepositoryInterface $appRepository;
 
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $pluginRepository;
+    private EntityRepositoryInterface $pluginRepository;
 
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $themeRepository;
+    private EntityRepositoryInterface $themeRepository;
 
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $salesChannelRepository;
+    private EntityRepositoryInterface $salesChannelRepository;
 
-    /**
-     * @var Context
-     */
-    private $context;
+    private Context $context;
 
     public function setUp(): void
     {
@@ -64,26 +50,7 @@ class ExtensionLifecycleServiceTest extends TestCase
         $this->pluginRepository = $this->getContainer()->get('plugin.repository');
         $this->themeRepository = $this->getContainer()->get('theme.repository');
         $this->salesChannelRepository = $this->getContainer()->get('sales_channel.repository');
-
-        $userId = Uuid::randomHex();
-        $storeToken = Uuid::randomHex();
-
-        $data = [
-            [
-                'id' => $userId,
-                'localeId' => $this->getLocaleIdOfSystemLanguage(),
-                'username' => 'foobar',
-                'password' => 'asdasdasdasd',
-                'firstName' => 'Foo',
-                'lastName' => 'Bar',
-                'email' => 'foo@bar.com',
-                'storeToken' => $storeToken,
-            ],
-        ];
-        $this->getContainer()->get('user.repository')->create($data, Context::createDefaultContext());
-        $source = new AdminApiSource($userId);
-        $source->setIsAdmin(true);
-        $this->context = Context::createDefaultContext($source);
+        $this->context = new Context(new SystemSource(), [], Defaults::CURRENCY, [Defaults::LANGUAGE_SYSTEM]);
     }
 
     public function tearDown(): void
@@ -104,7 +71,7 @@ class ExtensionLifecycleServiceTest extends TestCase
 
         static::assertCount(1, $apps);
         static::assertEquals('TestApp', $apps->first()->getName());
-        static::assertTrue($apps->first()->isActive());
+        static::assertFalse($apps->first()->isActive());
     }
 
     public function testUninstallWithInvalidName(): void
@@ -201,6 +168,7 @@ class ExtensionLifecycleServiceTest extends TestCase
     public function testExtensionCantBeRemovedIfAThemeIsAssigned(): void
     {
         $this->installApp(__DIR__ . '/../_fixtures/TestAppTheme');
+        $this->lifecycleService->activate('app', 'TestAppTheme', $this->context);
 
         /** @var AppCollection $apps */
         $apps = $this->appRepository->search(new Criteria(), $this->context)->getEntities();
@@ -232,6 +200,7 @@ class ExtensionLifecycleServiceTest extends TestCase
     public function testExtensionCantBeRemovedIfAChildThemeIsAssigned(): void
     {
         $this->installApp(__DIR__ . '/../_fixtures/TestAppTheme');
+        $this->lifecycleService->activate('app', 'TestAppTheme', $this->context);
 
         $theme = $this->themeRepository->search(
             (new Criteria())->addFilter(new EqualsFilter('technicalName', 'TestAppTheme')),
@@ -269,6 +238,7 @@ class ExtensionLifecycleServiceTest extends TestCase
     public function testExtensionCanBeRemovedIfThemeIsNotAssigned(): void
     {
         $this->installApp(__DIR__ . '/../_fixtures/TestAppTheme');
+        $this->lifecycleService->activate('app', 'TestAppTheme', $this->context);
 
         $themeCriteria = new Criteria();
         $themeCriteria->addFilter(new EqualsFilter('technicalName', 'TestAppTheme'))
@@ -291,5 +261,19 @@ class ExtensionLifecycleServiceTest extends TestCase
         )->first();
 
         static::assertNull($removedApp);
+    }
+
+    public function testDeleteAppWithDifferentName(): void
+    {
+        $this->installApp(__DIR__ . '/../_fixtures/TestAppTheme');
+
+        $oldName = $this->getContainer()->getParameter('shopware.app_dir') . '/TestAppTheme';
+        $newName = $this->getContainer()->getParameter('shopware.app_dir') . '/some-random-folder-name';
+
+        rename($oldName, $newName);
+
+        $this->lifecycleService->remove('app', 'TestAppTheme', Context::createDefaultContext());
+
+        static::assertFileDoesNotExist($newName);
     }
 }

@@ -7,7 +7,10 @@ use Shopware\Core\Checkout\Promotion\Aggregate\PromotionDiscountPrice\PromotionD
 use Shopware\Core\Checkout\Shipping\Aggregate\ShippingMethodPrice\ShippingMethodPriceCollection;
 use Shopware\Core\Content\ProductExport\ProductExportCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
+use Shopware\Core\Framework\DataAbstractionLayer\Pricing\CashRoundingConfig;
+use Shopware\Core\System\Currency\Aggregate\CurrencyCountryRounding\CurrencyCountryRoundingCollection;
 use Shopware\Core\System\Currency\Aggregate\CurrencyTranslation\CurrencyTranslationCollection;
 use Shopware\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainCollection;
 use Shopware\Core\System\SalesChannel\SalesChannelCollection;
@@ -15,6 +18,7 @@ use Shopware\Core\System\SalesChannel\SalesChannelCollection;
 class CurrencyEntity extends Entity
 {
     use EntityIdTrait;
+    use EntityCustomFieldsTrait;
 
     /**
      * @var string
@@ -47,11 +51,6 @@ class CurrencyEntity extends Entity
     protected $position;
 
     /**
-     * @var int
-     */
-    protected $decimalPrecision;
-
-    /**
      * @var CurrencyTranslationCollection|null
      */
     protected $translations;
@@ -77,11 +76,6 @@ class CurrencyEntity extends Entity
     protected $salesChannelDomains;
 
     /**
-     * @var array|null
-     */
-    protected $customFields;
-
-    /**
      * @var ShippingMethodPriceCollection|null
      */
     protected $shippingMethodPrices;
@@ -100,6 +94,26 @@ class CurrencyEntity extends Entity
      * @var ProductExportCollection|null
      */
     protected $productExports;
+
+    /**
+     * @var CurrencyCountryRoundingCollection|null
+     */
+    protected $countryRoundings;
+
+    /**
+     * @var CashRoundingConfig
+     */
+    protected $itemRounding;
+
+    /**
+     * @var CashRoundingConfig
+     */
+    protected $totalRounding;
+
+    /**
+     * @var float|null
+     */
+    protected $taxFreeFrom;
 
     public function getIsoCode(): string
     {
@@ -211,26 +225,6 @@ class CurrencyEntity extends Entity
         $this->salesChannelDomains = $salesChannelDomains;
     }
 
-    public function getCustomFields(): ?array
-    {
-        return $this->customFields;
-    }
-
-    public function setCustomFields(?array $customFields): void
-    {
-        $this->customFields = $customFields;
-    }
-
-    public function getDecimalPrecision(): int
-    {
-        return $this->decimalPrecision;
-    }
-
-    public function setDecimalPrecision(int $decimalPrecision): void
-    {
-        $this->decimalPrecision = $decimalPrecision;
-    }
-
     public function getShippingMethodPrices(): ?ShippingMethodPriceCollection
     {
         return $this->shippingMethodPrices;
@@ -269,5 +263,53 @@ class CurrencyEntity extends Entity
     public function setProductExports(ProductExportCollection $productExports): void
     {
         $this->productExports = $productExports;
+    }
+
+    public function getCountryRoundings(): ?CurrencyCountryRoundingCollection
+    {
+        return $this->countryRoundings;
+    }
+
+    public function setCountryRoundings(CurrencyCountryRoundingCollection $countryRoundings): void
+    {
+        $this->countryRoundings = $countryRoundings;
+    }
+
+    public function getItemRounding(): CashRoundingConfig
+    {
+        return $this->itemRounding;
+    }
+
+    public function setItemRounding(CashRoundingConfig $itemRounding): void
+    {
+        $this->itemRounding = $itemRounding;
+    }
+
+    public function getTotalRounding(): CashRoundingConfig
+    {
+        return $this->totalRounding;
+    }
+
+    public function setTotalRounding(CashRoundingConfig $totalRounding): void
+    {
+        $this->totalRounding = $totalRounding;
+    }
+
+    /**
+     * @deprecated tag:v6.5.0 - Use `itemRounding.decimals` or `totalRounding.decimals`
+     */
+    public function getDecimalPrecision(): int
+    {
+        return $this->itemRounding->getDecimals();
+    }
+
+    public function getTaxFreeFrom(): ?float
+    {
+        return $this->taxFreeFrom;
+    }
+
+    public function setTaxFreeFrom(?float $taxFreeFrom): void
+    {
+        $this->taxFreeFrom = $taxFreeFrom;
     }
 }

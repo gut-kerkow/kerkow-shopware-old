@@ -4,14 +4,16 @@ namespace Shopware\Core\Content\Product\SearchKeyword;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\FetchMode;
+use Doctrine\DBAL\Statement;
 use Psr\Log\LoggerInterface;
+use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Dbal\QueryBuilder;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Term\Filter\AbstractTokenFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Term\SearchPattern;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Term\SearchTerm;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Term\TokenizerInterface;
-use Shopware\Core\Framework\Feature;
+use Shopware\Core\Framework\Util\ArrayNormalizer;
 use Shopware\Core\Framework\Uuid\Uuid;
 
 class ProductSearchTermInterpreter implements ProductSearchTermInterpreterInterface
@@ -32,7 +34,7 @@ class ProductSearchTermInterpreter implements ProductSearchTermInterpreterInterf
     private $logger;
 
     /**
-     * @var AbstractTokenFilter|null
+     * @var AbstractTokenFilter
      */
     private $tokenFilter;
 
@@ -40,7 +42,7 @@ class ProductSearchTermInterpreter implements ProductSearchTermInterpreterInterf
         Connection $connection,
         TokenizerInterface $tokenizer,
         LoggerInterface $logger,
-        ?AbstractTokenFilter $tokenFilter = null
+        AbstractTokenFilter $tokenFilter
     ) {
         $this->connection = $connection;
         $this->tokenizer = $tokenizer;
@@ -52,17 +54,17 @@ class ProductSearchTermInterpreter implements ProductSearchTermInterpreterInterf
     {
         $tokens = $this->tokenizer->tokenize($word);
 
-        if (Feature::isActive('FEATURE_NEXT_10552') && $this->tokenFilter) {
-            $tokens = $this->tokenFilter->filter($tokens, $context);
+        $tokens = $this->tokenFilter->filter($tokens, $context);
+        if (empty($tokens)) {
+            return new SearchPattern(new SearchTerm(''));
         }
-
-        $slops = $this->slop($tokens);
-
-        if (empty($slops['normal'])) {
+        $tokenSlops = $this->slop($tokens);
+        if (!$this->checkSlops(array_values($tokenSlops))) {
             return new SearchPattern(new SearchTerm($word));
         }
-
-        $matches = $this->fetchKeywords($context, $slops);
+        $tokenKeywords = $this->fetchKeywords($context, $tokenSlops);
+        $matches = array_fill(0, \count($tokens), []);
+        $matches = $this->groupTokenKeywords($matches, $tokenKeywords);
 
         $combines = $this->permute($tokens);
         foreach ($combines as $token) {
@@ -70,15 +72,19 @@ class ProductSearchTermInterpreter implements ProductSearchTermInterpreterInterf
         }
         $tokens = array_keys(array_flip($tokens));
 
-        $scoring = $this->score($tokens, $matches);
+        $pattern = new SearchPattern(new SearchTerm($word));
 
-        $scoring = \array_slice($scoring, 0, 8, true);
+        $pattern->setBooleanClause($this->getConfigBooleanClause($context));
+        $pattern->setTokenTerms($matches);
+
+        $scoring = $this->score($tokens, ArrayNormalizer::flatten($matches));
+        if ($pattern->getBooleanClause() === SearchPattern::BOOLEAN_CLAUSE_OR) {
+            $scoring = \array_slice($scoring, 0, 8, true);
+        }
 
         foreach ($scoring as $keyword => $score) {
             $this->logger->info('Search match: ' . $keyword . ' with score ' . (float) $score);
         }
-
-        $pattern = new SearchPattern(new SearchTerm($word));
 
         foreach ($scoring as $keyword => $score) {
             $pattern->addTerm(new SearchTerm((string) $keyword, $score));
@@ -104,12 +110,13 @@ class ProductSearchTermInterpreter implements ProductSearchTermInterpreterInterf
 
     private function slop(array $tokens): array
     {
-        $slops = [
-            'normal' => [],
-            'reversed' => [],
-        ];
+        $tokenSlops = [];
 
         foreach ($tokens as $token) {
+            $slops = [
+                'normal' => [],
+                'reversed' => [],
+            ];
             $token = (string) $token;
             $slopSize = mb_strlen($token) > 4 ? 2 : 1;
             $length = mb_strlen($token);
@@ -117,6 +124,7 @@ class ProductSearchTermInterpreter implements ProductSearchTermInterpreterInterf
             if (mb_strlen($token) <= 2) {
                 $slops['normal'][] = $token . '%';
                 $slops['reversed'][] = $token . '%';
+                $tokenSlops[$token] = $slops;
 
                 continue;
             }
@@ -131,23 +139,37 @@ class ProductSearchTermInterpreter implements ProductSearchTermInterpreterInterf
                     }
                 }
             }
-
-            $token = strrev($token);
+            $tokenRev = strrev($token);
             for ($i = 1; $i <= $length - 2; $i += $steps) {
                 for ($i2 = 1; $i2 <= $slopSize; ++$i2) {
                     $placeholder = '';
                     for ($i3 = 1; $i3 <= $slopSize + 1; ++$i3) {
-                        $slops['reversed'][] = mb_substr($token, 0, $i) . $placeholder . mb_substr($token, $i + $i2) . '%';
+                        $slops['reversed'][] = mb_substr($tokenRev, 0, $i) . $placeholder . mb_substr($tokenRev, $i + $i2) . '%';
                         $placeholder .= '_';
                     }
                 }
             }
+            $tokenSlops[$token] = $slops;
         }
 
-        return $slops;
+        return $tokenSlops;
     }
 
-    private function fetchKeywords(Context $context, array $slops): array
+    private function groupTokenKeywords(array $matches, array $keywordRows): array
+    {
+        foreach ($keywordRows as $keywordRow) {
+            $keyword = array_shift($keywordRow);
+            foreach ($keywordRow as $indexColumn => $value) {
+                if ((bool) $value) {
+                    $matches[$indexColumn][] = $keyword;
+                }
+            }
+        }
+
+        return $matches;
+    }
+
+    private function fetchKeywords(Context $context, array $tokenSlops): array
     {
         $query = new QueryBuilder($this->connection);
         $query->select('keyword');
@@ -157,15 +179,22 @@ class ProductSearchTermInterpreter implements ProductSearchTermInterpreterInterf
 
         $counter = 0;
         $wheres = [];
-        foreach ($slops['normal'] as $slop) {
-            ++$counter;
-            $wheres[] = 'keyword LIKE :reg' . $counter;
-            $query->setParameter('reg' . $counter, $slop);
-        }
-        foreach ($slops['reversed'] as $slop) {
-            ++$counter;
-            $wheres[] = 'reversed LIKE :reg' . $counter;
-            $query->setParameter('reg' . $counter, $slop);
+        $index = 0;
+
+        foreach ($tokenSlops as $slops) {
+            $slopsWheres = [];
+            foreach ($slops['normal'] as $slop) {
+                ++$counter;
+                $slopsWheres[] = 'keyword LIKE :reg' . $counter;
+                $query->setParameter('reg' . $counter, $slop);
+            }
+            foreach ($slops['reversed'] as $slop) {
+                ++$counter;
+                $slopsWheres[] = 'reversed LIKE :reg' . $counter;
+                $query->setParameter('reg' . $counter, $slop);
+            }
+            $query->addSelect('IF (' . implode(' OR ', $slopsWheres) . ', 1, 0) as \'' . $index++ . '\'');
+            $wheres = array_merge($wheres, $slopsWheres);
         }
 
         $query->andWhere('language_id = :language');
@@ -173,7 +202,7 @@ class ProductSearchTermInterpreter implements ProductSearchTermInterpreterInterf
 
         $query->setParameter('language', Uuid::fromHexToBytes($context->getLanguageId()));
 
-        return $query->execute()->fetchAll(FetchMode::COLUMN);
+        return $query->execute()->fetchAll(FetchMode::NUMERIC);
     }
 
     private function score(array $tokens, array $matches): array
@@ -189,7 +218,12 @@ class ProductSearchTermInterpreter implements ProductSearchTermInterpreterInterf
             }
 
             foreach ($tokens as $token) {
-                $levenshtein = levenshtein($match, (string) $token);
+                if (\PHP_VERSION_ID < 80000) {
+                    $levenshtein = levenshtein(substr($match, 0, 255), substr((string) $token, 0, 255));
+                } else {
+                    $levenshtein = levenshtein($match, (string) $token);
+                }
+
                 if ($levenshtein === 0) {
                     $score += 6;
 
@@ -215,5 +249,45 @@ class ProductSearchTermInterpreter implements ProductSearchTermInterpreterInterf
         });
 
         return $scoring;
+    }
+
+    private function checkSlops(array $tokenSlops): bool
+    {
+        foreach ($tokenSlops as $slops) {
+            if ($slops['normal']) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function getConfigBooleanClause(Context $context): bool
+    {
+        $andLogic = false;
+        $currentLanguageId = $context->getLanguageId();
+
+        $query = new QueryBuilder($this->connection);
+        $query->select('and_logic, language_id');
+        $query->from('product_search_config');
+
+        $query->andWhere('language_id IN (:language)');
+
+        $query->setParameter('language', Uuid::fromHexToBytesList([
+            $currentLanguageId, Defaults::LANGUAGE_SYSTEM,
+        ]), Connection::PARAM_STR_ARRAY);
+
+        /** @var Statement $stmt */
+        $stmt = $query->execute();
+
+        $configurations = $stmt->fetchAll();
+        foreach ($configurations as $configuration) {
+            $andLogic = (bool) $configuration['and_logic'];
+            if (Uuid::fromBytesToHex($configuration['language_id']) === $currentLanguageId) {
+                break;
+            }
+        }
+
+        return $andLogic;
     }
 }

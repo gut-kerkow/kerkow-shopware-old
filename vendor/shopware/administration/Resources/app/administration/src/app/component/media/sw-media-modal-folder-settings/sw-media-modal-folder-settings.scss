@@ -1,9 +1,9 @@
 @import "~scss/variables";
 
-$sw-media-modal-folder-settings-color-switch-mode:          $color-shopware-blue;
-$sw-media-modal-folder-settings-border-color:               $color-steam-cloud;
-$sw-media-modal-folder-settings-color-disabled-switch-mode: $color-steam-cloud;
-$sw-media-modal-folder-settings-delete-color:               $color-crimson;
+$sw-media-modal-folder-settings-color-switch-mode:          $color-shopware-brand-500;
+$sw-media-modal-folder-settings-border-color:               $color-gray-300;
+$sw-media-modal-folder-settings-color-disabled-switch-mode: $color-gray-300;
+$sw-media-modal-folder-settings-delete-color:               $color-crimson-500;
 
 .sw-media-modal-folder-settings {
     .sw-tabs__bar {
@@ -53,7 +53,6 @@ $sw-media-modal-folder-settings-delete-color:               $color-crimson;
         li {
             border-bottom: 1px solid transparent;
             margin-bottom: 8px;
-
             display: flex;
             justify-content: space-between;
 

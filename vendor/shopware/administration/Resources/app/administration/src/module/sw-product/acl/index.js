@@ -44,9 +44,14 @@ Shopware.Service('privileges')
                     'shipping_method:read',
                     'product_tag:read',
                     'product_feature_set:read',
-                    'cms_page:read'
+                    'user_config:read',
+                    'user_config:create',
+                    'user_config:update',
+                    'number_range:read',
+                    'number_range_type:read',
+                    Shopware.Service('privileges').getPrivileges('cms.viewer'),
                 ],
-                dependencies: []
+                dependencies: [],
             },
             editor: {
                 privileges: [
@@ -86,28 +91,28 @@ Shopware.Service('privileges')
                     'review:delete',
                     'product_feature_set:create',
                     'product_feature_set:update',
-                    'product_feature_set:delete'
-                ],
-                dependencies: [
-                    'product.viewer'
-                ]
-            },
-            creator: {
-                privileges: [
-                    'product:create'
+                    'product_feature_set:delete',
                 ],
                 dependencies: [
                     'product.viewer',
-                    'product.editor'
-                ]
+                ],
+            },
+            creator: {
+                privileges: [
+                    'product:create',
+                ],
+                dependencies: [
+                    'product.viewer',
+                    'product.editor',
+                ],
             },
             deleter: {
                 privileges: [
-                    'product:delete'
+                    'product:delete',
                 ],
                 dependencies: [
-                    'product.viewer'
-                ]
-            }
-        }
+                    'product.viewer',
+                ],
+            },
+        },
     });

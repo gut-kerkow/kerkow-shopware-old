@@ -3,8 +3,9 @@
 namespace Shopware\Storefront\Test\Theme\StorefrontPluginConfiguration;
 
 use PHPUnit\Framework\TestCase;
-use Shopware\Core\Framework\Feature;
+use Shopware\Core\Framework\Bundle;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopware\Storefront\Framework\ThemeInterface;
 use Shopware\Storefront\Theme\StorefrontPluginConfiguration\FileCollection;
 use Shopware\Storefront\Theme\StorefrontPluginConfiguration\StorefrontPluginConfigurationFactory;
 
@@ -25,7 +26,12 @@ class StorefrontPluginConfigurationFactoryTest extends TestCase
     public function testCreateThemeConfig(): void
     {
         $basePath = realpath(__DIR__ . '/../fixtures/ThemeConfig');
-        $config = $this->configFactory->createThemeConfig('TestTheme', $basePath);
+
+        $theme = $this->getBundle('TestTheme', $basePath, true);
+        $config = $this->configFactory->createFromBundle($theme);
+
+        $basePath = $this->stripProjectDir($basePath);
+
         static::assertEquals('TestTheme', $config->getTechnicalName());
         static::assertEquals($basePath . '/Resources', $config->getBasePath());
         static::assertTrue($config->getIsTheme());
@@ -61,14 +67,19 @@ class StorefrontPluginConfigurationFactoryTest extends TestCase
                 ],
             ],
         ], $config->getThemeConfig());
+        static::assertEquals([
+            'custom-icons' => 'app/storefront/src/assets/icon-pack/custom-icons',
+        ], $config->getIconSets());
     }
 
     public function testPluginHasSingleScssEntryPoint(): void
     {
-        Feature::skipTestIfInActive('FEATURE_NEXT_7365', $this);
-
         $basePath = realpath(__DIR__ . '/../fixtures/SimplePlugin');
-        $config = $this->configFactory->createPluginConfig('SimplePlugin', $basePath);
+        $bundle = $this->getBundle('SimplePlugin', $basePath);
+
+        $basePath = $this->stripProjectDir($basePath);
+
+        $config = $this->configFactory->createFromBundle($bundle);
 
         $this->assertFileCollection([
             $basePath . '/Resources/app/storefront/src/scss/base.scss' => [],
@@ -77,23 +88,45 @@ class StorefrontPluginConfigurationFactoryTest extends TestCase
 
     public function testPluginHasNoScssEntryPoint(): void
     {
-        Feature::skipTestIfInActive('FEATURE_NEXT_7365', $this);
-
         $basePath = realpath(__DIR__ . '/../fixtures/SimplePluginWithoutCompilation');
-        $config = $this->configFactory->createPluginConfig('SimplePluginWithoutCompilation', $basePath);
+
+        $bundle = $this->getBundle('SimplePluginWithoutCompilation', $basePath);
+        $config = $this->configFactory->createFromBundle($bundle);
 
         $this->assertFileCollection([], $config->getStyleFiles());
     }
 
     public function testPluginHasNoScssEntryPointButDifferentScssFiles(): void
     {
-        Feature::skipTestIfInActive('FEATURE_NEXT_7365', $this);
-
         $basePath = realpath(__DIR__ . '/../fixtures/SimpleWithoutStyleEntryPoint');
-        $config = $this->configFactory->createPluginConfig('SimpleWithoutStyleEntryPoint', $basePath);
+
+        $bundle = $this->getBundle('SimpleWithoutStyleEntryPoint', $basePath);
+
+        $config = $this->configFactory->createFromBundle($bundle);
 
         // Style files should still be empty because of missing base.scss
         $this->assertFileCollection([], $config->getStyleFiles());
+    }
+
+    private function getBundle(string $name, string $basePath, bool $isTheme = false)
+    {
+        if ($isTheme) {
+            return new class($name, $basePath) extends Bundle implements ThemeInterface {
+                public function __construct($name, $basePath)
+                {
+                    $this->name = $name;
+                    $this->path = $basePath;
+                }
+            };
+        }
+
+        return new class($name, $basePath) extends Bundle {
+            public function __construct($name, $basePath)
+            {
+                $this->name = $name;
+                $this->path = $basePath;
+            }
+        };
     }
 
     private function assertFileCollection(array $expected, FileCollection $files): void
@@ -104,5 +137,16 @@ class StorefrontPluginConfigurationFactoryTest extends TestCase
         }
 
         static::assertEquals($expected, $flatFiles);
+    }
+
+    private function stripProjectDir(string $path): string
+    {
+        $projectDir = $this->getContainer()->getParameter('kernel.project_dir');
+
+        if (\strpos($path, $projectDir) === 0) {
+            return substr($path, \strlen($projectDir) + 1);
+        }
+
+        return $path;
     }
 }

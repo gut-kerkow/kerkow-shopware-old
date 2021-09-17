@@ -4,78 +4,77 @@ namespace Shopware\Core\Content\MailTemplate\Subscriber;
 
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Document\DocumentService;
+use Shopware\Core\Content\Mail\Service\AbstractMailService;
+use Shopware\Core\Content\MailTemplate\Event\MailSendSubscriberBridgeEvent;
 use Shopware\Core\Content\MailTemplate\Exception\MailEventConfigurationException;
 use Shopware\Core\Content\MailTemplate\Exception\SalesChannelNotFoundException;
 use Shopware\Core\Content\MailTemplate\MailTemplateActions;
 use Shopware\Core\Content\MailTemplate\MailTemplateEntity;
-use Shopware\Core\Content\MailTemplate\Service\MailServiceInterface;
 use Shopware\Core\Content\Media\MediaService;
+use Shopware\Core\Framework\Adapter\Translation\Translator;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Event\BusinessEvent;
-use Shopware\Core\Framework\Event\EventData\EventDataType;
 use Shopware\Core\Framework\Event\MailActionInterface;
 use Shopware\Core\Framework\Validation\DataBag\DataBag;
+use Shopware\Core\System\Language\LanguageEntity;
+use Shopware\Core\System\Locale\LocaleEntity;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 class MailSendSubscriber implements EventSubscriberInterface
 {
     public const ACTION_NAME = MailTemplateActions::MAIL_TEMPLATE_MAIL_SEND_ACTION;
     public const MAIL_CONFIG_EXTENSION = 'mail-attachments';
 
-    /**
-     * @var MailServiceInterface
-     */
-    private $mailService;
+    private EntityRepositoryInterface $mailTemplateRepository;
 
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $mailTemplateRepository;
+    private MediaService $mediaService;
 
-    /**
-     * @var MediaService
-     */
-    private $mediaService;
+    private EntityRepositoryInterface $mediaRepository;
 
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $mediaRepository;
+    private DocumentService $documentService;
 
-    /**
-     * @var DocumentService
-     */
-    private $documentService;
+    private EntityRepositoryInterface $documentRepository;
 
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $documentRepository;
+    private LoggerInterface $logger;
 
-    /**
-     * @var LoggerInterface
-     */
-    private $logger;
+    private AbstractMailService $emailService;
+
+    private EventDispatcherInterface $eventDispatcher;
+
+    private EntityRepositoryInterface $mailTemplateTypeRepository;
+
+    private Translator $translator;
+
+    private EntityRepositoryInterface $languageRepository;
 
     public function __construct(
-        MailServiceInterface $mailService,
+        AbstractMailService $emailService,
         EntityRepositoryInterface $mailTemplateRepository,
         MediaService $mediaService,
         EntityRepositoryInterface $mediaRepository,
         EntityRepositoryInterface $documentRepository,
         DocumentService $documentService,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        EventDispatcherInterface $eventDispatcher,
+        EntityRepositoryInterface $mailTemplateTypeRepository,
+        Translator $translator,
+        EntityRepositoryInterface $languageRepository
     ) {
-        $this->mailService = $mailService;
         $this->mailTemplateRepository = $mailTemplateRepository;
         $this->mediaService = $mediaService;
         $this->mediaRepository = $mediaRepository;
         $this->documentRepository = $documentRepository;
         $this->documentService = $documentService;
         $this->logger = $logger;
+        $this->emailService = $emailService;
+        $this->eventDispatcher = $eventDispatcher;
+        $this->mailTemplateTypeRepository = $mailTemplateTypeRepository;
+        $this->translator = $translator;
+        $this->languageRepository = $languageRepository;
     }
 
     public static function getSubscribedEvents(): array
@@ -119,10 +118,12 @@ class MailSendSubscriber implements EventSubscriberInterface
             return;
         }
 
+        $injectedTranslator = $this->injectTranslator($mailEvent);
+
         $data = new DataBag();
 
         $recipients = $mailEvent->getMailStruct()->getRecipients();
-        if (isset($config['recipients'])) {
+        if (isset($config['recipients']) && !empty($config['recipients'])) {
             $recipients = $config['recipients'];
         }
 
@@ -143,8 +144,21 @@ class MailSendSubscriber implements EventSubscriberInterface
             $data->set('binAttachments', $attachments);
         }
 
+        $this->eventDispatcher->dispatch(new MailSendSubscriberBridgeEvent($data, $mailTemplate, $event));
+
+        if ($data->has('templateId')) {
+            try {
+                $this->mailTemplateTypeRepository->update([[
+                    'id' => $mailTemplate->getMailTemplateTypeId(),
+                    'templateData' => $this->getTemplateData($mailEvent),
+                ]], $mailEvent->getContext());
+            } catch (\Throwable $e) {
+                // Dont throw errors if this fails // Fix with NEXT-15475
+            }
+        }
+
         try {
-            $this->mailService->send(
+            $this->emailService->send(
                 $data->all(),
                 $event->getContext(),
                 $this->getTemplateData($mailEvent)
@@ -166,6 +180,10 @@ class MailSendSubscriber implements EventSubscriberInterface
                 . json_encode($data->all()) . "\n"
             );
         }
+
+        if ($injectedTranslator) {
+            $this->translator->resetInjection();
+        }
     }
 
     private function getMailTemplate(string $id, Context $context): ?MailTemplateEntity
@@ -185,7 +203,7 @@ class MailSendSubscriber implements EventSubscriberInterface
     private function getTemplateData(MailActionInterface $event): array
     {
         $data = [];
-        /* @var EventDataType $item */
+
         foreach (array_keys($event::getAvailableData()->toArray()) as $key) {
             $getter = 'get' . ucfirst($key);
             if (method_exists($event, $getter)) {
@@ -245,5 +263,33 @@ class MailSendSubscriber implements EventSubscriberInterface
         }
 
         return $attachments;
+    }
+
+    private function injectTranslator(MailActionInterface $event): bool
+    {
+        if ($event->getSalesChannelId() === null) {
+            return false;
+        }
+
+        if ($this->translator->getSnippetSetId() !== null) {
+            return false;
+        }
+
+        $criteria = new Criteria([$event->getContext()->getLanguageId()]);
+        $criteria->addAssociation('locale');
+
+        /** @var LanguageEntity $language */
+        $language = $this->languageRepository->search($criteria, $event->getContext())->first();
+        $locale = $language->getLocale();
+        \assert($locale instanceof LocaleEntity);
+
+        $this->translator->injectSettings(
+            $event->getSalesChannelId(),
+            $event->getContext()->getLanguageId(),
+            $locale->getCode(),
+            $event->getContext()
+        );
+
+        return true;
     }
 }

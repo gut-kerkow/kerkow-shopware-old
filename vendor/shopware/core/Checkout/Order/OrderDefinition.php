@@ -12,6 +12,7 @@ use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionDefi
 use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\CalculatedPriceField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\CartPriceField;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\CashRoundingConfigField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\CreatedByField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\CustomFields;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\DateField;
@@ -78,7 +79,7 @@ class OrderDefinition extends EntityDefinition
 
             (new IntField('auto_increment', 'autoIncrement'))->addFlags(new WriteProtected()),
 
-            (new NumberRangeField('order_number', 'orderNumber'))->addFlags(new ApiAware(), new SearchRanking(SearchRanking::HIGH_SEARCH_RANKING)),
+            (new NumberRangeField('order_number', 'orderNumber'))->addFlags(new ApiAware(), new SearchRanking(SearchRanking::HIGH_SEARCH_RANKING, false)),
 
             (new FkField('billing_address_id', 'billingAddressId', OrderAddressDefinition::class))->addFlags(new ApiAware(), new Required()),
             (new ReferenceVersionField(OrderAddressDefinition::class, 'billing_address_version_id'))->addFlags(new ApiAware(), new Required()),
@@ -104,7 +105,7 @@ class OrderDefinition extends EntityDefinition
 
             (new StateMachineStateField('state_id', 'stateId', OrderStates::STATE_MACHINE))->addFlags(new Required()),
             (new ManyToOneAssociationField('stateMachineState', 'state_id', StateMachineStateDefinition::class, 'id', true))->addFlags(new ApiAware()),
-            new ListField('rule_ids', 'ruleIds', StringField::class),
+            (new ListField('rule_ids', 'ruleIds', StringField::class))->setStrict(true),
             (new CustomFields())->addFlags(new ApiAware()),
             (new CreatedByField())->addFlags(new ApiAware()),
             (new UpdatedByField())->addFlags(new ApiAware()),
@@ -123,6 +124,13 @@ class OrderDefinition extends EntityDefinition
             new ManyToOneAssociationField('createdBy', 'created_by_id', UserDefinition::class, 'id', false),
             new ManyToOneAssociationField('updatedBy', 'updated_by_id', UserDefinition::class, 'id', false),
         ]);
+
+        $fields->add(
+            new CashRoundingConfigField('item_rounding', 'itemRounding')
+        );
+        $fields->add(
+            new CashRoundingConfigField('total_rounding', 'totalRounding')
+        );
 
         return $fields;
     }

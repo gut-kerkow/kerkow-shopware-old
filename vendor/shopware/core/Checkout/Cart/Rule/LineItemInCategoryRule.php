@@ -14,14 +14,11 @@ use Symfony\Component\Validator\Constraints\NotBlank;
 class LineItemInCategoryRule extends Rule
 {
     /**
-     * @var array
+     * @var string[]
      */
-    protected $categoryIds;
+    protected array $categoryIds;
 
-    /**
-     * @var string
-     */
-    protected $operator;
+    protected string $operator;
 
     public function __construct(string $operator = self::OPERATOR_EQ, array $categoryIds = [])
     {
@@ -46,7 +43,7 @@ class LineItemInCategoryRule extends Rule
             return false;
         }
 
-        foreach ($scope->getCart()->getLineItems() as $lineItem) {
+        foreach ($scope->getCart()->getLineItems()->getFlat() as $lineItem) {
             if ($this->matchesOneOfCategory($lineItem)) {
                 return true;
             }
@@ -57,16 +54,20 @@ class LineItemInCategoryRule extends Rule
 
     public function getConstraints(): array
     {
-        return [
-            'categoryIds' => [new NotBlank(), new ArrayOfUuid()],
+        $constraints = [
             'operator' => [
                 new NotBlank(),
-                new Choice([
-                    self::OPERATOR_EQ,
-                    self::OPERATOR_NEQ,
-                ]),
+                new Choice([self::OPERATOR_EQ, self::OPERATOR_NEQ, self::OPERATOR_EMPTY]),
             ],
         ];
+
+        if ($this->operator === self::OPERATOR_EMPTY) {
+            return $constraints;
+        }
+
+        $constraints['categoryIds'] = [new NotBlank(), new ArrayOfUuid()];
+
+        return $constraints;
     }
 
     /**
@@ -85,6 +86,9 @@ class LineItemInCategoryRule extends Rule
 
             case self::OPERATOR_NEQ:
                 return empty($matches);
+
+            case self::OPERATOR_EMPTY:
+                return empty($categoryIds);
 
             default:
                 throw new UnsupportedOperatorException($this->operator, self::class);

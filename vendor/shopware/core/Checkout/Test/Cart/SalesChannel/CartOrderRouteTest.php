@@ -4,6 +4,7 @@ namespace Shopware\Core\Checkout\Test\Cart\SalesChannel;
 
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\Checkout\Cart\Event\CheckoutOrderPlacedCriteriaEvent;
 use Shopware\Core\Checkout\Test\Payment\Handler\V630\SyncTestPaymentHandler;
 use Shopware\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
 use Shopware\Core\Defaults;
@@ -16,6 +17,9 @@ use Shopware\Core\Framework\Test\TestDataCollection;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\PlatformRequest;
 
+/**
+ * @group store-api
+ */
 class CartOrderRouteTest extends TestCase
 {
     use IntegrationTestBehaviour;
@@ -62,7 +66,7 @@ class CartOrderRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/checkout/order'
+                '/store-api/checkout/order'
             );
 
         $response = json_decode($this->browser->getResponse()->getContent(), true);
@@ -78,7 +82,7 @@ class CartOrderRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/checkout/order'
+                '/store-api/checkout/order'
             );
 
         $response = json_decode($this->browser->getResponse()->getContent(), true);
@@ -95,7 +99,7 @@ class CartOrderRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/checkout/cart/line-item',
+                '/store-api/checkout/cart/line-item',
                 [
                     'items' => [
                         [
@@ -119,7 +123,7 @@ class CartOrderRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/checkout/order'
+                '/store-api/checkout/order'
             );
 
         $response = json_decode($this->browser->getResponse()->getContent(), true);
@@ -137,7 +141,7 @@ class CartOrderRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/checkout/cart/line-item',
+                '/store-api/checkout/cart/line-item',
                 [
                     'items' => [
                         [
@@ -161,7 +165,7 @@ class CartOrderRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/checkout/order',
+                '/store-api/checkout/order',
                 [
                     'customerComment' => '  test comment  ',
                 ]
@@ -181,7 +185,7 @@ class CartOrderRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/checkout/cart/line-item',
+                '/store-api/checkout/cart/line-item',
                 [
                     'items' => [
                         [
@@ -205,7 +209,7 @@ class CartOrderRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/checkout/order',
+                '/store-api/checkout/order',
                 [
                     'affiliateCode' => 'test affiliate code',
                     'campaignCode' => 'test campaign code',
@@ -227,7 +231,7 @@ class CartOrderRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/checkout/cart/line-item',
+                '/store-api/checkout/cart/line-item',
                 [
                     'items' => [
                         [
@@ -251,7 +255,7 @@ class CartOrderRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/checkout/order',
+                '/store-api/checkout/order',
                 [
                     'affiliateCode' => 'test affiliate code',
                 ]
@@ -272,7 +276,7 @@ class CartOrderRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/checkout/cart/line-item',
+                '/store-api/checkout/cart/line-item',
                 [
                     'items' => [
                         [
@@ -296,7 +300,7 @@ class CartOrderRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/checkout/order',
+                '/store-api/checkout/order',
                 [
                     'campaignCode' => 'test campaign code',
                 ]
@@ -346,7 +350,7 @@ class CartOrderRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/checkout/cart/line-item',
+                '/store-api/checkout/cart/line-item',
                 [
                     'items' => [
                         [
@@ -376,7 +380,7 @@ class CartOrderRouteTest extends TestCase
             ['intervalInDays' => -$intervalInDays]
         );
 
-        $this->browser->request('GET', '/store-api/v' . PlatformRequest::API_VERSION . '/checkout/cart');
+        $this->browser->request('GET', '/store-api/checkout/cart');
 
         $response = $this->browser->getResponse();
         $guestToken = $response->headers->get(PlatformRequest::HEADER_CONTEXT_TOKEN);
@@ -392,7 +396,7 @@ class CartOrderRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/checkout/cart/line-item',
+                '/store-api/checkout/cart/line-item',
                 [
                     'items' => [
                         [
@@ -414,7 +418,7 @@ class CartOrderRouteTest extends TestCase
         // the cart should be merged on login and a new token should be created
         $this->login($email, $password);
 
-        $this->browser->request('GET', '/store-api/v' . PlatformRequest::API_VERSION . '/checkout/cart');
+        $this->browser->request('GET', '/store-api/checkout/cart');
 
         $response = $this->browser->getResponse();
         $mergedToken = $response->headers->get(PlatformRequest::HEADER_CONTEXT_TOKEN);
@@ -424,6 +428,43 @@ class CartOrderRouteTest extends TestCase
 
         static::assertNotSame($guestToken, $mergedToken);
         static::assertNotSame($originalToken, $mergedToken);
+    }
+
+    public function testOrderPlacedCriteriaEventFired(): void
+    {
+        $this->createCustomerAndLogin();
+
+        $event = null;
+        $this->catchEvent(CheckoutOrderPlacedCriteriaEvent::class, $event);
+
+        $this->browser
+            ->request(
+                'POST',
+                '/store-api/checkout/cart/line-item',
+                [
+                    'items' => [
+                        [
+                            'id' => $this->ids->get('p1'),
+                            'type' => 'product',
+                            'referencedId' => $this->ids->get('p1'),
+                        ],
+                    ],
+                ]
+            );
+        $this->browser
+            ->request(
+                'POST',
+                '/store-api/checkout/order'
+            );
+
+        TestCase::assertInstanceOf(CheckoutOrderPlacedCriteriaEvent::class, $event);
+    }
+
+    protected function catchEvent(string $eventName, &$eventResult): void
+    {
+        $this->getContainer()->get('event_dispatcher')->addListener($eventName, static function ($event) use (&$eventResult): void {
+            $eventResult = $event;
+        });
     }
 
     private function createTestData(): void
@@ -461,7 +502,7 @@ class CartOrderRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/account/login',
+                '/store-api/account/login',
                 [
                     'email' => $email,
                     'password' => $password,

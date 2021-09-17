@@ -1,0 +1,15 @@
+
+{# file to extend #}
+{% sw_extends '@Storefront/storefront/component/buy-widget/buy-widget-form.html.twig' %}
+
+{# ... #}
+{% block buy_widget_buy_form_inner_csrf %}
+
+    {# prepend parent #}
+    {{ parent() }}
+
+    {# this is our input container for every option hidden input field #}
+    <div class="dvsn-product-option--input-container">
+    </div>
+
+{% endblock %}

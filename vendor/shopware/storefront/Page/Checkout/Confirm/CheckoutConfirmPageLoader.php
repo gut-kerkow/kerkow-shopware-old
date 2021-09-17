@@ -14,6 +14,7 @@ use Shopware\Core\Checkout\Shipping\ShippingMethodCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Validation\BuildValidationEvent;
+use Shopware\Core\Framework\Validation\DataBag\DataBag;
 use Shopware\Core\Framework\Validation\DataValidationFactoryInterface;
 use Shopware\Core\Framework\Validation\DataValidator;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -106,19 +107,25 @@ class CheckoutConfirmPageLoader
     private function getPaymentMethods(SalesChannelContext $context): PaymentMethodCollection
     {
         $request = new Request();
-        $request->query->set('onlyAvailable', true);
+        $request->query->set('onlyAvailable', '1');
 
-        return $this->paymentMethodRoute->load($request, $context)->getPaymentMethods();
+        return $this->paymentMethodRoute->load($request, $context, new Criteria())->getPaymentMethods();
     }
 
     private function getShippingMethods(SalesChannelContext $context): ShippingMethodCollection
     {
         $request = new Request();
-        $request->query->set('onlyAvailable', true);
+        $request->query->set('onlyAvailable', '1');
 
-        return $this->shippingMethodRoute
+        $shippingMethods = $this->shippingMethodRoute
             ->load($request, $context, new Criteria())
             ->getShippingMethods();
+
+        if (!$shippingMethods->has($context->getShippingMethod()->getId())) {
+            $shippingMethods->add($context->getShippingMethod());
+        }
+
+        return $shippingMethods;
     }
 
     /**
@@ -144,7 +151,7 @@ class CheckoutConfirmPageLoader
         SalesChannelContext $context
     ): void {
         $validation = $this->addressValidationFactory->create($context);
-        $validationEvent = new BuildValidationEvent($validation, $context->getContext());
+        $validationEvent = new BuildValidationEvent($validation, new DataBag(), $context->getContext());
         $this->eventDispatcher->dispatch($validationEvent);
 
         if ($billingAddress === null) {
@@ -165,7 +172,7 @@ class CheckoutConfirmPageLoader
         SalesChannelContext $context
     ): void {
         $validation = $this->addressValidationFactory->create($context);
-        $validationEvent = new BuildValidationEvent($validation, $context->getContext());
+        $validationEvent = new BuildValidationEvent($validation, new DataBag(), $context->getContext());
         $this->eventDispatcher->dispatch($validationEvent);
 
         if ($shippingAddress === null) {

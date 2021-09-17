@@ -5,7 +5,7 @@ namespace Shopware\Core\Framework\DataAbstractionLayer\Field;
 use Shopware\Core\Framework\Api\Context\AdminApiSource;
 use Shopware\Core\Framework\DataAbstractionLayer\Dbal\FieldAccessorBuilder\DefaultFieldAccessorBuilder;
 use Shopware\Core\Framework\DataAbstractionLayer\Dbal\FieldAccessorBuilder\FieldAccessorBuilderInterface;
-use Shopware\Core\Framework\DataAbstractionLayer\Dbal\FieldResolver\FieldResolverInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\Dbal\FieldResolver\AbstractFieldResolver;
 use Shopware\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Flag;
@@ -30,7 +30,7 @@ abstract class Field extends Struct
     private $serializer;
 
     /**
-     * @var FieldResolverInterface|null
+     * @var AbstractFieldResolver|null
      */
     private $resolver;
 
@@ -119,7 +119,10 @@ abstract class Field extends Struct
         return $this->serializer;
     }
 
-    public function getResolver(): ?FieldResolverInterface
+    /**
+     * @return AbstractFieldResolver|null
+     */
+    public function getResolver()
     {
         $this->initLazy();
 

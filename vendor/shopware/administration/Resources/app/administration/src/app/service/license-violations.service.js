@@ -25,13 +25,13 @@ export default function createLicenseViolationsService(storeService) {
             lastLicenseWarningsKey,
             lastLicenseFetchedKey,
             responseCacheKey,
-            showViolationsKey
-        }
+            showViolationsKey,
+        },
     };
 
     function checkForLicenseViolations() {
         const topLevelDomain = window.location.hostname.split('.').pop();
-        const whitelistDomains = [
+        const allowlistDomains = [
             'localhost',
             'test',
             'local',
@@ -39,15 +39,15 @@ export default function createLicenseViolationsService(storeService) {
             'development',
             'vm',
             'next',
-            'example'
+            'example',
         ];
 
-        // if the user is on a whitelisted domain
-        if (whitelistDomains.includes(topLevelDomain)) {
+        // if the user is on a allowlisted domain
+        if (allowlistDomains.includes(topLevelDomain)) {
             return Promise.resolve({
                 warnings: [],
                 violations: [],
-                other: []
+                other: [],
             });
         }
 
@@ -80,7 +80,7 @@ export default function createLicenseViolationsService(storeService) {
             other: response.filter((violation) => {
                 return violation.extensions.licenseViolation.type.level !== 'violation'
                     && violation.extensions.licenseViolation.type.level !== 'warning';
-            })
+            }),
         };
 
         if (isTimeExpired(lastLicenseWarningsKey)) {
@@ -151,20 +151,24 @@ export default function createLicenseViolationsService(storeService) {
         localStorage.removeItem(responseCacheKey);
     }
 
-    async function forceDeletePlugin(pluginService, plugin) {
+    async function forceDeletePlugin(extension) {
+        const shopwareExtensionService = Shopware.Service('shopwareExtensionService');
+        const cacheService = Shopware.Service('cacheApiService');
+
         try {
-            const isActive = plugin.active;
-            const isInstalled = plugin.installedAt !== null;
+            const isActive = extension.active;
+            const isInstalled = extension.installedAt !== null;
 
             if (isActive) {
-                await pluginService.deactivate(plugin.name);
+                await shopwareExtensionService.deactivateExtension(extension.name, extension.type);
+                await cacheService.clear();
             }
 
             if (isInstalled) {
-                await pluginService.uninstall(plugin.name);
+                await shopwareExtensionService.uninstallExtension(extension.name, extension.type);
             }
 
-            await pluginService.delete(plugin.name);
+            await shopwareExtensionService.removeExtension(extension.name, extension.type);
 
             return true;
         } catch (error) {
@@ -177,13 +181,13 @@ export default function createLicenseViolationsService(storeService) {
         const notificationActions = warning.actions.map((action) => {
             return {
                 label: action.label,
-                route: action.externalLink
+                route: action.externalLink,
             };
         });
 
         const ignorePluginAction = {
             label: getApplicationRootReference().$tc('sw-license-violation.ignorePlugin'),
-            method: () => ignorePlugin(warning.name, getIgnoredPlugins())
+            method: () => ignorePlugin(warning.name, getIgnoredPlugins()),
         };
 
         getApplicationRootReference().$store.dispatch('notification/createGrowlNotification', {
@@ -193,8 +197,8 @@ export default function createLicenseViolationsService(storeService) {
             variant: 'warning',
             actions: [
                 ...notificationActions,
-                ignorePluginAction
-            ]
+                ignorePluginAction,
+            ],
         });
     }
 

@@ -43,7 +43,8 @@ class CartDeleteRoute extends AbstractCartDeleteRoute
      * @Since("6.3.0.0")
      * @OA\Delete(
      *      path="/checkout/cart",
-     *      summary="Delete the cart",
+     *      summary="Delete a cart",
+     *      description="This route deletes the cart of the customer.",
      *      operationId="deleteCart",
      *      tags={"Store API", "Cart"},
      *      @OA\Response(
@@ -52,7 +53,7 @@ class CartDeleteRoute extends AbstractCartDeleteRoute
      *          @OA\JsonContent(ref="#/components/schemas/SuccessResponse")
      *     )
      * )
-     * @Route("/store-api/v{version}/checkout/cart", name="store-api.checkout.cart.delete", methods={"DELETE"})
+     * @Route("/store-api/checkout/cart", name="store-api.checkout.cart.delete", methods={"DELETE"})
      */
     public function delete(SalesChannelContext $context): NoContentResponse
     {

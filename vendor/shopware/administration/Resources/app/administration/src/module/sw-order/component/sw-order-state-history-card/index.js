@@ -1,5 +1,5 @@
 import template from './sw-order-state-history-card.html.twig';
-import '../sw-order-state-change-modal/';
+import '../sw-order-state-change-modal';
 
 const { Component, Mixin } = Shopware;
 const { Criteria } = Shopware.Data;
@@ -7,31 +7,32 @@ const { Criteria } = Shopware.Data;
 Component.register('sw-order-state-history-card', {
     template,
 
-    mixins: [
-        Mixin.getByName('notification')
-    ],
-
     inject: [
         'orderService',
         'stateMachineService',
         'orderStateMachineService',
         'repositoryFactory',
-        'acl'
+        'acl',
     ],
+
+    mixins: [
+        Mixin.getByName('notification'),
+    ],
+
     props: {
         title: {
             type: String,
-            required: true
+            required: true,
         },
         order: {
             type: Object,
-            required: true
+            required: true,
         },
         isLoading: {
             type: Boolean,
             required: false,
-            default: false
-        }
+            default: false,
+        },
     },
     data() {
         return {
@@ -46,9 +47,7 @@ Component.register('sw-order-state-history-card', {
             modalConfirmed: false,
             currentActionName: null,
             currentStateType: null,
-            /** @deprecated tag:v6.4.0 - Will be removed. Mail template assignment will be done via "sw-event-action". */
-            mailTemplatesExist: false,
-            technicalName: ''
+            technicalName: '',
         };
     },
     computed: {
@@ -93,14 +92,14 @@ Component.register('sw-order-state-history-card', {
             criteria.addFilter(
                 Criteria.equalsAny(
                     'state_machine_history.entityId.id',
-                    entityIds
-                )
+                    entityIds,
+                ),
             );
             criteria.addFilter(
                 Criteria.equalsAny(
                     'state_machine_history.entityName',
-                    ['order', 'order_transaction', 'order_delivery']
-                )
+                    ['order', 'order_transaction', 'order_delivery'],
+                ),
             );
             criteria.addAssociation('fromStateMachineState');
             criteria.addAssociation('toStateMachineState');
@@ -108,7 +107,7 @@ Component.register('sw-order-state-history-card', {
             criteria.addSorting({ field: 'state_machine_history.createdAt', order: 'ASC' });
 
             return criteria;
-        }
+        },
 
     },
 
@@ -127,7 +126,7 @@ Component.register('sw-order-state-history-card', {
 
             Promise.all([
                 this.getStateHistoryEntries(),
-                this.getTransitionOptions()
+                this.getTransitionOptions(),
             ]).then(() => {
                 this.$emit('options-change', 'order.states', this.orderOptions);
                 if (this.transaction) {
@@ -144,10 +143,7 @@ Component.register('sw-order-state-history-card', {
         },
 
         getStateHistoryEntries() {
-            return this.stateMachineHistoryRepository.search(
-                this.stateMachineHistoryCriteria,
-                Shopware.Context.api
-            ).then((fetchedEntries) => {
+            return this.stateMachineHistoryRepository.search(this.stateMachineHistoryCriteria).then((fetchedEntries) => {
                 this.orderHistory = this.buildStateHistory(this.order, fetchedEntries);
                 if (this.transaction) {
                     this.transactionHistory = this.buildStateHistory(this.transaction, fetchedEntries);
@@ -170,7 +166,7 @@ Component.register('sw-order-state-history-card', {
                 return [{
                     state: entity.stateMachineState,
                     createdAt: entity.createdAt,
-                    user: null
+                    user: null,
                 }];
             }
 
@@ -179,14 +175,14 @@ Component.register('sw-order-state-history-card', {
             entries.push({
                 state: fetchedEntries[0].fromStateMachineState,
                 createdAt: entity.createdAt,
-                user: null
+                user: null,
             });
 
             fetchedEntries.forEach((entry) => {
                 entries.push({
                     state: entry.toStateMachineState,
                     createdAt: entry.createdAt,
-                    user: entry.user ? entry.user : null
+                    user: entry.user ? entry.user : null,
                 });
             });
 
@@ -205,15 +201,15 @@ Component.register('sw-order-state-history-card', {
             return Promise.all(
                 [
                     this.getAllStates(),
-                    ...statePromises
-                ]
+                    ...statePromises,
+                ],
             ).then((data) => {
                 const allStates = data[0];
                 const orderState = data[1];
                 this.orderOptions = this.buildTransitionOptions(
                     'order.state',
                     allStates,
-                    orderState.data.transitions
+                    orderState.data.transitions,
                 );
 
                 if (this.transaction) {
@@ -221,7 +217,7 @@ Component.register('sw-order-state-history-card', {
                     this.transactionOptions = this.buildTransitionOptions(
                         'order_transaction.state',
                         allStates,
-                        orderTransactionState.data.transitions
+                        orderTransactionState.data.transitions,
                     );
                 }
 
@@ -230,7 +226,7 @@ Component.register('sw-order-state-history-card', {
                     this.deliveryOptions = this.buildTransitionOptions(
                         'order_delivery.state',
                         allStates,
-                        orderDeliveryState.data.transitions
+                        orderDeliveryState.data.transitions,
                     );
                 }
 
@@ -239,7 +235,7 @@ Component.register('sw-order-state-history-card', {
         },
 
         getAllStates() {
-            return this.stateMachineStateRepository.search(this.stateMachineStateCriteria(), Shopware.Context.api);
+            return this.stateMachineStateRepository.search(this.stateMachineStateCriteria());
         },
 
         stateMachineStateCriteria() {
@@ -249,21 +245,11 @@ Component.register('sw-order-state-history-card', {
             criteria.addFilter(
                 Criteria.equalsAny(
                     'state_machine_state.stateMachine.technicalName',
-                    ['order.state', 'order_transaction.state', 'order_delivery.state']
-                )
+                    ['order.state', 'order_transaction.state', 'order_delivery.state'],
+                ),
             );
 
             return criteria;
-        },
-
-        isMailTemplateAssigned(technicalName) {
-            this.technicalName = technicalName;
-
-            const mailTemplates = this.order.salesChannel.mailTemplates;
-
-            return mailTemplates.find((mailTemplate) => {
-                return mailTemplate.mailTemplateType.technicalName === technicalName;
-            });
         },
 
         buildTransitionOptions(stateMachineName, allTransitions, possibleTransitions) {
@@ -276,7 +262,7 @@ Component.register('sw-order-state-history-card', {
                     stateName: state.technicalName,
                     id: null,
                     name: state.translated.name,
-                    disabled: true
+                    disabled: true,
                 };
             });
 
@@ -302,13 +288,6 @@ Component.register('sw-order-state-history-card', {
                 this.currentActionName = actionName;
                 this.currentStateType = 'orderState';
 
-                const matchedTransactionOption = this.orderOptions
-                    .find((orderOption) => orderOption.id === actionName);
-
-                this.mailTemplatesExist = this.isMailTemplateAssigned(
-                    `order.state.${matchedTransactionOption.stateName}`
-                );
-
                 this.showModal = true;
 
                 return;
@@ -330,13 +309,6 @@ Component.register('sw-order-state-history-card', {
                 this.currentActionName = actionName;
                 this.currentStateType = 'orderTransactionState';
 
-                const matchedTransactionOption = this.transactionOptions
-                    .find((transactionOption) => transactionOption.id === actionName);
-
-                this.mailTemplatesExist = this.isMailTemplateAssigned(
-                    `order_transaction.state.${matchedTransactionOption.stateName}`
-                );
-
                 this.showModal = true;
                 return;
             }
@@ -353,21 +325,10 @@ Component.register('sw-order-state-history-card', {
                 this.currentActionName = actionName;
                 this.currentStateType = 'orderDeliveryState';
 
-                const matchedTransactionOption = this.deliveryOptions
-                    .find((deliveryOption) => deliveryOption.id === actionName);
-
-                this.mailTemplatesExist = this.isMailTemplateAssigned(
-                    `order_delivery.state.${matchedTransactionOption.stateName}`
-                );
-
                 this.showModal = true;
                 return;
             }
             this.modalConfirmed = false;
-        },
-
-        removeLastMailTemplate() {
-            this.order.salesChannel.mailTemplates.pop();
         },
 
         onLeaveModalClose() {
@@ -375,8 +336,6 @@ Component.register('sw-order-state-history-card', {
             this.currentActionName = null;
             this.currentStateType = null;
             this.showModal = false;
-
-            this.removeLastMailTemplate();
         },
 
         onLeaveModalConfirm(docIds, sendMail = true) {
@@ -385,7 +344,7 @@ Component.register('sw-order-state-history-card', {
                 this.orderStateMachineService.transitionOrderTransactionState(
                     this.transaction.id,
                     this.currentActionName,
-                    { documentIds: docIds, sendMail }
+                    { documentIds: docIds, sendMail },
                 ).then(() => {
                     this.$emit('order-state-change');
                     this.loadHistory();
@@ -396,7 +355,7 @@ Component.register('sw-order-state-history-card', {
                 this.orderStateMachineService.transitionOrderState(
                     this.order.id,
                     this.currentActionName,
-                    { documentIds: docIds, sendMail }
+                    { documentIds: docIds, sendMail },
                 ).then(() => {
                     this.$emit('order-state-change');
                     this.loadHistory();
@@ -407,7 +366,7 @@ Component.register('sw-order-state-history-card', {
                 this.orderStateMachineService.transitionOrderDeliveryState(
                     this.delivery.id,
                     this.currentActionName,
-                    { documentIds: docIds, sendMail }
+                    { documentIds: docIds, sendMail },
                 ).then(() => {
                     this.$emit('order-state-change');
                     this.loadHistory();
@@ -421,8 +380,8 @@ Component.register('sw-order-state-history-card', {
 
         createStateChangeErrorNotification(errorMessage) {
             this.createNotificationError({
-                message: this.$tc('sw-order.stateCard.labelErrorStateChange') + errorMessage
+                message: this.$tc('sw-order.stateCard.labelErrorStateChange') + errorMessage,
             });
-        }
-    }
+        },
+    },
 });

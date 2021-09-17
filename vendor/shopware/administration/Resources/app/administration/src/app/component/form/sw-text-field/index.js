@@ -17,36 +17,46 @@ Component.register('sw-text-field', {
     mixins: [
         Mixin.getByName('sw-form-field'),
         Mixin.getByName('remove-api-error'),
-        Mixin.getByName('validation')
+        Mixin.getByName('validation'),
     ],
 
     props: {
+        // FIXME: add type and default value to property
+        // eslint-disable-next-line vue/require-prop-types, vue/require-default-prop
         value: {
-            required: false
+            required: false,
         },
 
         placeholder: {
             type: String,
             required: false,
-            default: ''
+            default: '',
         },
 
         copyable: {
             type: Boolean,
             required: false,
-            default: false
+            default: false,
         },
 
         copyableTooltip: {
             type: Boolean,
             required: false,
-            default: false
-        }
+            default: false,
+        },
+
+        idSuffix: {
+            type: String,
+            required: false,
+            default() {
+                return '';
+            },
+        },
     },
 
     data() {
         return {
-            currentValue: this.value
+            currentValue: this.value,
         };
     },
 
@@ -66,13 +76,13 @@ Component.register('sw-text-field', {
             delete additionalListeners.change;
 
             return additionalListeners;
-        }
+        },
     },
 
     watch: {
         value(value) {
             this.currentValue = value;
-        }
+        },
     },
 
     methods: {
@@ -86,6 +96,14 @@ Component.register('sw-text-field', {
 
         restoreInheritance() {
             this.$emit('input', null);
-        }
-    }
+        },
+
+        createInputId(identification) {
+            if (!this.idSuffix || this.idSuffix.length <= 0) {
+                return identification;
+            }
+
+            return `${identification}-${this.idSuffix}`;
+        },
+    },
 });

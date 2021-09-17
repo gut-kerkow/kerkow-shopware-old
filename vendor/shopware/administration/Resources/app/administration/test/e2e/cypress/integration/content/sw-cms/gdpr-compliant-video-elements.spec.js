@@ -58,17 +58,12 @@ describe('CMS: Check GDPR compliant video elements', () => {
 
             // Upload preview image
             cy.get('.sw-media-upload-v2__dropzone.is--droppable').should('be.visible');
-            cy.fixture('img/sw-login-background.png').then(fileContent => {
-                cy.get('.sw-cms-slot__config-modal #files').upload(
-                    {
-                        fileContent,
-                        fileName: 'sw-login-background.png',
-                        mimeType: 'image/png'
-                    }, {
-                        subjectType: 'input'
-                    }
-                );
-            });
+            cy.get(`.sw-cms-slot__config-modal #files`)
+                .attachFile({
+                    filePath: 'img/sw-login-background.png',
+                    fileName: 'sw-login-background.png',
+                    mimeType: 'image/png'
+                });
             cy.awaitAndCheckNotification('File has been saved.');
 
             // Close config modal
@@ -82,7 +77,8 @@ describe('CMS: Check GDPR compliant video elements', () => {
 
             // Assign layout to root category
             cy.visit(`${Cypress.env('admin')}#/sw/category/index`);
-            cy.get('.sw-tree-item__element').contains('Home').click();
+            cy.get('.sw-category-tree__inner .sw-tree-item__element').contains('Home').click();
+            cy.get('.sw-category-detail__tab-cms').scrollIntoView().click();
             cy.get('.sw-card.sw-category-layout-card').scrollIntoView();
             cy.get('.sw-category-detail-layout__change-layout-action').click();
             cy.get('.sw-modal__dialog').should('be.visible');

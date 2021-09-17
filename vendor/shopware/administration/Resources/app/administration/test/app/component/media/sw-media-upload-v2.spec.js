@@ -1,21 +1,16 @@
-import { createLocalVue, shallowMount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import 'src/app/component/media/sw-media-upload-v2';
+import 'src/app/component/context-menu/sw-context-menu-item';
 
 function createWrapper(customOptions = {}, privileges = []) {
-    const localVue = createLocalVue();
-    localVue.directive('droppable', {});
-
     return shallowMount(Shopware.Component.build('sw-media-upload-v2'), {
-        localVue,
         stubs: {
-            'sw-context-button': true,
-            'sw-context-menu-item': true,
             'sw-icon': true,
-            'sw-button': true
-        },
-        mocks: {
-            $t: v => v,
-            $tc: v => v
+            'sw-button': true,
+            'sw-context-button': true,
+            'sw-button-group': true,
+            'sw-context-menu-item': Shopware.Component.build('sw-context-menu-item'),
+            'sw-media-url-form': true
         },
         provide: {
             repositoryFactory: {},
@@ -194,6 +189,36 @@ describe('src/app/component/media/sw-media-upload-v2', () => {
 
         const uploadButton = wrapper.find('.sw-media-upload-v2__button.open-media-sidebar');
         expect(uploadButton.attributes().disabled).toBeDefined();
+    });
+
+    it('context button switch mode should change input type when clicking on menu item', async () => {
+        await wrapper.setData({
+            isUploadUrlFeatureEnabled: true
+        });
+
+        const switchModeButton = wrapper.find('.sw-media-upload-v2__switch-mode');
+        expect(switchModeButton.exists()).toBeTruthy();
+
+        const fileInput = wrapper.find('.sw-media-upload-v2__file-input');
+        expect(fileInput.exists()).toBeTruthy();
+
+        let switchToUrlModeBtn = switchModeButton.find('.sw-media-upload-v2__button-url-upload');
+        expect(switchToUrlModeBtn.exists()).toBeTruthy();
+
+        let switchToFileModeBtn = switchModeButton.find('.sw-media-upload-v2__button-file-upload');
+        expect(switchToFileModeBtn.exists()).toBeFalsy();
+
+        await switchToUrlModeBtn.trigger('click');
+
+        switchToFileModeBtn = switchModeButton.find('.sw-media-upload-v2__button-file-upload');
+        switchToUrlModeBtn = switchModeButton.find('.sw-media-upload-v2__button-url-upload');
+
+        expect(switchToFileModeBtn.exists()).toBeTruthy();
+        expect(switchToUrlModeBtn.exists()).toBeFalsy();
+
+        const urlForm = wrapper.find('.sw-media-upload-v2__url-form');
+
+        expect(urlForm.exists()).toBeTruthy();
     });
 });
 

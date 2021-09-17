@@ -9,7 +9,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\Test\TestCaseBase\AdminFunctionalTestBehaviour;
 use Shopware\Core\Framework\Util\Random;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\PlatformRequest;
 use Symfony\Component\HttpFoundation\Response;
 
 class ImportExportFileApiTest extends TestCase
@@ -44,7 +43,7 @@ class ImportExportFileApiTest extends TestCase
         $data = $this->prepareImportExportFileTestData($num);
 
         foreach ($data as $entry) {
-            $this->getBrowser()->request('POST', $this->prepareRoute(), $entry);
+            $this->getBrowser()->request('POST', $this->prepareRoute(), [], [], [], json_encode($entry));
             $response = $this->getBrowser()->getResponse();
             static::assertSame(Response::HTTP_NO_CONTENT, $response->getStatusCode(), $response->getContent());
         }
@@ -123,9 +122,9 @@ class ImportExportFileApiTest extends TestCase
             $expectData[$id] = $data[$idx];
             unset($data[$idx]['id']);
 
-            $this->getBrowser()->request('PATCH', $this->prepareRoute() . $id, $data[$idx], [], [
+            $this->getBrowser()->request('PATCH', $this->prepareRoute() . $id, [], [], [
                 'HTTP_ACCEPT' => 'application/json',
-            ]);
+            ], json_encode($data[$idx]));
             $response = $this->getBrowser()->getResponse();
             static::assertEquals(Response::HTTP_NO_CONTENT, $response->getStatusCode());
         }
@@ -169,9 +168,9 @@ class ImportExportFileApiTest extends TestCase
             unset($data[$idx][$removedProperty]);
             unset($data[$idx]['id']);
 
-            $this->getBrowser()->request('PATCH', $this->prepareRoute() . $id, $data[$idx], [], [
+            $this->getBrowser()->request('PATCH', $this->prepareRoute() . $id, [], [], [
                 'HTTP_ACCEPT' => 'application/json',
-            ]);
+            ], json_encode($data[$idx]));
             $response = $this->getBrowser()->getResponse();
             static::assertEquals(Response::HTTP_NO_CONTENT, $response->getStatusCode());
 
@@ -299,7 +298,7 @@ class ImportExportFileApiTest extends TestCase
             $addPath = '/search';
         }
 
-        return '/api/v' . PlatformRequest::API_VERSION . $addPath . '/import-export-file/';
+        return '/api' . $addPath . '/import-export-file/';
     }
 
     /**

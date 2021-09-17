@@ -6,16 +6,16 @@ const { Component, Mixin } = Shopware;
 Component.register('sw-cms-el-config-image', {
     template,
 
-    mixins: [
-        Mixin.getByName('cms-element')
-    ],
-
     inject: ['repositoryFactory'],
+
+    mixins: [
+        Mixin.getByName('cms-element'),
+    ],
 
     data() {
         return {
             mediaModalIsOpen: false,
-            initialFolderId: null
+            initialFolderId: null,
         };
     },
 
@@ -34,7 +34,7 @@ Component.register('sw-cms-el-config-image', {
             }
 
             return this.element.config.media.value;
-        }
+        },
     },
 
     created() {
@@ -47,7 +47,7 @@ Component.register('sw-cms-el-config-image', {
         },
 
         async onImageUpload({ targetId }) {
-            const mediaEntity = await this.mediaRepository.get(targetId, Shopware.Context.api);
+            const mediaEntity = await this.mediaRepository.get(targetId);
 
             this.element.config.media.value = mediaEntity.id;
 
@@ -78,8 +78,15 @@ Component.register('sw-cms-el-config-image', {
         },
 
         updateElementData(media = null) {
-            this.$set(this.element.data, 'mediaId', media === null ? null : media.id);
-            this.$set(this.element.data, 'media', media);
+            const mediaId = media === null ? null : media.id;
+
+            if (!this.element.data) {
+                this.$set(this.element, 'data', { mediaId });
+                this.$set(this.element, 'data', { media });
+            } else {
+                this.$set(this.element.data, 'mediaId', mediaId);
+                this.$set(this.element.data, 'media', media);
+            }
         },
 
         onOpenMediaModal() {
@@ -95,11 +102,9 @@ Component.register('sw-cms-el-config-image', {
         onChangeDisplayMode(value) {
             if (value === 'cover') {
                 this.element.config.verticalAlign.value = null;
-            } else {
-                this.element.config.minHeight.value = '';
             }
 
             this.$emit('element-update', this.element);
-        }
-    }
+        },
+    },
 });

@@ -8,12 +8,7 @@ function createWrapper(privileges = []) {
     return shallowMount(Shopware.Component.build('sw-settings-customer-group-detail'), {
         localVue,
         mocks: {
-            $tc: (translationPath) => translationPath,
-            $router: { replace: () => {} },
-            $route: { query: '' },
-            $device: {
-                getSystemKey: () => 'CTRL'
-            }
+            $route: { query: '' }
         },
 
         propsData: {
@@ -46,7 +41,8 @@ function createWrapper(privileges = []) {
             'sw-button': true,
             'sw-button-process': true,
             'sw-switch-field': true,
-            'sw-entity-multi-select': true
+            'sw-entity-multi-select': true,
+            'sw-custom-field-set-renderer': true
         },
 
         provide: {
@@ -99,6 +95,9 @@ function createWrapper(privileges = []) {
 
                     return privileges.includes(identifier);
                 }
+            },
+            customFieldDataProviderService: {
+                getCustomFieldSets: () => Promise.resolve([])
             }
         }
     });

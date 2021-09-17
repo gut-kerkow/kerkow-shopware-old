@@ -8,51 +8,43 @@ use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaI
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
-use Shopware\Core\Framework\Uuid\Uuid;
+use Shopware\Storefront\Theme\ConfigLoader\AbstractConfigLoader;
+use Shopware\Storefront\Theme\Event\ThemeAssignedEvent;
+use Shopware\Storefront\Theme\Event\ThemeConfigChangedEvent;
+use Shopware\Storefront\Theme\Event\ThemeConfigResetEvent;
 use Shopware\Storefront\Theme\Exception\InvalidThemeConfigException;
 use Shopware\Storefront\Theme\Exception\InvalidThemeException;
-use Shopware\Storefront\Theme\StorefrontPluginConfiguration\StorefrontPluginConfiguration;
 use Shopware\Storefront\Theme\StorefrontPluginConfiguration\StorefrontPluginConfigurationCollection;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 class ThemeService
 {
-    /**
-     * @var StorefrontPluginRegistryInterface
-     */
-    private $pluginRegistry;
+    private StorefrontPluginRegistryInterface $extensionRegistery;
 
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $themeRepository;
+    private EntityRepositoryInterface $themeRepository;
 
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $themeSalesChannelRepository;
+    private EntityRepositoryInterface $themeSalesChannelRepository;
 
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $mediaRepository;
+    private ThemeCompilerInterface $themeCompiler;
 
-    /**
-     * @var ThemeCompilerInterface
-     */
-    private $themeCompiler;
+    private EventDispatcherInterface $dispatcher;
+
+    private AbstractConfigLoader $configLoader;
 
     public function __construct(
-        StorefrontPluginRegistryInterface $pluginRegistry,
+        StorefrontPluginRegistryInterface $extensionRegistry,
         EntityRepositoryInterface $themeRepository,
         EntityRepositoryInterface $themeSalesChannelRepository,
-        EntityRepositoryInterface $mediaRepository,
-        ThemeCompilerInterface $themeCompiler
+        ThemeCompilerInterface $themeCompiler,
+        EventDispatcherInterface $dispatcher,
+        AbstractConfigLoader $configLoader
     ) {
-        $this->pluginRegistry = $pluginRegistry;
+        $this->extensionRegistery = $extensionRegistry;
         $this->themeRepository = $themeRepository;
         $this->themeSalesChannelRepository = $themeSalesChannelRepository;
-        $this->mediaRepository = $mediaRepository;
         $this->themeCompiler = $themeCompiler;
+        $this->dispatcher = $dispatcher;
+        $this->configLoader = $configLoader;
     }
 
     public function compileTheme(
@@ -62,13 +54,11 @@ class ThemeService
         ?StorefrontPluginConfigurationCollection $configurationCollection = null,
         bool $withAssets = true
     ): void {
-        $themePluginConfiguration = $this->getPluginConfiguration($themeId, $context);
-
         $this->themeCompiler->compileTheme(
             $salesChannelId,
             $themeId,
-            $themePluginConfiguration,
-            $configurationCollection ?? $this->pluginRegistry->getConfigurations(),
+            $this->configLoader->load($themeId, $context),
+            $configurationCollection ?? $this->extensionRegistery->getConfigurations(),
             $withAssets
         );
     }
@@ -77,6 +67,7 @@ class ThemeService
     {
         $criteria = new Criteria([$themeId]);
         $criteria->addAssociation('salesChannels');
+        /** @var ThemeEntity|null $theme */
         $theme = $this->themeRepository->search($criteria, $context)->get($themeId);
 
         if (!$theme) {
@@ -94,11 +85,27 @@ class ThemeService
             $data['parentThemeId'] = $parentThemeId;
         }
 
+        if (\array_key_exists('configValues', $data)) {
+            $this->dispatcher->dispatch(new ThemeConfigChangedEvent($themeId, $data['configValues']));
+        }
+
         if (\array_key_exists('configValues', $data) && $theme->getConfigValues()) {
-            $data['configValues'] = array_replace_recursive($theme->getConfigValues(), $data['configValues']);
+            $submittedChanges = $data['configValues'];
+            $currentConfig = $theme->getConfigValues();
+            $data['configValues'] = array_replace_recursive($currentConfig, $data['configValues']);
+
+            foreach ($submittedChanges as $key => $changes) {
+                if (\is_array($changes['value']) && isset($currentConfig[$key]) && \is_array($currentConfig[$key])) {
+                    $data['configValues'][$key]['value'] = array_unique($changes['value']);
+                }
+            }
         }
 
         $this->themeRepository->update([$data], $context);
+
+        if ($theme->getSalesChannels() === null) {
+            return;
+        }
 
         foreach ($theme->getSalesChannels() as $salesChannel) {
             $this->compileTheme($salesChannel->getId(), $themeId, $context, null, false);
@@ -114,6 +121,8 @@ class ThemeService
             'salesChannelId' => $salesChannelId,
         ]], $context);
 
+        $this->dispatcher->dispatch(new ThemeAssignedEvent($themeId, $salesChannelId));
+
         return true;
     }
 
@@ -128,6 +137,8 @@ class ThemeService
 
         $data = ['id' => $themeId];
         $data['configValues'] = null;
+
+        $this->dispatcher->dispatch(new ThemeConfigResetEvent($themeId));
 
         $this->themeRepository->update([$data], $context);
     }
@@ -193,41 +204,6 @@ class ThemeService
         return $themeConfig;
     }
 
-    public function getResolvedThemeConfiguration(string $themeId, Context $context): array
-    {
-        $config = $this->getThemeConfiguration($themeId, false, $context);
-        $resolvedConfig = [];
-        $mediaItems = [];
-        if (!\array_key_exists('fields', $config)) {
-            return [];
-        }
-
-        foreach ($config['fields'] as $key => $data) {
-            if ($data['type'] === 'media' && $data['value'] && Uuid::isValid($data['value'])) {
-                $mediaItems[$data['value']][] = $key;
-            }
-            $resolvedConfig[$key] = $data['value'];
-        }
-
-        /** @var string[] $mediaIds */
-        $mediaIds = array_keys($mediaItems);
-        $criteria = new Criteria($mediaIds);
-        $criteria->setTitle('theme-service::resolve-media');
-        $result = $this->mediaRepository->search($criteria, $context);
-
-        foreach ($result as $media) {
-            if (!\array_key_exists($media->getId(), $mediaItems)) {
-                continue;
-            }
-
-            foreach ($mediaItems[$media->getId()] as $key) {
-                $resolvedConfig[$key] = $media->getUrl();
-            }
-        }
-
-        return $resolvedConfig;
-    }
-
     public function getThemeConfigurationStructuredFields(string $themeId, bool $translate, Context $context): array
     {
         $mergedConfig = $this->getThemeConfiguration($themeId, $translate, $context)['fields'];
@@ -269,218 +245,29 @@ class ThemeService
         return $outputStructure;
     }
 
-    /**
-     * @deprecated tag:v6.4.0 use getThemeConfigurationStructuredFields instead
-     *
-     * @throws InconsistentCriteriaIdsException
-     * @throws InvalidThemeConfigException
-     * @throws InvalidThemeException
-     */
-    public function getThemeConfigurationFields(string $themeId, bool $translate, Context $context): array
-    {
-        $mergedConfig = $this->getThemeConfiguration($themeId, $translate, $context)['fields'];
-
-        $translations = [];
-        if ($translate) {
-            $translations = $this->getTranslations($themeId, $context);
-            $mergedConfig = $this->translateLabels($mergedConfig, $translations);
-        }
-
-        $blocks = [];
-        $noblocks = [
-            'label' => $this->getBlockLabel('unordered', $translations),
-            'sections' => [],
-        ];
-
-        foreach ($mergedConfig as $fieldName => $fieldConfig) {
-            $section = $this->getSection($fieldConfig);
-
-            if (!isset($fieldConfig['block'])) {
-                $noblocks['sections'][$section] = [
-                    'label' => $this->getSectionLabel($section, $translations),
-                    $fieldName => [
-                        'label' => $fieldConfig['label'],
-                        'helpText' => $fieldConfig['helpText'] ?? null,
-                        'type' => $fieldConfig['type'],
-                        'custom' => $fieldConfig['custom'],
-                    ],
-                ];
-            } elseif (!isset($blocks[$fieldConfig['block']])) {
-                $blocks[$fieldConfig['block']] = [
-                    'label' => $this->getBlockLabel($fieldConfig['block'], $translations),
-                    'sections' => [
-                        $section => [
-                            'label' => $this->getSectionLabel($section, $translations),
-                            $fieldName => [
-                                'label' => $fieldConfig['label'],
-                                'helpText' => $fieldConfig['helpText'] ?? null,
-                                'type' => $fieldConfig['type'],
-                                'custom' => $fieldConfig['custom'],
-                            ],
-                        ],
-                    ],
-                ];
-            } elseif (isset($blocks[$fieldConfig['block']]['sections'][$section])) {
-                $blocks[$fieldConfig['block']]['sections'][$section][$fieldName] = [
-                    'label' => $fieldConfig['label'],
-                    'helpText' => $fieldConfig['helpText'] ?? null,
-                    'type' => $fieldConfig['type'],
-                    'custom' => $fieldConfig['custom'],
-                ];
-            } else {
-                $blocks[$fieldConfig['block']]['sections'][$section] = [
-                    'label' => $this->getSectionLabel($section, $translations),
-                    $fieldName => [
-                        'label' => $fieldConfig['label'],
-                        'helpText' => $fieldConfig['helpText'] ?? null,
-                        'type' => $fieldConfig['type'],
-                        'custom' => $fieldConfig['custom'],
-                    ],
-                ];
-            }
-        }
-
-        $blocks['unordered'] = $noblocks;
-
-        return $blocks;
-    }
-
-    private function loadCompileConfig(string $themeId, Context $context): array
-    {
-        $config = $this->loadRecursiveConfig($themeId, $context);
-
-        $field = new ThemeConfigField();
-
-        foreach ($config['fields'] as $name => $item) {
-            $clone = clone $field;
-            $clone->setName($name);
-            $clone->assign($item);
-            $config[$name] = $clone;
-        }
-
-        return json_decode((string) json_encode($config), true);
-    }
-
-    private function loadRecursiveConfig(string $themeId, Context $context): array
-    {
-        $criteria = new Criteria([$themeId]);
-
-        $theme = $this->themeRepository
-            ->search($criteria, $context)
-            ->first();
-
-        if (!$theme instanceof ThemeEntity) {
-            throw new InvalidThemeException($themeId);
-        }
-
-        $config = $this->mergeStaticConfig($theme);
-
-        $parentId = $theme->getParentThemeId();
-        if ($parentId) {
-            $parent = $this->loadRecursiveConfig($parentId, $context);
-
-            return array_replace_recursive($parent, $config);
-        }
-
-        $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('technicalName', StorefrontPluginRegistry::BASE_THEME_NAME));
-
-        $theme = $this->themeRepository
-            ->search($criteria, $context)
-            ->first();
-
-        if (!$theme instanceof ThemeEntity) {
-            throw new InvalidThemeException(StorefrontPluginRegistry::BASE_THEME_NAME);
-        }
-
-        $base = $this->mergeStaticConfig($theme);
-
-        return array_replace_recursive($base, $config);
-    }
-
-    private function getPluginConfiguration(string $themeId, Context $context): StorefrontPluginConfiguration
-    {
-        $pluginConfig = $this->loadConfigByName($themeId, $context);
-
-        if (!$pluginConfig) {
-            throw new InvalidThemeException($themeId);
-        }
-
-        $pluginConfig = clone $pluginConfig;
-
-        $config = $this->loadCompileConfig($themeId, $context);
-
-        $pluginConfig->setThemeConfig($config);
-
-        return $pluginConfig;
-    }
-
-    private function loadConfigByName(string $themeId, Context $context): ?StorefrontPluginConfiguration
-    {
-        /** @var ThemeEntity|null $theme */
-        $theme = $this->themeRepository
-            ->search(new Criteria([$themeId]), $context)
-            ->get($themeId);
-
-        if ($theme === null) {
-            return $this->pluginRegistry
-                ->getConfigurations()
-                ->getByTechnicalName(StorefrontPluginRegistry::BASE_THEME_NAME);
-        }
-
-        $pluginConfig = null;
-        if ($theme->getTechnicalName() !== null) {
-            $pluginConfig = $this->pluginRegistry
-                ->getConfigurations()
-                ->getByTechnicalName($theme->getTechnicalName());
-        }
-
-        if ($pluginConfig !== null) {
-            return $pluginConfig;
-        }
-
-        if ($theme->getParentThemeId() !== null) {
-            $criteria = new Criteria();
-            $criteria->addFilter(new EqualsFilter('id', $theme->getParentThemeId()));
-
-            /** @var ThemeEntity $parentTheme */
-            $parentTheme = $this->themeRepository
-                ->search($criteria, $context)
-                ->first();
-
-            return $this->pluginRegistry
-                ->getConfigurations()
-                ->getByTechnicalName($parentTheme->getTechnicalName());
-        }
-
-        return $this->pluginRegistry
-            ->getConfigurations()
-            ->getByTechnicalName(StorefrontPluginRegistry::BASE_THEME_NAME);
-    }
-
     private function mergeStaticConfig(ThemeEntity $theme): array
     {
         $configuredTheme = [];
 
         $pluginConfig = null;
         if ($theme->getTechnicalName()) {
-            $pluginConfig = $this->pluginRegistry->getConfigurations()->getByTechnicalName($theme->getTechnicalName());
+            $pluginConfig = $this->extensionRegistery->getConfigurations()->getByTechnicalName($theme->getTechnicalName());
         }
 
         if ($pluginConfig !== null) {
             $configuredTheme = $pluginConfig->getThemeConfig();
         }
 
-        if ($theme !== null && $theme->getBaseConfig() !== null) {
+        if ($theme->getBaseConfig() !== null) {
             $configuredTheme = array_replace_recursive($configuredTheme, $theme->getBaseConfig());
         }
 
-        if ($theme !== null && $theme->getConfigValues() !== null) {
-            $configuredThemeFields = [];
-            if (\array_key_exists('fields', $configuredTheme)) {
-                $configuredThemeFields = $configuredTheme['fields'];
+        if ($theme->getConfigValues() !== null) {
+            foreach ($theme->getConfigValues() as $fieldName => $configValue) {
+                if (isset($configuredTheme['fields']) && isset($configValue['value'])) {
+                    $configuredTheme['fields'][$fieldName]['value'] = $configValue['value'];
+                }
             }
-            $configuredTheme['fields'] = array_replace_recursive($configuredThemeFields, $theme->getConfigValues());
         }
 
         return $configuredTheme;
@@ -582,8 +369,7 @@ class ThemeService
         $criteria->addFilter(new EqualsFilter('technicalName', StorefrontPluginRegistry::BASE_THEME_NAME));
         $baseTheme = $this->themeRepository->search($criteria, $context)->first();
         $baseTranslations = $baseTheme->getLabels() ?: [];
-        $translations = array_replace_recursive($baseTranslations, $translations);
 
-        return $translations;
+        return array_replace_recursive($baseTranslations, $translations);
     }
 }

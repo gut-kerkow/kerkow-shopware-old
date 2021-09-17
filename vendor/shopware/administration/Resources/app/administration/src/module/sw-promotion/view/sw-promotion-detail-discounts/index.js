@@ -2,9 +2,10 @@ import { DiscountTypes, DiscountScopes } from 'src/module/sw-promotion/helper/pr
 import template from './sw-promotion-detail-discounts.html.twig';
 
 const { Component } = Shopware;
-const { Criteria } = Shopware.Data;
 
-
+/**
+ * @deprecated tag:v6.5.0 - will be removed, use `sw-promotion-v2` instead
+ */
 Component.register('sw-promotion-detail-discounts', {
     template,
 
@@ -13,7 +14,7 @@ Component.register('sw-promotion-detail-discounts', {
     data() {
         return {
             deleteDiscountId: null,
-            repository: null
+            repository: null,
         };
     },
 
@@ -28,60 +29,26 @@ Component.register('sw-promotion-detail-discounts', {
             },
             set(isLoading) {
                 Shopware.State.commit('swPromotionDetail/setIsLoading', isLoading);
-            }
+            },
         },
 
-        discounts: {
-            get() {
-                return Shopware.State.get('swPromotionDetail').discounts;
-            },
-            set(discounts) {
-                Shopware.State.commit('swPromotionDetail/setDiscounts', discounts);
-            }
-        }
+        discounts() {
+            return Shopware.State.get('swPromotionDetail').promotion &&
+                Shopware.State.get('swPromotionDetail').promotion.discounts;
+        },
 
-    },
-
-    watch: {
-        promotion() {
-            this.loadDiscounts();
-        }
-    },
-
-    created() {
-        this.createdComponent();
     },
 
     methods: {
-        createdComponent() {
-            if (this.promotion && this.discounts === null) {
-                this.loadDiscounts();
-            }
-        },
-
-        loadDiscounts() {
-            const discountRepository = this.repositoryFactory.create(
-                this.promotion.discounts.entity,
-                this.promotion.discounts.source
-            );
-
-            const discountCriteria = (new Criteria()).addAssociation('promotionDiscountPrices');
-
-            this.isLoading = true;
-            discountRepository.search(discountCriteria, this.promotion.discounts.context).then((discounts) => {
-                this.discounts = discounts;
-                this.isLoading = false;
-            });
-        },
         // This function adds a new blank discount object to our promotion.
         // It will automatically trigger a rendering of the view which
         // leads to a new card that appears within our discounts area.
         onAddDiscount() {
             const promotionDiscountRepository = this.repositoryFactory.create(
                 this.discounts.entity,
-                this.discounts.source
+                this.discounts.source,
             );
-            const newDiscount = promotionDiscountRepository.create(Shopware.Context.api);
+            const newDiscount = promotionDiscountRepository.create();
             newDiscount.promotionId = this.promotion.id;
             newDiscount.scope = DiscountScopes.CART;
             newDiscount.type = DiscountTypes.PERCENTAGE;
@@ -103,13 +70,13 @@ Component.register('sw-promotion-detail-discounts', {
             this.isLoading = true;
             const promotionDiscountRepository = this.repositoryFactory.create(
                 this.discounts.entity,
-                this.discounts.source
+                this.discounts.source,
             );
 
             promotionDiscountRepository.delete(discount.id, this.discounts.context).then(() => {
                 this.discounts.remove(discount.id);
                 this.isLoading = false;
             });
-        }
-    }
+        },
+    },
 });

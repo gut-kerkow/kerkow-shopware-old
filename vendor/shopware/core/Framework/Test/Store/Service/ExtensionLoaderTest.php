@@ -7,7 +7,9 @@ use PHPUnit\Framework\TestCase;
 use Shopware\Core\Framework\App\AppCollection;
 use Shopware\Core\Framework\App\AppEntity;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Plugin\PluginCollection;
 use Shopware\Core\Framework\Plugin\PluginService;
@@ -20,6 +22,9 @@ use Shopware\Core\Framework\Store\Struct\VariantCollection;
 use Shopware\Core\Framework\Test\Store\ExtensionBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 
+/**
+ * @group skip-paratest
+ */
 class ExtensionLoaderTest extends TestCase
 {
     use IntegrationTestBehaviour;
@@ -43,6 +48,18 @@ class ExtensionLoaderTest extends TestCase
     {
         $this->removePlugin(__DIR__ . '/../_fixtures/AppStoreTestPlugin');
         $this->removeApp(__DIR__ . '/../_fixtures/TestApp');
+    }
+
+    public function testAppNotInstalledDetectedAsTheme(): void
+    {
+        $this->installApp(__DIR__ . '/../_fixtures/TestAppTheme', false);
+        $extensions = $this->extensionLoader->loadFromAppCollection(
+            Context::createDefaultContext(),
+            new AppCollection([])
+        );
+
+        static::assertTrue($extensions->get('TestAppTheme')->isTheme());
+        $this->removeApp(__DIR__ . '/../_fixtures/TestAppTheme');
     }
 
     public function testLocalUpdateShouldSetLatestVersion(): void
@@ -104,10 +121,37 @@ class ExtensionLoaderTest extends TestCase
         $extensions = $this->extensionLoader->loadFromPluginCollection(Context::createDefaultContext(), $plugins);
 
         /** @var ExtensionStruct $extension */
-        $extension = $extensions->get(0);
+        $extension = $extensions->get('AppStoreTestPlugin');
 
         static::assertNotNull($extension);
         static::assertEquals('AppStoreTestPlugin', $extension->getName());
+    }
+
+    public function testUpgradeAtMapsToUpdatedAtInStruct(): void
+    {
+        $this->getContainer()->get(PluginService::class)->refreshPlugins(Context::createDefaultContext(), new NullIO());
+
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('name', 'AppStoreTestPlugin'));
+
+        $firstPluginId = $this->getContainer()->get('plugin.repository')->searchIds($criteria, Context::createDefaultContext())->firstId();
+
+        $time = new \DateTime();
+
+        /** @var EntityRepositoryInterface $pluginRepository */
+        $pluginRepository = $this->getContainer()->get('plugin.repository');
+        $pluginRepository->update([
+            [
+                'id' => $firstPluginId,
+                'upgradedAt' => $time,
+            ],
+        ], Context::createDefaultContext());
+
+        $firstPlugin = $this->getContainer()->get('plugin.repository')->search($criteria, Context::createDefaultContext())->first();
+
+        $extensions = $this->extensionLoader->loadFromPluginCollection(Context::createDefaultContext(), new PluginCollection([$firstPlugin]));
+
+        static::assertSame($time->getTimestamp(), $extensions->first()->getUpdatedAt()->getTimestamp());
     }
 
     public function testItLoadsExtensionsFromAppsCollection(): void
@@ -125,12 +169,14 @@ class ExtensionLoaderTest extends TestCase
             'British English',
         ], $extensions->first()->getLanguages());
 
+        static::assertSame($installedApp->getUpdatedAt(), $extensions->first()->getUpdatedAt());
+
         foreach ($extensions as $extension) {
             static::assertEquals(ExtensionStruct::EXTENSION_TYPE_APP, $extension->getType());
         }
     }
 
-    private function getInstalledApp(): AppEntity
+    private function getInstalledApp(): ?AppEntity
     {
         $appRepository = $this->getContainer()->get('app.repository');
 
@@ -142,15 +188,15 @@ class ExtensionLoaderTest extends TestCase
 
     private function getDetailResponseFixture(): array
     {
-        $content = \file_get_contents(__DIR__ . '/../_fixtures/responses/extension-detail.json');
+        $content = file_get_contents(__DIR__ . '/../_fixtures/responses/extension-detail.json');
 
-        return \json_decode($content, true);
+        return json_decode($content, true);
     }
 
     private function getListingResponseFixture(): array
     {
-        $content = \file_get_contents(__DIR__ . '/../_fixtures/responses/extension-listing.json');
+        $content = file_get_contents(__DIR__ . '/../_fixtures/responses/extension-listing.json');
 
-        return \json_decode($content, true);
+        return json_decode($content, true);
     }
 }

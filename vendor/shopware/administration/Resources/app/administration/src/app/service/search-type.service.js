@@ -10,44 +10,58 @@
  * @returns {Object}
  */
 export default function createSearchTypeService() {
-    const $typeStore = {
+    const typeStore = {
         product: {
             entityName: 'product',
-            entityService: 'productService',
             placeholderSnippet: 'sw-product.general.placeholderSearchBar',
-            listingRoute: 'sw.product.index'
+            listingRoute: 'sw.product.index',
         },
         category: {
             entityName: 'category',
-            entityService: 'categoryService',
             placeholderSnippet: 'sw-category.general.placeholderSearchBar',
-            listingRoute: 'sw.category.index'
+            listingRoute: 'sw.category.index',
+        },
+        landing_page: {
+            entityName: 'landing_page',
+            placeholderSnippet: 'sw-landing-page.general.placeholderSearchBar',
+            listingRoute: 'sw.category.index',
         },
         customer: {
             entityName: 'customer',
-            entityService: 'customerService',
             placeholderSnippet: 'sw-customer.general.placeholderSearchBar',
-            listingRoute: 'sw.customer.index'
+            listingRoute: 'sw.customer.index',
         },
         order: {
             entityName: 'order',
-            entityService: 'orderService',
             placeholderSnippet: 'sw-order.general.placeholderSearchBar',
-            listingRoute: 'sw.order.index'
+            listingRoute: 'sw.order.index',
         },
         media: {
             entityName: 'media',
-            entityService: 'mediaService',
             placeholderSnippet: 'sw-media.general.placeholderSearchBar',
-            listingRoute: 'sw.media.index'
-        }
+            listingRoute: 'sw.media.index',
+        },
     };
+
+    let $typeStore = {};
+    if (Shopware.Feature.isActive('FEATURE_NEXT_6040')) {
+        $typeStore = {
+            all: {
+                entityName: '',
+                placeholderSnippet: '',
+                listingRoute: '',
+            },
+            ...typeStore,
+        };
+    } else {
+        $typeStore = typeStore;
+    }
 
     return {
         getTypeByName,
         upsertType,
         getTypes,
-        removeType
+        removeType,
     };
 
     function getTypeByName(type) {

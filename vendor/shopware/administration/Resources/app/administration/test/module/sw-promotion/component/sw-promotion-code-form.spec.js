@@ -1,14 +1,14 @@
-import { createLocalVue, shallowMount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import 'src/module/sw-promotion/component/sw-promotion-code-form';
 import 'src/app/component/form/sw-switch-field';
 import 'src/app/component/form/sw-checkbox-field';
 
+/**
+ * @deprecated tag:v6.5.0 - will be removed, use `sw-promotion-v2` instead
+ * @feature-deprecated (flag:FEATURE_NEXT_13810)
+ */
 function createWrapper(privileges = []) {
-    const localVue = createLocalVue();
-    localVue.directive('tooltip', {});
-
     return shallowMount(Shopware.Component.build('sw-promotion-code-form'), {
-        localVue,
         stubs: {
             'sw-container': {
                 template: '<div class="sw-container"><slot></slot></div>'
@@ -42,9 +42,6 @@ function createWrapper(privileges = []) {
                 })
             },
             validationService: () => {}
-        },
-        mocks: {
-            $tc: v => v
         },
         propsData: {
             promotion: {

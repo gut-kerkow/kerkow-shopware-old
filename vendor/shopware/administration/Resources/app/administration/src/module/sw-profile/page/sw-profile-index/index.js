@@ -1,19 +1,24 @@
 import { email } from 'src/core/service/validation.service';
-import CriteriaFactory from 'src/core/factory/criteria.factory';
 import template from './sw-profile-index.html.twig';
 
 const { Component, Mixin } = Shopware;
 const { Criteria } = Shopware.Data;
 const { mapPropertyErrors } = Component.getComponentHelper();
-const types = Shopware.Utils.types;
 
 Component.register('sw-profile-index', {
     template,
 
-    inject: ['userService', 'loginService', 'repositoryFactory', 'acl'],
+    inject: [
+        'userService',
+        'loginService',
+        'mediaDefaultFolderService',
+        'repositoryFactory',
+        'acl',
+        'feature',
+    ],
 
     mixins: [
-        Mixin.getByName('notification')
+        Mixin.getByName('notification'),
     ],
 
     data() {
@@ -21,27 +26,29 @@ Component.register('sw-profile-index', {
             user: { username: '', email: '' },
             languages: [],
             imageSize: 140,
-            oldPassword: null, // @deprecated tag:v6.4.0 use confirmPassword instead
             newPassword: null,
             newPasswordConfirm: null,
+            confirmPassword: null,
             avatarMediaItem: null,
             uploadTag: 'sw-profile-upload-tag',
             isLoading: false,
             isUserLoading: true,
             isSaveSuccessful: false,
-            confirmPasswordModal: false
+            confirmPasswordModal: false,
+            mediaDefaultFolderId: null,
+            showMediaModal: false,
         };
     },
 
     metaInfo() {
         return {
-            title: this.$createTitle()
+            title: this.$createTitle(),
         };
     },
 
     computed: {
         ...mapPropertyErrors('user', [
-            'email'
+            'email',
         ]),
 
         isDisabled() {
@@ -66,8 +73,10 @@ Component.register('sw-profile-index', {
 
         userMediaCriteria() {
             if (this.user.id) {
+                // ???
                 // ToDo: If SwSidebarMedia has the new data handling, change this too
-                return CriteriaFactory.equals('userId', this.user.id);
+                // return CriteriaFactory.equals('userId', this.user.id);
+                return null;
             }
 
             return null;
@@ -76,27 +85,20 @@ Component.register('sw-profile-index', {
         languageId() {
             return Shopware.State.get('session').languageId;
         },
-
-        confirmPassword: {
-            get() {
-                return this.oldPassword;
-            },
-            set(value) {
-                this.oldPassword = value;
-            }
-        }
     },
 
     watch: {
-        'user.avatarMedia'() {
-            if (this.user.avatarMedia.id) {
-                this.setMediaItem({ targetId: this.user.avatarMedia.id });
+        'user.avatarMedia.id'() {
+            if (!this.user.avatarMedia?.id) {
+                return;
             }
+
+            this.setMediaItem({ targetId: this.user.avatarMedia.id });
         },
 
         languageId() {
             this.createdComponent();
-        }
+        },
     },
 
     created() {
@@ -119,8 +121,18 @@ Component.register('sw-profile-index', {
 
             const promises = [
                 languagePromise,
-                this.userPromise
+                this.userPromise,
             ];
+
+            if (this.feature.isActive('FEATURE_NEXT_6040')) {
+                this.getMediaDefaultFolderId()
+                    .then((id) => {
+                        this.mediaDefaultFolderId = id;
+                    })
+                    .catch(() => {
+                        this.mediaDefaultFolderId = null;
+                    });
+            }
 
             Promise.all(promises).then(() => {
                 this.loadLanguages();
@@ -147,7 +159,7 @@ Component.register('sw-profile-index', {
             languageCriteria.addFilter(Criteria.equalsAny('locale.code', registeredLocales));
             languageCriteria.limit = 500;
 
-            return this.languageRepository.search(languageCriteria, Shopware.Context.api).then((result) => {
+            return this.languageRepository.search(languageCriteria).then((result) => {
                 this.languages = [];
                 const localeIds = [];
                 let fallbackId = '';
@@ -175,11 +187,11 @@ Component.register('sw-profile-index', {
         async getUserData() {
             const routeUser = this.$route.params.user;
             if (routeUser) {
-                return this.userRepository.get(routeUser.id, Shopware.Context.api);
+                return this.userRepository.get(routeUser.id);
             }
 
             const user = await this.userService.getUser();
-            return this.userRepository.get(user.data.id, Shopware.Context.api);
+            return this.userRepository.get(user.data.id);
         },
 
         async saveFinish() {
@@ -223,31 +235,9 @@ Component.register('sw-profile-index', {
             return null;
         },
 
-        /**
-         * @deprecated tag:v6.4.0 will be remove because of password confirmation logic change
-         */
-        validateOldPassword() {
-            return this.loginService.loginByUsername(this.user.username, this.oldPassword).then((response) => {
-                return types.isString(response.access);
-            }).catch(() => {
-                return false;
-            });
-        },
-
-        // @deprecated tag:v6.4.0 use loginService.verifyUserToken() instead
-        verifyUserToken() {
-            // eslint-disable-next-line no-unused-vars
-            return this.loginService.verifyUserToken(this.confirmPassword).catch(e => {
-                this.createErrorMessage(this.$tc('sw-profile.index.notificationOldPasswordErrorMessage'));
-                return false;
-            }).finally(() => {
-                this.confirmPassword = '';
-            });
-        },
-
         createErrorMessage(errorMessage) {
             this.createNotificationError({
-                message: errorMessage
+                message: errorMessage,
             });
         },
 
@@ -270,7 +260,10 @@ Component.register('sw-profile-index', {
             context.authToken.access = authToken;
 
             this.userRepository.save(this.user, context).then(() => {
-                this.$refs.mediaSidebarItem.getList();
+                // @feature-deprecated (FEATURE_NEXT_6040) tag:v6.5.0 - can be removed
+                if (this.$refs.mediaSidebarItem) {
+                    this.$refs.mediaSidebarItem.getList();
+                }
 
                 Shopware.Service('localeHelper').setLocaleWithId(this.user.localeId);
 
@@ -288,7 +281,7 @@ Component.register('sw-profile-index', {
                     this.isSaveSuccessful = true;
                 }
 
-                this.oldPassword = '';
+                this.confirmPassword = '';
                 this.newPassword = '';
                 this.newPasswordConfirm = '';
             }).catch(() => {
@@ -297,7 +290,7 @@ Component.register('sw-profile-index', {
         },
 
         setMediaItem({ targetId }) {
-            this.mediaRepository.get(targetId, Shopware.Context.api).then((response) => {
+            this.mediaRepository.get(targetId).then((response) => {
                 this.avatarMediaItem = response;
             });
             this.user.avatarId = targetId;
@@ -316,8 +309,8 @@ Component.register('sw-profile-index', {
                 const authObject = {
                     ...this.loginService.getBearerAuthentication(),
                     ...{
-                        access: verifiedToken
-                    }
+                        access: verifiedToken,
+                    },
                 };
 
                 this.loginService.setBearerAuthentication(authObject);
@@ -339,6 +332,7 @@ Component.register('sw-profile-index', {
             this.confirmPasswordModal = false;
         },
 
+        /* @feature-deprecated (FEATURE_NEXT_6040) tag:v6.5.0 - Will be removed */
         setMediaFromSidebar(mediaEntity) {
             this.avatarMediaItem = mediaEntity;
             this.user.avatarId = mediaEntity.id;
@@ -349,15 +343,37 @@ Component.register('sw-profile-index', {
             this.user.avatarId = null;
         },
 
+        /* @feature-deprecated (FEATURE_NEXT_6040) tag:v6.5.0 - Will be removed */
         openMediaSidebar() {
             this.$refs.mediaSidebarItem.openContent();
         },
 
+        openMediaModal() {
+            this.showMediaModal = true;
+        },
+
         handleUserSaveError() {
             this.createNotificationError({
-                message: this.$tc('sw-profile.index.notificationSaveErrorMessage')
+                message: this.$tc('sw-profile.index.notificationSaveErrorMessage'),
             });
             this.isLoading = false;
-        }
-    }
+        },
+
+        onChangeNewPassword(newPassword) {
+            this.newPassword = newPassword;
+        },
+
+        onChangeNewPasswordConfirm(newPasswordConfirm) {
+            this.newPasswordConfirm = newPasswordConfirm;
+        },
+
+        onMediaSelectionChange([mediaEntity]) {
+            this.avatarMediaItem = mediaEntity;
+            this.user.avatarId = mediaEntity.id;
+        },
+
+        getMediaDefaultFolderId() {
+            return this.mediaDefaultFolderService.getDefaultFolderId('user');
+        },
+    },
 });

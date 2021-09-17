@@ -10,17 +10,16 @@ use Shopware\Core\Checkout\Cart\Price\Struct\QuantityPriceDefinition;
 use Shopware\Core\Framework\Struct\Collection;
 
 /**
- * @method LineItem[]         getIterator()
- * @method LineItem[]         getElements()
- * @method LineItem|null      first()
- * @method LineItem|null      last()
- * @method LineItemCollection filter(\Closure $closure)
+ * @method LineItem[]    getIterator()
+ * @method LineItem[]    getElements()
+ * @method LineItem|null first()
+ * @method LineItem|null last()
  */
 class LineItemCollection extends Collection
 {
     public function __construct(iterable $elements = [])
     {
-        parent::__construct([]);
+        parent::__construct();
 
         foreach ($elements as $lineItem) {
             $this->add($lineItem);
@@ -53,6 +52,10 @@ class LineItemCollection extends Collection
         $this->elements[$this->getKey($lineItem)] = $lineItem;
     }
 
+    /**
+     * @param int|string $key
+     * @param LineItem   $lineItem
+     */
     public function set($key, $lineItem): void
     {
         $this->validateType($lineItem);
@@ -162,6 +165,23 @@ class LineItemCollection extends Collection
         );
     }
 
+    /**
+     * @return LineItem[]
+     */
+    public function filterGoodsFlat(): array
+    {
+        $lineItems = $this->getFlat();
+
+        $filtered = [];
+        foreach ($lineItems as $lineItem) {
+            if ($lineItem->isGood()) {
+                $filtered[] = $lineItem;
+            }
+        }
+
+        return $filtered;
+    }
+
     public function getTypes(): array
     {
         return $this->fmap(
@@ -185,6 +205,13 @@ class LineItemCollection extends Collection
         return 'cart_line_item_collection';
     }
 
+    public function getTotalQuantity(): int
+    {
+        return $this->reduce(function ($result, $item) {
+            return $result + $item->getQuantity();
+        }, 0);
+    }
+
     protected function getKey(LineItem $element): string
     {
         return $element->getId();
@@ -200,13 +227,8 @@ class LineItemCollection extends Collection
         $flat = [];
         foreach ($lineItems as $lineItem) {
             $flat[] = $lineItem;
-            if (!$lineItem->getChildren()) {
-                continue;
-            }
 
-            $nested = $this->buildFlat($lineItem->getChildren());
-
-            foreach ($nested as $nest) {
+            foreach ($this->buildFlat($lineItem->getChildren()) as $nest) {
                 $flat[] = $nest;
             }
         }

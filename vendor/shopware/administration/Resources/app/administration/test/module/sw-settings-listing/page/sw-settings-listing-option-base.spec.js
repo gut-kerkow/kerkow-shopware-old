@@ -9,13 +9,13 @@ describe('src/module/sw-settings-listing/page/sw-settings-listing-option-base', 
             id: '2e55a50661ce4f42b188996aebbf6117',
             fields: [
                 {
-                    field: 'product.listingPrices',
+                    field: 'product.cheapestPrice',
                     order: 'desc',
                     position: 0,
                     naturalSorting: 0
                 },
                 {
-                    field: 'product.listingPrices',
+                    field: 'product.cheapestPrice',
                     order: 'desc',
                     position: 0,
                     naturalSorting: 0
@@ -60,8 +60,6 @@ describe('src/module/sw-settings-listing/page/sw-settings-listing-option-base', 
     function createWrapper() {
         return shallowMount(Shopware.Component.build('sw-settings-listing-option-base'), {
             mocks: {
-                $tc: translationKey => translationKey,
-                $t: translationKey => translationKey,
                 $route: {
                     params: {
                         id: getProductSortingEntity().id
@@ -173,13 +171,13 @@ describe('src/module/sw-settings-listing/page/sw-settings-listing-option-base', 
 
         expect(transformedCustomFieldCriterias).toEqual([
             {
-                field: 'product.listingPrices',
+                field: 'product.cheapestPrice',
                 naturalSorting: 0,
                 order: 'desc',
                 position: 0
             },
             {
-                field: 'product.listingPrices',
+                field: 'product.cheapestPrice',
                 naturalSorting: 0,
                 order: 'desc',
                 position: 0

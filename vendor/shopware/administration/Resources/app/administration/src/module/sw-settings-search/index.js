@@ -2,12 +2,20 @@ import './page/sw-settings-search';
 import './view/sw-settings-search-view-general';
 import './view/sw-settings-search-view-live-search';
 import './component/sw-settings-search-search-behaviour';
+import './component/sw-settings-search-searchable-content';
+import './component/sw-settings-search-example-modal';
+import './component/sw-settings-search-searchable-content-general';
+import './component/sw-settings-search-searchable-content-customfields';
+import './component/sw-settings-search-excluded-search-terms';
+import './component/sw-settings-search-search-index';
+import './component/sw-settings-search-live-search';
+import './component/sw-settings-search-live-search-keyword';
+import './init/services.init';
 import './acl';
 
 const { Module } = Shopware;
 
 Module.register('sw-settings-search', {
-    flag: 'FEATURE_NEXT_10552',
     type: 'core',
     name: 'settings-product-search-config',
     title: 'sw-settings-search.general.mainMenuItemGeneral',
@@ -25,11 +33,11 @@ Module.register('sw-settings-search', {
             path: 'index',
             meta: {
                 parentPath: 'sw.settings.index',
-                privilege: 'product_search_config.viewer'
+                privilege: 'product_search_config.viewer',
             },
 
             redirect: {
-                name: 'sw.settings.search.index.general'
+                name: 'sw.settings.search.index.general',
             },
 
             children: {
@@ -38,8 +46,8 @@ Module.register('sw-settings-search', {
                     path: 'general',
                     meta: {
                         parentPath: 'sw.settings.index',
-                        privilege: 'product_search_config.viewer'
-                    }
+                        privilege: 'product_search_config.viewer',
+                    },
                 },
 
                 liveSearch: {
@@ -47,17 +55,17 @@ Module.register('sw-settings-search', {
                     path: 'live-search',
                     meta: {
                         parentPath: 'sw.settings.index',
-                        privilege: 'product_search_config.viewer'
-                    }
-                }
-            }
-        }
+                        privilege: 'product_search_config.viewer',
+                    },
+                },
+            },
+        },
     },
 
     settingsItem: {
         group: 'shop',
         to: 'sw.settings.search.index',
         icon: 'default-action-search',
-        privilege: 'product_search_config.viewer'
-    }
+        privilege: 'product_search_config.viewer',
+    },
 });

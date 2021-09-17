@@ -10,6 +10,7 @@
       "buttonLabel": "Einloggen oder kostenlosen Sendcloud Account erstellen"
     },
     "dashboard": {
+      "tabName": "Dashboard",
       "mainText": "Alles bereit! Jetzt kann's losgehen!",
       "buttonLabel": "Gehe zu Sendcloud",
       "notification": {
@@ -25,6 +26,36 @@
       "emptyStatusMessage": "-",
       "emptyTrackingNumberMessage": "-",
       "emptyServicePointMessage": "-"
+    },
+    "customsInfo": {
+      "tabName": "Customs information",
+      "defaultValues": {
+        "title": "Default values",
+        "paragraph": "To send international shipment data to Sendcloud, please select a default value that will be used. If you have mapped value for HS code and origin country in the next section, and the value is not found on the product, the defined value below will be used."
+      },
+      "dataMapping": {
+        "title": "Data mapping",
+        "paragraph": "Please map product HS-code and origin country to Shopware custom product attributes. Mapped attribute values will be used when plugin sends order data to Sendcloud."
+      },
+      "shipmentType": "Shipment type",
+      "shipmentTypeHelpText": "Type of shipment.",
+      "hsCode": "HS Code",
+      "hsCodeHelpText": "The HS code is the harmonized system code. If you want to ship",
+      "originCountry": "Origin country",
+      "originCountryHelpText": "In most cases, the country where the product is manufactured.",
+      "hsCodePlaceholderText": "Enter default value for HS code field",
+      "originCountrySelectMessage": "Please select country of origin",
+      "hsCodeMappingSelectMessage": "Please select attribute for mapping",
+      "originCountryMappingSelectMessage": "Please select attribute for mapping",
+      "none": "None",
+      "shipmentTypes": {
+        "gift": "Geschenk",
+        "documents": "Dokumente",
+        "commercialGoods": "Kommerzielle Güter",
+        "commercialSample": "Handelsmuster",
+        "returnedGoods": "Rücksendung"
+      },
+      "successfulSaveMessage": "Customs information has been saved."
     }
   }
 }

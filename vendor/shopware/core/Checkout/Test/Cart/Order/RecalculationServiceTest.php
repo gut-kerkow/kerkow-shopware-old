@@ -7,7 +7,6 @@ use PHPUnit\Framework\TestCase;
 use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Cart\CartBehavior;
 use Shopware\Core\Checkout\Cart\Delivery\DeliveryCalculator;
-use Shopware\Core\Checkout\Cart\Delivery\Struct\Delivery;
 use Shopware\Core\Checkout\Cart\Delivery\Struct\ShippingLocation;
 use Shopware\Core\Checkout\Cart\LineItem\LineItem;
 use Shopware\Core\Checkout\Cart\LineItem\LineItemCollection;
@@ -24,6 +23,7 @@ use Shopware\Core\Checkout\Cart\Transaction\Struct\TransactionCollection;
 use Shopware\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressEntity;
 use Shopware\Core\Checkout\Order\OrderDefinition;
 use Shopware\Core\Checkout\Order\OrderEntity;
+use Shopware\Core\Checkout\Promotion\Aggregate\PromotionDiscount\PromotionDiscountEntity;
 use Shopware\Core\Checkout\Shipping\Aggregate\ShippingMethodPrice\ShippingMethodPriceCollection;
 use Shopware\Core\Checkout\Shipping\ShippingMethodEntity;
 use Shopware\Core\Checkout\Test\Cart\Common\TrueRule;
@@ -51,6 +51,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * @group slow
+ * @group skip-paratest
  */
 class RecalculationServiceTest extends TestCase
 {
@@ -59,20 +60,11 @@ class RecalculationServiceTest extends TestCase
     use TaxAddToSalesChannelTestBehaviour;
     use CountryAddToSalesChannelTestBehaviour;
 
-    /**
-     * @var SalesChannelContext
-     */
-    protected $salesChannelContext;
+    protected SalesChannelContext $salesChannelContext;
 
-    /**
-     * @var Context
-     */
-    protected $context;
+    protected Context $context;
 
-    /**
-     * @var string
-     */
-    protected $customerId;
+    protected string $customerId;
 
     protected function setUp(): void
     {
@@ -204,6 +196,12 @@ class RecalculationServiceTest extends TestCase
             $lineItem->setQuantityInformation(null);
         }
 
+        $this->resetDataTimestamps($cart->getLineItems());
+        foreach ($cart->getDeliveries() as $delivery) {
+            $this->resetDataTimestamps($delivery->getPositions()->getLineItems());
+        }
+        $cart->setRuleIds([]);
+
         static::assertEquals($cart, $convertedCart);
     }
 
@@ -220,8 +218,7 @@ class RecalculationServiceTest extends TestCase
         $this->getBrowser()->request(
             'POST',
             sprintf(
-                '/api/v%s/_action/order/%s/recalculate',
-                PlatformRequest::API_VERSION,
+                '/api/_action/order/%s/recalculate',
                 $orderId
             ),
             [],
@@ -245,8 +242,7 @@ class RecalculationServiceTest extends TestCase
         $this->getBrowser()->request(
             'POST',
             sprintf(
-                '/api/v%s/_action/order/%s/recalculate',
-                PlatformRequest::API_VERSION,
+                '/api/_action/order/%s/recalculate',
                 $orderId
             ),
             [],
@@ -273,8 +269,7 @@ class RecalculationServiceTest extends TestCase
         $this->getBrowser()->request(
             'POST',
             sprintf(
-                '/api/v%s/_action/order/%s/recalculate',
-                PlatformRequest::API_VERSION,
+                '/api/_action/order/%s/recalculate',
                 $orderId
             ),
             [],
@@ -312,8 +307,7 @@ class RecalculationServiceTest extends TestCase
         $this->getBrowser()->request(
             'POST',
             sprintf(
-                '/api/v%s/_action/order/%s/recalculate',
-                PlatformRequest::API_VERSION,
+                '/api/_action/order/%s/recalculate',
                 $orderId
             ),
             [],
@@ -337,8 +331,7 @@ class RecalculationServiceTest extends TestCase
         $this->getBrowser()->request(
             'POST',
             sprintf(
-                '/api/v%s/_action/order/%s/recalculate',
-                PlatformRequest::API_VERSION,
+                '/api/_action/order/%s/recalculate',
                 $orderId
             ),
             [],
@@ -362,11 +355,28 @@ class RecalculationServiceTest extends TestCase
 
         // create version of order
         $versionId = $this->createVersionedOrder($orderId);
+        $versionContext = $this->context->createWithVersionId($versionId);
 
         $productName = 'Test';
         $productPrice = 10.0;
         $productTaxRate = 19.0;
         $this->addProductToVersionedOrder($productName, $productPrice, $productTaxRate, $orderId, $versionId, $oldTotal);
+
+        $this->getContainer()->get(RecalculationService::class)->recalculateOrder($orderId, $versionContext);
+
+        $critera = new Criteria();
+        $critera->addFilter(new EqualsFilter('order_delivery.orderId', $orderId));
+
+        $orderDeliveryRepository = $this->getContainer()->get('order_delivery.repository');
+        $deliveries = $orderDeliveryRepository->search($critera, $versionContext);
+
+        /** @var CalculatedPrice $newShippingCosts */
+        $newShippingCosts = $deliveries->first()->getShippingCosts();
+
+        // tax is now mixed
+        static::assertSame(2, $newShippingCosts->getCalculatedTaxes()->count());
+        static::assertSame(19.0, $newShippingCosts->getCalculatedTaxes()->first()->getTaxRate());
+        static::assertSame(5.0, $newShippingCosts->getCalculatedTaxes()->last()->getTaxRate());
     }
 
     public function testAddProductToOrderWithCustomerComment(): void
@@ -394,8 +404,7 @@ class RecalculationServiceTest extends TestCase
         $this->getBrowser()->request(
             'POST',
             sprintf(
-                '/api/v%s/_action/order/%s/product/%s',
-                PlatformRequest::API_VERSION,
+                '/api/_action/order/%s/product/%s',
                 $orderId,
                 $productId
             ),
@@ -412,8 +421,7 @@ class RecalculationServiceTest extends TestCase
         $this->getBrowser()->request(
             'POST',
             sprintf(
-                '/api/v%s/_action/order/%s/recalculate',
-                PlatformRequest::API_VERSION,
+                '/api/_action/order/%s/recalculate',
                 $orderId
             ),
             [],
@@ -485,35 +493,64 @@ class RecalculationServiceTest extends TestCase
     {
         // create order
         $cart = $this->generateDemoCart();
-        $order = $this->persistCart($cart);
-        $orderId = $order['orderId'];
-        $oldTotal = $order['total'];
+        ['orderId' => $orderId, 'total' => $oldTotal, 'orderDateTime' => $orderDateTime] = $this->persistCart($cart);
 
         // create version of order
         $versionId = $this->createVersionedOrder($orderId);
 
-        $this->addCustomLineItemToVersionedOrder($orderId, $versionId, $oldTotal);
+        $this->addCustomLineItemToVersionedOrder($orderId, $versionId, $oldTotal, $orderDateTime);
     }
 
     public function testAddCreditItemToOrder(): void
     {
         // create order
         $cart = $this->generateDemoCart();
-        $order = $this->persistCart($cart);
+        ['orderId' => $orderId, 'total' => $total, 'orderDateTime' => $orderDateTime] = $this->persistCart($cart);
 
         // create version of order
-        $versionId = $this->createVersionedOrder($order['orderId']);
+        $versionId = $this->createVersionedOrder($orderId);
 
-        $this->addCreditItemToVersionedOrder($order['orderId'], $versionId, $order['total']);
+        $this->addCreditItemToVersionedOrder($orderId, $versionId, $total, $orderDateTime);
+    }
+
+    public function testAddPromotionItemToOrder(): void
+    {
+        // create order
+        $cart = $this->generateDemoCart();
+        ['orderId' => $orderId, 'orderDateTime' => $orderDateTime] = $this->persistCart($cart);
+
+        // create version of order
+        $versionId = $this->createVersionedOrder($orderId);
+
+        // create a promotion code with discount
+        $code = 'GET5';
+        $discountValue = 5.0;
+        $this->createPromotion($discountValue, $code);
+
+        $this->addPromotionItemToVersionedOrder($orderId, $versionId, $code, $orderDateTime);
+    }
+
+    public function testToggleAutomaticPromotions(): void
+    {
+        // create order
+        $cart = $this->generateDemoCart();
+        ['orderId' => $orderId, 'orderDateTime' => $orderDateTime] = $this->persistCart($cart);
+
+        // create version of order
+        $versionId = $this->createVersionedOrder($orderId);
+
+        // create an automatic promotion with discount
+        $discountValue = 5.0;
+        $promotionId = $this->createPromotion($discountValue);
+
+        $this->toggleAutomaticPromotions($orderId, $versionId, $promotionId, $orderDateTime);
     }
 
     public function testCreatedVersionedOrderAndMerge(): void
     {
         // create order
         $cart = $this->generateDemoCart();
-        $oldOrder = $this->persistCart($cart);
-        $orderId = $oldOrder['orderId'];
-        $oldTotal = $oldOrder['total'];
+        ['orderId' => $orderId, 'total' => $oldTotal, 'orderDateTime' => $orderDateTime] = $this->persistCart($cart);
 
         // create version of order
         $versionId = $this->createVersionedOrder($orderId);
@@ -534,8 +571,7 @@ class RecalculationServiceTest extends TestCase
         $this->getBrowser()->request(
             'POST',
             sprintf(
-                '/api/v%s/_action/version/merge/%s/%s',
-                PlatformRequest::API_VERSION,
+                '/api/_action/version/merge/%s/%s',
                 $this->getContainer()->get(OrderDefinition::class)->getEntityName(),
                 $versionId
             )
@@ -564,6 +600,7 @@ class RecalculationServiceTest extends TestCase
         /** @var TaxRule $taxRule */
         $taxRule = $product->getPrice()->getTaxRules()->first();
         static::assertSame($taxRule->getTaxRate(), $productTaxRate);
+        static::assertEquals($order->getOrderDateTime(), $orderDateTime);
     }
 
     public function testChangeShippingCosts(): void
@@ -613,7 +650,53 @@ class RecalculationServiceTest extends TestCase
         static::assertSame(5.0, $newShippingCosts->getUnitPrice());
         static::assertSame(5.0, $newShippingCosts->getTotalPrice());
 
-        static::assertSame(0, $newShippingCosts->getCalculatedTaxes()->count());
+        // tax is now mixed
+        static::assertSame(2, $newShippingCosts->getCalculatedTaxes()->count());
+        static::assertSame(19.0, $newShippingCosts->getCalculatedTaxes()->first()->getTaxRate());
+        static::assertSame(5.0, $newShippingCosts->getCalculatedTaxes()->last()->getTaxRate());
+    }
+
+    public function testRecalculateOrderWithInactiveProduct(): void
+    {
+        $inactiveProductId = Uuid::randomHex();
+        // create order
+        $cart = $this->generateDemoCart($inactiveProductId);
+        $orderId = $this->persistCart($cart)['orderId'];
+
+        // create version of order
+        $versionId = $this->createVersionedOrder($orderId);
+        $versionContext = $this->context->createWithVersionId($versionId);
+
+        $this->getContainer()->get(RecalculationService::class)->recalculateOrder($orderId, $versionContext);
+
+        $criteria = (new Criteria([$orderId]))
+            ->addAssociation('lineItems')
+            ->addAssociation('transactions')
+            ->addAssociation('deliveries.shippingMethod')
+            ->addAssociation('deliveries.positions.orderLineItem')
+            ->addAssociation('deliveries.shippingOrderAddress.country')
+            ->addAssociation('deliveries.shippingOrderAddress.countryState');
+
+        /** @var OrderEntity $order */
+        $order = $this->getContainer()->get('order.repository')
+            ->search($criteria, $this->context)
+            ->get($orderId);
+
+        static::assertSame(224.07, $order->getPrice()->getNetPrice());
+        static::assertSame(249.98, $order->getPrice()->getTotalPrice());
+        static::assertSame(239.98, $order->getPrice()->getPositionPrice());
+
+        $this->getContainer()->get('product.repository')->update([['id' => $inactiveProductId, 'active' => false]], $this->context);
+
+        $this->getContainer()->get(RecalculationService::class)->recalculateOrder($orderId, $versionContext);
+
+        $order = $this->getContainer()->get('order.repository')
+            ->search($criteria, $this->context)
+            ->get($orderId);
+
+        static::assertSame(224.07, $order->getPrice()->getNetPrice());
+        static::assertSame(249.98, $order->getPrice()->getTotalPrice());
+        static::assertSame(239.98, $order->getPrice()->getPositionPrice());
     }
 
     public function testForeachLoopInCalculateDeliveryFunction(): void
@@ -810,8 +893,7 @@ class RecalculationServiceTest extends TestCase
         $this->getBrowser()->request(
             'POST',
             sprintf(
-                '/api/v%s/_action/order-address/%s/customer-address/%s',
-                PlatformRequest::API_VERSION,
+                '/api/_action/order-address/%s/customer-address/%s',
                 $orderAddressId,
                 $customerAddressId
             ),
@@ -872,6 +954,15 @@ class RecalculationServiceTest extends TestCase
         );
 
         return $countryId;
+    }
+
+    private function resetDataTimestamps(LineItemCollection $items): void
+    {
+        foreach ($items as $item) {
+            $item->setDataTimestamp(null);
+            $item->setDataContextHash(null);
+            $this->resetDataTimestamps($item->getChildren());
+        }
     }
 
     private function removeExtensions(Cart $cart): void
@@ -954,6 +1045,40 @@ class RecalculationServiceTest extends TestCase
         $this->getContainer()->get('product.repository')->create([$data], $this->context);
 
         return $productId;
+    }
+
+    private function createPromotion(float $discountValue, ?string $code = null): string
+    {
+        $promotionId = Uuid::randomHex();
+
+        $data = [
+            'id' => $promotionId,
+            'name' => 'auto promotion',
+            'active' => true,
+            'useCodes' => false,
+            'useSetGroups' => false,
+            'salesChannels' => [
+                ['salesChannelId' => Defaults::SALES_CHANNEL, 'priority' => 1],
+            ],
+            'discounts' => [
+                [
+                    'scope' => PromotionDiscountEntity::SCOPE_CART,
+                    'type' => PromotionDiscountEntity::TYPE_ABSOLUTE,
+                    'value' => $discountValue,
+                    'considerAdvancedRules' => false,
+                ],
+            ],
+        ];
+
+        if ($code) {
+            $data['name'] = $code;
+            $data['useCodes'] = true;
+            $data['code'] = $code;
+        }
+
+        $this->getContainer()->get('promotion.repository')->create([$data], $this->context);
+
+        return $promotionId;
     }
 
     private function createCustomer(): string
@@ -1055,7 +1180,7 @@ class RecalculationServiceTest extends TestCase
         /** @var OrderEntity $order */
         $order = $this->getContainer()->get('order.repository')->search($criteria, $this->salesChannelContext->getContext())->get($orderId);
 
-        return ['orderId' => $orderId, 'total' => $order->getPrice()->getTotalPrice()];
+        return ['orderId' => $orderId, 'total' => $order->getPrice()->getTotalPrice(), 'orderDateTime' => $order->getOrderDateTime()];
     }
 
     private function createVersionedOrder(string $orderId): string
@@ -1063,8 +1188,7 @@ class RecalculationServiceTest extends TestCase
         $this->getBrowser()->request(
             'POST',
             sprintf(
-                '/api/v%s/_action/version/order/%s',
-                PlatformRequest::API_VERSION,
+                '/api/_action/version/order/%s',
                 $orderId
             )
         );
@@ -1094,8 +1218,7 @@ class RecalculationServiceTest extends TestCase
         $this->getBrowser()->request(
             'POST',
             sprintf(
-                '/api/v%s/_action/order/%s/product/%s',
-                PlatformRequest::API_VERSION,
+                '/api/_action/order/%s/product/%s',
                 $orderId,
                 $productId
             ),
@@ -1112,8 +1235,7 @@ class RecalculationServiceTest extends TestCase
         $this->getBrowser()->request(
             'POST',
             sprintf(
-                '/api/v%s/_action/order/%s/recalculate',
-                PlatformRequest::API_VERSION,
+                '/api/_action/order/%s/recalculate',
                 $orderId
             ),
             [],
@@ -1152,7 +1274,7 @@ class RecalculationServiceTest extends TestCase
         return $productId;
     }
 
-    private function addCustomLineItemToVersionedOrder(string $orderId, string $versionId, float $oldTotal): void
+    private function addCustomLineItemToVersionedOrder(string $orderId, string $versionId, float $oldTotal, \DateTimeInterface $orderDateTime): void
     {
         $identifier = Uuid::randomHex();
         $data = [
@@ -1179,8 +1301,7 @@ class RecalculationServiceTest extends TestCase
         $this->getBrowser()->request(
             'POST',
             sprintf(
-                '/api/v%s/_action/order/%s/lineItem',
-                PlatformRequest::API_VERSION,
+                '/api/_action/order/%s/lineItem',
                 $orderId
             ),
             [],
@@ -1222,10 +1343,11 @@ class RecalculationServiceTest extends TestCase
         static::assertSame($calculatedTaxes->getTaxRate(), 19.0);
         static::assertSame($calculatedTaxes->getTax(), 53.18);
 
+        static::assertEquals($order->getOrderDateTime(), $orderDateTime);
         static::assertSame($customLineItem->getPrice()->getTotalPrice() + $oldTotal, $order->getAmountTotal());
     }
 
-    private function addCreditItemToVersionedOrder(string $orderId, string $versionId, float $oldTotal): void
+    private function addCreditItemToVersionedOrder(string $orderId, string $versionId, float $oldTotal, \DateTimeInterface $orderDateTime): void
     {
         $orderRepository = $this->getContainer()->get('order.repository');
 
@@ -1249,8 +1371,7 @@ class RecalculationServiceTest extends TestCase
         $this->getBrowser()->request(
             'POST',
             sprintf(
-                '/api/v%s/_action/order/%s/creditItem',
-                PlatformRequest::API_VERSION,
+                '/api/_action/order/%s/creditItem',
                 $orderId
             ),
             [],
@@ -1285,7 +1406,100 @@ class RecalculationServiceTest extends TestCase
         $tax5 = $taxRules->getElements()[5];
         static::assertEquals(5, $tax5->getTaxRate());
 
+        static::assertEquals($order->getOrderDateTime(), $orderDateTime);
         static::assertEquals($creditAmount, $tax19->getPrice() + $tax5->getPrice());
+    }
+
+    private function addPromotionItemToVersionedOrder(string $orderId, string $versionId, string $code, \DateTimeInterface $orderDateTime): void
+    {
+        $orderRepository = $this->getContainer()->get('order.repository');
+
+        $data = [
+            'code' => $code,
+        ];
+
+        // add promotion item to order
+        $this->getBrowser()->request(
+            'POST',
+            sprintf(
+                '/api/_action/order/%s/promotion-item',
+                $orderId
+            ),
+            [],
+            [],
+            [
+                'HTTP_' . PlatformRequest::HEADER_VERSION_ID => $versionId,
+            ],
+            json_encode($data)
+        );
+        $response = $this->getBrowser()->getResponse();
+
+        static::assertEquals(Response::HTTP_OK, $response->getStatusCode(), $response->getContent());
+
+        // read versioned order
+        $criteria = new Criteria([$orderId]);
+        $criteria->addAssociation('lineItems');
+        $order = $orderRepository->search($criteria, $this->context->createWithVersionId($versionId))->get($orderId);
+        static::assertNotEmpty($order);
+        static::assertCount(3, $order->getLineItems());
+        static::assertEquals($order->getOrderDateTime(), $orderDateTime);
+
+        $promotionItem = $order->getLineItems()->filterByProperty('referencedId', $code)->first();
+
+        static::assertNotNull($promotionItem);
+
+        $content = json_decode($response->getContent(), true);
+        static::assertCount(1, $content['errors']);
+
+        $errors = array_values($content['errors']);
+        static::assertEquals($errors[0]['message'], 'Discount GET5 has been added');
+    }
+
+    private function toggleAutomaticPromotions(string $orderId, string $versionId, string $promotionId, \DateTimeInterface $orderDateTime): void
+    {
+        $orderRepository = $this->getContainer()->get('order.repository');
+
+        $data = [
+            'skipAutomaticPromotions' => false,
+        ];
+
+        // add promotion item to order
+        $this->getBrowser()->request(
+            'POST',
+            sprintf(
+                '/api/_action/order/%s/toggleAutomaticPromotions',
+                $orderId
+            ),
+            [],
+            [],
+            [
+                'HTTP_' . PlatformRequest::HEADER_VERSION_ID => $versionId,
+            ],
+            json_encode($data)
+        );
+        $response = $this->getBrowser()->getResponse();
+
+        static::assertEquals(Response::HTTP_OK, $response->getStatusCode(), $response->getContent());
+
+        // read versioned order
+        $criteria = new Criteria([$orderId]);
+        $criteria->addAssociation('lineItems');
+        $order = $orderRepository->search($criteria, $this->context->createWithVersionId($versionId))->get($orderId);
+        static::assertNotEmpty($order);
+        static::assertCount(3, $order->getLineItems());
+        static::assertEquals($order->getOrderDateTime(), $orderDateTime);
+
+        $promotionItem = $order->getLineItems()->filterByProperty('type', 'promotion')->first();
+
+        static::assertNotNull($promotionItem);
+
+        static::assertEquals($promotionItem->getPayload()['promotionId'], $promotionId);
+
+        $content = json_decode($response->getContent(), true);
+        static::assertCount(1, $content['errors']);
+
+        $errors = array_values($content['errors']);
+        static::assertEquals($errors[0]['message'], 'Discount auto promotion has been added');
     }
 
     private function createDeliveryTime(): array

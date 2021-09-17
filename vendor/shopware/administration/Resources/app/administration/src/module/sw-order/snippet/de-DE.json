@@ -36,8 +36,6 @@
     },
     "detail": {
       "buttonCancel": "Änderungen verwerfen",
-      "buttonSave": "Speichern",
-      "buttonEdit": "Bearbeiten",
       "tabOrderDetails": "Bestelldetails",
       "tabDeliveries": "Lieferungen",
       "textHeadline": "Bestellung",
@@ -109,6 +107,7 @@
       "summaryLabelAmountGrandTotal": "Gesamtsumme",
       "summaryLabelAmountWithoutTaxes": "Gesamtsumme ohne MwSt.",
       "summaryLabelAmountTotal": "Gesamtsumme inkl. MwSt.",
+      "summaryLabelAmountTotalRounded": "Gesamtsumme gerundet inkl. MwSt.",
       "summaryLabelShippingCosts": "Versandkosten",
       "discountLabelShippingCosts": "Versandkostenrabatt",
       "summaryLabelTaxes": "zzgl. {taxRate}% MwSt.",
@@ -162,6 +161,7 @@
       "summaryLabelAmountGrandTotal": "Gesamtsumme",
       "summaryLabelAmountWithoutTaxes": "Gesamtsumme ohne MwSt.",
       "summaryLabelAmountTotal": "Gesamtsumme inkl. MwSt.",
+      "summaryLabelAmountTotalRounded": "Gesamtsumme gerundet inkl. MwSt.",
       "summaryLabelShippingCosts": "Versandkosten",
       "discountLabelShippingCosts": "Versandkostenrabatt",
       "summaryLabelTaxes": "zzgl. {taxRate}% MwSt.",
@@ -179,6 +179,7 @@
       "buttonAddBlankProduct": "Leere Position hinzufügen",
       "buttonAddCredit": "Gutschrift hinzufügen",
       "buttonEditAddress": "Bearbeiten",
+      "tooltipNestedLineItemsButton": "Diese Bestellposition enthält Unterpositionen.",
       "labelNoPhoneNumber": "Keine",
       "labelNoEmail": "Keine",
       "labelCustomerPhoneNumber": "Telefonnummer",
@@ -204,7 +205,16 @@
       "addTrackingCode": "Zum Hinzufügen hier klicken",
       "enterValidTrackingCode": "Tracking-Code eingeben",
       "textCreditTax": "auto",
-      "taxDetail": "{taxRate}%: {tax}"
+      "taxDetail": "{taxRate}%: {tax}",
+      "textPromotionRemoved": "Rabatt {promotion} wurde entfernt"
+    },
+    "nestedLineItemsModal": {
+      "titlePrefix": "Position: {lineItemLabel} - {price}",
+      "headerLabel": "Name",
+      "headerUnitPrice": "Bruttopreis",
+      "headerQuantity": "Menge",
+      "headerTotalPrice": "Gesamt",
+      "headerTax": "Steuersatz"
     },
     "addressSelection": {
       "modalTitleEditAddress": "Adressen",
@@ -278,7 +288,13 @@
       "labelDownloadPdf": "PDF herunterladen",
       "labelCreateNew": "Neu erstellen",
       "messageEmptyTitle": "Noch keine Dokumente",
-      "messageEmptySubline": "Verwaltung von Dokumenten."
+      "messageEmptySubline": "Verwaltung von Dokumenten.",
+      "error": {
+        "DOCUMENT__NUMBER_ALREADY_EXISTS": "Die Dokumentnummer {number} ist bereits in Verwendung."
+      },
+      "info": {
+        "DOCUMENT__NUMBER_WAS_CHANGED": "Doppelte Dokumentnummer. Eine Folgenummer aus dem entsprechenden Nummernkreis wurde automatisch zugewiesen."
+      }
     },
     "documentModal": {
       "modalTitle": "Dokument anlegen",
@@ -317,6 +333,71 @@
       "message": "Die folgenden automatischen Werbeaktionen werden deaktiviert:",
       "messageNoItems": "Keine automatischen Werbeaktionen aktiv.",
       "buttonDisable": "Deaktivieren"
+    },
+    "filters": {
+      "documentFilter": {
+        "label": "Dokumente",
+        "placeholder": "Dokumentstatus auswählen ...",
+        "textHasCriteria": "Verfügt über mind. ein Dokument",
+        "textNoCriteria": "Keine Dokumente zugewiesen"
+      },
+      "orderDateFilter": {
+        "label": "Bestelldatum"
+      },
+      "statusFilter": {
+        "label": "Bestellstatus",
+        "placeholder": "Bestellstatus auswählen ..."
+      },
+      "paymentStatusFilter": {
+        "label": "Zahlungsstatus",
+        "placeholder": "Zahlungsstatus auswählen ..."
+      },
+      "deliveryStatusFilter": {
+        "label": "Lieferstatus",
+        "placeholder": "Lieferstatus auswählen ..."
+      },
+      "paymentMethodFilter": {
+        "label": "Zahlungsart",
+        "placeholder": "Zahlungsart auswählen ..."
+      },
+      "shippingMethodFilter": {
+        "label": "Versandart",
+        "placeholder": "Versandart auswählen ..."
+      },
+      "salesChannelFilter": {
+        "label": "Verkaufskanäle",
+        "placeholder": "Verkaufskanäle auswählen ..."
+      },
+      "billingCountryFilter": {
+        "label": "Rechnungsland",
+        "placeholder": "Rechnungsländer auswählen ..."
+      },
+      "shippingCountryFilter": {
+        "label": "Lieferland",
+        "placeholder": "Lieferländer auswählen ..."
+      },
+      "customerGroupFilter": {
+        "label": "Kundengruppe",
+        "placeholder": "Kundengruppe auswählen ..."
+      },
+      "tagFilter": {
+        "label": "Tags",
+        "placeholder": "Tags auswählen ..."
+      },
+      "productFilter": {
+        "label": "Produkte",
+        "placeholder": "Produkte auswählen ..."
+      },
+      "affiliateCodeFilter": {
+        "label": "Affiliate-Code",
+        "placeholder": "Affiliate-Code auswählen..."
+      },
+      "campaignCodeFilter": {
+        "label": "Kampagnen-Code",
+        "placeholder": "Kampagnen-Code auswählen..."
+      },
+      "messageEmptyTitle": "Nichts gefunden",
+      "messageEmptySubline": "Bearbeite Deine Filter, um Ergebnisse zu finden."
     }
   },
   "sw-privileges": {
@@ -327,7 +408,7 @@
     },
     "additional_permissions": {
       "orders": {
-        "create_discounts": "Rabatte erstellen"
+        "create_discounts": "Gutschriften erstellen"
       }
     }
   }

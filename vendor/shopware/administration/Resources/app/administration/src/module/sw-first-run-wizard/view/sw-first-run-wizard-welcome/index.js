@@ -1,11 +1,10 @@
 import template from './sw-first-run-wizard-welcome.html.twig';
 import './sw-first-run-wizard-welcome.scss';
 
-
-const { Component, Mixin } = Shopware;
+const { Component } = Shopware;
 const { Criteria } = Shopware.Data;
 const cacheApiService = Shopware.Service('cacheApiService');
-const pluginService = Shopware.Service('pluginService');
+const extensionStoreActionService = Shopware.Service('extensionStoreActionService');
 
 Component.register('sw-first-run-wizard-welcome', {
     template,
@@ -15,13 +14,12 @@ Component.register('sw-first-run-wizard-welcome', {
         'userService',
         'loginService',
         'repositoryFactory',
-        'storeService'
+        'storeService',
     ],
 
     mixins: [
-        Mixin.getByName('notification')
+        'notification',
     ],
-
 
     data() {
         return {
@@ -33,7 +31,7 @@ Component.register('sw-first-run-wizard-welcome', {
             user: { localeId: '', pw: '' },
             userProfile: {},
             userPromise: null,
-            isLoading: false
+            isLoading: false,
         };
     },
 
@@ -66,13 +64,13 @@ Component.register('sw-first-run-wizard-welcome', {
             const snippetCriteria = new Criteria();
             snippetCriteria.setLimit(10);
             return snippetCriteria;
-        }
+        },
     },
 
     watch: {
         languageId() {
             this.createdComponent();
-        }
+        },
     },
 
     beforeMount() {
@@ -110,7 +108,7 @@ Component.register('sw-first-run-wizard-welcome', {
 
             const promises = [
                 languagePromise,
-                this.userPromise
+                this.userPromise,
             ];
 
             Promise.all(promises).then(() => {
@@ -130,8 +128,8 @@ Component.register('sw-first-run-wizard-welcome', {
                     position: 'right',
                     variant: 'primary',
                     action: 'sw.first.run.wizard.index.data-import',
-                    disabled: false
-                }
+                    disabled: false,
+                },
             ];
 
             this.$emit('buttons-update', buttonConfig);
@@ -140,7 +138,7 @@ Component.register('sw-first-run-wizard-welcome', {
         setUserData(userProfile) {
             this.userProfile = userProfile;
             return new Promise((resolve) => {
-                resolve(this.userRepository.get(this.userProfile.id, Shopware.Context.api));
+                resolve(this.userRepository.get(this.userProfile.id));
             });
         },
 
@@ -148,7 +146,7 @@ Component.register('sw-first-run-wizard-welcome', {
             const language = Shopware.State.get('session').currentLocale;
 
             this.languagePluginService.getPlugins({
-                language
+                language,
             }).then((response) => {
                 this.languagePlugins = response.items;
             });
@@ -188,7 +186,7 @@ Component.register('sw-first-run-wizard-welcome', {
             }).catch(() => {
                 this.createNotificationError({
                     title: this.$tc('sw-settings-user.user-detail.passwordConfirmation.notificationPasswordErrorTitle'),
-                    message: this.$tc('sw-settings-user.user-detail.passwordConfirmation.notificationPasswordErrorMessage')
+                    message: this.$tc('sw-settings-user.user-detail.passwordConfirmation.notificationPasswordErrorMessage'),
                 });
             }).finally(() => {
                 this.confirmPassword = '';
@@ -230,14 +228,14 @@ Component.register('sw-first-run-wizard-welcome', {
             let errMessage = null;
 
             try {
-                await this.storeService.downloadPlugin(pluginName, true);
+                await this.storeService.downloadPlugin(pluginName, true, true);
             } catch (e) {
                 errCode = 'downloadFailed';
                 catchedError = e;
             }
 
             try {
-                await pluginService.install(pluginName);
+                await extensionStoreActionService.installExtension(pluginName, 'plugin');
             } catch (e) {
                 if (errCode !== 'downloadFailed') {
                     errCode = 'installationFailed';
@@ -247,7 +245,7 @@ Component.register('sw-first-run-wizard-welcome', {
             }
 
             try {
-                await pluginService.activate(pluginName);
+                await extensionStoreActionService.activateExtension(pluginName, 'plugin');
             } catch (e) {
                 if (errCode === 'noErrors') {
                     errCode = 'activationFailed';
@@ -265,7 +263,7 @@ Component.register('sw-first-run-wizard-welcome', {
         },
 
         loadSnippets() {
-            return this.snippetRepository.search(this.snippetCriteria, Shopware.Context.api).then((result) => {
+            return this.snippetRepository.search(this.snippetCriteria).then((result) => {
                 return result.map(snippet => snippet.iso);
             });
         },
@@ -275,7 +273,7 @@ Component.register('sw-first-run-wizard-welcome', {
             languageCriteria.addAssociation('locale');
             languageCriteria.addSorting(Criteria.sort('locale.name', 'ASC'));
             languageCriteria.addSorting(Criteria.sort('locale.territory', 'ASC'));
-            languageCriteria.limit = 10;
+            languageCriteria.limit = null;
 
             return languageCriteria;
         },
@@ -293,7 +291,7 @@ Component.register('sw-first-run-wizard-welcome', {
         getMissingSnippets() {
             const languageCriteria = this.getLanguageCriteria();
 
-            return this.languageRepository.search(languageCriteria, Shopware.Context.api).then(async (result) => {
+            return this.languageRepository.search(languageCriteria).then(async (result) => {
                 const snippets = await this.loadSnippets();
                 const missingSnippets = [];
 
@@ -328,7 +326,7 @@ Component.register('sw-first-run-wizard-welcome', {
             const tryLater = this.$tc('sw-first-run-wizard.welcome.tryAgainLater');
 
             this.createNotificationError({
-                message: `${message}\n${errorMessage}\n${tryLater}`
+                message: `${message}\n${errorMessage}\n${tryLater}`,
             });
         },
 
@@ -362,7 +360,7 @@ Component.register('sw-first-run-wizard-welcome', {
 
                 this.createNotification({
                     message: this.$tc('sw-first-run-wizard.welcome.pluginsInstalledMessage', missingSnippets.length)
-                        + installedPlugins
+                        + installedPlugins,
                 });
 
                 this.onPluginInstalled(missingSnippets[missingSnippets.length - 1]);
@@ -371,7 +369,7 @@ Component.register('sw-first-run-wizard-welcome', {
         },
 
         loadLanguages() {
-            return this.languageRepository.search(this.languageCriteria, Shopware.Context.api).then((result) => {
+            return this.languageRepository.search(this.languageCriteria).then((result) => {
                 this.languages = [];
 
                 result.forEach((lang) => {
@@ -381,6 +379,6 @@ Component.register('sw-first-run-wizard-welcome', {
 
                 return this.languages;
             });
-        }
-    }
+        },
+    },
 });

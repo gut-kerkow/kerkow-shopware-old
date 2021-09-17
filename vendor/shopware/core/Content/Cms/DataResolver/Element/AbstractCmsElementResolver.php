@@ -13,9 +13,13 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField
 use Shopware\Core\Framework\DataAbstractionLayer\Field\OneToManyAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\Struct\Struct;
 
 abstract class AbstractCmsElementResolver implements CmsElementResolverInterface
 {
+    /**
+     * @return mixed|Entity|Struct|null
+     */
     protected function resolveEntityValue(?Entity $entity, string $path)
     {
         if ($entity === null) {
@@ -42,7 +46,7 @@ abstract class AbstractCmsElementResolver implements CmsElementResolverInterface
                 // if we are at the destination entity and it does not have a value for the field
                 // on it's on, then try to get the translation fallback
                 if ($value === null) {
-                    $value = $entity->getTranslation((string) $part);
+                    $value = $entity->getTranslation($part);
                 }
             } catch (\InvalidArgumentException $ex) {
                 if (!$smartDetect) {
@@ -58,6 +62,22 @@ abstract class AbstractCmsElementResolver implements CmsElementResolverInterface
         }
 
         return $value;
+    }
+
+    protected function resolveEntityValueToString(?Entity $entity, string $path, EntityResolverContext $resolverContext): string
+    {
+        $content = $this->resolveEntityValue($entity, $path);
+
+        if ($content instanceof \DateTimeInterface) {
+            $dateFormatter = new \IntlDateFormatter(
+                $resolverContext->getRequest()->getLocale(),
+                \IntlDateFormatter::MEDIUM,
+                \IntlDateFormatter::MEDIUM
+            );
+            $content = $dateFormatter->format($content);
+        }
+
+        return (string) $content;
     }
 
     protected function resolveDefinitionField(EntityDefinition $definition, string $path): ?Field
@@ -92,7 +112,8 @@ abstract class AbstractCmsElementResolver implements CmsElementResolverInterface
         EntityResolverContext $resolverContext,
         FieldConfig $config
     ): ?Criteria {
-        if (!$field = $this->resolveDefinitionField($resolverContext->getDefinition(), $config->getValue())) {
+        $field = $this->resolveDefinitionField($resolverContext->getDefinition(), $config->getStringValue());
+        if ($field === null) {
             return null;
         }
 
@@ -120,6 +141,24 @@ abstract class AbstractCmsElementResolver implements CmsElementResolverInterface
         );
 
         return $criteria;
+    }
+
+    protected function resolveEntityValues(EntityResolverContext $resolverContext, string $content): ?string
+    {
+        // https://regex101.com/r/idIfbk/1
+        $content = preg_replace_callback(
+            '/{{\s*(?<property>[\w.\d]+)\s*}}/',
+            function ($matches) use ($resolverContext) {
+                try {
+                    return $this->resolveEntityValueToString($resolverContext->getEntity(), $matches['property'], $resolverContext);
+                } catch (\InvalidArgumentException $e) {
+                    return $matches[0];
+                }
+            },
+            $content
+        );
+
+        return $content;
     }
 
     private function getKeyByManyToMany(ManyToManyAssociationField $field): ?string

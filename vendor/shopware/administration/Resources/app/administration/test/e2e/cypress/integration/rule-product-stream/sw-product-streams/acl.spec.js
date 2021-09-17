@@ -20,9 +20,9 @@ describe('Dynamic product group: Test ACL privileges', () => {
                 key: 'product_stream',
                 role: 'viewer'
             }
-        ]);
-
-        cy.openInitialPage(`${Cypress.env('admin')}#/sw/product/stream/index`);
+        ]).then(() => {
+            cy.openInitialPage(`${Cypress.env('admin')}#/sw/product/stream/index`);
+        });
 
         cy.get('.smart-bar__actions .sw-button.sw-button--primary')
             .should('to.have.class', 'sw-button--disabled', true);
@@ -89,17 +89,17 @@ describe('Dynamic product group: Test ACL privileges', () => {
                 key: 'product_stream',
                 role: 'editor'
             }
-        ]);
+        ]).then(() => {
+            cy.openInitialPage(`${Cypress.env('admin')}#/sw/product/stream/index`);
+        });
 
         cy.server();
         cy.route({
-            url: '/api/v*/product-stream/*',
+            url: `${Cypress.env('apiPath')}/product-stream/*`,
             method: 'patch'
         }).as('updateData');
 
         cy.createProductFixture().then(() => {
-            cy.visit(`${Cypress.env('admin')}#/sw/product/stream/index`);
-
             // go to detail page of product stream
             cy.get('.sw-data-grid__row--0 .sw-data-grid__cell--name a').click();
 
@@ -111,7 +111,7 @@ describe('Dynamic product group: Test ACL privileges', () => {
 
             cy.get('.sw-select-option--3').click();
 
-            cy.get('.sw-product-stream-value .sw-entity-single-select__selection').click();
+            cy.get('.sw-product-stream-value .sw-entity-multi-select').click();
 
             cy.get('.sw-select-result')
                 .should('be.visible')
@@ -147,7 +147,7 @@ describe('Dynamic product group: Test ACL privileges', () => {
     it('@catalogue: can create product streams', () => {
         cy.server();
         cy.route({
-            url: '/api/v*/product-stream',
+            url: `${Cypress.env('apiPath')}/product-stream`,
             method: 'post'
         }).as('saveData');
 
@@ -157,9 +157,9 @@ describe('Dynamic product group: Test ACL privileges', () => {
                     key: 'product_stream',
                     role: 'creator'
                 }
-            ]);
-
-            cy.visit(`${Cypress.env('admin')}#/sw/product/stream/index`);
+            ]).then(() => {
+                cy.openInitialPage(`${Cypress.env('admin')}#/sw/product/stream/index`);
+            });
 
             cy.get('.smart-bar__actions .sw-button--primary').click();
 
@@ -203,20 +203,20 @@ describe('Dynamic product group: Test ACL privileges', () => {
                     key: 'product_stream',
                     role: 'deleter'
                 }
-            ]);
+            ]).then(() => {
+                cy.openInitialPage(`${Cypress.env('admin')}#/sw/product/stream/index`);
+            });
 
             cy.server();
             cy.route({
-                url: '/api/v*/product-stream/*',
+                url: `${Cypress.env('apiPath')}/product-stream/*`,
                 method: 'delete'
             }).as('deleteData');
 
             cy.route({
-                url: '/api/v*/_action/sync',
+                url: '/api/_action/sync',
                 method: 'post'
             }).as('deleteMultipleData');
-
-            cy.openInitialPage(`${Cypress.env('admin')}#/sw/product/stream/index`);
 
             // open context menu
             cy.get('.sw-data-grid__row--0 .sw-context-button__button').click();
@@ -234,9 +234,12 @@ describe('Dynamic product group: Test ACL privileges', () => {
             });
 
             // select all entities
+            cy.get('.sw-data-grid-skeleton').should('not.exist');
             cy.get('.sw-data-grid__cell--header.sw-data-grid__cell--selection input').check();
 
             // delete product stream via bulk
+            cy.get('.sw-data-grid__row.is--selected').should('be.visible');
+            cy.get('.sw-data-grid__bulk a.link.link-danger').should('be.visible');
             cy.get('.sw-data-grid__bulk a.link.link-danger').click();
 
             cy.get('.sw-modal').should('be.visible');

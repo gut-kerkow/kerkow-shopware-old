@@ -1,28 +1,41 @@
-<div class="dvsn-product-option card border" data-dvsn-product-option="true">
-	<div class="card-body">
-		<div class="option-container">
-			{% for option in options %}
-				<div class="option custom-checkbox" data-index="{{ loop.index }}" data-id="{{ option.id }}" data-product-id="{{ product.id }}" data-media="">
-					<input type="checkbox" name="dvsn_product_option_checkbox[]" id="dvsn-product-option--loop-{{ loop.index }}" class="custom-control-input"/>
 
-					<label class="custom-control-label" for="dvsn-product-option--loop-{{ loop.index }}" style="">
-						<div class="name">
-							{{ option.translated.name }}
-						</div>
+<div
+    class="dvsn-product-option card border{% if page.dvsnProductOptionsHidden == true %} is--hidden{% endif %}"
+    data-dvsn-product-option="true"
+>
+    <div class="card-body">
+        <div class="option-container">
+            {% for option in options %}
+                <div
+                    class="option custom-checkbox{% if option.mandatory == true %} is--mandatory{% endif %}{% if option.hidden == true %} is--hidden{% else %} is--visible{% endif %}"
+                    data-index="{{ loop.index }}"
+                    data-id="{{ option.id }}"
+                    data-product-id="{{ product.id }}"
+                    data-media=""
+                >
+                    <input
+                        type="checkbox"
+                        name="dvsn_product_option_checkbox[]"
+                        id="dvsn-product-option--loop-{{ loop.index }}"
+                        class="custom-control-input"
+                        {% if option.mandatory == true %}checked disabled{% endif %}
+                    />
 
-						{% if option.translated.description != '' %}
-							<div class="description" style="">
-								{{ option.translated.description }}
-							</div>
-						{% endif %}
+                    <label class="custom-control-label" for="dvsn-product-option--loop-{{ loop.index }}" style="">
+                        <div class="name">
+                            {{ option.translated.name }}
+                        </div>
 
-						<div class="price" style="">
-							{{ option.price|currency }}
-							{{ "general.star"|trans|sw_sanitize }}
-						</div>
-					</label>
-				</div>
-			{% endfor %}
-		</div>
-	</div>
+                        {% if option.translated.description != '' %}
+                            <div class="description" style="">{{ option.translated.description }}</div>
+                        {% endif %}
+
+                        <div class="price" style="">
+                            {{ option.price|currency }}{{ "general.star"|trans|sw_sanitize }}
+                        </div>
+                    </label>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
 </div>

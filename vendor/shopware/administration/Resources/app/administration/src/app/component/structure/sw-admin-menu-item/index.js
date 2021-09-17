@@ -1,6 +1,7 @@
 import template from './sw-admin-menu-item.html.twig';
 
 const { Component } = Shopware;
+const { createId, types } = Shopware.Utils;
 
 /**
  * @private
@@ -13,32 +14,39 @@ Component.register('sw-admin-menu-item', {
     props: {
         entry: {
             type: Object,
-            required: true
+            required: true,
         },
+        // FIXME: add default property `() => []` ?
+        // eslint-disable-next-line vue/require-default-prop
         parentEntries: {
             type: Array,
-            required: false
+            required: false,
         },
         displayIcon: {
             type: Boolean,
             default: true,
-            required: false
+            required: false,
         },
         iconSize: {
             type: String,
             default: '20px',
-            required: false
+            required: false,
         },
         collapsibleText: {
             type: Boolean,
             default: true,
-            required: false
+            required: false,
         },
         sidebarExpanded: {
             type: Boolean,
             default: true,
-            required: false
-        }
+            required: false,
+        },
+        borderColor: {
+            type: String,
+            default: '#333',
+            required: false,
+        },
     },
 
     computed: {
@@ -91,7 +99,7 @@ Component.register('sw-admin-menu-item', {
 
                 return this.acl.can(child.privilege);
             });
-        }
+        },
     },
 
     methods: {
@@ -116,19 +124,40 @@ Component.register('sw-admin-menu-item', {
 
         subIsActive(path) {
             const meta = this.$route.meta;
+            const adminMenuEntries = Shopware.State.get('adminMenu').adminModuleNavigation;
             let compareTo;
 
-            if (meta.$current) {
-                compareTo = meta.$current.parent;
+            function findRootEntry(currentPath, foundPaths = []) {
+                const foundEntry = adminMenuEntries.find((entry) => {
+                    return entry.path === currentPath || entry.id === currentPath;
+                });
+
+                foundPaths.push(foundEntry.path || foundEntry.id);
+
+                if (foundEntry.parent?.length) {
+                    return findRootEntry(foundEntry.parent, foundPaths);
+                }
+
+                return foundPaths;
             }
+
+            if (meta.$current) {
+                const matchingPaths = findRootEntry(meta.$current.path);
+                return matchingPaths.includes(path);
+            }
+
             if (meta.parentPath) {
                 compareTo = meta.parentPath;
             }
 
             if (meta.$module) {
-                if (meta.$module.navigation && meta.$module.navigation[0].parent) {
+                if (meta.$module.navigation?.[0].parent) {
                     compareTo = meta.$module.navigation[0].parent;
                 }
+            }
+
+            if (!compareTo) {
+                compareTo = this.$route?.name;
             }
 
             if (this.entry.path) {
@@ -136,6 +165,41 @@ Component.register('sw-admin-menu-item', {
             }
 
             return this.entry.id === compareTo;
-        }
-    }
+        },
+
+        getElementClasses(menuItemName) {
+            const name = menuItemName.replace(/\./g, '-');
+            const hasChildren = this.entry.children.length > 0;
+            const convertName = this.entry.id || this.entry.path;
+            const convertedId = convertName.replace(/\./g, '-');
+
+            return [
+                convertedId,
+                `navigation-list-item__type-${this.entry.moduleType}`,
+                `navigation-list-item__${name}`,
+                `sw-admin-menu__item--${this.entry.id}`,
+                `navigation-list-item__level-${this.entry.level}`,
+                { 'navigation-list-item__has-children': hasChildren },
+            ];
+        },
+
+        onSubMenuItemEnter(entry, $event, parentEntries) {
+            this.$emit('sub-menu-item-enter', entry, $event, parentEntries);
+        },
+
+        isFirstPluginInMenuEntries(entry, menuEntries) {
+            const firstPluginEntry = menuEntries.find((menuEntry) => {
+                return menuEntry.moduleType === 'plugin';
+            });
+
+            if (!firstPluginEntry) {
+                return false;
+            }
+            return types.isEqual(entry, firstPluginEntry);
+        },
+
+        getCustomKey(path) {
+            return `${path}-${createId()}`;
+        },
+    },
 });

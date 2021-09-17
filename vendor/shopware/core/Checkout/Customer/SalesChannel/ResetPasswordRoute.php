@@ -12,6 +12,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
+use Shopware\Core\Framework\RateLimiter\RateLimiter;
 use Shopware\Core\Framework\Routing\Annotation\ContextTokenRequired;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Core\Framework\Routing\Annotation\Since;
@@ -24,6 +25,7 @@ use Shopware\Core\Framework\Validation\Exception\ConstraintViolationException;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\SalesChannel\SuccessResponse;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Validator\Constraints\EqualTo;
 use Symfony\Component\Validator\Constraints\Length;
@@ -38,43 +40,36 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
  */
 class ResetPasswordRoute extends AbstractResetPasswordRoute
 {
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $customerRepository;
+    private EntityRepositoryInterface $customerRepository;
 
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $customerRecoveryRepository;
+    private EntityRepositoryInterface $customerRecoveryRepository;
 
-    /**
-     * @var EventDispatcherInterface
-     */
-    private $eventDispatcher;
+    private EventDispatcherInterface $eventDispatcher;
 
-    /**
-     * @var DataValidator
-     */
-    private $validator;
+    private DataValidator $validator;
 
-    /**
-     * @var SystemConfigService
-     */
-    private $systemConfigService;
+    private SystemConfigService $systemConfigService;
+
+    private RequestStack $requestStack;
+
+    private RateLimiter $rateLimiter;
 
     public function __construct(
         EntityRepositoryInterface $customerRepository,
         EntityRepositoryInterface $customerRecoveryRepository,
         EventDispatcherInterface $eventDispatcher,
         DataValidator $validator,
-        SystemConfigService $systemConfigService
+        SystemConfigService $systemConfigService,
+        RequestStack $requestStack,
+        RateLimiter $rateLimiter
     ) {
         $this->customerRepository = $customerRepository;
         $this->customerRecoveryRepository = $customerRecoveryRepository;
         $this->eventDispatcher = $eventDispatcher;
         $this->validator = $validator;
         $this->systemConfigService = $systemConfigService;
+        $this->requestStack = $requestStack;
+        $this->rateLimiter = $rateLimiter;
     }
 
     public function getDecorated(): AbstractResetPasswordRoute
@@ -86,24 +81,41 @@ class ResetPasswordRoute extends AbstractResetPasswordRoute
      * @Since("6.2.0.0")
      * @OA\Post(
      *      path="/account/recovery-password-confirm",
-     *      summary="Resets password using recovery hash",
+     *      summary="Reset a password with recovery credentials",
+     *      description="This operation is Step 2 of the password reset flow. It is required to conduct Step 1 ""Send a password recovery mail"" in order to obtain the required credentials for this step.
+
+Resets a customer's password using credentials from a password recovery mail as a validation.",
      *      operationId="recoveryPassword",
-     *      tags={"Store API", "Account"},
+     *      tags={"Store API", "Profile"},
      *      @OA\RequestBody(
      *          required=true,
      *          @OA\JsonContent(
-     *              @OA\Property(property="hash", description="Hash from confirmation mail", type="string"),
-     *              @OA\Property(property="newPassword", description="New password", type="string"),
-     *              @OA\Property(property="newPasswordConfirm", description="New password confirm", type="string"),
-     *              @OA\Property(property="storefrontUrl", description="BaseUrl for the url in mail", type="string")
+     *              required={
+     *                  "hash",
+     *                  "newPassword",
+     *                  "newPasswordConfirm"
+     *              },
+     *              @OA\Property(
+     *                  property="hash",
+     *                  description="Parameter from the link in the confirmation mail sent in Step 1",
+     *                  type="string"),
+     *              @OA\Property(
+     *                  property="newPassword",
+     *                  description="New password for the customer",
+     *                  type="string"),
+     *              @OA\Property(
+     *                  property="newPasswordConfirm",
+     *                  description="Confirmation of the new password",
+     *                  type="string")
      *          )
      *      ),
      *      @OA\Response(
      *          response="200",
-     *          description=""
+     *          description="Returns a success response indicating a successful update.",
+     *          @OA\JsonContent(ref="#/components/schemas/SuccessResponse")
      *     )
      * )
-     * @Route(path="/store-api/v{version}/account/recovery-password-confirm", name="store-api.account.recovery.password", methods={"POST"})
+     * @Route(path="/store-api/account/recovery-password-confirm", name="store-api.account.recovery.password", methods={"POST"})
      */
     public function resetPassword(RequestDataBag $data, SalesChannelContext $context): SuccessResponse
     {
@@ -131,6 +143,14 @@ class ResetPasswordRoute extends AbstractResetPasswordRoute
             throw new CustomerNotFoundByHashException($hash);
         }
 
+        // reset login and pw-reset limit when password was changed
+        if (($request = $this->requestStack->getMainRequest()) !== null) {
+            $cacheKey = strtolower($customer->getEmail()) . '-' . $request->getClientIp();
+
+            $this->rateLimiter->reset(RateLimiter::LOGIN_ROUTE, $cacheKey);
+            $this->rateLimiter->reset(RateLimiter::RESET_PASSWORD, $cacheKey);
+        }
+
         $customerData = [
             'id' => $customer->getId(),
             'password' => $data->get('newPassword'),
@@ -155,16 +175,16 @@ class ResetPasswordRoute extends AbstractResetPasswordRoute
 
         $definition->add('newPassword', new NotBlank(), new Length(['min' => $minPasswordLength]), new EqualTo(['propertyPath' => 'newPasswordConfirm']));
 
-        $this->dispatchValidationEvent($definition, $context->getContext());
+        $this->dispatchValidationEvent($definition, $data, $context->getContext());
 
         $this->validator->validate($data->all(), $definition);
 
         $this->tryValidateEqualtoConstraint($data->all(), 'newPassword', $definition);
     }
 
-    private function dispatchValidationEvent(DataValidationDefinition $definition, Context $context): void
+    private function dispatchValidationEvent(DataValidationDefinition $definition, DataBag $data, Context $context): void
     {
-        $validationEvent = new BuildValidationEvent($definition, $context);
+        $validationEvent = new BuildValidationEvent($definition, $data, $context);
         $this->eventDispatcher->dispatch($validationEvent, $validationEvent->getName());
     }
 

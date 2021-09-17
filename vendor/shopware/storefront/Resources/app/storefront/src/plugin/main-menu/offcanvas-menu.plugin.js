@@ -4,6 +4,7 @@ import LoadingIndicator from 'src/utility/loading-indicator/loading-indicator.ut
 import HttpClient from 'src/service/http-client.service';
 import DomAccess from 'src/helper/dom-access.helper';
 import Iterator from 'src/helper/iterator.helper';
+import ViewportDetection from 'src/helper/viewport-detection.helper';
 
 export default class OffcanvasMenuPlugin extends Plugin {
 
@@ -27,7 +28,7 @@ export default class OffcanvasMenuPlugin extends Plugin {
         placeholderClass: '.navigation-offcanvas-placeholder',
 
         forwardAnimationType: 'forwards',
-        backwardAnimationType: 'backwards'
+        backwardAnimationType: 'backwards',
     };
 
     init() {
@@ -69,8 +70,9 @@ export default class OffcanvasMenuPlugin extends Plugin {
      * @private
      */
     _openMenu(event) {
+        const isFullwidth = ViewportDetection.isXS();
         OffcanvasMenuPlugin._stopEvent(event);
-        OffCanvas.open(this._content, this._registerEvents.bind(this), this.options.position);
+        OffCanvas.open(this._content, this._registerEvents.bind(this), this.options.position, undefined, undefined, isFullwidth);
         OffCanvas.setAdditionalClassName(this.options.additionalOffcanvasClass);
 
         this.$emitter.publish('openMenu');
@@ -85,11 +87,16 @@ export default class OffcanvasMenuPlugin extends Plugin {
      */
     _getLinkEventHandler(event, link) {
         if (!link) {
-            // fetch home menu to warm the cache
-            this._fetchMenu(this.options.navigationUrl);
-
             const initialContentElement = DomAccess.querySelector(document, this.options.initialContentSelector);
             this._content = initialContentElement.innerHTML;
+
+            if (initialContentElement.classList.contains('is-root')) {
+                this._cache[this.options.navigationUrl] = this._content;
+            } else {
+                // fetch home menu to warm the cache
+                this._fetchMenu(this.options.navigationUrl);
+            }
+
             return this._openMenu(event);
         }
 

@@ -10,45 +10,50 @@ use Shopware\Core\Content\Product\SearchKeyword\ProductSearchKeywordAnalyzerInte
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Api\Context\SystemSource;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\Dbal\Common\RepositoryIterator;
+use Shopware\Core\Framework\DataAbstractionLayer\Dbal\EntityDefinitionQueryHelper;
 use Shopware\Core\Framework\DataAbstractionLayer\Doctrine\MultiInsertQueryQueue;
 use Shopware\Core\Framework\DataAbstractionLayer\Doctrine\RetryableQuery;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\AssociationField;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\Field;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\NandFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Shopware\Core\System\Language\LanguageCollection;
 use Shopware\Core\System\Language\LanguageEntity;
 
 class SearchKeywordUpdater
 {
-    /**
-     * @var Connection
-     */
-    private $connection;
+    private Connection $connection;
+
+    private EntityRepositoryInterface $languageRepository;
+
+    private EntityRepositoryInterface $productRepository;
+
+    private ProductSearchKeywordAnalyzerInterface $analyzer;
+
+    private EntityRepositoryInterface $productSearchConfigFieldRepository;
 
     /**
-     * @var EntityRepositoryInterface
+     * @var array[]
      */
-    private $languageRepository;
-
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $productRepository;
-
-    /**
-     * @var ProductSearchKeywordAnalyzerInterface
-     */
-    private $analyzer;
+    private $config = [];
 
     public function __construct(
         Connection $connection,
         EntityRepositoryInterface $languageRepository,
         EntityRepositoryInterface $productRepository,
-        ProductSearchKeywordAnalyzerInterface $analyzer
+        ProductSearchKeywordAnalyzerInterface $analyzer,
+        EntityRepositoryInterface $productSearchConfigFieldRepository
     ) {
         $this->connection = $connection;
         $this->languageRepository = $languageRepository;
         $this->productRepository = $productRepository;
         $this->analyzer = $analyzer;
+        $this->productSearchConfigFieldRepository = $productSearchConfigFieldRepository;
     }
 
     public function update(array $ids, Context $context): void
@@ -57,9 +62,14 @@ class SearchKeywordUpdater
             return;
         }
 
-        $languages = $this->languageRepository->search(new Criteria(), Context::createDefaultContext());
+        $criteria = new Criteria();
+        $criteria->addFilter(new NandFilter([new EqualsFilter('salesChannelDomains.id', null)]));
+        /** @var LanguageCollection $languages */
+        $languages = $this->languageRepository->search($criteria, Context::createDefaultContext())->getEntities();
 
-        /** @var LanguageEntity $language */
+        $languages = $this->sortLanguages($languages);
+
+        $products = [];
         foreach ($languages as $language) {
             $languageContext = new Context(
                 new SystemSource(),
@@ -69,17 +79,21 @@ class SearchKeywordUpdater
                 $context->getVersionId()
             );
 
-            $this->updateLanguage($ids, $languageContext);
+            $existingProducts = $products[$language->getParentId() ?? Defaults::LANGUAGE_SYSTEM] ?? [];
+
+            $products[$language->getId()] = $this->updateLanguage($ids, $languageContext, $existingProducts);
         }
     }
 
-    private function updateLanguage(array $ids, Context $context): void
+    /**
+     * @return ProductEntity[]
+     */
+    private function updateLanguage(array $ids, Context $context, array $existingProducts): array
     {
-        $products = $context->disableCache(function (Context $context) use ($ids) {
-            return $context->enableInheritance(function (Context $context) use ($ids) {
-                return $this->productRepository->search((new Criteria($ids))->addAssociation('manufacturer'), $context);
-            });
-        });
+        $configFields = [];
+        if ($this->productSearchConfigFieldRepository !== null) {
+            $configFields = $this->getConfigFields($context->getLanguageId());
+        }
 
         $versionId = Uuid::fromHexToBytes($context->getVersionId());
         $languageId = Uuid::fromHexToBytes($context->getLanguageId());
@@ -91,9 +105,19 @@ class SearchKeywordUpdater
         $keywords = [];
         $dictionary = [];
 
-        /** @var ProductEntity $product */
-        foreach ($products as $product) {
-            $analyzed = $this->analyzer->analyze($product, $context);
+        $iterator = $this->getIterator($ids, $context, $configFields);
+
+        while ($products = $iterator->fetch()) {
+            /** @var ProductEntity $product */
+            foreach ($products as $product) {
+                // overwrite fetched products if translations for that product exists
+                // otherwise we use the already fetched product from the parent language
+                $existingProducts[$product->getId()] = $product;
+            }
+        }
+
+        foreach ($existingProducts as $product) {
+            $analyzed = $this->analyzer->analyze($product, $context, $configFields);
 
             $productId = Uuid::fromHexToBytes($product->getId());
 
@@ -108,7 +132,8 @@ class SearchKeywordUpdater
                     'ranking' => $keyword->getRanking(),
                     'created_at' => $now,
                 ];
-                $dictionary[] = [
+                $key = $keyword->getKeyword() . $languageId;
+                $dictionary[$key] = [
                     'id' => Uuid::randomBytes(),
                     'language_id' => $languageId,
                     'keyword' => $keyword->getKeyword(),
@@ -117,8 +142,21 @@ class SearchKeywordUpdater
         }
 
         $this->insertKeywords($keywords);
-
         $this->insertDictionary($dictionary);
+
+        return $existingProducts;
+    }
+
+    private function getIterator(array $ids, Context $context, array $configFields): RepositoryIterator
+    {
+        $context->setConsiderInheritance(true);
+
+        $criteria = new Criteria($ids);
+        $criteria->setLimit(50);
+
+        $this->buildCriteria(array_column($configFields, 'field'), $criteria, $context);
+
+        return new RepositoryIterator($this->productRepository, $context, $criteria);
     }
 
     private function delete(array $ids, string $languageId, string $versionId): void
@@ -168,6 +206,7 @@ class SearchKeywordUpdater
     private function insertDictionary(array $dictionary): void
     {
         $queue = new MultiInsertQueryQueue($this->connection, 50, false, true);
+
         foreach ($dictionary as $insert) {
             $queue->addInsert(ProductKeywordDictionaryDefinition::ENTITY_NAME, $insert);
         }
@@ -185,5 +224,109 @@ class SearchKeywordUpdater
                 $query->execute($insert);
             }
         }
+    }
+
+    private function buildCriteria(array $accessors, Criteria $criteria, Context $context): void
+    {
+        $definition = $this->productRepository->getDefinition();
+
+        // Filter for products that have translations in the given language
+        // if there are no translations, we copy the keywords of the parent language without fetching the product
+        $filters = [
+            new EqualsFilter('translations.languageId', $context->getLanguageId()),
+            new EqualsFilter('parent.translations.languageId', $context->getLanguageId()),
+        ];
+
+        foreach ($accessors as $accessor) {
+            $fields = EntityDefinitionQueryHelper::getFieldsOfAccessor($definition, $accessor);
+
+            $fields = array_filter($fields, function (Field $field) {
+                return $field instanceof AssociationField;
+            });
+
+            if (empty($fields)) {
+                continue;
+            }
+
+            $lastAssociationField = $fields[\count($fields) - 1];
+
+            $path = array_map(function (Field $field) {
+                return $field->getPropertyName();
+            }, $fields);
+
+            $association = implode('.', $path);
+            if ($criteria->hasAssociation($association)) {
+                continue;
+            }
+
+            $criteria->addAssociation($association);
+
+            $translationField = $lastAssociationField->getReferenceDefinition()->getTranslationField();
+            if (!$translationField) {
+                continue;
+            }
+
+            // filter the associations that have no translations in given language,
+            // as we automatically use the parent languages keywords for those
+            $translationLanguageAccessor = sprintf(
+                '%s.%s.languageId',
+                $association,
+                $translationField->getPropertyName()
+            );
+            $filters[] = new EqualsFilter($translationLanguageAccessor, $context->getLanguageId());
+        }
+
+        $criteria->addFilter(new MultiFilter(MultiFilter::CONNECTION_OR, $filters));
+    }
+
+    private function getConfigFields(string $languageId): array
+    {
+        if (isset($this->config[$languageId])) {
+            return $this->config[$languageId];
+        }
+
+        $query = $this->connection->createQueryBuilder();
+        $query->select('configField.field', 'configField.tokenize', 'configField.ranking', 'LOWER(HEX(config.language_id)) as language_id');
+        $query->from('product_search_config', 'config');
+        $query->join('config', 'product_search_config_field', 'configField', 'config.id = configField.product_search_config_id');
+        $query->andWhere('config.language_id IN (:languageIds)');
+        $query->andWhere('configField.searchable = 1');
+
+        $query->setParameter('languageIds', Uuid::fromHexToBytesList([$languageId, Defaults::LANGUAGE_SYSTEM]), Connection::PARAM_STR_ARRAY);
+
+        $all = $query->execute()->fetchAll();
+
+        $fields = array_filter($all, function (array $field) use ($languageId) {
+            return $field['language_id'] === $languageId;
+        });
+
+        if (!empty($fields)) {
+            return $this->config[$languageId] = $fields;
+        }
+
+        $fields = array_filter($all, function (array $field) {
+            return $field['language_id'] === Defaults::LANGUAGE_SYSTEM;
+        });
+
+        return $this->config[$languageId] = $fields;
+    }
+
+    /**
+     * Sort languages so default language comes first, then languages that don't inherit and last inherited languages
+     *
+     * @return LanguageEntity[]
+     */
+    private function sortLanguages(LanguageCollection $languages): array
+    {
+        $defaultLanguage = $languages->get(Defaults::LANGUAGE_SYSTEM);
+        $languages->remove(Defaults::LANGUAGE_SYSTEM);
+
+        return array_filter(array_merge(
+            [$defaultLanguage],
+            $languages->filterByProperty('parentId', null)->getElements(),
+            $languages->filter(function (LanguageEntity $language) {
+                return $language->getParentId() !== null;
+            })->getElements()
+        ));
     }
 }

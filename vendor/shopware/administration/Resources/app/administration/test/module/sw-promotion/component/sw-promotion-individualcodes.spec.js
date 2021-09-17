@@ -1,5 +1,5 @@
-import { createLocalVue, shallowMount } from '@vue/test-utils';
-import EntityCollection from 'src/core/data-new/entity-collection.data';
+import { shallowMount } from '@vue/test-utils';
+import EntityCollection from 'src/core/data/entity-collection.data';
 import 'src/module/sw-promotion/component/sw-promotion-individualcodes';
 import 'src/app/component/form/sw-field';
 import 'src/app/component/form/sw-text-field';
@@ -8,12 +8,12 @@ import 'src/app/component/form/field-base/sw-block-field';
 import 'src/app/component/form/field-base/sw-base-field';
 import 'src/app/component/base/sw-button';
 
-function createWrapper(privileges = []) {
-    const localVue = createLocalVue();
-    localVue.directive('tooltip', {});
-
+/**
+ * @deprecated tag:v6.5.0 - will be removed, use `sw-promotion-v2` instead
+ * @feature-deprecated (flag:FEATURE_NEXT_13810)
+ */
+function createWrapper() {
     return shallowMount(Shopware.Component.build('sw-promotion-individualcodes'), {
-        localVue,
         stubs: {
             'sw-container': {
                 template: '<div class="sw-container"><slot></slot></div>'
@@ -46,13 +46,6 @@ function createWrapper(privileges = []) {
             }
         },
         provide: {
-            acl: {
-                can: (key) => {
-                    if (!key) { return true; }
-
-                    return privileges.includes(key);
-                }
-            },
             repositoryFactory: {
                 create: () => {
                     return { search: () => {
@@ -64,9 +57,6 @@ function createWrapper(privileges = []) {
                 }
             },
             validationService: () => {}
-        },
-        mocks: {
-            $tc: v => v
         },
         propsData: {
             promotion: {
@@ -161,9 +151,8 @@ describe('src/module/sw-promotion/component/sw-promotion-individualcodes', () =>
     });
 
     it('should not have disabled form fields', async () => {
-        wrapper = createWrapper([
-            'promotion.editor'
-        ]);
+        global.activeAclRoles = ['promotion.editor'];
+        wrapper = createWrapper();
 
         expect(wrapper.vm.isEditingDisabled).toBe(false);
 
@@ -181,9 +170,8 @@ describe('src/module/sw-promotion/component/sw-promotion-individualcodes', () =>
     });
 
     it('should be individualCodePattern can be generate', async () => {
-        wrapper = createWrapper([
-            'promotion.editor'
-        ]);
+        global.activeAclRoles = ['promotion.editor'];
+        wrapper = createWrapper();
         wrapper.vm.createNotificationWarning = jest.fn();
         wrapper.setProps({
             promotion: {
@@ -213,9 +201,8 @@ describe('src/module/sw-promotion/component/sw-promotion-individualcodes', () =>
     });
 
     it('should throw an warning message when the individualCodePattern invalid couldn\'t be generate', async () => {
-        wrapper = createWrapper([
-            'promotion.editor'
-        ]);
+        global.activeAclRoles = ['promotion.editor'];
+        wrapper = createWrapper();
 
         wrapper.vm.createNotificationWarning = jest.fn();
 
@@ -233,9 +220,8 @@ describe('src/module/sw-promotion/component/sw-promotion-individualcodes', () =>
     });
 
     it('should throw an warning message not allow to generate number', async () => {
-        wrapper = createWrapper([
-            'promotion.editor'
-        ]);
+        global.activeAclRoles = ['promotion.editor'];
+        wrapper = createWrapper();
 
         wrapper.vm.createNotificationWarning = jest.fn();
 
@@ -255,9 +241,8 @@ describe('src/module/sw-promotion/component/sw-promotion-individualcodes', () =>
     });
 
     it('should throw an warning message not allow to generate characters', async () => {
-        wrapper = createWrapper([
-            'promotion.editor'
-        ]);
+        global.activeAclRoles = ['promotion.editor'];
+        wrapper = createWrapper();
 
         wrapper.vm.createNotificationWarning = jest.fn();
 

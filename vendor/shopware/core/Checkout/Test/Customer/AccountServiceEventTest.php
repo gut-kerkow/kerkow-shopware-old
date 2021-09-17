@@ -13,7 +13,6 @@ use Shopware\Core\Checkout\Customer\SalesChannel\AccountService;
 use Shopware\Core\Checkout\Customer\SalesChannel\ChangePaymentMethodRoute;
 use Shopware\Core\Checkout\Customer\SalesChannel\LoginRoute;
 use Shopware\Core\Checkout\Customer\SalesChannel\LogoutRoute;
-use Shopware\Core\Checkout\Test\Payment\Handler\V630\SyncTestPaymentHandler;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -22,6 +21,7 @@ use Shopware\Core\Framework\Test\TestCaseBase\SalesChannelFunctionalTestBehaviou
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\Framework\Validation\DataBag\DataBag;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
+use Shopware\Core\System\SalesChannel\Context\AbstractSalesChannelContextFactory;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpKernel\Debug\TraceableEventDispatcher;
@@ -68,11 +68,11 @@ class AccountServiceEventTest extends TestCase
         $this->changePaymentMethodRoute = $this->getContainer()->get(ChangePaymentMethodRoute::class);
         $this->loginRoute = $this->getContainer()->get(LoginRoute::class);
 
-        /** @var SalesChannelContextFactory $salesChannelContextFactory */
+        /** @var AbstractSalesChannelContextFactory $salesChannelContextFactory */
         $salesChannelContextFactory = $this->getContainer()->get(SalesChannelContextFactory::class);
         $this->salesChannelContext = $salesChannelContextFactory->create(Uuid::randomHex(), Defaults::SALES_CHANNEL);
 
-        $this->createCustomer($this->salesChannelContext, 'info@example.com', 'shopware');
+        $this->createCustomer('shopware', 'info@example.com');
     }
 
     public function testLoginBeforeEventNotDispatchedIfNoCredentialsGiven(): void
@@ -173,7 +173,7 @@ class AccountServiceEventTest extends TestCase
 
         static::assertSame($email, $this->salesChannelContext->getCustomer()->getEmail());
 
-        $this->logoutRoute->logout($this->salesChannelContext);
+        $this->logoutRoute->logout($this->salesChannelContext, new RequestDataBag());
 
         static::assertTrue($eventDidRun, 'Event "' . CustomerLogoutEvent::class . '" did not run');
 
@@ -204,7 +204,8 @@ class AccountServiceEventTest extends TestCase
         $this->changePaymentMethodRoute->change(
             $customer->getDefaultPaymentMethodId(),
             new RequestDataBag(),
-            $this->salesChannelContext
+            $this->salesChannelContext,
+            $customer
         );
         static::assertTrue($eventDidRun, 'Event "' . CustomerChangedPaymentMethodEvent::class . '" did not run');
 
@@ -213,7 +214,6 @@ class AccountServiceEventTest extends TestCase
 
     private function getEmailListenerClosure(bool &$eventDidRun, self $phpunit)
     {
-        /* @var CustomerBeforeLoginEvent $event */
         return function ($event) use (&$eventDidRun, $phpunit): void {
             $eventDidRun = true;
             $phpunit->assertSame('info@example.com', $event->getEmail());
@@ -222,63 +222,9 @@ class AccountServiceEventTest extends TestCase
 
     private function getCustomerListenerClosure(bool &$eventDidRun, self $phpunit)
     {
-        /* @var CustomerLoginEvent $event */
         return function ($event) use (&$eventDidRun, $phpunit): void {
             $eventDidRun = true;
             $phpunit->assertSame('info@example.com', $event->getCustomer()->getEmail());
         };
-    }
-
-    private function createCustomer(
-        SalesChannelContext $salesChannelContext,
-        string $email,
-        string $password
-    ): void {
-        $customerId = Uuid::randomHex();
-        $addressId = Uuid::randomHex();
-
-        $this->customerRepository->create([
-            [
-                'id' => $customerId,
-                'salesChannelId' => Defaults::SALES_CHANNEL,
-                'defaultShippingAddress' => [
-                    'id' => $addressId,
-                    'firstName' => 'Max',
-                    'lastName' => 'Mustermann',
-                    'street' => 'Musterstraße 1',
-                    'city' => 'Schöppingen',
-                    'zipcode' => '12345',
-                    'salutationId' => $this->getValidSalutationId(),
-                    'countryId' => $this->getValidCountryId(),
-                ],
-                'defaultBillingAddressId' => $addressId,
-                'defaultPaymentMethod' => [
-                    'name' => 'Invoice',
-                    'description' => 'Default payment method',
-                    'handlerIdentifier' => SyncTestPaymentHandler::class,
-                    'availabilityRule' => [
-                        'id' => Uuid::randomHex(),
-                        'name' => 'true',
-                        'priority' => 0,
-                        'conditions' => [
-                            [
-                                'type' => 'cartCartAmount',
-                                'value' => [
-                                    'operator' => '>=',
-                                    'amount' => 0,
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-                'groupId' => Defaults::FALLBACK_CUSTOMER_GROUP,
-                'email' => $email,
-                'password' => $password,
-                'firstName' => 'Max',
-                'lastName' => 'Mustermann',
-                'salutationId' => $this->getValidSalutationId(),
-                'customerNumber' => '12345',
-            ],
-        ], $salesChannelContext->getContext());
     }
 }

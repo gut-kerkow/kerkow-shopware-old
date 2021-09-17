@@ -66,6 +66,6 @@ class DatabaseHandler
     private function removeTable(string $tableName): void
     {
         $sql = "DROP TABLE IF EXISTS `{$tableName}`";
-        $this->connection->executeQuery($sql);
+        $this->connection->executeUpdate($sql);
     }
 }

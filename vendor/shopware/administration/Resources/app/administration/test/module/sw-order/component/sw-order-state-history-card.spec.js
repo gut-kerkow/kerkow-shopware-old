@@ -1,11 +1,8 @@
-import { createLocalVue, shallowMount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import 'src/module/sw-order/component/sw-order-state-history-card';
 import 'src/module/sw-order/component/sw-order-state-change-modal';
 
 function createWrapper(privileges = []) {
-    const localVue = createLocalVue();
-    localVue.directive('tooltip', {});
-
     const orderProp = {
         transactions: [],
         deliveries: [
@@ -16,7 +13,6 @@ function createWrapper(privileges = []) {
     orderProp.transactions.last = () => ({});
 
     return shallowMount(Shopware.Component.build('sw-order-state-history-card'), {
-        localVue,
         stubs: {
             'sw-card': {
                 template: '<div><slot></slot></div>'
@@ -37,7 +33,7 @@ function createWrapper(privileges = []) {
             },
             orderService: {},
             stateMachineService: {
-                getState: () => ''
+                getState: () => { return { data: { transactions: [] } }; }
             },
             orderStateMachineService: {},
             repositoryFactory: {
@@ -45,9 +41,6 @@ function createWrapper(privileges = []) {
                     search: () => Promise.resolve([])
                 })
             }
-        },
-        mocks: {
-            $tc: v => v
         },
         propsData: {
             title: '',
@@ -58,10 +51,6 @@ function createWrapper(privileges = []) {
 
 describe('src/module/sw-order/component/sw-order-state-history-card', () => {
     let wrapper;
-
-    beforeAll(() => {
-        console.warn = () => {};
-    });
 
     beforeEach(() => {
         wrapper = createWrapper();
@@ -105,9 +94,6 @@ describe('src/module/sw-order/component/sw-order-state-history-card', () => {
         wrapper.setData({ showModal: true });
 
         await wrapper.vm.$nextTick();
-
-        // Order state change modal should always have true mailTemplatesExist prop
-        expect(wrapper.find('.sw-order-state-change-modal').props().mailTemplatesExist).toBe(true);
 
         // Document selection should be visible
         expect(wrapper.find('sw-order-state-change-modal-attach-documents-stub').exists()).toBeTruthy();

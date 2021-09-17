@@ -17,19 +17,34 @@
     "configFile": "reporter-config.json"
   },
   "env": {
-    "apiVersion": "v2",
     "user": "admin",
     "pass": "shopware",
     "salesChannelName": "Storefront",
     "admin": "/admin",
-    "apiPath": "/api/v2",
+    "apiPath": "/api",
     "locale": "en-GB",
     "checkoutAllowed": false,
-    "projectRoot": "/app",
-    "localUsage": false
+    "shopwareRoot": "/app",
+    "localUsage": false,
+    "minAuthTokenLifetime": 60
   },
   "firefoxGcInterval": {
     "runMode": null,
     "openMode": null
-  }
+  },
+  "reporter": "cypress-multi-reporters",
+    "reporterOptions": {
+        "reporterEnabled": "mochawesome, mocha-junit-reporter",
+        "mochawesomeReporterOptions": {
+            "reportDir": "cypress/results/mocha",
+            "quite": true,
+            "overwrite": false,
+            "html": false,
+            "json": true
+        },
+        "mochaJunitReporterReporterOptions": {
+          "mochaFile": "cypress/results/single-reports/results-[hash].xml"
+        }
+    }
+
 }

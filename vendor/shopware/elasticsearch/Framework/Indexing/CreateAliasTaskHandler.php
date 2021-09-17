@@ -10,25 +10,13 @@ use Shopware\Elasticsearch\Framework\ElasticsearchHelper;
 
 class CreateAliasTaskHandler extends ScheduledTaskHandler
 {
-    /**
-     * @var Client
-     */
-    private $client;
+    private Client $client;
 
-    /**
-     * @var Connection
-     */
-    private $connection;
+    private Connection $connection;
 
-    /**
-     * @var ElasticsearchHelper
-     */
-    private $elasticsearchHelper;
+    private ElasticsearchHelper $elasticsearchHelper;
 
-    /**
-     * @var array
-     */
-    private $config;
+    private array $config;
 
     public function __construct(
         EntityRepositoryInterface $scheduledTaskRepository,
@@ -60,22 +48,14 @@ class CreateAliasTaskHandler extends ScheduledTaskHandler
         }
     }
 
-    private function isIndexReady(string $index, string $entity, int $expected): bool
-    {
-        /** @var array $remote */
-        $remote = $this->client->count([
-            'index' => $index,
-            'type' => $entity,
-        ]);
-
-        return $remote['count'] >= $expected;
-    }
-
     private function createAlias(string $index, string $alias): void
     {
         $exist = $this->client->indices()->existsAlias(['name' => $alias]);
 
         if (!$exist) {
+            $this->client->indices()->refresh([
+                'index' => $index,
+            ]);
             $this->client->indices()->putAlias(['index' => $index, 'name' => $alias]);
 
             return;
@@ -104,12 +84,11 @@ class CreateAliasTaskHandler extends ScheduledTaskHandler
 
         foreach ($indices as $row) {
             $index = $row['index'];
-            $entity = $row['entity'];
             $count = (int) $row['doc_count'];
 
             $this->client->indices()->refresh(['index' => $index]);
 
-            if (!$this->isIndexReady($index, $entity, $count)) {
+            if ($count > 0) {
                 continue;
             }
 

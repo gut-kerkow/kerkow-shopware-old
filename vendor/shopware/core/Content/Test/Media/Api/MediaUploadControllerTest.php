@@ -11,7 +11,6 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Test\TestCaseBase\AdminFunctionalTestBehaviour;
-use Shopware\Core\PlatformRequest;
 use Symfony\Component\HttpFoundation\Response;
 
 class MediaUploadControllerTest extends TestCase
@@ -53,8 +52,7 @@ class MediaUploadControllerTest extends TestCase
     public function testUploadFromBinaryUsesMediaId(): void
     {
         $url = sprintf(
-            '/api/v%s/_action/media/%s/upload',
-            PlatformRequest::API_VERSION,
+            '/api/_action/media/%s/upload',
             $this->mediaId
         );
 
@@ -81,8 +79,7 @@ class MediaUploadControllerTest extends TestCase
     public function testUploadFromBinaryUsesFileName(): void
     {
         $url = sprintf(
-            '/api/v%s/_action/media/%s/upload',
-            PlatformRequest::API_VERSION,
+            '/api/_action/media/%s/upload',
             $this->mediaId
         );
 
@@ -108,39 +105,31 @@ class MediaUploadControllerTest extends TestCase
 
     public function testUploadFromURL(): void
     {
-        $target = $this->getContainer()->getParameter('kernel.project_dir') . '/public/shopware-logo.png';
-        copy(__DIR__ . '/../fixtures/shopware-logo.png', $target);
-
         $baseUrl = 'http://assets.shopware.com/sw_logo_white.png';
 
         $url = sprintf(
-            '/api/v%s/_action/media/%s/upload',
-            PlatformRequest::API_VERSION,
+            '/api/_action/media/%s/upload',
             $this->mediaId
         );
 
-        try {
-            $this->getBrowser()->request(
-                'POST',
-                $url . '?extension=png',
-                [],
-                [],
-                [
-                    'HTTP_CONTENT-TYPE' => 'application/json',
-                ],
-                json_encode(['url' => $baseUrl])
-            );
-            $response = $this->getBrowser()->getResponse();
-        } finally {
-            unlink($target);
-        }
+        $this->getBrowser()->request(
+            'POST',
+            $url . '?extension=png',
+            [],
+            [],
+            [
+                'HTTP_CONTENT-TYPE' => 'application/json',
+            ],
+            json_encode(['url' => $baseUrl])
+        );
+        $response = $this->getBrowser()->getResponse();
 
         $media = $this->mediaRepository->search(new Criteria([$this->mediaId]), $this->context)->get($this->mediaId);
 
         static::assertSame(Response::HTTP_NO_CONTENT, $response->getStatusCode(), $response->getContent());
         static::assertNotEmpty($response->headers->get('Location'));
         static::assertStringEndsWith(
-            '/api/v' . PlatformRequest::API_VERSION . '/media/' . $this->mediaId,
+            '/api/media/' . $this->mediaId,
             $response->headers->get('Location')
         );
         static::assertTrue($this->getPublicFilesystem()->has($this->urlGenerator->getRelativeMediaUrl($media)));
@@ -155,8 +144,7 @@ class MediaUploadControllerTest extends TestCase
         $media = $this->getPng();
 
         $url = sprintf(
-            '/api/v%s/_action/media/%s/rename',
-            PlatformRequest::API_VERSION,
+            '/api/_action/media/%s/rename',
             $media->getId()
         );
 
@@ -187,8 +175,7 @@ class MediaUploadControllerTest extends TestCase
         $this->getPublicFilesystem()->put($this->urlGenerator->getRelativeMediaUrl($media), 'some content');
 
         $url = sprintf(
-            '/api/v%s/_action/media/%s/rename',
-            PlatformRequest::API_VERSION,
+            '/api/_action/media/%s/rename',
             $media->getId()
         );
 
@@ -218,8 +205,7 @@ class MediaUploadControllerTest extends TestCase
         $media = $this->getPng();
 
         $url = sprintf(
-            '/api/v%s/_action/media/provide-name?fileName=%s&extension=png',
-            PlatformRequest::API_VERSION,
+            '/api/_action/media/provide-name?fileName=%s&extension=png',
             $media->getFileName()
         );
 
@@ -242,8 +228,7 @@ class MediaUploadControllerTest extends TestCase
         $media = $this->getPng();
 
         $url = sprintf(
-            '/api/v%s/_action/media/provide-name?fileName=%s&extension=png&mediaId=%s',
-            PlatformRequest::API_VERSION,
+            '/api/_action/media/provide-name?fileName=%s&extension=png&mediaId=%s',
             $media->getFileName(),
             $media->getId()
         );
@@ -270,7 +255,7 @@ class MediaUploadControllerTest extends TestCase
 
         static::assertNotEmpty($response->headers->get('Location'));
         static::assertStringEndsWith(
-            '/api/v' . PlatformRequest::API_VERSION . '/media/' . $this->mediaId,
+            '/api/media/' . $this->mediaId,
             $response->headers->get('Location')
         );
 
@@ -281,7 +266,7 @@ class MediaUploadControllerTest extends TestCase
     {
         $this->getBrowser()->request(
             'GET',
-            '/api/v' . PlatformRequest::API_VERSION . '/media/' . $this->mediaId
+            '/api/media/' . $this->mediaId
         );
 
         $responseData = json_decode($this->getBrowser()->getResponse()->getContent(), true);

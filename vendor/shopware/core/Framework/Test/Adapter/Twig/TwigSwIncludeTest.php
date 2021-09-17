@@ -2,6 +2,7 @@
 
 namespace Shopware\Core\Framework\Test\Adapter\Twig;
 
+use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Framework\Adapter\Twig\InheritanceExtension;
 use Shopware\Core\Framework\Adapter\Twig\NamespaceHierarchy\BundleHierarchyBuilder;
@@ -25,7 +26,7 @@ class TwigSwIncludeTest extends TestCase
             new BundleFixture('TestPlugin2', __DIR__ . '/fixtures/Plugins/TestPlugin2'),
         ]);
 
-        $template = $twig->loadTemplate('storefront/frontend/index.html.twig');
+        $template = $twig->loadTemplate($twig->getTemplateClass('storefront/frontend/index.html.twig'), 'storefront/frontend/index.html.twig');
         static::assertSame('innerblockplugin2innerblockplugin1innerblock', $template->render([]));
     }
 
@@ -37,7 +38,7 @@ class TwigSwIncludeTest extends TestCase
             new BundleFixture('TestPlugin2', __DIR__ . '/fixtures/Plugins/TestPlugin2'),
         ]);
 
-        $template = $twig->loadTemplate('storefront/frontend/withvars.html.twig');
+        $template = $twig->loadTemplate($twig->getTemplateClass('storefront/frontend/withvars.html.twig'), 'storefront/frontend/withvars.html.twig');
         static::assertSame('innerblockvaluefromindex', $template->render([]));
     }
 
@@ -49,7 +50,7 @@ class TwigSwIncludeTest extends TestCase
             new BundleFixture('TestPlugin2', __DIR__ . '/fixtures/Plugins/TestPlugin2'),
         ]);
 
-        $template = $twig->loadTemplate('storefront/frontend/withvarsonly.html.twig');
+        $template = $twig->loadTemplate($twig->getTemplateClass('storefront/frontend/withvarsonly.html.twig'), 'storefront/frontend/withvarsonly.html.twig');
         static::assertSame('innerblockvaluefromindexnotvisibleinnerblockvaluefromindex', $template->render([]));
     }
 
@@ -61,7 +62,7 @@ class TwigSwIncludeTest extends TestCase
             new BundleFixture('TestPlugin2', __DIR__ . '/fixtures/Plugins/TestPlugin2'),
         ]);
 
-        $template = $twig->loadTemplate('storefront/frontend/templatenameexpression.html.twig');
+        $template = $twig->loadTemplate($twig->getTemplateClass('storefront/frontend/templatenameexpression.html.twig'), 'storefront/frontend/templatenameexpression.html.twig');
         static::assertSame('innerblockplugin2innerblockplugin1innerblock', $template->render([]));
     }
 
@@ -71,7 +72,7 @@ class TwigSwIncludeTest extends TestCase
             new BundleFixture('Storefront', __DIR__ . '/fixtures/Storefront/'),
         ]);
 
-        $template = $twig->loadTemplate('storefront/frontend/notemplatefound.html.twig');
+        $template = $twig->loadTemplate($twig->getTemplateClass('storefront/frontend/notemplatefound.html.twig'), 'storefront/frontend/notemplatefound.html.twig');
         static::assertSame('nothingelse', $template->render([]));
     }
 
@@ -81,7 +82,7 @@ class TwigSwIncludeTest extends TestCase
             new BundleFixture('Storefront', __DIR__ . '/fixtures/Storefront/'),
         ]);
 
-        $template = $twig->loadTemplate('storefront/frontend/dynamic_include.html.twig');
+        $template = $twig->loadTemplate($twig->getTemplateClass('storefront/frontend/dynamic_include.html.twig'), 'storefront/frontend/dynamic_include.html.twig');
         static::assertSame('a', $template->render(['child' => 'a']));
         static::assertSame('b', $template->render(['child' => 'b']));
     }
@@ -94,7 +95,7 @@ class TwigSwIncludeTest extends TestCase
             new BundleFixture('TestPlugin2', __DIR__ . '/fixtures/Plugins/TestPlugin2'),
         ]);
 
-        $template = $twig->loadTemplate('storefront/frontend/dynamic_include.html.twig');
+        $template = $twig->loadTemplate($twig->getTemplateClass('storefront/frontend/dynamic_include.html.twig'), 'storefront/frontend/dynamic_include.html.twig');
         static::assertSame('a/TestPlugin1_a/TestPlugin2_a', $template->render(['child' => 'a']));
         static::assertSame('b/TestPlugin1_b/TestPlugin2_b', $template->render(['child' => 'b']));
     }
@@ -124,7 +125,7 @@ class TwigSwIncludeTest extends TestCase
             new NamespaceHierarchyBuilder([
                 new BundleHierarchyBuilder(
                     $kernel,
-                    $this->getContainer()->get('app.repository')
+                    $this->getContainer()->get(Connection::class)
                 ),
             ])
         );

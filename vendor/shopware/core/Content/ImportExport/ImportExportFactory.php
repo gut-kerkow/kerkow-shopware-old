@@ -2,6 +2,7 @@
 
 namespace Shopware\Core\Content\ImportExport;
 
+use Doctrine\DBAL\Connection;
 use League\Flysystem\FilesystemInterface;
 use Shopware\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLogEntity;
 use Shopware\Core\Content\ImportExport\Exception\ProcessingException;
@@ -16,49 +17,36 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class ImportExportFactory
 {
-    /**
-     * @var AbstractReaderFactory[]
-     */
-    private $readerFactories;
+    private ImportExportService $importExportService;
+
+    private DefinitionInstanceRegistry $definitionInstanceRegistry;
+
+    private FilesystemInterface $filesystem;
+
+    private EventDispatcherInterface $eventDispatcher;
+
+    private EntityRepositoryInterface $logRepository;
+
+    private Connection $connection;
 
     /**
-     * @var AbstractWriterFactory[]
+     * @var \IteratorAggregate<AbstractReaderFactory>
      */
-    private $writerFactories;
+    private \IteratorAggregate $readerFactories;
 
     /**
-     * @var AbstractPipeFactory[]
+     * @var \IteratorAggregate<AbstractWriterFactory>
      */
-    private $pipeFactories;
+    private \IteratorAggregate $writerFactories;
 
     /**
-     * @var DefinitionInstanceRegistry
+     * @var \IteratorAggregate<AbstractPipeFactory>
      */
-    private $definitionInstanceRegistry;
-
-    /**
-     * @var FilesystemInterface
-     */
-    private $filesystem;
-
-    /**
-     * @var ImportExportService
-     */
-    private $importExportService;
-
-    /**
-     * @var EventDispatcherInterface
-     */
-    private $eventDispatcher;
-
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $logRepository;
+    private \IteratorAggregate $pipeFactories;
 
     public function __construct(
         ImportExportService $importExportService,
@@ -66,18 +54,20 @@ class ImportExportFactory
         FilesystemInterface $filesystem,
         EventDispatcherInterface $eventDispatcher,
         EntityRepositoryInterface $logRepository,
-        $readerFactories,
-        $writerFactories,
-        $pipeFactories
+        Connection $connection,
+        \IteratorAggregate $readerFactories,
+        \IteratorAggregate $writerFactories,
+        \IteratorAggregate $pipeFactories
     ) {
+        $this->importExportService = $importExportService;
         $this->definitionInstanceRegistry = $definitionInstanceRegistry;
+        $this->filesystem = $filesystem;
+        $this->eventDispatcher = $eventDispatcher;
+        $this->logRepository = $logRepository;
+        $this->connection = $connection;
         $this->readerFactories = $readerFactories;
         $this->writerFactories = $writerFactories;
         $this->pipeFactories = $pipeFactories;
-        $this->filesystem = $filesystem;
-        $this->importExportService = $importExportService;
-        $this->eventDispatcher = $eventDispatcher;
-        $this->logRepository = $logRepository;
     }
 
     public function create(string $logId, int $importBatchSize = 250, int $exportBatchSize = 250): ImportExport
@@ -90,6 +80,7 @@ class ImportExportFactory
             $logEntity,
             $this->filesystem,
             $this->eventDispatcher,
+            $this->connection,
             $repository,
             $this->getPipe($logEntity),
             $this->getReader($logEntity),

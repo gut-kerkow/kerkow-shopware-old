@@ -3,70 +3,41 @@
 namespace Shopware\Core\Checkout\Cart\Price;
 
 use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
+use Shopware\Core\Checkout\Cart\Price\Struct\CartPrice;
 use Shopware\Core\Checkout\Cart\Price\Struct\QuantityPriceDefinition;
 use Shopware\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
 use Shopware\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
-use Shopware\Core\Checkout\Cart\Tax\TaxDetector;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class QuantityPriceCalculator
 {
-    /**
-     * @var GrossPriceCalculator
-     */
-    private $grossPriceCalculator;
+    private GrossPriceCalculator $grossPriceCalculator;
 
-    /**
-     * @var NetPriceCalculator
-     */
-    private $netPriceCalculator;
-
-    /**
-     * @var TaxDetector
-     */
-    private $taxDetector;
-
-    /**
-     * @var ReferencePriceCalculator
-     */
-    private $referencePriceCalculator;
+    private NetPriceCalculator $netPriceCalculator;
 
     public function __construct(
         GrossPriceCalculator $grossPriceCalculator,
-        NetPriceCalculator $netPriceCalculator,
-        TaxDetector $taxDetector,
-        ReferencePriceCalculator $referencePriceCalculator
+        NetPriceCalculator $netPriceCalculator
     ) {
         $this->grossPriceCalculator = $grossPriceCalculator;
         $this->netPriceCalculator = $netPriceCalculator;
-        $this->taxDetector = $taxDetector;
-        $this->referencePriceCalculator = $referencePriceCalculator;
     }
 
     public function calculate(QuantityPriceDefinition $definition, SalesChannelContext $context): CalculatedPrice
     {
-        if ($this->taxDetector->useGross($context)) {
-            $price = $this->grossPriceCalculator->calculate($definition);
+        if ($context->getTaxState() === CartPrice::TAX_STATE_GROSS) {
+            $price = $this->grossPriceCalculator->calculate($definition, $context->getItemRounding());
         } else {
-            $price = $this->netPriceCalculator->calculate($definition);
+            $price = $this->netPriceCalculator->calculate($definition, $context->getItemRounding());
         }
 
-        $taxRules = $price->getTaxRules();
-        $calculatedTaxes = $price->getCalculatedTaxes();
-
-        if ($this->taxDetector->isNetDelivery($context)) {
-            $taxRules = new TaxRuleCollection();
-            $calculatedTaxes = new CalculatedTaxCollection();
+        if ($context->getTaxState() === CartPrice::TAX_STATE_FREE) {
+            $price->assign([
+                'taxRules' => new TaxRuleCollection(),
+                'calculatedTaxes' => new CalculatedTaxCollection(),
+            ]);
         }
 
-        return new CalculatedPrice(
-            $price->getUnitPrice(),
-            $price->getTotalPrice(),
-            $calculatedTaxes,
-            $taxRules,
-            $price->getQuantity(),
-            $this->referencePriceCalculator->calculate($price->getUnitPrice(), $definition),
-            $price->getListPrice()
-        );
+        return $price;
     }
 }

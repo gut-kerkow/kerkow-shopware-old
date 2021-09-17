@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Shopware\Core\Framework\Test\CustomField\CustomFieldEntityRepositoryTest;
+namespace Shopware\Core\Framework\Test\CustomField;
 
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
@@ -57,6 +57,8 @@ class CustomFieldEntityRepositoryTest extends TestCase
 
     public function testUpdateCustomFields(): void
     {
+        static::markTestSkipped('NEXT-16212 - This test sometimes triggers a "SQLSTATE[HY000]: General error: 2006 MySQL server has gone away" error');
+
         $newSize = 22;
         $productId = Uuid::randomHex();
 
@@ -84,6 +86,8 @@ class CustomFieldEntityRepositoryTest extends TestCase
 
     public function testNewCustomField(): void
     {
+        static::markTestSkipped('NEXT-16212 - This test sometimes triggers a "SQLSTATE[HY000]: General error: 2006 MySQL server has gone away" error');
+
         $productId = Uuid::randomHex();
         $this->createProduct($productId);
         $this->createBasicCustomFields($productId);

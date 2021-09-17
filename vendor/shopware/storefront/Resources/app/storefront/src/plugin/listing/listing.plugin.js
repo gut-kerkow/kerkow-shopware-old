@@ -26,12 +26,12 @@ export default class ListingPlugin extends Plugin {
         loadingElementLoaderClass: 'has-element-loader',
         disableEmptyFilter: false,
         snippets: {
-            resetAllButtonText: 'Reset all'
+            resetAllButtonText: 'Reset all',
         },
         //if the window should be scrolled to top of to the listingWrapper element
         scrollTopListingWrapper: true,
         // how much px the scrolling should be offset
-        scrollOffset: 15
+        scrollOffset: 15,
     };
 
     init() {
@@ -57,6 +57,8 @@ export default class ListingPlugin extends Plugin {
         this._cmsProductListingWrapperActive = !!this._cmsProductListingWrapper;
 
         this._allFiltersInitializedDebounce = Debouncer.debounce(this.sendDisabledFiltersRequest.bind(this), 100);
+
+        this._registerEvents();
     }
 
     /**
@@ -77,10 +79,12 @@ export default class ListingPlugin extends Plugin {
     }
 
     /**
+     * @param pushHistory
+     * @param overrideParams
      * @public
      */
-    changeListing() {
-        this._buildRequest();
+    changeListing(pushHistory = true, overrideParams = {}) {
+        this._buildRequest(pushHistory, overrideParams);
 
         if (this._filterPanelActive) {
             this._buildLabels();
@@ -168,9 +172,11 @@ export default class ListingPlugin extends Plugin {
     }
 
     /**
+     * @param pushHistory
+     * @param overrideParams
      * @private
      */
-    _buildRequest() {
+    _buildRequest(pushHistory = true, overrideParams = {}) {
         const filters = this._fetchValuesOfRegisteredFilters();
         const mapped = this._mapFilters(filters);
 
@@ -184,6 +190,10 @@ export default class ListingPlugin extends Plugin {
             });
         }
 
+        Object.entries(overrideParams).forEach(([paramKey, paramValue]) => {
+            mapped[paramKey] = paramValue;
+        });
+
         let query = querystring.stringify(mapped);
         this.sendDataRequest(query);
 
@@ -193,7 +203,9 @@ export default class ListingPlugin extends Plugin {
         delete mapped['only-aggregations'];
         query = querystring.stringify(mapped);
 
-        this._updateHistory(query);
+        if (pushHistory) {
+            this._updateHistory(query);
+        }
 
         if (this.options.scrollTopListingWrapper) {
             this._scrollTopOfListing();
@@ -209,7 +221,7 @@ export default class ListingPlugin extends Plugin {
         const top = elemRect.top + window.scrollY - this.options.scrollOffset;
         window.scrollTo({
             top: top,
-            behavior: 'smooth'
+            behavior: 'smooth',
         });
     }
 
@@ -462,5 +474,32 @@ export default class ListingPlugin extends Plugin {
         window.PluginManager.initializePlugins();
 
         this.$emitter.publish('Listing/afterRenderResponse', { response });
+    }
+
+    /**
+     * @private
+     */
+    _registerEvents() {
+        window.onpopstate = this._onWindowPopstate.bind(this);
+    }
+
+    /**
+     * @private
+     */
+    _onWindowPopstate() {
+        this.refreshRegistry();
+
+        this._registry.forEach(filterItem => {
+            if (Object.keys(this._urlFilterParams).length === 0) {
+                this._urlFilterParams.p = 1;
+            }
+            this._setFilterState(filterItem);
+        });
+
+        if (this.options.disableEmptyFilter) {
+            this._allFiltersInitializedDebounce();
+        }
+
+        this.changeListing(false);
     }
 }

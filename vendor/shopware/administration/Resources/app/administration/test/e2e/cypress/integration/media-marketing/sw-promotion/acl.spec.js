@@ -2,7 +2,16 @@
 
 import ProductPageObject from '../../../support/pages/module/sw-product.page-object';
 
+/**
+ * @deprecated tag:v6.5.0 - will be removed, use `sw-promotion-v2` instead
+ * @feature-deprecated (flag:FEATURE_NEXT_13810)
+ */
 describe('Promotion: Test ACL privileges', () => {
+    // eslint-disable-next-line no-undef
+    before(() => {
+        cy.onlyOnFeature('FEATURE_NEXT_13810');
+    });
+
     beforeEach(() => {
         cy.setToInitialState()
             .then(() => {
@@ -30,9 +39,9 @@ describe('Promotion: Test ACL privileges', () => {
                 key: 'promotion',
                 role: 'viewer'
             }
-        ]);
-
-        cy.visit(`${Cypress.env('admin')}#/sw/promotion/index`);
+        ]).then(() => {
+            cy.visit(`${Cypress.env('admin')}#/sw/promotion/index`);
+        });
 
         cy.get(`${page.elements.dataGridRow}--0`).contains('Thunder Tuesday');
         cy.clickContextMenuItem(
@@ -55,9 +64,9 @@ describe('Promotion: Test ACL privileges', () => {
 
     it('@acl: can edit promotion', () => {
         cy.route({
-            url: `${Cypress.env('apiPath')}/search/promotion/**/discounts`,
-            method: 'post'
-        }).as('saveDiscount');
+            url: `${Cypress.env('apiPath')}/promotion/**`,
+            method: 'patch'
+        }).as('patchPromotion');
 
         const page = new ProductPageObject();
 
@@ -70,9 +79,9 @@ describe('Promotion: Test ACL privileges', () => {
                 key: 'promotion',
                 role: 'editor'
             }
-        ]);
-
-        cy.visit(`${Cypress.env('admin')}#/sw/promotion/index`);
+        ]).then(() => {
+            cy.visit(`${Cypress.env('admin')}#/sw/promotion/index`);
+        });
 
         cy.get(`${page.elements.dataGridRow}--0`).contains('Thunder Tuesday');
         cy.clickContextMenuItem(
@@ -83,6 +92,7 @@ describe('Promotion: Test ACL privileges', () => {
 
         cy.get(page.elements.smartBarHeader)
             .contains('Thunder Tuesday');
+        cy.get('#sw-field--promotion-name').should('be.visible');
         cy.get('#sw-field--promotion-name').should('have.value', 'Thunder Tuesday');
         cy.get('#sw-field--promotion-name').should('not.be.disabled');
 
@@ -106,12 +116,13 @@ describe('Promotion: Test ACL privileges', () => {
 
         // Save final promotion
         cy.get('.sw-promotion-detail__save-action').click();
-        cy.wait('@saveDiscount').then((xhr) => {
+        cy.wait('@patchPromotion').then((xhr) => {
             expect(xhr).to.have.property('status', 200);
         });
 
         // Verify promotion in Administration
         cy.get(page.elements.smartBarBack).click();
+        cy.get(`${page.elements.dataGridRow}--0 .sw-data-grid__cell--name`).should('be.visible');
         cy.get(`${page.elements.dataGridRow}--0 .sw-data-grid__cell--name`)
             .contains('New promotion name');
     });
@@ -139,9 +150,9 @@ describe('Promotion: Test ACL privileges', () => {
                 key: 'promotion',
                 role: 'deleter'
             }
-        ]);
-
-        cy.visit(`${Cypress.env('admin')}#/sw/promotion/index`);
+        ]).then(() => {
+            cy.visit(`${Cypress.env('admin')}#/sw/promotion/index`);
+        });
 
         // Delete product
         cy.clickContextMenuItem(

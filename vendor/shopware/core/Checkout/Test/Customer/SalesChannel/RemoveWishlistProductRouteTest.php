@@ -10,9 +10,11 @@ use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestDataCollection;
 use Shopware\Core\Framework\Util\Random;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\PlatformRequest;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
+/**
+ * @group store-api
+ */
 class RemoveWishlistProductRouteTest extends TestCase
 {
     use IntegrationTestBehaviour;
@@ -59,7 +61,6 @@ class RemoveWishlistProductRouteTest extends TestCase
         $this->assignSalesChannelContext($this->browser);
         $this->customerRepository = $this->getContainer()->get('customer.repository');
 
-        /* @var SystemConfigService $systemConfigService */
         $this->systemConfigService = $this->getContainer()->get(SystemConfigService::class);
         $this->systemConfigService->set('core.cart.wishlistEnabled', true);
 
@@ -69,7 +70,7 @@ class RemoveWishlistProductRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/account/login',
+                '/store-api/account/login',
                 [
                     'email' => $email,
                     'password' => 'shopware',
@@ -89,7 +90,7 @@ class RemoveWishlistProductRouteTest extends TestCase
         $this->browser
             ->request(
                 'DELETE',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/customer/wishlist/delete/' . $productId
+                '/store-api/customer/wishlist/delete/' . $productId
             );
 
         $response = json_decode($this->browser->getResponse()->getContent(), true);
@@ -106,7 +107,7 @@ class RemoveWishlistProductRouteTest extends TestCase
         $this->browser
             ->request(
                 'DELETE',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/customer/wishlist/delete/' . $productData[0]
+                '/store-api/customer/wishlist/delete/' . $productData[0]
             );
         $response = json_decode($this->browser->getResponse()->getContent(), true);
         $errors = $response['errors'][0];
@@ -124,7 +125,7 @@ class RemoveWishlistProductRouteTest extends TestCase
         $this->browser
             ->request(
                 'DELETE',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/customer/wishlist/delete/' . $productId
+                '/store-api/customer/wishlist/delete/' . $productId
             );
         $response = json_decode($this->browser->getResponse()->getContent(), true);
 
@@ -142,7 +143,7 @@ class RemoveWishlistProductRouteTest extends TestCase
         $this->browser
             ->request(
                 'DELETE',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/customer/wishlist/delete/' . $productId
+                '/store-api/customer/wishlist/delete/' . $productId
             );
         $response = json_decode($this->browser->getResponse()->getContent(), true);
         $errors = $response['errors'][0];
@@ -161,7 +162,7 @@ class RemoveWishlistProductRouteTest extends TestCase
         $this->browser
             ->request(
                 'DELETE',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/customer/wishlist/delete/' . $productId
+                '/store-api/customer/wishlist/delete/' . $productId
             );
         $response = json_decode($this->browser->getResponse()->getContent(), true);
         $errors = $response['errors'][0];

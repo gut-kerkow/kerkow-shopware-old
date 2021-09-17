@@ -4,6 +4,8 @@ namespace Shopware\Core\Framework\Migration;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DBALException;
+use Shopware\Core\Defaults;
+use Shopware\Core\DevOps\Environment\EnvironmentHelper;
 
 abstract class MigrationStep
 {
@@ -35,14 +37,7 @@ abstract class MigrationStep
 
     public function isInstallation(): bool
     {
-        $install = $_SERVER[self::INSTALL_ENVIRONMENT_VARIABLE] ?? false;
-        if ($install) {
-            return $install;
-        }
-
-        return $_ENV[self::INSTALL_ENVIRONMENT_VARIABLE]
-            ?? $_SERVER[self::INSTALL_ENVIRONMENT_VARIABLE]
-            ?? false;
+        return (bool) EnvironmentHelper::getVariable(self::INSTALL_ENVIRONMENT_VARIABLE, false);
     }
 
     /**
@@ -55,14 +50,13 @@ abstract class MigrationStep
     }
 
     /**
-     * BACKWARD triggers are executed when the new application works with the new Database
-     * and has to keep it rollback-safe
+     * @internal this method is kept because we don't want hard breaks in old migrations
      *
      * @deprecated tag:v6.4.0 use createTrigger instead
      */
     protected function addBackwardTrigger(Connection $connection, string $name, string $table, string $time, string $event, string $statements): void
     {
-        $this->addTrigger($connection, $name, $table, $time, $event, $statements, '');
+        @trigger_error('addBackwardTrigger is not supported anymore. Use createTrigger instead', \E_USER_DEPRECATED);
     }
 
     protected function addTrigger(Connection $connection, string $name, string $table, string $time, string $event, string $statements, string $condition): void
@@ -97,7 +91,7 @@ abstract class MigrationStep
      */
     protected function createTrigger(Connection $connection, string $query, array $params = []): void
     {
-        $blueGreenDeployment = $_ENV['BLUE_GREEN_DEPLOYMENT'] ?? false;
+        $blueGreenDeployment = EnvironmentHelper::getVariable('BLUE_GREEN_DEPLOYMENT', false);
         if ((int) $blueGreenDeployment === 0) {
             return;
         }
@@ -108,5 +102,33 @@ abstract class MigrationStep
     protected function registerIndexer(Connection $connection, string $name): void
     {
         IndexerQueuer::registerIndexer($connection, $name, static::class);
+    }
+
+    protected function addAdditionalPrivileges(Connection $connection, array $privileges): void
+    {
+        $roles = $connection->fetchAllAssociative('SELECT * from `acl_role`');
+        foreach ($roles as $role) {
+            $currentPrivileges = json_decode($role['privileges'], true);
+            $newPrivileges = array_values($this->fixRolePrivileges($privileges, $currentPrivileges));
+            if ($currentPrivileges === $newPrivileges) {
+                continue;
+            }
+
+            $role['privileges'] = json_encode($newPrivileges);
+            $role['updated_at'] = (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_FORMAT);
+
+            $connection->update('acl_role', $role, ['id' => $role['id']]);
+        }
+    }
+
+    private function fixRolePrivileges(array $privilegeChange, array $rolePrivileges): array
+    {
+        foreach ($privilegeChange as $existingPrivilege => $newPrivileges) {
+            if (\in_array($existingPrivilege, $rolePrivileges, true)) {
+                $rolePrivileges = array_merge($rolePrivileges, $newPrivileges);
+            }
+        }
+
+        return $rolePrivileges;
     }
 }

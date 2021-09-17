@@ -5,8 +5,8 @@ namespace Shopware\Core\Checkout\Test\Cart\Promotion\Integration;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Checkout\Cart\LineItem\LineItem;
 use Shopware\Core\Checkout\Cart\Order\OrderConverter;
+use Shopware\Core\Checkout\Cart\Rule\LineItemTotalPriceRule;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
-use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Promotion\Aggregate\PromotionDiscount\PromotionDiscountEntity;
 use Shopware\Core\Checkout\Promotion\Cart\Extension\CartExtension;
 use Shopware\Core\Checkout\Promotion\Cart\PromotionProcessor;
@@ -16,9 +16,11 @@ use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\Rule\Rule;
 use Shopware\Core\Framework\Test\TestCaseBase\CountryAddToSalesChannelTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
 
@@ -257,7 +259,7 @@ class PromotionExtensionCodesTest extends TestCase
         /** @var string $discountId */
         $discountId = array_keys($cart->getLineItems()->getElements())[1];
 
-        $this->cartService->order($cart, $context);
+        $this->cartService->order($cart, $context, new RequestDataBag());
 
         $this->cartService->remove($cart, $discountId, $context);
 
@@ -291,7 +293,7 @@ class PromotionExtensionCodesTest extends TestCase
         // add promotion to cart
         $cart = $this->addPromotionCode($promotionCode, $cart, $this->cartService, $context);
 
-        $orderId = $this->cartService->order($cart, $context);
+        $orderId = $this->cartService->order($cart, $context, new RequestDataBag());
 
         $criteria = (new Criteria([$orderId]))
             ->addAssociation('lineItems')
@@ -301,7 +303,6 @@ class PromotionExtensionCodesTest extends TestCase
             ->addAssociation('deliveries.shippingOrderAddress.country')
             ->addAssociation('deliveries.shippingOrderAddress.countryState');
 
-        /* @var OrderEntity|null $order */
         $order = $this->getContainer()->get('order.repository')
             ->search($criteria, $context->getContext())
             ->get($orderId);
@@ -421,6 +422,106 @@ class PromotionExtensionCodesTest extends TestCase
         $cart = $this->addProduct($productId, 1, $cart, $this->cartService, $this->context);
 
         static::assertCount(2, $cart->getLineItems());
+    }
+
+    public function testUsageOfCodeWithActiveNoCodePromo(): void
+    {
+        $productCheap = Uuid::randomHex();
+        $productExpensive = Uuid::randomHex();
+        $promotion1 = Uuid::randomHex();
+        $promotion2 = Uuid::randomHex();
+        $promotionCode = 'TEST123';
+
+        $this->createTestFixtureProduct($productCheap, 2, 19, $this->getContainer(), $this->context);
+        $this->createTestFixtureProduct($productExpensive, 200, 19, $this->getContainer(), $this->context);
+
+        // create rule
+        $ruleId = Uuid::randomHex();
+
+        $ruleRepository = $this->getContainer()->get('rule.repository');
+        $conditionRepository = $this->getContainer()->get('rule_condition.repository');
+
+        $ruleRepository->create([
+            [
+                'id' => $ruleId,
+                'name' => 'Cart >= 200',
+                'priority' => 1,
+            ],
+        ], $this->context->getContext());
+
+        $conditionRepository->create([
+            [
+                'id' => Uuid::randomHex(),
+                'type' => (new LineItemTotalPriceRule())->getName(),
+                'ruleId' => $ruleId,
+                'value' => [
+                    'operator' => Rule::OPERATOR_GTE,
+                    'amount' => 200,
+                ],
+            ],
+        ], $this->context->getContext());
+
+        $this->createCustomPercentagePromotion($promotion1, 'Promo 1', null, 10, null, [
+            'cartRules' => [
+                ['id' => $ruleId],
+            ],
+        ]);
+        $this->createCustomPercentagePromotion($promotion2, 'Promo 2', $promotionCode, 10, null, [
+            'exclusionIds' => [
+                $promotion1,
+            ],
+        ]);
+
+        $cart = $this->cartService->getCart($this->context->getToken(), $this->context);
+
+        // add expensive product to cart, promo 1 should be applied now
+        $cart = $this->addProduct($productExpensive, 1, $cart, $this->cartService, $this->context);
+
+        static::assertCount(2, $cart->getLineItems());
+        static::assertSame('Promo 1', $cart->getLineItems()->last()->getLabel());
+
+        // add promotion to cart
+        // because we have another rule that cannot be combined, it is not applied
+        $cart = $this->addPromotionCode($promotionCode, $cart, $this->cartService, $this->context);
+
+        static::assertCount(2, $cart->getLineItems());
+        static::assertSame('Promo 1', $cart->getLineItems()->last()->getLabel());
+
+        // now remove item again and make sure promotion is gone
+        $cart = $this->cartService->remove($cart, $productExpensive, $this->context);
+
+        static::assertCount(0, $cart->getLineItems());
+
+        // add cheap product to check if our code will be applied
+        $cart = $this->addProduct($productCheap, 1, $cart, $this->cartService, $this->context);
+
+        static::assertCount(2, $cart->getLineItems());
+        static::assertSame('Promo 2', $cart->getLineItems()->last()->getLabel());
+
+        $cart = $this->addProduct($productExpensive, 1, $cart, $this->cartService, $this->context);
+
+        static::assertCount(3, $cart->getLineItems());
+    }
+
+    private function createCustomPercentagePromotion(string $promotionId, string $name, ?string $code, float $percentage, ?float $maxValue, array $data = []): string
+    {
+        $data = array_merge([
+            'id' => $promotionId,
+            'name' => $name,
+            'active' => true,
+            'salesChannels' => [
+                ['salesChannelId' => $this->context->getSalesChannel()->getId(), 'priority' => 1],
+            ],
+        ], $data);
+
+        if ($code !== null) {
+            $data['code'] = $code;
+            $data['useCodes'] = true;
+        }
+
+        $this->createPromotionWithCustomData($data, $this->promotionRepository, $this->context);
+
+        return $this->createTestFixtureDiscount($promotionId, PromotionDiscountEntity::TYPE_PERCENTAGE, PromotionDiscountEntity::SCOPE_CART, $percentage, $maxValue, $this->getContainer(), $this->context);
     }
 
     private function createCustomer(): string

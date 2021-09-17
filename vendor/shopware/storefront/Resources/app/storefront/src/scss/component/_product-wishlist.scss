@@ -147,7 +147,6 @@ Styling for productbox component.
     }
 
     &-text {
-        text-transform: capitalize;
         font-weight: $font-weight-bold;
     }
 
@@ -158,10 +157,8 @@ Styling for productbox component.
         -webkit-box-orient: vertical;
         -webkit-line-clamp: 2;
         line-clamp: 2;
-        height: 3em;
         overflow: hidden;
         text-overflow: ellipsis;
-        margin-top: 1em;
     }
 
     .product-variant-characteristics-text {

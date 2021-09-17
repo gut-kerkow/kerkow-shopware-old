@@ -7,13 +7,13 @@ const lineItemConstants = Object.freeze({
         PRODUCT: 'product',
         CREDIT: 'credit',
         CUSTOM: 'custom',
-        PROMOTION: 'promotion'
+        PROMOTION: 'promotion',
     }),
 
     priceTypes: Object.freeze({
         ABSOLUTE: 'absolute',
-        QUANTITY: 'quantity'
-    })
+        QUANTITY: 'quantity',
+    }),
 });
 
 /**
@@ -43,34 +43,34 @@ class CartStoreService extends ApiService {
         const mapTypes = {
             [lineItemTypes.PRODUCT]: priceTypes.QUANTITY,
             [lineItemTypes.CUSTOM]: priceTypes.QUANTITY,
-            [lineItemTypes.CREDIT]: priceTypes.ABSOLUTE
+            [lineItemTypes.CREDIT]: priceTypes.ABSOLUTE,
         };
 
         return mapTypes[itemType];
     }
 
     createCart(salesChannelId, additionalParams = {}, additionalHeaders = {}) {
-        const route = `_proxy/store-api/${salesChannelId}/v${this.getApiVersion()}/checkout/cart`;
+        const route = `_proxy/store-api/${salesChannelId}/checkout/cart`;
         const headers = this.getBasicHeaders(additionalHeaders);
 
         return this.httpClient.get(route, { additionalParams, headers });
     }
 
     getCart(salesChannelId, contextToken, additionalParams = {}, additionalHeaders = {}) {
-        const route = `_proxy/store-api/${salesChannelId}/v${this.getApiVersion()}/checkout/cart`;
+        const route = `_proxy/store-api/${salesChannelId}/checkout/cart`;
         const headers = {
             ...this.getBasicHeaders(additionalHeaders),
-            'sw-context-token': contextToken
+            'sw-context-token': contextToken,
         };
 
         return this.httpClient.get(route, { additionalParams, headers });
     }
 
     cancelCart(salesChannelId, contextToken, additionalParams = {}, additionalHeaders = {}) {
-        const route = `_proxy/store-api/${salesChannelId}/v${this.getApiVersion()}/checkout/cart`;
+        const route = `_proxy/store-api/${salesChannelId}/checkout/cart`;
         const headers = {
             ...this.getBasicHeaders(additionalHeaders),
-            'sw-context-token': contextToken
+            'sw-context-token': contextToken,
         };
 
         return this.httpClient.delete(route, { additionalParams, headers });
@@ -81,24 +81,25 @@ class CartStoreService extends ApiService {
         contextToken,
         lineItemKeys,
         additionalParams = {},
-        additionalHeaders = {}
+        additionalHeaders = {},
     ) {
-        const route = `_proxy/store-api/${salesChannelId}/v${this.getApiVersion()}/checkout/cart/line-item`;
+        const route = `_proxy/store-api/${salesChannelId}/checkout/cart/line-item`;
         const headers = {
             ...this.getBasicHeaders(additionalHeaders),
-            'sw-context-token': contextToken
+            'sw-context-token': contextToken,
         };
 
         return this.httpClient.delete(route, { additionalParams, headers, data: { ids: lineItemKeys } });
     }
 
     getRouteForItem(id, salesChannelId) {
-        return `_proxy/store-api/${salesChannelId}/v${this.getApiVersion()}/checkout/cart/line-item`;
+        return `_proxy/store-api/${salesChannelId}/checkout/cart/line-item`;
     }
 
     shouldPriceUpdated(item, isNewProductItem) {
         const isUnitPriceEdited = item.price.unitPrice !== item.priceDefinition.price;
-        const isTaxRateEdited = item.price.taxRules[0].taxRate !== item.priceDefinition.taxRules[0].taxRate;
+        const isTaxRateEdited = (item?.price?.taxRules?.[0]?.taxRate ?? null)
+            !== (item?.priceDefinition?.taxRules?.[0]?.taxRate ?? null);
         const isCustomItem = item.type === this.getLineItemTypes().CUSTOM;
 
         const isExistingProductAndUnitPriceIsEdited = !isNewProductItem && isUnitPriceEdited;
@@ -130,9 +131,9 @@ class CartStoreService extends ApiService {
                     priceDefinition: dummyPrice,
                     stackable: true,
                     removable: true,
-                    salesChannelId
-                }
-            ]
+                    salesChannelId,
+                },
+            ],
         };
     }
 
@@ -141,14 +142,14 @@ class CartStoreService extends ApiService {
         contextToken,
         item,
         additionalParams = {},
-        additionalHeaders = {}
+        additionalHeaders = {},
     ) {
-        const isNewProductItem = item._isNew && item.type === this.getLineItemTypes().PRODUCT;
+        const isNewProductItem = item._isNew === true && item.type === this.getLineItemTypes().PRODUCT;
         const id = item.identifier || item.id || utils.createId();
         const route = this.getRouteForItem(id, salesChannelId, isNewProductItem);
         const headers = {
             ...this.getBasicHeaders(additionalHeaders),
-            'sw-context-token': contextToken
+            'sw-context-token': contextToken,
         };
 
         const payload = this.getPayloadForItem(item, salesChannelId, isNewProductItem, id);
@@ -165,21 +166,21 @@ class CartStoreService extends ApiService {
         contextToken,
         code,
         additionalParams = {},
-        additionalHeaders = {}
+        additionalHeaders = {},
     ) {
-        const route = `_proxy/store-api/${salesChannelId}/v${this.getApiVersion()}/checkout/cart/line-item`;
+        const route = `_proxy/store-api/${salesChannelId}/checkout/cart/line-item`;
         const headers = {
             ...this.getBasicHeaders(additionalHeaders),
-            'sw-context-token': contextToken
+            'sw-context-token': contextToken,
         };
 
         const payload = {
             items: [
                 {
                     type: 'promotion',
-                    referencedId: code
-                }
-            ]
+                    referencedId: code,
+                },
+            ],
         };
 
         return this.httpClient.post(route, payload, { additionalParams, headers });
@@ -189,7 +190,7 @@ class CartStoreService extends ApiService {
         const route = '_proxy/modify-shipping-costs';
         const headers = {
             ...this.getBasicHeaders(additionalHeaders),
-            'sw-context-token': contextToken
+            'sw-context-token': contextToken,
         };
 
         return this.httpClient.patch(route, { salesChannelId, shippingCosts }, { additionalParams, headers });
@@ -200,11 +201,11 @@ class CartStoreService extends ApiService {
         const route = '_proxy/disable-automatic-promotions';
         const headers = {
             ...this.getBasicHeaders(additionalHeaders),
-            'sw-context-token': contextToken
+            'sw-context-token': contextToken,
         };
 
         const data = {
-            salesChannelId: additionalParams.salesChannelId
+            salesChannelId: additionalParams.salesChannelId,
         };
 
         return this.httpClient.patch(route, data, { additionalParams, headers });
@@ -214,11 +215,11 @@ class CartStoreService extends ApiService {
         const route = '_proxy/enable-automatic-promotions';
         const headers = {
             ...this.getBasicHeaders(additionalHeaders),
-            'sw-context-token': contextToken
+            'sw-context-token': contextToken,
         };
 
         const data = {
-            salesChannelId: additionalParams.salesChannelId
+            salesChannelId: additionalParams.salesChannelId,
         };
 
         return this.httpClient.patch(route, data, { additionalParams, headers });

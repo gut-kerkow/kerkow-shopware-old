@@ -30,33 +30,35 @@ class TranslationsAssociationFieldSerializer implements FieldSerializerInterface
         $this->writeExtractor = $writeExtractor;
     }
 
-    /**
-     * @throws ExpectedArrayException
-     * @throws InvalidSerializerFieldException
-     * @throws MissingSystemTranslationException
-     * @throws MissingTranslationLanguageException
-     */
-    public function encode(
-        Field $field,
-        EntityExistence $existence,
-        KeyValuePair $data,
-        WriteParameterBag $parameters
-    ): \Generator {
+    public function normalize(Field $field, array $data, WriteParameterBag $parameters): array
+    {
         if (!$field instanceof TranslationsAssociationField) {
             throw new InvalidSerializerFieldException(TranslationsAssociationField::class, $field);
         }
 
-        $value = $data->getValue();
-        /* @var TranslationsAssociationField $field */
+        $key = $field->getPropertyName();
+        $value = $data[$key] ?? null;
+
+        $path = $parameters->getPath() . '/' . $key;
+        /** @var EntityTranslationDefinition $referenceDefinition */
+        $referenceDefinition = $field->getReferenceDefinition();
 
         if ($value === null) {
-            $value = [
-                $parameters->getContext()->getContext()->getLanguageId() => [],
-            ];
-            $data = new KeyValuePair($data->getKey(), $value, $data->isRaw());
+            $languageId = $parameters->getContext()->getContext()->getLanguageId();
+            $clonedParams = $parameters->cloneForSubresource(
+                $referenceDefinition,
+                $path . '/' . $languageId
+            );
 
-            return $this->map($field, $data, $parameters, $existence);
+            $data[$key] = [
+                $languageId => $this->writeExtractor->normalizeSingle($referenceDefinition, [], $clonedParams),
+            ];
+
+            return $data;
         }
+
+        $languageField = $referenceDefinition->getFields()->getByStorageName($field->getLanguageField());
+        $languagePropName = $languageField->getPropertyName();
 
         foreach ($value as $identifier => $fields) {
             /* Supported formats:
@@ -70,6 +72,7 @@ class TranslationsAssociationFieldSerializer implements FieldSerializerInterface
             }
 
             $languageId = $parameters->getContext()->getLanguageId($identifier);
+
             if ($languageId === null) {
                 unset($value[$identifier]);
 
@@ -84,44 +87,6 @@ class TranslationsAssociationFieldSerializer implements FieldSerializerInterface
 
             unset($value[$identifier]);
         }
-
-        $data = new KeyValuePair($data->getKey(), $value, $data->isRaw());
-
-        return $this->map($field, $data, $parameters, $existence);
-    }
-
-    /**
-     * @throws DecodeByHydratorException
-     */
-    public function decode(Field $field, $value): void
-    {
-        throw new DecodeByHydratorException($field);
-    }
-
-    /**
-     * @throws ExpectedArrayException
-     * @throws MissingSystemTranslationException
-     * @throws MissingTranslationLanguageException
-     */
-    protected function map(
-        TranslationsAssociationField $field,
-        KeyValuePair $data,
-        WriteParameterBag $parameters,
-        EntityExistence $existence
-    ): \Generator {
-        $key = $data->getKey();
-        $value = $data->getValue();
-        $path = $parameters->getPath() . '/' . $key;
-
-        /** @var EntityTranslationDefinition $referenceDefinition */
-        $referenceDefinition = $field->getReferenceDefinition();
-
-        if (!\is_array($value)) {
-            throw new ExpectedArrayException($path);
-        }
-
-        $languageField = $referenceDefinition->getFields()->getByStorageName($field->getLanguageField());
-        $languagePropName = $languageField->getPropertyName();
 
         $translations = [];
         foreach ($value as $keyValue => $subResources) {
@@ -152,6 +117,87 @@ class TranslationsAssociationFieldSerializer implements FieldSerializerInterface
                 $referenceDefinition,
                 $path . '/' . $languageId
             );
+
+            $translation = $this->writeExtractor->normalizeSingle($referenceDefinition, $translation, $clonedParams);
+
+            $translations[$languageId] = $translation;
+        }
+
+        $data[$key] = $translations;
+
+        return $data;
+    }
+
+    /**
+     * @throws ExpectedArrayException
+     * @throws InvalidSerializerFieldException
+     * @throws MissingSystemTranslationException
+     * @throws MissingTranslationLanguageException
+     */
+    public function encode(
+        Field $field,
+        EntityExistence $existence,
+        KeyValuePair $data,
+        WriteParameterBag $parameters
+    ): \Generator {
+        if (!$field instanceof TranslationsAssociationField) {
+            throw new InvalidSerializerFieldException(TranslationsAssociationField::class, $field);
+        }
+
+        $value = $data->getValue();
+
+        if ($value === null) {
+            $value = [
+                $parameters->getContext()->getContext()->getLanguageId() => [],
+            ];
+            $data = new KeyValuePair($data->getKey(), $value, $data->isRaw());
+
+            return $this->map($field, $data, $parameters, $existence);
+        }
+
+        $data = new KeyValuePair($data->getKey(), $value, $data->isRaw());
+
+        return $this->map($field, $data, $parameters, $existence);
+    }
+
+    /**
+     * @throws DecodeByHydratorException
+     *
+     * @deprecated tag:v6.5.0 The parameter $value will be native typed
+     * @never
+     */
+    public function decode(Field $field, /*?string */$value): void
+    {
+        throw new DecodeByHydratorException($field);
+    }
+
+    /**
+     * @throws ExpectedArrayException
+     * @throws MissingSystemTranslationException
+     * @throws MissingTranslationLanguageException
+     */
+    protected function map(
+        TranslationsAssociationField $field,
+        KeyValuePair $data,
+        WriteParameterBag $parameters,
+        EntityExistence $existence
+    ): \Generator {
+        $key = $data->getKey();
+        $value = $data->getValue();
+        $path = $parameters->getPath() . '/' . $key;
+
+        /** @var EntityTranslationDefinition $referenceDefinition */
+        $referenceDefinition = $field->getReferenceDefinition();
+
+        if (!\is_array($value)) {
+            throw new ExpectedArrayException($path);
+        }
+
+        foreach ($value as $languageId => $translation) {
+            $clonedParams = $parameters->cloneForSubresource(
+                $referenceDefinition,
+                $path . '/' . $languageId
+            );
             $clonedParams->setCurrentWriteLanguageId($languageId);
 
             $this->writeExtractor->extract($translation, $clonedParams);
@@ -162,7 +208,7 @@ class TranslationsAssociationFieldSerializer implements FieldSerializerInterface
             return;
         }
 
-        $languageIds = array_keys($translations);
+        $languageIds = array_keys($value);
         // the translation in the system language is always required for new entities,
         // if there is at least one required translated field
         if ($referenceDefinition->hasRequiredField() && !\in_array(Defaults::LANGUAGE_SYSTEM, $languageIds, true)) {

@@ -2,29 +2,19 @@
 
 namespace Shopware\Storefront\Page\Product;
 
+use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\Event\ShopwareSalesChannelEvent;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Contracts\EventDispatcher\Event;
 
-/**
- * @deprecated tag:v6.4.0 - Will implement Shopware\Core\Framework\Event\ShopwareSalesChannelEvent
- */
-class ProductPageCriteriaEvent extends Event /*implements ShopwareSalesChannelEvent*/
+class ProductPageCriteriaEvent extends Event implements ShopwareSalesChannelEvent
 {
-    /**
-     * @var string
-     */
-    protected $productId;
+    protected string $productId;
 
-    /**
-     * @var Criteria
-     */
-    protected $criteria;
+    protected Criteria $criteria;
 
-    /**
-     * @var SalesChannelContext
-     */
-    protected $context;
+    protected SalesChannelContext $context;
 
     public function __construct(string $productId, Criteria $criteria, SalesChannelContext $context)
     {
@@ -43,12 +33,9 @@ class ProductPageCriteriaEvent extends Event /*implements ShopwareSalesChannelEv
         return $this->criteria;
     }
 
-    /**
-     * @deprecated tag:v6.4.0 - Will return Shopware\Core\Framework\Context instead
-     */
-    public function getContext(): SalesChannelContext
+    public function getContext(): Context
     {
-        return $this->context;
+        return $this->context->getContext();
     }
 
     public function getSalesChannelContext(): SalesChannelContext

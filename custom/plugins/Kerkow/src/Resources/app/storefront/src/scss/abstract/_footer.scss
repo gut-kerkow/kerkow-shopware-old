@@ -3,6 +3,9 @@
   padding: 0 1rem;
   border: 0;
 }
+.footer-bottom {
+  background: $kerkow-blue;
+}
 .footer-columns {
   border: 0;
   padding-bottom: 0.5rem;
@@ -91,7 +94,7 @@ li.footer-column-link {
   max-height: 6rem;
   padding: 0;
   @include gt-medium;
-  line-height: 2rem;
+  line-height: 1.9rem;
 
   .footer-service-legal-list {
     li {

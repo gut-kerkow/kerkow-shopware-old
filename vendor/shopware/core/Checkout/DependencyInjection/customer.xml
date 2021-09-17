@@ -42,38 +42,6 @@
             <argument type="service" id="Shopware\Core\System\SalesChannel\Context\SalesChannelContextRestorer"/>
         </service>
 
-        <service id="Shopware\Core\Checkout\Customer\SalesChannel\SalesChannelCustomerController" public="true">
-            <argument type="service" id="serializer"/>
-            <argument type="service" id="Shopware\Core\Checkout\Customer\SalesChannel\AccountService"/>
-            <argument type="service" id="order.repository"/>
-            <argument type="service" id="Shopware\Core\Checkout\Customer\SalesChannel\AccountRegistrationService"/>
-            <argument type="service" id="Shopware\Core\Checkout\Customer\SalesChannel\AddressService"/>
-            <argument type="service" id="Shopware\Core\Checkout\Customer\CustomerDefinition"/>
-            <argument type="service" id="Shopware\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressDefinition"/>
-            <argument type="service" id="Shopware\Core\Framework\Api\Converter\ApiVersionConverter"/>
-            <argument type="service" id="Shopware\Core\Checkout\Customer\SalesChannel\ChangeCustomerProfileRoute"/>
-            <call method="setContainer">
-                <argument type="service" id="service_container"/>
-            </call>
-            <argument type="service" id="Shopware\Core\Checkout\Customer\SalesChannel\ChangePasswordRoute"/>
-            <argument type="service" id="Shopware\Core\Checkout\Customer\SalesChannel\ChangeEmailRoute"/>
-            <argument type="service" id="Shopware\Core\Checkout\Customer\SalesChannel\LoginRoute"/>
-            <argument type="service" id="Shopware\Core\Checkout\Customer\SalesChannel\LogoutRoute"/>
-        </service>
-
-        <service id="Shopware\Core\Checkout\Customer\SalesChannel\AccountRegistrationService">
-            <argument type="service" id="Shopware\Core\Checkout\Customer\SalesChannel\RegisterRoute"/>
-            <argument type="service" id="Shopware\Core\Checkout\Customer\SalesChannel\RegisterConfirmRoute"/>
-            <argument type="service" id="sales_channel_domain.repository"/>
-            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
-        </service>
-
-        <service id="Shopware\Core\Checkout\Customer\SalesChannel\AddressService">
-            <argument type="service" id="Shopware\Core\Checkout\Customer\SalesChannel\ListAddressRoute"/>
-            <argument type="service" id="Shopware\Core\Checkout\Customer\SalesChannel\UpsertAddressRoute"/>
-            <argument type="service" id="Shopware\Core\Checkout\Customer\SalesChannel\DeleteAddressRoute"/>
-        </service>
-
         <service id="Shopware\Core\Checkout\Customer\Validation\AddressValidationFactory">
             <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
         </service>
@@ -117,10 +85,15 @@
         </service>
 
         <service id="Shopware\Core\Checkout\Customer\Subscriber\CustomerMetaFieldSubscriber">
-            <argument type="service" id="order.repository"/>
-            <argument type="service" id="customer.repository"/>
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
 
             <tag name="kernel.event_subscriber"/>
+        </service>
+
+        <service id="Shopware\Core\Checkout\Customer\Subscriber\CustomerNewsletterSubscriber">
+            <argument type="service" id="customer.repository"/>
+            <tag name="kernel.event_subscriber"/>
+            <tag name="shopware.feature" flag="FEATURE_NEXT_14001"/>
         </service>
 
         <service id="Shopware\Core\Checkout\Customer\Subscriber\CustomerRemoteAddressSubscriber">
@@ -155,6 +128,8 @@
             <argument type="service" id="customer.repository"/>
             <argument type="service" id="Shopware\Core\Checkout\Customer\Password\LegacyPasswordVerifier"/>
             <argument type="service" id="Shopware\Core\System\SalesChannel\Context\SalesChannelContextRestorer"/>
+            <argument type="service" id="Symfony\Component\HttpFoundation\RequestStack"/>
+            <argument type="service" id="Shopware\Core\Framework\RateLimiter\RateLimiter"/>
         </service>
 
         <service id="Shopware\Core\Checkout\Customer\SalesChannel\LogoutRoute" public="true">
@@ -169,6 +144,9 @@
             <argument type="service" id="customer_recovery.repository"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Framework\Validation\DataValidator"/>
+            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
+            <argument type="service" id="Symfony\Component\HttpFoundation\RequestStack"/>
+            <argument type="service" id="shopware.rate_limiter"/>
         </service>
 
         <service id="Shopware\Core\Checkout\Customer\SalesChannel\ResetPasswordRoute" public="true">
@@ -177,6 +155,8 @@
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Framework\Validation\DataValidator"/>
             <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
+            <argument type="service" id="Symfony\Component\HttpFoundation\RequestStack"/>
+            <argument type="service" id="shopware.rate_limiter"/>
         </service>
 
         <service id="Shopware\Core\Checkout\Customer\SalesChannel\ChangePaymentMethodRoute" public="true">
@@ -206,9 +186,7 @@
         </service>
 
         <service id="Shopware\Core\Checkout\Customer\SalesChannel\CustomerRoute" public="true">
-            <argument type="service" id="Shopware\Core\Checkout\Customer\CustomerDefinition"/>
             <argument type="service" id="customer.repository"/>
-            <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Search\RequestCriteriaBuilder"/>
         </service>
 
         <service id="Shopware\Core\Checkout\Customer\SalesChannel\DeleteCustomerRoute" public="true">
@@ -225,6 +203,7 @@
             <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
             <argument type="service" id="customer.repository"/>
             <argument type="service" id="Shopware\Core\System\SalesChannel\Context\SalesChannelContextPersister"/>
+            <argument type="service" id="sales_channel.country.repository"/>
         </service>
 
         <service id="Shopware\Core\Checkout\Customer\SalesChannel\RegisterConfirmRoute" public="true">
@@ -254,23 +233,18 @@
         <service id="Shopware\Core\Checkout\Customer\SalesChannel\SwitchDefaultAddressRoute" public="true">
             <argument type="service" id="customer_address.repository"/>
             <argument type="service" id="customer.repository"/>
+            <argument type="service" id="Symfony\Component\EventDispatcher\EventDispatcherInterface" />
         </service>
 
         <service id="Shopware\Core\Checkout\Customer\SalesChannel\CustomerGroupRegistrationSettingsRoute" public="true">
             <argument type="service" id="customer_group.repository"/>
         </service>
 
-        <service id="Shopware\Core\Checkout\Customer\DataAbstractionLayer\CustomerVatIdsDeprecationUpdater">
-            <argument type="service" id="Doctrine\DBAL\Connection"/>
-        </service>
-
         <service id="Shopware\Core\Checkout\Customer\DataAbstractionLayer\CustomerIndexer">
             <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory"/>
             <argument type="service" id="customer.repository"/>
-            <argument type="service" id="Shopware\Core\Framework\Adapter\Cache\CacheClearer"/>
             <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Indexing\ManyToManyIdFieldUpdater"/>
             <argument type="service" id="event_dispatcher"/>
-            <argument type="service" id="Shopware\Core\Checkout\Customer\DataAbstractionLayer\CustomerVatIdsDeprecationUpdater"/>
             <tag name="shopware.entity_indexer" priority="100"/>
         </service>
 
@@ -320,6 +294,10 @@
 
         <service id="Shopware\Core\Checkout\Customer\CustomerValueResolver">
             <tag name="controller.argument_value_resolver" priority="1002"/>
+        </service>
+
+        <service id="Shopware\Core\Checkout\Customer\SalesChannel\AccountNewsletterRecipientRoute" public="true">
+            <argument type="service" id="sales_channel.newsletter_recipient.repository" />
         </service>
 
     </services>

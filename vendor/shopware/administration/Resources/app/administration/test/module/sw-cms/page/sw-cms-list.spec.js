@@ -1,4 +1,4 @@
-import { shallowMount, createLocalVue } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import 'src/module/sw-cms/page/sw-cms-list';
 import 'src/module/sw-cms/component/sw-cms-list-item';
 import 'src/app/component/context-menu/sw-context-button';
@@ -6,13 +6,7 @@ import 'src/app/component/context-menu/sw-context-menu-item';
 import 'src/app/component/data-grid/sw-data-grid';
 
 function createWrapper(privileges = []) {
-    const localVue = createLocalVue();
-
-    localVue.directive('tooltip', {});
-    localVue.filter('date', v => v);
-
     return shallowMount(Shopware.Component.build('sw-cms-list'), {
-        localVue,
         stubs: {
             'sw-page': {
                 template: `
@@ -57,13 +51,7 @@ function createWrapper(privileges = []) {
             'sw-data-grid-skeleton': true
         },
         mocks: {
-            $tc: (value) => value,
-            $te: () => true,
-            $router: { replace: () => {} },
-            $route: { query: '' },
-            $device: {
-                onResize: () => {}
-            }
+            $route: { query: '' }
         },
         provide: {
             acl: {
@@ -75,10 +63,8 @@ function createWrapper(privileges = []) {
             },
             repositoryFactory: {
                 create: () => ({ search: () => Promise.resolve() })
-            },
-            feature: {
-                isActive: () => true
             }
+
         }
     });
 }
@@ -488,5 +474,73 @@ describe('module/sw-cms/page/sw-cms-list', () => {
         const contextMenuItemDelete = wrapper.find('.sw-cms-list-item__option-delete');
 
         expect(contextMenuItemDelete.props().disabled).toBe(false);
+    });
+
+    it('should apply the necessary criteria when aggregating layouts already linked to pages', () => {
+        const wrapper = createWrapper();
+
+        expect(wrapper.vm.isLinkedCriteria).toBeDefined();
+        expect(wrapper.vm.assignablePageTypes).toBeDefined();
+
+        const criteria = wrapper.vm.isLinkedCriteria;
+
+        expect(criteria).toHaveLength(1);
+
+        const multiFilter = criteria.pop();
+
+        expect(multiFilter.type).toEqual('multi');
+        expect(multiFilter.operator).toEqual('OR');
+        expect(multiFilter.queries).toHaveLength(wrapper.vm.assignablePageTypes.length);
+    });
+
+    it('should indicate layouts already assigned to pages', async () => {
+        const wrapper = createWrapper();
+        const testData = {
+            isLoading: false,
+            pages: [
+                {
+                    id: '1a',
+                    sections: [],
+                    categories: [],
+                    products: [],
+                    translated: {
+                        name: 'CMS Page 1'
+                    }
+                },
+                {
+                    id: '2a',
+                    sections: [],
+                    categories: [],
+                    products: [],
+                    translated: {
+                        name: 'CMS Page 2'
+                    }
+                }
+            ],
+            linkedLayouts: [
+                {
+                    id: '2a'
+                }
+            ]
+        };
+
+        await wrapper.setData(testData);
+
+        expect(wrapper.vm.layoutIsLinked).toBeDefined();
+
+        expect(wrapper.vm.layoutIsLinked('1a')).toBeFalsy();
+        expect(wrapper.vm.layoutIsLinked('2a')).toBeTruthy();
+
+        const infoBoxes = wrapper.findAll('.sw-cms-list-item__info');
+
+        expect(infoBoxes).toHaveLength(2);
+
+        const unlinkedLayout = infoBoxes.filter(w => w.text() === 'CMS Page 1').at(0);
+        const linkedLayout = infoBoxes.filter(w => w.text() === 'CMS Page 2').at(0);
+
+        expect(() => unlinkedLayout.get('.sw-cms-list-item__status.is--active'))
+            .toThrow();
+        expect(linkedLayout.get('.sw-cms-list-item__status.is--active'))
+            .toBeTruthy();
     });
 });

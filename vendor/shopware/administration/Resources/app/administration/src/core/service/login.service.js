@@ -22,10 +22,6 @@ export default function createLoginService(httpClient, context, bearerAuth = nul
     const onLoginListener = [];
     const cookieStorage = cookieStorageFactory();
 
-    if (typeof removeLocalStorageImplementation === 'function') {
-        removeLocalStorageImplementation();
-    }
-
     return {
         loginByUsername,
         verifyUserByUsername,
@@ -40,7 +36,7 @@ export default function createLoginService(httpClient, context, bearerAuth = nul
         addOnLoginListener,
         getStorageKey,
         notifyOnLoginListener,
-        verifyUserToken
+        verifyUserToken,
     };
 
     /**
@@ -74,14 +70,14 @@ export default function createLoginService(httpClient, context, bearerAuth = nul
             client_id: 'administration',
             scopes: 'write',
             username: user,
-            password: pass
+            password: pass,
         }, {
-            baseURL: context.apiPath
+            baseURL: context.apiPath,
         }).then((response) => {
             const auth = setBearerAuthentication({
                 access: response.data.access_token,
                 refresh: response.data.refresh_token,
-                expiry: response.data.expires_in
+                expiry: response.data.expires_in,
             });
 
             window.localStorage.setItem('redirectFromLogin', 'true');
@@ -107,14 +103,14 @@ export default function createLoginService(httpClient, context, bearerAuth = nul
             grant_type: 'refresh_token',
             client_id: 'administration',
             scopes: 'write',
-            refresh_token: token
+            refresh_token: token,
         }, {
-            baseURL: context.apiPath
+            baseURL: context.apiPath,
         }).then((response) => {
             setBearerAuthentication({
                 access: response.data.access_token,
                 expiry: response.data.expires_in,
-                refresh: response.data.refresh_token
+                refresh: response.data.refresh_token,
             });
 
             return response.data.access_token;
@@ -127,14 +123,14 @@ export default function createLoginService(httpClient, context, bearerAuth = nul
             client_id: 'administration',
             scope: 'user-verified',
             username: user,
-            password: pass
+            password: pass,
         }, {
-            baseURL: context.apiPath
+            baseURL: context.apiPath,
         }).then((response) => {
             return {
                 access: response.data.access_token,
                 expiry: response.data.expires_in,
-                refresh: response.data.refresh_token
+                refresh: response.data.refresh_token,
             };
         });
     }
@@ -260,6 +256,10 @@ export default function createLoginService(httpClient, context, bearerAuth = nul
     function logout() {
         if (typeof document !== 'undefined' && typeof document.cookie !== 'undefined') {
             cookieStorage.removeItem(storageKey);
+
+            // @deprecated tag:v6.5.0 - Was needed for old cookies set without domain
+            // eslint-disable-next-line max-len
+            document.cookie = `bearerAuth=deleted; expires=Thu, 18 Dec 2013 12:00:00 UTC;path=${context.basePath + context.pathInfo}`;
         }
 
         context.authToken = null;
@@ -337,20 +337,8 @@ export default function createLoginService(httpClient, context, bearerAuth = nul
                 path: path,
                 domain: domain,
                 secure: false, // only allow HTTPs
-                sameSite: 'Strict' // Should be Strict
-            }
+                sameSite: 'Strict', // Should be Strict
+            },
         );
-    }
-
-    /**
-     * @deprecated tag:v6.4.0
-     * It resets the old localStorage implementation of the authentication.
-     * Can be removed in 6.3.0 because it is only needed for upgrading from
-     * 6.1 to 6.2
-     */
-    function removeLocalStorageImplementation() {
-        if (typeof localStorage !== 'undefined') {
-            localStorage.removeItem(storageKey);
-        }
     }
 }

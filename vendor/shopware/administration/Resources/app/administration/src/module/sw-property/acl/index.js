@@ -10,9 +10,15 @@ Shopware.Service('privileges')
                     'property_group:read',
                     'media_default_folder:read',
                     'media_folder:read',
-                    'media:read'
+                    'media:read',
+                    'user_config:read',
+                    'user_config:create',
+                    'user_config:update',
+                    'custom_field_set:read',
+                    'custom_field:read',
+                    'custom_field_set_relation:read',
                 ],
-                dependencies: []
+                dependencies: [],
             },
             editor: {
                 privileges: [
@@ -32,28 +38,28 @@ Shopware.Service('privileges')
                     'document_base_config:read',
                     'user:read',
                     'payment_method:read',
-                    'shipping_method:read'
-                ],
-                dependencies: [
-                    'property.viewer'
-                ]
-            },
-            creator: {
-                privileges: [
-                    'property_group:create'
+                    'shipping_method:read',
                 ],
                 dependencies: [
                     'property.viewer',
-                    'property.editor'
-                ]
+                ],
+            },
+            creator: {
+                privileges: [
+                    'property_group:create',
+                ],
+                dependencies: [
+                    'property.viewer',
+                    'property.editor',
+                ],
             },
             deleter: {
                 privileges: [
-                    'property_group:delete'
+                    'property_group:delete',
                 ],
                 dependencies: [
-                    'property.viewer'
-                ]
-            }
-        }
+                    'property.viewer',
+                ],
+            },
+        },
     });

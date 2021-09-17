@@ -39,7 +39,7 @@ class ConfirmDeliveryDateSubscriber implements EventSubscriberInterface
 
         // Query for delivery day and slot
         $context = $event->getSalesChannelContext();
-        $persistedData = $this->contextPersister->load($context->getToken());
+        $persistedData = $this->contextPersister->load($context->getToken(), $context->getSalesChannelId());
         if (isset($persistedData['deliveryDate'])) {
             $now = new DateTime();
             $createdAt = new DateTime($persistedData['customDeliveryTimestamp']);

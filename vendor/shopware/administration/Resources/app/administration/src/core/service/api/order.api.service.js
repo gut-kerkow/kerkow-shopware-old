@@ -29,7 +29,7 @@ class OrderApiService extends ApiService {
             .post(
                 route,
                 { quantity: quantity },
-                { additionalParams, headers }
+                { additionalParams, headers },
             );
     }
 
@@ -49,10 +49,10 @@ class OrderApiService extends ApiService {
                         type: item.type,
                         identifier: utils.createId(),
                         description: item.description,
-                        priceDefinition: dummyPrice }
+                        priceDefinition: dummyPrice },
                 ), {
                     additionalParams,
-                    headers
+                    headers,
                 });
     }
 
@@ -69,10 +69,38 @@ class OrderApiService extends ApiService {
                         type: item.type,
                         identifier: utils.createId(),
                         description: item.description,
-                        priceDefinition: dummyPrice }
+                        priceDefinition: dummyPrice },
                 ), {
                     additionalParams,
-                    headers
+                    headers,
+                });
+    }
+
+    addPromotionToOrder(orderId, versionId, code, additionalParams = {}, additionalHeaders = {}) {
+        const route = `_action/order/${orderId}/promotion-item`;
+        const headers = Object.assign(ApiService.getVersionHeader(versionId), this.getBasicHeaders(additionalHeaders));
+
+        return this.httpClient
+            .post(route,
+                JSON.stringify(
+                    { code },
+                ), {
+                    additionalParams,
+                    headers,
+                });
+    }
+
+    toggleAutomaticPromotions(orderId, versionId, skipAutomaticPromotions, additionalParams = {}, additionalHeaders = {}) {
+        const route = `_action/order/${orderId}/toggleAutomaticPromotions`;
+        const headers = Object.assign(ApiService.getVersionHeader(versionId), this.getBasicHeaders(additionalHeaders));
+
+        return this.httpClient
+            .post(route,
+                JSON.stringify(
+                    { skipAutomaticPromotions },
+                ), {
+                    additionalParams,
+                    headers,
                 });
     }
 
@@ -84,7 +112,7 @@ class OrderApiService extends ApiService {
         return this.httpClient
             .post(route, {}, {
                 params,
-                headers
+                headers,
             });
     }
 }

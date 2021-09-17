@@ -45,7 +45,7 @@ export default class FormAjaxSubmitPlugin extends Plugin {
          * route which should be forwarded to
          * when submitted
          */
-        forwardTo: false
+        forwardTo: false,
     };
 
     init() {
@@ -102,8 +102,10 @@ export default class FormAjaxSubmitPlugin extends Plugin {
 
         if (this.options.submitOnChange) {
             Iterator.iterate(this._form.elements, element => {
-                element.removeEventListener('change', onSubmit);
-                element.addEventListener('change', onSubmit);
+                if (element.removeEventListener !== undefined) {
+                    element.removeEventListener('change', onSubmit);
+                    element.addEventListener('change', onSubmit);
+                }
             });
         }
     }
@@ -149,10 +151,18 @@ export default class FormAjaxSubmitPlugin extends Plugin {
      */
     _fireRequest() {
         this._createLoadingIndicators();
+        /**
+         * @deprecated tag:v6.5.0 - beforeFireRequest event will be removed, use beforeSubmit instead
+         */
+        this.$emitter.publish('beforeFireRequest');
+        this.$emitter.publish('beforeSubmit');
+
+        this.sendAjaxFormSubmit();
+    }
+
+    sendAjaxFormSubmit() {
         const action = DomAccess.getAttribute(this._form, 'action');
         const method = DomAccess.getAttribute(this._form, 'method');
-
-        this.$emitter.publish('beforeFireRequest');
 
         if (method === 'get') {
             this._client.get(action, this._onAfterAjaxSubmit.bind(this));

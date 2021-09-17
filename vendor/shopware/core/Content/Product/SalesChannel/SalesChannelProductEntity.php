@@ -5,22 +5,14 @@ namespace Shopware\Core\Content\Product\SalesChannel;
 use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopware\Core\Checkout\Cart\Price\Struct\PriceCollection;
 use Shopware\Core\Content\Category\CategoryEntity;
+use Shopware\Core\Content\Product\DataAbstractionLayer\CheapestPrice\CalculatedCheapestPrice;
+use Shopware\Core\Content\Product\DataAbstractionLayer\CheapestPrice\CheapestPrice;
+use Shopware\Core\Content\Product\DataAbstractionLayer\CheapestPrice\CheapestPriceContainer;
 use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Content\Property\PropertyGroupCollection;
-use Shopware\Core\Framework\DataAbstractionLayer\Pricing\CalculatedListingPrice;
 
 class SalesChannelProductEntity extends ProductEntity
 {
-    /**
-     * @deprecated tag:v6.4.0 - Will be removed
-     */
-    public const VISIBILITY_FILTERED = 'product-visibility';
-
-    /**
-     * @var CalculatedListingPrice
-     */
-    protected $calculatedListingPrice;
-
     /**
      * @var PriceCollection
      */
@@ -37,6 +29,11 @@ class SalesChannelProductEntity extends ProductEntity
     protected $sortedProperties;
 
     /**
+     * @var CalculatedCheapestPrice
+     */
+    protected $calculatedCheapestPrice;
+
+    /**
      * @var bool
      */
     protected $isNew = false;
@@ -47,26 +44,22 @@ class SalesChannelProductEntity extends ProductEntity
     protected $calculatedMaxPurchase;
 
     /**
-     * @deprecated tag:v6.4.0 - Only used for backward compatibility
-     *
-     * @var PropertyGroupCollection|null
-     */
-    protected $configurator;
-
-    /**
      * @var CategoryEntity|null
      */
     protected $seoCategory;
 
-    public function getCalculatedListingPrice(): CalculatedListingPrice
-    {
-        return $this->calculatedListingPrice;
-    }
+    /**
+     * The container will be resolved on product.loaded event and
+     * the detected cheapest price will be set for the current context rules
+     *
+     * @var CheapestPrice|CheapestPriceContainer|null
+     */
+    protected $cheapestPrice;
 
-    public function setCalculatedListingPrice(CalculatedListingPrice $calculatedListingPrice): void
-    {
-        $this->calculatedListingPrice = $calculatedListingPrice;
-    }
+    /**
+     * @var CheapestPriceContainer|null
+     */
+    protected $cheapestPriceContainer;
 
     public function setCalculatedPrices(PriceCollection $prices): void
     {
@@ -98,11 +91,6 @@ class SalesChannelProductEntity extends ProductEntity
         $this->sortedProperties = $sortedProperties;
     }
 
-    public function hasPriceRange(): bool
-    {
-        return $this->getCalculatedListingPrice()->hasRange() || $this->getCalculatedPrices()->count() > 1;
-    }
-
     public function isNew(): bool
     {
         return $this->isNew;
@@ -123,22 +111,6 @@ class SalesChannelProductEntity extends ProductEntity
         $this->calculatedMaxPurchase = $calculatedMaxPurchase;
     }
 
-    /**
-     * @deprecated tag:v6.4.0 - Only used for backward compatibility
-     */
-    public function getConfigurator(): ?PropertyGroupCollection
-    {
-        return $this->configurator;
-    }
-
-    /**
-     * @deprecated tag:v6.4.0 - Only used for backward compatibility
-     */
-    public function setConfigurator(PropertyGroupCollection $configurator): void
-    {
-        $this->configurator = $configurator;
-    }
-
     public function getSeoCategory(): ?CategoryEntity
     {
         return $this->seoCategory;
@@ -147,5 +119,35 @@ class SalesChannelProductEntity extends ProductEntity
     public function setSeoCategory(?CategoryEntity $category): void
     {
         $this->seoCategory = $category;
+    }
+
+    public function getCalculatedCheapestPrice(): CalculatedCheapestPrice
+    {
+        return $this->calculatedCheapestPrice;
+    }
+
+    public function setCalculatedCheapestPrice(CalculatedCheapestPrice $calculatedCheapestPrice): void
+    {
+        $this->calculatedCheapestPrice = $calculatedCheapestPrice;
+    }
+
+    public function getCheapestPrice()
+    {
+        return $this->cheapestPrice;
+    }
+
+    public function setCheapestPrice(?CheapestPrice $cheapestPrice): void
+    {
+        $this->cheapestPrice = $cheapestPrice;
+    }
+
+    public function setCheapestPriceContainer(CheapestPriceContainer $container): void
+    {
+        $this->cheapestPriceContainer = $container;
+    }
+
+    public function getCheapestPriceContainer(): ?CheapestPriceContainer
+    {
+        return $this->cheapestPriceContainer;
     }
 }

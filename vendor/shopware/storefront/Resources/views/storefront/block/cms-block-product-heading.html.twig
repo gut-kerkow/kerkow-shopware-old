@@ -1,5 +1,4 @@
 {% block block_product_heading %}
-    <div class="row align-items-center product-detail-headline w-100">
     {% set productNameElement = block.slots.getSlot('left') %}
     {% set manufacturerLogoElement = block.slots.getSlot('right') %}
 
@@ -22,5 +21,4 @@
             {% endblock %}
         </div>
     {% endblock %}
-    </div>
 {% endblock %}

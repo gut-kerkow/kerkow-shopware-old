@@ -7,20 +7,11 @@ use Shopware\Core\Framework\Update\Struct\Version;
 
 class DownloadStep
 {
-    /**
-     * @var Version
-     */
-    private $version;
+    private Version $version;
 
-    /**
-     * @var string
-     */
-    private $destination;
+    private string $destination;
 
-    /**
-     * @var bool
-     */
-    private $testMode;
+    private bool $testMode;
 
     public function __construct(Version $version, string $destination, bool $testMode = false)
     {
@@ -36,21 +27,24 @@ class DownloadStep
     {
         if ($this->testMode === true && $offset >= 90) {
             return new FinishResult(100, 100);
-        } elseif ($this->testMode === true) {
+        }
+
+        if ($this->testMode === true) {
             return new ValidResult($offset + 10, 100);
         }
 
         if (is_file($this->destination) && filesize($this->destination) > 0) {
-            return new FinishResult($offset, $this->version->size);
+            return new FinishResult($offset, (int) $this->version->size);
         }
 
         $download = new Download();
         $startTime = microtime(true);
-        $download->setHaltCallback(function () use ($startTime) {
+        $download->setHaltCallback(static function () use ($startTime) {
             return microtime(true) - $startTime > 10;
         });
-        $offset = $download->downloadFile($this->version->uri, $this->destination, (int) $this->version->size, $this->version->sha1);
 
-        return new ValidResult($offset, (int) $this->version->size);
+        $offset = $download->downloadFile($this->version->uri, $this->destination, (int) ($this->version->size), $this->version->sha1);
+
+        return new ValidResult($offset, (int) ($this->version->size));
     }
 }

@@ -11,11 +11,6 @@
 			{% block page_product_detail_inner %}
 				{% block page_product_detail_content %}
 					<div class="product-detail-content">
-						{% block page_product_detail_breadcrumb %}
-							{{ parent() }}
-						{% endblock %}
-
-
 						{% set mediaItems = page.product.media.media %}
 
 						{% block page_product_detail_main %}

@@ -20,11 +20,11 @@ describe('Product: Test crud operations', () => {
         // Request we want to wait for later
         cy.server();
         cy.route({
-            url: '/api/v*/product',
+            url: `${Cypress.env('apiPath')}/_action/sync`,
             method: 'post'
         }).as('saveData');
         cy.route({
-            url: '/api/v*/_action/calculate-price',
+            url: `${Cypress.env('apiPath')}/_action/calculate-price`,
             method: 'post'
         }).as('calculatePrice');
 
@@ -37,6 +37,6 @@ describe('Product: Test crud operations', () => {
             expect(xhr).to.have.property('status', 400);
         });
 
-        cy.awaitAndCheckNotification('Please fill in all required fields.');
+        cy.awaitAndCheckNotification('This value should not be blank.');
     });
 });

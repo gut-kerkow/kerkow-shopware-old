@@ -1,13 +1,14 @@
 import template from './sendcloud-dashboard.html.twig';
 import '../../component/sendcloud-notification';
+import '../sendcloud-customs-info'
 
-const { Component } = Shopware;
+const {Component} = Shopware;
 
 Component.register('sendcloud-dashboard', {
     template,
 
     inject: [
-        'pluginService'
+        'sendcloudService'
     ],
 
     data() {
@@ -15,26 +16,33 @@ Component.register('sendcloud-dashboard', {
             isLoading: true,
             isServicePointEnabled: false,
             salesChannel: '',
-            sendcloudUrl: ''
+            sendcloudUrl: '',
+            activeTab: 'dashboard',
+
+            shipmentTypes: [],
+            countries: [],
+            customFields: [],
+            shipmentType: ''
         };
     },
 
-    created: function() {
+    created: function () {
         this.getDashboardConfig();
     },
 
     methods: {
-        getDashboardConfig: function() {
-            const headers = this.pluginService.getBasicHeaders();
+        getDashboardConfig: function () {
 
-            return this.pluginService.httpClient
-                .get('/sendcloud/dashboard', {headers})
-                .then((response) => {
+            return this.sendcloudService.getDashboardConfig()
+                .then((configData) => {
                     this.isLoading = false;
-                    let configData = Shopware.Classes.ApiService.handleResponse(response);
                     this.isServicePointEnabled = configData.isServicePointEnabled;
                     this.salesChannel = configData.salesChannel;
                     this.sendcloudUrl = configData.sendcloudUrl;
+                    this.shipmentTypes = configData.shipmentTypes;
+                    this.countries = configData.countries;
+                    this.customFields = configData.customFields;
+                    this.shipmentType = configData.shipmentTypePreselectedValue;
                 }).catch(error => {
 
                 });

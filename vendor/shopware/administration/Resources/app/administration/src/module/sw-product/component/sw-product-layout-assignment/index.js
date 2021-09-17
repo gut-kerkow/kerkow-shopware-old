@@ -6,12 +6,14 @@ const { Component } = Shopware;
 Component.register('sw-product-layout-assignment', {
     template,
 
+    inject: ['acl'],
+
     props: {
         cmsPage: {
             type: Object,
             required: false,
-            default: null
-        }
+            default: null,
+        },
     },
 
     methods: {
@@ -25,6 +27,6 @@ Component.register('sw-product-layout-assignment', {
 
         onLayoutReset() {
             this.$emit('button-delete-click');
-        }
-    }
+        },
+    },
 });

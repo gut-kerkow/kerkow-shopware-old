@@ -19,7 +19,7 @@ abstract class Adapter implements \SeekableIterator, \Countable
      */
     public function seek($position): void
     {
-        $this->position = (int) $position;
+        $this->position = $position;
     }
 
     public function count(): int
@@ -48,12 +48,12 @@ abstract class Adapter implements \SeekableIterator, \Countable
     }
 
     /**
-     * @return array|bool
+     * @return array
      */
     public function each()
     {
         if (!$this->valid()) {
-            return false;
+            return [];
         }
         $result = [$this->key(), $this->current()];
         $this->next();

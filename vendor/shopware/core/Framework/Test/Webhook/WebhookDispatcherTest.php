@@ -28,37 +28,34 @@ use Shopware\Core\Framework\Event\NestedEventCollection;
 use Shopware\Core\Framework\Test\App\GuzzleTestClientBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\Framework\Webhook\Hookable\HookableEventFactory;
+use Shopware\Core\Framework\Webhook\Message\WebhookEventMessage;
 use Shopware\Core\Framework\Webhook\WebhookDispatcher;
+use Shopware\Core\Kernel;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\EventDispatcher\EventDispatcher;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 class WebhookDispatcherTest extends TestCase
 {
     use GuzzleTestClientBehaviour;
 
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $webhookRepository;
+    private EntityRepositoryInterface $webhookRepository;
 
-    /**
-     * @var string
-     */
-    private $shopUrl;
+    private string $shopUrl;
 
-    /**
-     * @var ShopIdProvider
-     */
-    private $shopIdProvider;
+    private ShopIdProvider $shopIdProvider;
+
+    private MessageBusInterface $bus;
 
     public function setUp(): void
     {
         $this->webhookRepository = $this->getContainer()->get('webhook.repository');
         $this->shopUrl = $_SERVER['APP_URL'];
         $this->shopIdProvider = $this->getContainer()->get(ShopIdProvider::class);
+        $this->bus = $this->createMock(MessageBusInterface::class);
     }
 
     public function testDispatchesBusinessEventToWebhookWithoutApp(): void
@@ -78,9 +75,19 @@ class WebhookDispatcherTest extends TestCase
             'test@example.com'
         );
 
-        /** @var EventDispatcherInterface $eventDispatcher */
-        $eventDispatcher = $this->getContainer()->get(WebhookDispatcher::class);
-        $event = $eventDispatcher->dispatch($event);
+        $webhookDispatcher = new WebhookDispatcher(
+            $this->getContainer()->get('event_dispatcher'),
+            $this->getContainer()->get(Connection::class),
+            $this->getContainer()->get('shopware.app_system.guzzle'),
+            $this->shopUrl,
+            $this->getContainer(),
+            $this->getContainer()->get(HookableEventFactory::class),
+            Kernel::SHOPWARE_FALLBACK_VERSION,
+            $this->bus,
+            true
+        );
+        $webhookDispatcher->dispatch($event);
+
         static::assertInstanceOf(CustomerBeforeLoginEvent::class, $event);
 
         /** @var Request $request */
@@ -106,43 +113,72 @@ class WebhookDispatcherTest extends TestCase
 
     public function testDispatchesWrappedEntityWrittenEventToWebhookWithoutApp(): void
     {
+        $context = Context::createDefaultContext();
         $this->webhookRepository->upsert([
             [
                 'name' => 'hook1',
                 'eventName' => ProductEvents::PRODUCT_WRITTEN_EVENT,
                 'url' => 'https://test.com',
             ],
-        ], Context::createDefaultContext());
+        ], $context);
 
         $this->appendNewResponse(new Response(200));
 
         $id = Uuid::randomHex();
 
-        /** @var EntityRepositoryInterface $productRepository */
-        $productRepository = $this->getContainer()->get('product.repository');
-        $productRepository->upsert([
-            [
-                'id' => $id,
-                'name' => 'testProduct',
-                'productNumber' => 'SWC-1000',
-                'stock' => 100,
-                'manufacturer' => [
-                    'name' => 'app creator',
-                ],
-                'price' => [
+        $event = new EntityWrittenContainerEvent(
+            $context,
+            new NestedEventCollection([
+                new EntityWrittenEvent(
+                    ProductDefinition::ENTITY_NAME,
                     [
-                        'gross' => 100,
-                        'net' => 200,
-                        'linked' => false,
-                        'currencyId' => Defaults::CURRENCY,
+                        new EntityWriteResult(
+                            $id,
+                            [
+                                'id' => $id,
+                                'name' => 'testProduct',
+                                'productNumber' => 'SWC-1000',
+                                'stock' => 100,
+                                'manufacturer' => [
+                                    'name' => 'app creator',
+                                ],
+                                'price' => [
+                                    [
+                                        'gross' => 100,
+                                        'net' => 200,
+                                        'linked' => false,
+                                        'currencyId' => Defaults::CURRENCY,
+                                    ],
+                                ],
+                                'tax' => [
+                                    'name' => 'luxury',
+                                    'taxRate' => '25',
+                                ],
+                            ],
+                            ProductDefinition::ENTITY_NAME,
+                            EntityWriteResult::OPERATION_INSERT,
+                            null,
+                            null
+                        ),
                     ],
-                ],
-                'tax' => [
-                    'name' => 'luxury',
-                    'taxRate' => '25',
-                ],
-            ],
-        ], Context::createDefaultContext());
+                    $context
+                ),
+            ]),
+            []
+        );
+
+        $webhookDispatcher = new WebhookDispatcher(
+            $this->getContainer()->get('event_dispatcher'),
+            $this->getContainer()->get(Connection::class),
+            $this->getContainer()->get('shopware.app_system.guzzle'),
+            $this->shopUrl,
+            $this->getContainer(),
+            $this->getContainer()->get(HookableEventFactory::class),
+            Kernel::SHOPWARE_FALLBACK_VERSION,
+            $this->bus,
+            true
+        );
+        $webhookDispatcher->dispatch($event);
 
         /** @var Request $request */
         $request = $this->getLastRequest();
@@ -170,23 +206,13 @@ class WebhookDispatcherTest extends TestCase
         ], $payload);
 
         $expectedUpdatedFields = [
-            'versionId',
             'id',
-            'parentVersionId',
-            'manufacturerId',
-            'productManufacturerVersionId',
-            'taxId',
+            'manufacturer',
+            'tax',
             'stock',
             'price',
             'productNumber',
-            'isCloseout',
-            'purchaseSteps',
-            'minPurchase',
-            'shippingFree',
-            'restockTime',
-            'createdAt',
             'name',
-            'active',
         ];
 
         foreach ($expectedUpdatedFields as $field) {
@@ -213,7 +239,10 @@ class WebhookDispatcherTest extends TestCase
             $clientMock,
             $this->shopUrl,
             $this->getContainer(),
-            $this->getContainer()->get(HookableEventFactory::class)
+            $this->getContainer()->get(HookableEventFactory::class),
+            Kernel::SHOPWARE_FALLBACK_VERSION,
+            $this->bus,
+            true
         );
 
         $webhookDispatcher->dispatch($event);
@@ -247,7 +276,10 @@ class WebhookDispatcherTest extends TestCase
             $clientMock,
             $this->shopUrl,
             $this->getContainer(),
-            $this->getContainer()->get(HookableEventFactory::class)
+            $this->getContainer()->get(HookableEventFactory::class),
+            Kernel::SHOPWARE_FALLBACK_VERSION,
+            $this->bus,
+            true
         );
 
         $webhookDispatcher->dispatch($event);
@@ -265,7 +297,10 @@ class WebhookDispatcherTest extends TestCase
             $this->getContainer()->get('shopware.app_system.guzzle'),
             $this->shopUrl,
             $this->getContainer(),
-            $this->getContainer()->get(HookableEventFactory::class)
+            $this->getContainer()->get(HookableEventFactory::class),
+            Kernel::SHOPWARE_FALLBACK_VERSION,
+            $this->bus,
+            true
         );
 
         $webhookDispatcher->addSubscriber(new MockSubscriber());
@@ -283,7 +318,10 @@ class WebhookDispatcherTest extends TestCase
             $this->getContainer()->get('shopware.app_system.guzzle'),
             $this->shopUrl,
             $this->getContainer(),
-            $this->getContainer()->get(HookableEventFactory::class)
+            $this->getContainer()->get(HookableEventFactory::class),
+            Kernel::SHOPWARE_FALLBACK_VERSION,
+            $this->bus,
+            true
         );
 
         $webhookDispatcher->removeSubscriber(new MockSubscriber());
@@ -327,9 +365,19 @@ class WebhookDispatcherTest extends TestCase
             'test@example.com'
         );
 
-        /** @var EventDispatcherInterface $eventDispatcher */
-        $eventDispatcher = $this->getContainer()->get('event_dispatcher');
-        $eventDispatcher->dispatch($event);
+        $webhookDispatcher = new WebhookDispatcher(
+            $this->getContainer()->get('event_dispatcher'),
+            $this->getContainer()->get(Connection::class),
+            $this->getContainer()->get('shopware.app_system.guzzle'),
+            $this->shopUrl,
+            $this->getContainer(),
+            $this->getContainer()->get(HookableEventFactory::class),
+            Kernel::SHOPWARE_FALLBACK_VERSION,
+            $this->bus,
+            true
+        );
+
+        $webhookDispatcher->dispatch($event);
 
         /** @var Request $request */
         $request = $this->getLastRequest();
@@ -356,6 +404,8 @@ class WebhookDispatcherTest extends TestCase
             hash_hmac('sha256', $body, 's3cr3t'),
             $request->getHeaderLine('shopware-shop-signature')
         );
+
+        static::assertNotEmpty($request->getHeaderLine('sw-version'));
     }
 
     public function testDoesNotDispatchBusinessEventIfAppIsInactive(): void
@@ -406,17 +456,16 @@ class WebhookDispatcherTest extends TestCase
             'testToken'
         );
 
-        $clientMock = $this->createMock(Client::class);
-        $clientMock->expects(static::never())
-            ->method('sendAsync');
-
         $webhookDispatcher = new WebhookDispatcher(
             $this->getContainer()->get('event_dispatcher'),
             $this->getContainer()->get(Connection::class),
-            $clientMock,
+            $this->getContainer()->get('shopware.app_system.guzzle'),
             $this->shopUrl,
             $this->getContainer(),
-            $this->getContainer()->get(HookableEventFactory::class)
+            $this->getContainer()->get(HookableEventFactory::class),
+            Kernel::SHOPWARE_FALLBACK_VERSION,
+            $this->bus,
+            true
         );
 
         $webhookDispatcher->dispatch($event);
@@ -469,7 +518,10 @@ class WebhookDispatcherTest extends TestCase
             $clientMock,
             $this->shopUrl,
             $this->getContainer(),
-            $this->getContainer()->get(HookableEventFactory::class)
+            $this->getContainer()->get(HookableEventFactory::class),
+            Kernel::SHOPWARE_FALLBACK_VERSION,
+            $this->bus,
+            true
         );
 
         $webhookDispatcher->dispatch($event);
@@ -508,7 +560,6 @@ class WebhookDispatcherTest extends TestCase
             ],
         ]], Context::createDefaultContext());
 
-        /** @var PermissionPersister $permissionPersister */
         $permissionPersister = $this->getContainer()->get(PermissionPersister::class);
         $permissions = Permissions::fromArray([
             'customer' => ['read'],
@@ -524,9 +575,19 @@ class WebhookDispatcherTest extends TestCase
             'testToken'
         );
 
-        /** @var EventDispatcherInterface $eventDispatcher */
-        $eventDispatcher = $this->getContainer()->get('event_dispatcher');
-        $eventDispatcher->dispatch($event);
+        $webhookDispatcher = new WebhookDispatcher(
+            $this->getContainer()->get('event_dispatcher'),
+            $this->getContainer()->get(Connection::class),
+            $this->getContainer()->get('shopware.app_system.guzzle'),
+            $this->shopUrl,
+            $this->getContainer(),
+            $this->getContainer()->get(HookableEventFactory::class),
+            Kernel::SHOPWARE_FALLBACK_VERSION,
+            $this->bus,
+            true
+        );
+
+        $webhookDispatcher->dispatch($event);
 
         /** @var Request $request */
         $request = $this->getLastRequest();
@@ -557,6 +618,8 @@ class WebhookDispatcherTest extends TestCase
             hash_hmac('sha256', $body, 's3cr3t'),
             $request->getHeaderLine('shopware-shop-signature')
         );
+
+        static::assertNotEmpty($request->getHeaderLine('sw-version'));
     }
 
     public function testDoesNotDispatchBusinessEventIfAppUrlChangeWasDetected(): void
@@ -591,7 +654,6 @@ class WebhookDispatcherTest extends TestCase
             ],
         ]], Context::createDefaultContext());
 
-        /** @var PermissionPersister $permissionPersister */
         $permissionPersister = $this->getContainer()->get(PermissionPersister::class);
         $permissions = Permissions::fromArray([
             'customer' => ['read'],
@@ -599,7 +661,6 @@ class WebhookDispatcherTest extends TestCase
 
         $permissionPersister->updatePrivileges($permissions, $aclRoleId);
 
-        /** @var SystemConfigService $systemConfigService */
         $systemConfigService = $this->getContainer()->get(SystemConfigService::class);
         $systemConfigService->set(ShopIdProvider::SHOP_ID_SYSTEM_CONFIG_KEY, [
             'app_url' => 'https://test.com',
@@ -622,7 +683,10 @@ class WebhookDispatcherTest extends TestCase
             $clientMock,
             $this->shopUrl,
             $this->getContainer(),
-            $this->getContainer()->get(HookableEventFactory::class)
+            $this->getContainer()->get(HookableEventFactory::class),
+            Kernel::SHOPWARE_FALLBACK_VERSION,
+            $this->bus,
+            true
         );
 
         $webhookDispatcher->dispatch($event);
@@ -673,7 +737,10 @@ class WebhookDispatcherTest extends TestCase
             $clientMock,
             $this->shopUrl,
             $this->getContainer(),
-            $this->getContainer()->get(HookableEventFactory::class)
+            $this->getContainer()->get(HookableEventFactory::class),
+            Kernel::SHOPWARE_FALLBACK_VERSION,
+            $this->bus,
+            true
         );
 
         $webhookDispatcher->dispatch($event);
@@ -724,9 +791,19 @@ class WebhookDispatcherTest extends TestCase
         $entityId = Uuid::randomHex();
         $event = $this->getEntityWrittenEvent($entityId);
 
-        /** @var EventDispatcherInterface $eventDispatcher */
-        $eventDispatcher = $this->getContainer()->get('event_dispatcher');
-        $eventDispatcher->dispatch($event);
+        $webhookDispatcher = new WebhookDispatcher(
+            $this->getContainer()->get('event_dispatcher'),
+            $this->getContainer()->get(Connection::class),
+            $this->getContainer()->get('shopware.app_system.guzzle'),
+            $this->shopUrl,
+            $this->getContainer(),
+            $this->getContainer()->get(HookableEventFactory::class),
+            Kernel::SHOPWARE_FALLBACK_VERSION,
+            $this->bus,
+            true
+        );
+
+        $webhookDispatcher->dispatch($event);
 
         /** @var Request $request */
         $request = $this->getLastRequest();
@@ -808,7 +885,10 @@ class WebhookDispatcherTest extends TestCase
             $clientMock,
             $this->shopUrl,
             $this->getContainer(),
-            $this->getContainer()->get(HookableEventFactory::class)
+            $this->getContainer()->get(HookableEventFactory::class),
+            Kernel::SHOPWARE_FALLBACK_VERSION,
+            $this->bus,
+            true
         );
 
         $webhookDispatcher->dispatch($event);
@@ -852,9 +932,19 @@ class WebhookDispatcherTest extends TestCase
 
         $event = new AppDeletedEvent($appId, Context::createDefaultContext());
 
-        /** @var EventDispatcherInterface $eventDispatcher */
-        $eventDispatcher = $this->getContainer()->get('event_dispatcher');
-        $eventDispatcher->dispatch($event);
+        $webhookDispatcher = new WebhookDispatcher(
+            $this->getContainer()->get('event_dispatcher'),
+            $this->getContainer()->get(Connection::class),
+            $this->getContainer()->get('shopware.app_system.guzzle'),
+            $this->shopUrl,
+            $this->getContainer(),
+            $this->getContainer()->get(HookableEventFactory::class),
+            Kernel::SHOPWARE_FALLBACK_VERSION,
+            $this->bus,
+            true
+        );
+
+        $webhookDispatcher->dispatch($event);
 
         /** @var Request $request */
         $request = $this->getLastRequest();
@@ -881,6 +971,314 @@ class WebhookDispatcherTest extends TestCase
             hash_hmac('sha256', $body, 's3cr3t'),
             $request->getHeaderLine('shopware-shop-signature')
         );
+
+        static::assertNotEmpty($request->getHeaderLine('sw-version'));
+    }
+
+    public function testItDoesDispatchAppLifecycleEventForInactiveApp(): void
+    {
+        $aclRoleId = Uuid::randomHex();
+        $appId = Uuid::randomHex();
+
+        $appRepository = $this->getContainer()->get('app.repository');
+        $appRepository->create([[
+            'id' => $appId,
+            'name' => 'SwagApp',
+            'active' => false,
+            'path' => __DIR__ . '/Manifest/_fixtures/test',
+            'version' => '0.0.1',
+            'label' => 'test',
+            'accessToken' => 'test',
+            'appSecret' => 's3cr3t',
+            'integration' => [
+                'label' => 'test',
+                'writeAccess' => false,
+                'accessKey' => 'api access key',
+                'secretAccessKey' => 'test',
+            ],
+            'aclRole' => [
+                'id' => $aclRoleId,
+                'name' => 'SwagApp',
+            ],
+            'webhooks' => [
+                [
+                    'name' => 'hook1',
+                    'eventName' => AppDeletedEvent::NAME,
+                    'url' => 'https://test.com',
+                ],
+            ],
+        ]], Context::createDefaultContext());
+
+        $this->appendNewResponse(new Response(200));
+
+        $event = new AppDeletedEvent($appId, Context::createDefaultContext());
+
+        $webhookDispatcher = new WebhookDispatcher(
+            $this->getContainer()->get('event_dispatcher'),
+            $this->getContainer()->get(Connection::class),
+            $this->getContainer()->get('shopware.app_system.guzzle'),
+            $this->shopUrl,
+            $this->getContainer(),
+            $this->getContainer()->get(HookableEventFactory::class),
+            Kernel::SHOPWARE_FALLBACK_VERSION,
+            $this->bus,
+            true
+        );
+
+        $webhookDispatcher->dispatch($event);
+
+        /** @var Request $request */
+        $request = $this->getLastRequest();
+
+        static::assertEquals('POST', $request->getMethod());
+        $body = $request->getBody()->getContents();
+        static::assertJson($body);
+
+        $data = json_decode($body, true);
+
+        static::assertEquals([
+            'data' => [
+                'payload' => [],
+                'event' => AppDeletedEvent::NAME,
+            ],
+            'source' => [
+                'url' => $this->shopUrl,
+                'appVersion' => '0.0.1',
+                'shopId' => $this->shopIdProvider->getShopId(),
+            ],
+        ], $data);
+
+        static::assertEquals(
+            hash_hmac('sha256', $body, 's3cr3t'),
+            $request->getHeaderLine('shopware-shop-signature')
+        );
+    }
+
+    public function testItDoesDispatchWebhookMessageQueueWithAppActive(): void
+    {
+        $aclRoleId = Uuid::randomHex();
+        $appId = Uuid::randomHex();
+        $webhookId = Uuid::randomHex();
+        $appRepository = $this->getContainer()->get('app.repository');
+        $appRepository->create([[
+            'id' => $appId,
+            'name' => 'SwagApp',
+            'active' => true,
+            'path' => __DIR__ . '/Manifest/_fixtures/test',
+            'version' => '0.0.1',
+            'label' => 'test',
+            'accessToken' => 'test',
+            'appSecret' => 's3cr3t',
+            'integration' => [
+                'label' => 'test',
+                'writeAccess' => false,
+                'accessKey' => 'api access key',
+                'secretAccessKey' => 'test',
+            ],
+            'aclRole' => [
+                'id' => $aclRoleId,
+                'name' => 'SwagApp',
+            ],
+            'webhooks' => [
+                [
+                    'id' => $webhookId,
+                    'name' => 'hook1',
+                    'eventName' => ProductEvents::PRODUCT_WRITTEN_EVENT,
+                    'url' => 'https://test.com',
+                ],
+            ],
+        ]], Context::createDefaultContext());
+
+        $permissionPersister = $this->getContainer()->get(PermissionPersister::class);
+        $permissions = Permissions::fromArray([
+            'product' => ['read'],
+        ]);
+
+        $permissionPersister->updatePrivileges($permissions, $aclRoleId);
+
+        $entityId = Uuid::randomHex();
+        $event = $this->getEntityWrittenEvent($entityId);
+
+        $clientMock = $this->createMock(Client::class);
+        $clientMock->expects(static::never())
+            ->method('sendAsync');
+
+        $payload = [
+            'data' => [
+                'payload' => [
+                    [
+                        'entity' => 'product',
+                        'operation' => 'delete',
+                        'primaryKey' => $entityId,
+                        'updatedFields' => ['id'],
+                    ],
+                ],
+                'event' => ProductEvents::PRODUCT_WRITTEN_EVENT,
+            ],
+            'source' => [
+                'url' => $this->shopUrl,
+                'appVersion' => '0.0.1',
+                'shopId' => $this->shopIdProvider->getShopId(),
+            ],
+        ];
+
+        $webhookEventId = Uuid::randomHex();
+
+        $shopwareVersion = Kernel::SHOPWARE_FALLBACK_VERSION;
+
+        $this->bus->expects(static::once())
+            ->method('dispatch')
+            ->with(static::callback(function (WebhookEventMessage $message) use ($payload, $appId, $webhookId, $shopwareVersion) {
+                static::assertEquals($payload, $message->getPayload());
+                static::assertEquals($appId, $message->getAppId());
+                static::assertEquals($webhookId, $message->getWebhookId());
+                static::assertEquals($shopwareVersion, $message->getShopwareVersion());
+                static::assertEquals('s3cr3t', $message->getSecret());
+
+                return true;
+            }))
+            ->willReturn(new Envelope(new WebhookEventMessage($webhookEventId, $payload, $appId, $webhookId, $shopwareVersion, 'https://test.com', 's3cr3t')));
+
+        $webhookDispatcher = new WebhookDispatcher(
+            $this->getContainer()->get('event_dispatcher'),
+            $this->getContainer()->get(Connection::class),
+            $clientMock,
+            $this->shopUrl,
+            $this->getContainer(),
+            $this->getContainer()->get(HookableEventFactory::class),
+            Kernel::SHOPWARE_FALLBACK_VERSION,
+            $this->bus,
+            false
+        );
+        $webhookDispatcher->dispatch($event);
+    }
+
+    public function testItDoesNotDispatchWebhookMessageQueueWithAppInActive(): void
+    {
+        $aclRoleId = Uuid::randomHex();
+        $appRepository = $this->getContainer()->get('app.repository');
+        $appRepository->create([[
+            'name' => 'SwagApp',
+            'active' => false,
+            'path' => __DIR__ . '/Manifest/_fixtures/test',
+            'version' => '0.0.1',
+            'label' => 'test',
+            'accessToken' => 'test',
+            'appSecret' => 's3cr3t',
+            'integration' => [
+                'label' => 'test',
+                'writeAccess' => false,
+                'accessKey' => 'api access key',
+                'secretAccessKey' => 'test',
+            ],
+            'aclRole' => [
+                'id' => $aclRoleId,
+                'name' => 'SwagApp',
+            ],
+            'webhooks' => [
+                [
+                    'name' => 'hook1',
+                    'eventName' => ProductEvents::PRODUCT_WRITTEN_EVENT,
+                    'url' => 'https://test.com',
+                ],
+            ],
+        ]], Context::createDefaultContext());
+
+        $permissionPersister = $this->getContainer()->get(PermissionPersister::class);
+        $permissions = Permissions::fromArray([
+            'product' => ['read'],
+        ]);
+
+        $permissionPersister->updatePrivileges($permissions, $aclRoleId);
+
+        $entityId = Uuid::randomHex();
+        $event = $this->getEntityWrittenEvent($entityId);
+
+        $clientMock = $this->createMock(Client::class);
+        $clientMock->expects(static::never())
+            ->method('sendAsync');
+
+        $this->bus->expects(static::never())
+            ->method('dispatch');
+
+        $webhookDispatcher = new WebhookDispatcher(
+            $this->getContainer()->get('event_dispatcher'),
+            $this->getContainer()->get(Connection::class),
+            $clientMock,
+            $this->shopUrl,
+            $this->getContainer(),
+            $this->getContainer()->get(HookableEventFactory::class),
+            Kernel::SHOPWARE_FALLBACK_VERSION,
+            $this->bus,
+            false
+        );
+        $webhookDispatcher->dispatch($event);
+    }
+
+    public function testItDoesDispatchWebhookMessageQueueWithoutApp(): void
+    {
+        $webhookId = Uuid::randomHex();
+        $this->webhookRepository->upsert([
+            [
+                'id' => $webhookId,
+                'name' => 'hook1',
+                'eventName' => ProductEvents::PRODUCT_WRITTEN_EVENT,
+                'url' => 'https://test.com',
+            ],
+        ], Context::createDefaultContext());
+
+        $entityId = Uuid::randomHex();
+        $event = $this->getEntityWrittenEvent($entityId);
+
+        $clientMock = $this->createMock(Client::class);
+        $clientMock->expects(static::never())
+            ->method('sendAsync');
+
+        $payload = [
+            'data' => [
+                'payload' => [
+                    [
+                        'entity' => 'product',
+                        'operation' => 'delete',
+                        'primaryKey' => $entityId,
+                        'updatedFields' => ['id'],
+                    ],
+                ],
+                'event' => ProductEvents::PRODUCT_WRITTEN_EVENT,
+            ],
+            'source' => [
+                'url' => $this->shopUrl,
+            ],
+        ];
+
+        $webhookEventId = Uuid::randomHex();
+        $shopwareVersion = Kernel::SHOPWARE_FALLBACK_VERSION;
+
+        $this->bus->expects(static::once())
+            ->method('dispatch')
+            ->with(static::callback(function (WebhookEventMessage $message) use ($payload, $webhookId, $shopwareVersion) {
+                static::assertEquals($payload, $message->getPayload());
+                static::assertEquals($webhookId, $message->getWebhookId());
+                static::assertEquals($shopwareVersion, $message->getShopwareVersion());
+                static::assertNull($message->getAppId());
+                static::assertNull($message->getSecret());
+
+                return true;
+            }))
+            ->willReturn(new Envelope(new WebhookEventMessage($webhookEventId, $payload, null, $webhookId, $shopwareVersion, 'https://test.com', null)));
+
+        $webhookDispatcher = new WebhookDispatcher(
+            $this->getContainer()->get('event_dispatcher'),
+            $this->getContainer()->get(Connection::class),
+            $clientMock,
+            $this->shopUrl,
+            $this->getContainer(),
+            $this->getContainer()->get(HookableEventFactory::class),
+            Kernel::SHOPWARE_FALLBACK_VERSION,
+            $this->bus,
+            false
+        );
+        $webhookDispatcher->dispatch($event);
     }
 
     private function getEntityWrittenEvent(string $entityId): EntityWrittenContainerEvent

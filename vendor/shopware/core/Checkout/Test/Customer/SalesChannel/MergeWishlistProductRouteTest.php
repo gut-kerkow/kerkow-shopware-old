@@ -11,9 +11,11 @@ use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestDataCollection;
 use Shopware\Core\Framework\Util\Random;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\PlatformRequest;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
+/**
+ * @group store-api
+ */
 class MergeWishlistProductRouteTest extends TestCase
 {
     use IntegrationTestBehaviour;
@@ -70,14 +72,13 @@ class MergeWishlistProductRouteTest extends TestCase
         $email = Uuid::randomHex() . '@example.com';
         $this->customerId = $this->createCustomer('shopware', $email);
 
-        /* @var SystemConfigService $systemConfigService */
         $this->systemConfigService = $this->getContainer()->get(SystemConfigService::class);
         $this->systemConfigService->set('core.cart.wishlistEnabled', true);
 
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/account/login',
+                '/store-api/account/login',
                 [
                     'email' => $email,
                     'password' => 'shopware',
@@ -96,7 +97,7 @@ class MergeWishlistProductRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/customer/wishlist/merge',
+                '/store-api/customer/wishlist/merge',
                 [
                     'productIds' => [
                         'id' => $productData,
@@ -119,7 +120,7 @@ class MergeWishlistProductRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/customer/wishlist/merge',
+                '/store-api/customer/wishlist/merge',
                 [
                     'productIds' => [
                         $productDataOne, $productDataTwo,
@@ -143,7 +144,7 @@ class MergeWishlistProductRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/customer/wishlist/merge',
+                '/store-api/customer/wishlist/merge',
                 [
                     'productIds' => [
                         $productDataOne,
@@ -167,7 +168,7 @@ class MergeWishlistProductRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/customer/wishlist/merge',
+                '/store-api/customer/wishlist/merge',
                 [
                     'productIds' => [
                         'id' => Uuid::randomHex(),
@@ -192,7 +193,7 @@ class MergeWishlistProductRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/customer/wishlist/merge',
+                '/store-api/customer/wishlist/merge',
                 [
                     'productIds' => [
                         'id' => Uuid::randomHex(),
@@ -215,7 +216,7 @@ class MergeWishlistProductRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/customer/wishlist/merge',
+                '/store-api/customer/wishlist/merge',
                 [
                     'productIds' => [
                         'id' => Uuid::randomHex(),
@@ -238,7 +239,7 @@ class MergeWishlistProductRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/customer/wishlist/merge',
+                '/store-api/customer/wishlist/merge',
                 [
                     'productIds' => [
                         'id' => $productData,
@@ -263,7 +264,7 @@ class MergeWishlistProductRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/customer/wishlist/merge',
+                '/store-api/customer/wishlist/merge',
                 [
                     'productIds' => [
                         'id' => $newProductData,
@@ -286,7 +287,7 @@ class MergeWishlistProductRouteTest extends TestCase
         $this->browser
             ->request(
                 'POST',
-                '/store-api/v' . PlatformRequest::API_VERSION . '/customer/wishlist/merge',
+                '/store-api/customer/wishlist/merge',
                 [
                     'productIds' => [
                         'id' => $alreadyProductData,

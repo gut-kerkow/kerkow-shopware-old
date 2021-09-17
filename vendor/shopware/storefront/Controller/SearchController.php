@@ -39,11 +39,11 @@ class SearchController extends StorefrontController
     public function __construct(
         SearchPageLoader $searchPageLoader,
         SuggestPageLoader $suggestPageLoader,
-        AbstractProductSearchRoute $productSearchRout
+        AbstractProductSearchRoute $productSearchRoute
     ) {
         $this->searchPageLoader = $searchPageLoader;
         $this->suggestPageLoader = $suggestPageLoader;
-        $this->productSearchRoute = $productSearchRout;
+        $this->productSearchRoute = $productSearchRoute;
     }
 
     /**
@@ -99,7 +99,10 @@ class SearchController extends StorefrontController
 
         $page = $this->searchPageLoader->load($request, $context);
 
-        return $this->renderStorefront('@Storefront/storefront/page/search/search-pagelet.html.twig', ['page' => $page]);
+        $response = $this->renderStorefront('@Storefront/storefront/page/search/search-pagelet.html.twig', ['page' => $page]);
+        $response->headers->set('x-robots-tag', 'noindex');
+
+        return $response;
     }
 
     /**
@@ -136,6 +139,9 @@ class SearchController extends StorefrontController
             $mapped[$aggregation->getName()] = $aggregation;
         }
 
-        return new JsonResponse($mapped);
+        $response = new JsonResponse($mapped);
+        $response->headers->set('x-robots-tag', 'noindex');
+
+        return $response;
     }
 }

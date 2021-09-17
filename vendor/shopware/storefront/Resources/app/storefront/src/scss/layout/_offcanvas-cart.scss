@@ -59,12 +59,19 @@ Extends the basic offcanvas component with additional cart styles.
 
     .cart-item-details {
         margin-bottom: $spacer;
+        word-break: break-word;
     }
 
     .cart-item-details-container {
         .cart-item-details {
             margin-right: 58px;
         }
+    }
+
+    .cart-item-children {
+        margin-left: 4px;
+        margin-right: 4px;
+        width: 100%;
     }
 
     .cart-item-remove {
@@ -132,5 +139,13 @@ Extends the basic offcanvas component with additional cart styles.
     .summary-value,
     .shipping-value {
         text-align: right;
+    }
+}
+
+@include media-breakpoint-down(xs) {
+    .cart-offcanvas {
+        .cart-item-price {
+            order: 4;
+        }
     }
 }

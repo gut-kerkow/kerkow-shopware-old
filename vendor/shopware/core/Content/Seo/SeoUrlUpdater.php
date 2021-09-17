@@ -10,6 +10,7 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\Language\LanguageEntity;
 
 /**
@@ -71,9 +72,8 @@ class SeoUrlUpdater
         }
 
         $context = Context::createDefaultContext();
-        $languages = $context->disableCache(function (Context $context) {
-            return $this->languageRepository->search(new Criteria(), $context);
-        });
+        $languages = $this->languageRepository->search(new Criteria(), $context);
+
         $languageChains = $this->fetchLanguageChains($languages->getEntities()->getElements());
 
         $salesChannels = $this->fetchSalesChannels();
@@ -94,7 +94,7 @@ class SeoUrlUpdater
 
             $salesChannel = $salesChannels->get($salesChannelId);
 
-            // generate new seo urls
+            // generate new  seo urls
             $urls = $this->seoUrlGenerator->generate($ids, $template, $route, $context, $salesChannel);
 
             // persist seo urls to storage
@@ -166,9 +166,7 @@ class SeoUrlUpdater
     {
         $context = Context::createDefaultContext();
 
-        return $context->disableCache(function (Context $context) {
-            return $this->salesChannelRepository->search(new Criteria(), $context)->getEntities();
-        });
+        return $this->salesChannelRepository->search(new Criteria(), $context)->getEntities();
     }
 
     private function fetchLanguageChains(array $languages): array
@@ -196,7 +194,7 @@ class SeoUrlUpdater
     {
         // TODO: optimize to one query
         $result = $this->connection
-            ->executeQuery('SELECT LOWER(HEX(parent_id)) FROM language WHERE id = :id', ['id' => $languageId])
+            ->executeQuery('SELECT LOWER(HEX(parent_id)) FROM language WHERE id = :id', ['id' => Uuid::fromHexToBytes($languageId)])
             ->fetchColumn();
 
         return $result ? (string) $result : null;

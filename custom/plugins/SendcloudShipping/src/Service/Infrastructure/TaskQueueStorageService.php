@@ -199,6 +199,19 @@ class TaskQueueStorageService implements TaskQueueStorage
     }
 
     /**
+     * @param array $filterBy
+     * @return int
+     */
+    public function countAll(array $filterBy = []): int
+    {
+        try {
+            return $this->queueEntityRepository->countAll($filterBy);
+        } catch (\Exception $exception) {
+            return 0;
+        }
+    }
+
+    /**
      * @param QueueItem $queueItem
      *
      * @return array

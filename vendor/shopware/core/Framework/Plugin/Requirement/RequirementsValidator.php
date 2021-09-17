@@ -17,6 +17,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\NotFilter;
 use Shopware\Core\Framework\Plugin\Composer\Factory;
 use Shopware\Core\Framework\Plugin\PluginCollection;
 use Shopware\Core\Framework\Plugin\PluginEntity;
+use Shopware\Core\Framework\Plugin\Requirement\Exception\ComposerNameMissingException;
 use Shopware\Core\Framework\Plugin\Requirement\Exception\ConflictingPackageException;
 use Shopware\Core\Framework\Plugin\Requirement\Exception\MissingRequirementException;
 use Shopware\Core\Framework\Plugin\Requirement\Exception\RequirementStackException;
@@ -25,20 +26,11 @@ use Shopware\Core\Framework\Plugin\Util\PluginFinder;
 
 class RequirementsValidator
 {
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $pluginRepo;
+    private EntityRepositoryInterface $pluginRepo;
 
-    /**
-     * @var string
-     */
-    private $projectDir;
+    private string $projectDir;
 
-    /**
-     * @var Composer
-     */
-    private $pluginComposer;
+    private Composer $pluginComposer;
 
     /**
      * @var Composer
@@ -153,7 +145,13 @@ class RequirementsValidator
         $packages = $composer->getRepositoryManager()->getLocalRepository()->getPackages();
 
         // Get PHP extension "packages"
-        $packages = array_merge($packages, (new PlatformRepository())->getPackages());
+        $packages = array_merge(
+            $packages,
+            (new PlatformRepository())->getPackages(),
+        );
+
+        // add root package
+        $packages[] = $composer->getPackage();
 
         foreach ($packages as $package) {
             // Ignore Shopware plugins. They are checked separately in `validateInstalledPlugins`
@@ -198,6 +196,12 @@ class RequirementsValidator
 
         foreach ($this->getInstalledPlugins($context) as $pluginEntity) {
             $pluginComposerName = $pluginEntity->getComposerName();
+            if ($pluginComposerName === null) {
+                $exceptionStack->add(new ComposerNameMissingException($pluginEntity->getName()));
+
+                continue;
+            }
+
             $pluginPath = sprintf('%s/%s', $this->projectDir, $pluginEntity->getPath());
 
             $installedPluginComposerPackage = $pluginPackages[$pluginComposerName] ?? $this->getComposer($pluginPath)->getPackage();
@@ -305,7 +309,7 @@ class RequirementsValidator
     private function checkRequirement(
         array $pluginRequirements,
         string $installedName,
-        ?ConstraintInterface $installedVersion,
+        ConstraintInterface $installedVersion,
         RequirementExceptionStack $exceptionStack
     ): array {
         if (!isset($pluginRequirements[$installedName])) {
@@ -313,9 +317,6 @@ class RequirementsValidator
         }
 
         $constraint = $pluginRequirements[$installedName]->getConstraint();
-        if ($constraint === null || $installedVersion === null) {
-            return $pluginRequirements;
-        }
 
         if ($constraint->matches($installedVersion) === false) {
             $exceptionStack->add(
@@ -337,7 +338,7 @@ class RequirementsValidator
         array $pluginConflicts,
         string $sourceName,
         string $targetName,
-        ?ConstraintInterface $installedVersion,
+        ConstraintInterface $installedVersion,
         RequirementExceptionStack $exceptionStack
     ): array {
         if (!isset($pluginConflicts[$targetName])) {
@@ -345,9 +346,6 @@ class RequirementsValidator
         }
 
         $constraint = $pluginConflicts[$targetName]->getConstraint();
-        if ($constraint === null || $installedVersion === null) {
-            return $pluginConflicts;
-        }
 
         if ($constraint->matches($installedVersion) === true) {
             $exceptionStack->add(

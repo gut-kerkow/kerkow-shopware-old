@@ -7,7 +7,6 @@ use Shopware\Core\Checkout\Cart\CartRuleLoader;
 use Shopware\Core\Content\Rule\Event\RuleIndexerEvent;
 use Shopware\Core\Content\Rule\RuleDefinition;
 use Shopware\Core\Content\Rule\RuleEvents;
-use Shopware\Core\Framework\Adapter\Cache\CacheClearer;
 use Shopware\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
 use Shopware\Core\Framework\DataAbstractionLayer\Doctrine\RetryableQuery;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
@@ -25,6 +24,8 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 class RuleIndexer extends EntityIndexer implements EventSubscriberInterface
 {
+    public const PAYLOAD_UPDATER = 'rule.payload';
+
     /**
      * @var IteratorFactory
      */
@@ -39,11 +40,6 @@ class RuleIndexer extends EntityIndexer implements EventSubscriberInterface
      * @var EntityRepositoryInterface
      */
     private $repository;
-
-    /**
-     * @var CacheClearer
-     */
-    private $cacheClearer;
 
     /**
      * @var RulePayloadUpdater
@@ -64,7 +60,6 @@ class RuleIndexer extends EntityIndexer implements EventSubscriberInterface
         Connection $connection,
         IteratorFactory $iteratorFactory,
         EntityRepositoryInterface $repository,
-        CacheClearer $cacheClearer,
         RulePayloadUpdater $payloadUpdater,
         CartRuleLoader $cartRuleLoader,
         EventDispatcherInterface $eventDispatcher
@@ -72,7 +67,6 @@ class RuleIndexer extends EntityIndexer implements EventSubscriberInterface
         $this->iteratorFactory = $iteratorFactory;
         $this->repository = $repository;
         $this->connection = $connection;
-        $this->cacheClearer = $cacheClearer;
         $this->payloadUpdater = $payloadUpdater;
         $this->eventDispatcher = $eventDispatcher;
         $this->cartRuleLoader = $cartRuleLoader;
@@ -102,12 +96,14 @@ class RuleIndexer extends EntityIndexer implements EventSubscriberInterface
             $this->connection->prepare('UPDATE `rule` SET `payload` = null, `invalid` = 0')
         );
         $update->execute();
-
-        // invalidates all cached queries to the `rule` table
-        $this->cacheClearer->invalidateTags(['entity_' . RuleDefinition::ENTITY_NAME]);
     }
 
-    public function iterate($offset): ?EntityIndexingMessage
+    /**
+     * @param array|null $offset
+     *
+     * @deprecated tag:v6.5.0 The parameter $offset will be native typed
+     */
+    public function iterate(/*?array */$offset): ?EntityIndexingMessage
     {
         $iterator = $this->iteratorFactory->createIterator($this->repository->getDefinition(), $offset);
 
@@ -142,11 +138,11 @@ class RuleIndexer extends EntityIndexer implements EventSubscriberInterface
             return;
         }
 
-        $this->payloadUpdater->update($ids);
+        if ($message->allow(self::PAYLOAD_UPDATER)) {
+            $this->payloadUpdater->update($ids);
+        }
 
-        $this->eventDispatcher->dispatch(new RuleIndexerEvent($ids, $message->getContext()));
-
-        $this->cacheClearer->invalidateIds($ids, RuleDefinition::ENTITY_NAME);
+        $this->eventDispatcher->dispatch(new RuleIndexerEvent($ids, $message->getContext(), $message->getSkip()));
     }
 
     public function onRuleWritten(EntityWrittenEvent $event): void

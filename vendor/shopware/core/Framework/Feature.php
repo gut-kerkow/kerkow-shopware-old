@@ -3,6 +3,7 @@
 namespace Shopware\Core\Framework;
 
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\DevOps\Environment\EnvironmentHelper;
 
 class Feature
 {
@@ -11,7 +12,7 @@ class Feature
     /**
      * @var array[]
      */
-    private static $registeredFeatures = [];
+    private static array $registeredFeatures = [];
 
     public static function normalizeName(string $name): string
     {
@@ -35,35 +36,35 @@ class Feature
 
     public static function isActive(string $feature): bool
     {
-        $env = $_ENV['APP_ENV'] ?? $_SERVER['APP_ENV'] ?? 'prod';
+        $env = EnvironmentHelper::getVariable('APP_ENV', 'prod');
         $feature = self::normalizeName($feature);
 
         if (self::$registeredFeatures !== []
             && !isset(self::$registeredFeatures[$feature])
             && $env !== 'prod'
         ) {
-            trigger_error('Unknown feature "' . $feature . '"', E_USER_WARNING);
+            trigger_error('Unknown feature "' . $feature . '"', \E_USER_WARNING);
         }
 
-        $featureAll = $_SERVER['FEATURE_ALL'] ?? '';
-        if (self::isTrue((string) $featureAll) && (self::$registeredFeatures === [] || \array_key_exists($feature, self::$registeredFeatures ?? []))) {
+        $featureAll = EnvironmentHelper::getVariable('FEATURE_ALL', '');
+        if (self::isTrue((string) $featureAll) && (self::$registeredFeatures === [] || \array_key_exists($feature, self::$registeredFeatures))) {
             if ($featureAll === Feature::ALL_MAJOR) {
                 return true;
             }
 
             // return true if it's registered and not a major feature
-            if ((self::$registeredFeatures[$feature]['major'] ?? false) === false) {
+            if (isset(self::$registeredFeatures[$feature]) && (self::$registeredFeatures[$feature]['major'] ?? false) === false) {
                 return true;
             }
         }
 
-        if (!\array_key_exists($feature, $_SERVER)) {
+        if (!EnvironmentHelper::hasVariable($feature)) {
             $fallback = self::$registeredFeatures[$feature]['default'] ?? false;
 
             return (bool) $fallback;
         }
 
-        return self::isTrue(trim($_SERVER[$feature]));
+        return self::isTrue(trim((string) EnvironmentHelper::getVariable($feature)));
     }
 
     public static function ifActive(string $flagName, \Closure $closure): void
@@ -96,6 +97,33 @@ class Feature
         }
 
         $test::markTestSkipped('Skipping feature test for flag  "' . $flagName . '"');
+    }
+
+    /**
+     * Triggers a silenced deprecation notice.
+     *
+     * @param string $sinceVersion  The version of the package that introduced the deprecation
+     * @param string $removeVersion The version of the package when the deprectated code will be removed
+     * @param string $message       The message of the deprecation
+     * @param mixed  ...$args       Values to insert in the message using printf() formatting
+     */
+    public static function triggerDeprecated(string $flag, string $sinceVersion, string $removeVersion, string $message, ...$args): void
+    {
+        if (self::isActive($flag) || !self::has($flag)) {
+            trigger_deprecation('shopware/core', $sinceVersion, 'Deprecated tag:' . $removeVersion . '(flag:' . $flag . '). ' . $message, $args);
+        }
+    }
+
+    public static function throwException(string $flag, string $message): void
+    {
+        if (self::isActive($flag) || !self::has($flag)) {
+            throw new \RuntimeException($message);
+        }
+    }
+
+    public static function has(string $flag): bool
+    {
+        return isset(self::$registeredFeatures[$flag]);
     }
 
     public static function getAll(): array
@@ -150,17 +178,6 @@ class Feature
 
     /**
      * @internal
-     *
-     * @deprecated tag:v6.4.0.0 Use `Feature::resetRegisteredFeatures` and `Feature::registerFeatures`
-     */
-    public static function setRegisteredFeatures(iterable $registeredFeatures, ?string $dumpPath = null): void
-    {
-        self::resetRegisteredFeatures();
-        self::registerFeatures($registeredFeatures, $dumpPath);
-    }
-
-    /**
-     * @internal
      */
     public static function resetRegisteredFeatures(): void
     {
@@ -177,7 +194,6 @@ class Feature
 
     private static function isTrue(string $value): bool
     {
-        /* @var mixed $value */
         return $value
             && $value !== 'false'
             && $value !== '0'
@@ -186,7 +202,7 @@ class Feature
 
     private static function dumpFeatures(string $dumpPath): void
     {
-        $env = $_ENV['APP_ENV'] ?? $_SERVER['APP_ENV'] ?? 'prod';
+        $env = EnvironmentHelper::getVariable('APP_ENV', 'prod');
         // do not dump in prod
         if ($env === 'prod') {
             return;

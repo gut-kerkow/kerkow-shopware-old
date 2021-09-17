@@ -5,11 +5,13 @@ namespace Shopware\Core\System\Integration;
 use Shopware\Core\Framework\Api\Acl\Role\AclRoleCollection;
 use Shopware\Core\Framework\App\AppEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 
 class IntegrationEntity extends Entity
 {
     use EntityIdTrait;
+    use EntityCustomFieldsTrait;
 
     /**
      * @var string
@@ -32,21 +34,9 @@ class IntegrationEntity extends Entity
     protected $admin;
 
     /**
-     * @deprecated tag:v6.4.0 will be removed in 6.4.0
-     *
-     * @var bool
-     */
-    protected $writeAccess;
-
-    /**
      * @var \DateTimeInterface|null
      */
     protected $lastUsageAt;
-
-    /**
-     * @var array|null
-     */
-    protected $customFields;
 
     /**
      * @var AppEntity|null
@@ -57,6 +47,8 @@ class IntegrationEntity extends Entity
      * @var AclRoleCollection|null
      */
     protected $aclRoles;
+
+    protected ?\DateTimeInterface $deletedAt;
 
     public function getLabel(): string
     {
@@ -88,22 +80,6 @@ class IntegrationEntity extends Entity
         $this->secretAccessKey = $secretAccessKey;
     }
 
-    /**
-     * @deprecated tag:v6.4.0 will be removed in 6.4.0
-     */
-    public function getWriteAccess(): bool
-    {
-        return $this->writeAccess;
-    }
-
-    /**
-     * @deprecated tag:v6.4.0 will be removed in 6.4.0
-     */
-    public function setWriteAccess(bool $writeAccess): void
-    {
-        $this->writeAccess = $writeAccess;
-    }
-
     public function getLastUsageAt(): ?\DateTimeInterface
     {
         return $this->lastUsageAt;
@@ -112,16 +88,6 @@ class IntegrationEntity extends Entity
     public function setLastUsageAt(\DateTimeInterface $lastUsageAt): void
     {
         $this->lastUsageAt = $lastUsageAt;
-    }
-
-    public function getCustomFields(): ?array
-    {
-        return $this->customFields;
-    }
-
-    public function setCustomFields(?array $customFields): void
-    {
-        $this->customFields = $customFields;
     }
 
     public function getApp(): ?AppEntity
@@ -152,5 +118,15 @@ class IntegrationEntity extends Entity
     public function setAdmin(bool $admin): void
     {
         $this->admin = $admin;
+    }
+
+    public function getDeletedAt(): ?\DateTimeInterface
+    {
+        return $this->deletedAt;
+    }
+
+    public function setDeletedAt(\DateTimeInterface $deletedAt): void
+    {
+        $this->deletedAt = $deletedAt;
     }
 }

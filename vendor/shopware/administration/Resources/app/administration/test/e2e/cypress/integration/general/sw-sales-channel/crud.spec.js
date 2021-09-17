@@ -1,4 +1,4 @@
-/// <reference types="Cypress" />
+// / <reference types="Cypress" />
 
 import SalesChannelPageObject from '../../../support/pages/module/sw-sales-channel.page-object';
 
@@ -39,15 +39,19 @@ describe('Sales Channel: Test crud operations', () => {
         cy.get(page.elements.salesChannelSaveAction).click();
         cy.wait('@saveData').then((xhr) => {
             expect(xhr).to.have.property('status', 204);
+            cy.get('.sw-button-process__status-indicator > svg > path').should('be.visible');
+            cy.get('.sw-button-process__status-indicator > svg > path').should('not.exist');
         });
 
         // Verify creation
+        cy.get('.sw-loader').should('not.exist');
         cy.get(page.elements.salesChannelNameInput).should('have.value', '1st Epic Sales Channel');
 
         // Check if the sales channel can be used in other modules
         cy.clickMainMenuItem({
             targetPath: '#/sw/customer/index',
-            mainMenuId: 'sw-customer'
+            mainMenuId: 'sw-customer',
+            subMenuId: 'sw-customer-index'
         });
         cy.get('.smart-bar__actions a[href="#/sw/customer/create"]').click();
         cy.get('.sw-customer-base-form__sales-channel-select')

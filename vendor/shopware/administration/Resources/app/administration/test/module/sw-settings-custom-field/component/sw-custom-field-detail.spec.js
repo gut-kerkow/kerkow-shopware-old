@@ -20,14 +20,6 @@ function createWrapper(privileges = []) {
     return shallowMount(Shopware.Component.build('sw-custom-field-detail'), {
         localVue,
         mocks: {
-            $tc: () => {
-            },
-            $device: {
-                getSystemKey: () => {
-                },
-                onResize: () => {
-                }
-            },
             $i18n: {
                 fallbackLocale: 'en-GB'
             }
@@ -66,7 +58,8 @@ function createWrapper(privileges = []) {
             'sw-custom-field-type-checkbox': true,
             'sw-field': true,
             'sw-button': true,
-            'sw-loader': true
+            'sw-loader': true,
+            'sw-alert': true
         }
     });
 }

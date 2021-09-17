@@ -3,11 +3,14 @@
 namespace Shopware\Core\Framework\DataAbstractionLayer\Write;
 
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\Struct\StateAwareTrait;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\Language\LanguageDefinition;
 
 class WriteContext
 {
+    use StateAwareTrait;
+
     private const SPACER = '::';
 
     /**
@@ -127,6 +130,11 @@ class WriteContext
             $callback($this);
             $this->context = $originalContext;
         });
+    }
+
+    public function resetExceptions(): void
+    {
+        $this->exceptions = new WriteException();
     }
 
     private function getLanguageCodeToIdMapping(): array

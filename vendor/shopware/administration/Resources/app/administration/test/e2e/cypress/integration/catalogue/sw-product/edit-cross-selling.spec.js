@@ -1,4 +1,4 @@
-/// <reference types="Cypress" />
+// / <reference types="Cypress" />
 
 import ProductStreamObject from '../../../support/pages/module/sw-product-stream.page-object';
 
@@ -43,8 +43,8 @@ describe('Product: Check cross selling integration', () => {
         // Request we want to wait for later
         cy.server();
         cy.route({
-            url: `${Cypress.env('apiPath')}/product/*`,
-            method: 'patch'
+            url: `${Cypress.env('apiPath')}/_action/sync`,
+            method: 'post'
         }).as('saveData');
         cy.route({
             url: `${Cypress.env('apiPath')}/search/product-stream`,
@@ -65,17 +65,10 @@ describe('Product: Check cross selling integration', () => {
             {
                 field: null,
                 operator: 'Is equal to any of',
-                value: ['Second product']
+                value: ['Second product', 'Third product']
             }
         );
-        page.fillFilterWithEntityMultiSelect(
-            '.sw-product-stream-filter',
-            {
-                field: null,
-                operator: 'Is equal to any of',
-                value: ['Third product']
-            }
-        );
+
         cy.get('.sw-button-process').click();
         cy.wait('@saveStream').then((xhr) => {
             expect(xhr).to.have.property('status', 200);
@@ -89,7 +82,7 @@ describe('Product: Check cross selling integration', () => {
         cy.get(page.elements.loader).should('not.exist');
 
         cy.contains(
-            `.sw-product-detail-cross-selling__empty-state ${page.elements.ghostButton}`,
+            `.sw-empty-state ${page.elements.ghostButton}`,
             'Add new Cross Selling'
         ).should('be.visible').click();
         cy.get('.product-detail-cross-selling-form').should('be.visible');
@@ -106,8 +99,11 @@ describe('Product: Check cross selling integration', () => {
         // Save and verify cross selling stream
         cy.get('.sw-button-process').click();
         cy.wait('@saveData').then((xhr) => {
-            expect(xhr).to.have.property('status', 204);
+            expect(xhr).to.have.property('status', 200);
         });
+
+        // check if add cross selling button is still visible
+        cy.get('.sw-product-detail-cross-selling__add-btn').should('be.visible');
 
         // Verify in storefront
         cy.visit('/');
@@ -131,8 +127,8 @@ describe('Product: Check cross selling integration', () => {
         // Request we want to wait for later
         cy.server();
         cy.route({
-            url: `${Cypress.env('apiPath')}/product/*`,
-            method: 'patch'
+            url: `${Cypress.env('apiPath')}/_action/sync`,
+            method: 'post'
         }).as('saveData');
         cy.route({
             url: `${Cypress.env('apiPath')}/search/product-stream`,
@@ -151,7 +147,7 @@ describe('Product: Check cross selling integration', () => {
         cy.get(page.elements.loader).should('not.exist');
 
         cy.contains(
-            `.sw-product-detail-cross-selling__empty-state ${page.elements.ghostButton}`,
+            `.sw-empty-state ${page.elements.ghostButton}`,
             'Add new Cross Selling'
         ).should('be.visible').click();
         cy.get('.product-detail-cross-selling-form').should('be.visible');
@@ -164,8 +160,11 @@ describe('Product: Check cross selling integration', () => {
         // Save and verify cross selling stream
         cy.get('.sw-button-process').click();
         cy.wait('@saveData').then((xhr) => {
-            expect(xhr).to.have.property('status', 204);
+            expect(xhr).to.have.property('status', 200);
         });
+
+        // check if add cross selling button is still visible
+        cy.get('.sw-product-detail-cross-selling__add-btn').should('be.visible');
 
         // Add products to cross selling
         cy.get('.sw-product-cross-selling-assignment__select-container .sw-entity-single-select__selection').type('Second');
@@ -196,8 +195,11 @@ describe('Product: Check cross selling integration', () => {
         // Save and verify cross selling stream
         cy.get('.sw-button-process').click();
         cy.wait('@saveData').then((xhr) => {
-            expect(xhr).to.have.property('status', 204);
+            expect(xhr).to.have.property('status', 200);
         });
+
+        // check if add cross selling button is still visible
+        cy.get('.sw-product-detail-cross-selling__add-btn').should('be.visible');
 
         // Verify in storefront
         cy.visit('/');
@@ -219,15 +221,15 @@ describe('Product: Check cross selling integration', () => {
         // Request we want to wait for later
         cy.server();
         cy.route({
-            url: '/api/v*/product/*',
-            method: 'patch'
+            url: `${Cypress.env('apiPath')}/_action/sync`,
+            method: 'post'
         }).as('saveData');
         cy.route({
-            url: '/api/v*/search/product-stream',
+            url: `${Cypress.env('apiPath')}/search/product-stream`,
             method: 'post'
         }).as('saveStream');
         cy.route({
-            url: '/api/v*/search/product-cross-selling/**/assigned-products',
+            url: `${Cypress.env('apiPath')}/search/product-cross-selling/**/assigned-products`,
             method: 'post'
         }).as('assignProduct');
 
@@ -239,7 +241,7 @@ describe('Product: Check cross selling integration', () => {
         cy.get(page.elements.loader).should('not.exist');
 
         cy.contains(
-            `.sw-product-detail-cross-selling__empty-state ${page.elements.ghostButton}`,
+            `.sw-empty-state ${page.elements.ghostButton}`,
             'Add new Cross Selling'
         ).should('be.visible').click();
         cy.get('.product-detail-cross-selling-form').should('be.visible');
@@ -249,6 +251,9 @@ describe('Product: Check cross selling integration', () => {
         cy.wait('@saveData').then((xhr) => {
             expect(xhr).to.have.property('status', 400);
         });
+
+        // check if add cross selling button is still visible
+        cy.get('.sw-product-detail-cross-selling__add-btn').should('be.visible');
 
         cy.get('.sw-tabs__content').contains('.sw-tabs-item', 'Cross Selling').then((field) => {
             cy.wrap(field).should('have.class', 'sw-tabs-item--has-error');

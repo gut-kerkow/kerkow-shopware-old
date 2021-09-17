@@ -2,6 +2,7 @@
 
 namespace Shopware\Core\Content\Test\Sitemap\ScheduledTask;
 
+use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Content\Sitemap\ScheduledTask\SitemapGenerateTaskHandler;
@@ -12,7 +13,9 @@ use Shopware\Core\Framework\Api\Util\AccessKeyHelper;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\Test\Seo\StorefrontSalesChannelTestHelper;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopware\Core\Framework\Test\TestCaseBase\SalesChannelFunctionalTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
@@ -22,11 +25,10 @@ use Symfony\Component\Messenger\MessageBusInterface;
 class SitemapGenerateTaskHandlerTest extends TestCase
 {
     use IntegrationTestBehaviour;
+    use StorefrontSalesChannelTestHelper;
+    use SalesChannelFunctionalTestBehaviour;
 
-    /**
-     * @var SitemapGenerateTaskHandler
-     */
-    private $sitemapHandler;
+    private SitemapGenerateTaskHandler $sitemapHandler;
 
     /**
      * @var EntityRepositoryInterface
@@ -54,14 +56,17 @@ class SitemapGenerateTaskHandlerTest extends TestCase
             $this->getContainer()->get(SitemapExporter::class),
             $this->getContainer()->get('logger'),
             $this->getContainer()->get(SystemConfigService::class),
-            $this->messageBusMock
+            $this->messageBusMock,
+            $this->getContainer()->get('event_dispatcher')
         );
         $this->salesChannelDomainRepository = $this->getContainer()->get('sales_channel_domain.repository');
     }
 
-    public function testItWontLoopForMultipleDomainsWithSameLanguage(): void
+    public function testNotHandelDuplicateWithSameLanguage(): void
     {
         $salesChannelIds = $this->salesChannelRepository->searchIds(new Criteria(), Context::createDefaultContext())->getIds();
+
+        $salesChannelContext = $this->createStorefrontSalesChannelContext(Uuid::randomHex(), 'test-sitemap-task-handler');
 
         $nonDefaults = array_values(array_filter(array_map(function (string $id): ?array {
             if ($id === Defaults::SALES_CHANNEL) {
@@ -75,14 +80,14 @@ class SitemapGenerateTaskHandlerTest extends TestCase
 
         $this->salesChannelDomainRepository->create([
             [
-                'salesChannelId' => Defaults::SALES_CHANNEL,
+                'salesChannelId' => $salesChannelContext->getSalesChannelId(),
                 'languageId' => Defaults::LANGUAGE_SYSTEM,
                 'currencyId' => Defaults::CURRENCY,
                 'snippetSetId' => $this->getSnippetSetIdForLocale('en-GB'),
                 'url' => 'https://test.com',
             ],
             [
-                'salesChannelId' => Defaults::SALES_CHANNEL,
+                'salesChannelId' => $salesChannelContext->getSalesChannelId(),
                 'languageId' => Defaults::LANGUAGE_SYSTEM,
                 'currencyId' => Defaults::CURRENCY,
                 'snippetSetId' => $this->getSnippetSetIdForLocale('en-GB'),
@@ -98,9 +103,11 @@ class SitemapGenerateTaskHandlerTest extends TestCase
             true
         );
 
-        $this->messageBusMock->expects(static::never())
-            ->method('dispatch');
-        $this->sitemapHandler->handle($message);
+        $this->messageBusMock->expects(static::once())
+            ->method('dispatch')
+            ->willReturn(new Envelope($message));
+
+        $this->sitemapHandler->run();
     }
 
     public function testItGeneratesCorrectMessagesIfLastLanguageIsFirstOfNextSalesChannel(): void
@@ -170,6 +177,60 @@ class SitemapGenerateTaskHandlerTest extends TestCase
             ->method('dispatch')
             ->willReturn(new Envelope($message));
 
-        $this->sitemapHandler->handle($message);
+        $this->sitemapHandler->run();
+    }
+
+    public function testSkipNonStorefrontSalesChannels(): void
+    {
+        $connection = $this->getContainer()->get(Connection::class);
+        $connection->executeStatement('DELETE FROM sales_channel');
+
+        $storefrontId = Uuid::randomHex();
+        $this->createSalesChannel([
+            'id' => $storefrontId,
+            'name' => 'storefront',
+            'typeId' => Defaults::SALES_CHANNEL_TYPE_STOREFRONT,
+            'domains' => [[
+                'languageId' => Defaults::LANGUAGE_SYSTEM,
+                'currencyId' => Defaults::CURRENCY,
+                'snippetSetId' => $this->getSnippetSetIdForLocale('en-GB'),
+                'url' => 'http://valid.test',
+            ]],
+        ]);
+        $this->createSalesChannel([
+            'name' => 'api',
+            'typeId' => Defaults::SALES_CHANNEL_TYPE_API,
+            'domains' => [[
+                'languageId' => Defaults::LANGUAGE_SYSTEM,
+                'currencyId' => Defaults::CURRENCY,
+                'snippetSetId' => $this->getSnippetSetIdForLocale('en-GB'),
+                'url' => 'http://api.test',
+            ]],
+        ]);
+        $this->createSalesChannel([
+            'name' => 'export',
+            'typeId' => Defaults::SALES_CHANNEL_TYPE_PRODUCT_COMPARISON,
+            'domains' => [[
+                'languageId' => Defaults::LANGUAGE_SYSTEM,
+                'currencyId' => Defaults::CURRENCY,
+                'snippetSetId' => $this->getSnippetSetIdForLocale('en-GB'),
+                'url' => 'http://export.test',
+            ]],
+        ]);
+
+        $message = new SitemapMessage(
+            $storefrontId,
+            Defaults::LANGUAGE_SYSTEM,
+            null,
+            null,
+            false
+        );
+
+        $this->messageBusMock->expects(static::once())
+            ->method('dispatch')
+            ->with($message)
+            ->willReturn(new Envelope($message));
+
+        $this->sitemapHandler->run();
     }
 }

@@ -7,6 +7,7 @@ use Shopware\Core\Checkout\Customer\CustomerEntity;
 use Shopware\Core\Checkout\Customer\Event\CustomerBeforeLoginEvent;
 use Shopware\Core\Checkout\Customer\Event\CustomerLoginEvent;
 use Shopware\Core\Checkout\Customer\Exception\BadCredentialsException;
+use Shopware\Core\Checkout\Customer\Exception\CustomerAuthThrottledException;
 use Shopware\Core\Checkout\Customer\Exception\CustomerNotFoundException;
 use Shopware\Core\Checkout\Customer\Exception\InactiveCustomerException;
 use Shopware\Core\Checkout\Customer\Password\LegacyPasswordVerifier;
@@ -15,7 +16,10 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
+use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
+use Shopware\Core\Framework\RateLimiter\Exception\RateLimitExceededException;
+use Shopware\Core\Framework\RateLimiter\RateLimiter;
 use Shopware\Core\Framework\Routing\Annotation\ContextTokenRequired;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Core\Framework\Routing\Annotation\Since;
@@ -23,6 +27,7 @@ use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextRestorer;
 use Shopware\Core\System\SalesChannel\ContextTokenResponse;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
@@ -33,36 +38,32 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
  */
 class LoginRoute extends AbstractLoginRoute
 {
-    /**
-     * @var EventDispatcherInterface
-     */
-    private $eventDispatcher;
+    private EventDispatcherInterface $eventDispatcher;
 
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $customerRepository;
+    private EntityRepositoryInterface $customerRepository;
 
-    /**
-     * @var LegacyPasswordVerifier
-     */
-    private $legacyPasswordVerifier;
+    private LegacyPasswordVerifier $legacyPasswordVerifier;
 
-    /**
-     * @var SalesChannelContextRestorer
-     */
-    private $contextRestorer;
+    private SalesChannelContextRestorer $contextRestorer;
+
+    private RequestStack $requestStack;
+
+    private RateLimiter $rateLimiter;
 
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         EntityRepositoryInterface $customerRepository,
         LegacyPasswordVerifier $legacyPasswordVerifier,
-        SalesChannelContextRestorer $contextRestorer
+        SalesChannelContextRestorer $contextRestorer,
+        RequestStack $requestStack,
+        RateLimiter $rateLimiter
     ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->customerRepository = $customerRepository;
         $this->legacyPasswordVerifier = $legacyPasswordVerifier;
         $this->contextRestorer = $contextRestorer;
+        $this->requestStack = $requestStack;
+        $this->rateLimiter = $rateLimiter;
     }
 
     public function getDecorated(): AbstractLoginRoute
@@ -74,23 +75,33 @@ class LoginRoute extends AbstractLoginRoute
      * @Since("6.2.0.0")
      * @OA\Post(
      *      path="/account/login",
-     *      summary="Login as customer using password",
+     *      summary="Log in a customer",
+     *      description="Logs in customers given their credentials.",
      *      operationId="loginCustomer",
-     *      tags={"Store API", "Account"},
+     *      tags={"Store API", "Login & Registration"},
      *      @OA\RequestBody(
      *          required=true,
      *          @OA\JsonContent(
+     *              required={
+     *                  "username",
+     *                  "password"
+     *              },
      *              @OA\Property(property="username", description="Email", type="string"),
      *              @OA\Property(property="password", description="Password", type="string")
      *          )
      *      ),
      *      @OA\Response(
      *          response="200",
-     *          description="Context token",
+     *          description="A successful login returns a context token which is associated with the logged in user. Use that as your `sw-context-token` header for subsequent requests.",
      *          @OA\JsonContent(ref="#/components/schemas/ContextTokenResponse")
+     *     ),
+     *      @OA\Response(
+     *          response="401",
+     *          description="If credentials are incorrect an error is returned",
+     *          @OA\JsonContent(ref="#/components/schemas/failure")
      *     )
      * )
-     * @Route(path="/store-api/v{version}/account/login", name="store-api.account.login", methods={"POST"})
+     * @Route(path="/store-api/account/login", name="store-api.account.login", methods={"POST"})
      */
     public function login(RequestDataBag $data, SalesChannelContext $context): ContextTokenResponse
     {
@@ -103,6 +114,16 @@ class LoginRoute extends AbstractLoginRoute
         $event = new CustomerBeforeLoginEvent($context, $email);
         $this->eventDispatcher->dispatch($event);
 
+        if (Feature::isActive('FEATURE_NEXT_13795') && $this->requestStack->getMainRequest() !== null) {
+            $cacheKey = strtolower($email) . '-' . $this->requestStack->getMainRequest()->getClientIp();
+
+            try {
+                $this->rateLimiter->ensureAccepted(RateLimiter::LOGIN_ROUTE, $cacheKey);
+            } catch (RateLimitExceededException $exception) {
+                throw new CustomerAuthThrottledException($exception->getWaitTime(), $exception);
+            }
+        }
+
         try {
             $customer = $this->getCustomerByLogin(
                 $email,
@@ -111,6 +132,10 @@ class LoginRoute extends AbstractLoginRoute
             );
         } catch (CustomerNotFoundException | BadCredentialsException $exception) {
             throw new UnauthorizedHttpException('json', $exception->getMessage());
+        }
+
+        if (Feature::isActive('FEATURE_NEXT_13795') && isset($cacheKey)) {
+            $this->rateLimiter->reset(RateLimiter::LOGIN_ROUTE, $cacheKey);
         }
 
         if (!$customer->getActive()) {
@@ -147,7 +172,7 @@ class LoginRoute extends AbstractLoginRoute
             return $customer;
         }
 
-        if (!password_verify($password, $customer->getPassword())) {
+        if (!password_verify($password, $customer->getPassword() ?? '')) {
             throw new BadCredentialsException();
         }
 

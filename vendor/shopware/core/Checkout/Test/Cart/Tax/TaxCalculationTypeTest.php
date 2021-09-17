@@ -6,6 +6,7 @@ use PHPUnit\Framework\TestCase;
 use Shopware\Core\Checkout\Cart\LineItem\LineItem;
 use Shopware\Core\Checkout\Cart\Price\AmountCalculator;
 use Shopware\Core\Checkout\Cart\Price\QuantityPriceCalculator;
+use Shopware\Core\Checkout\Cart\Price\Struct\CartPrice;
 use Shopware\Core\Checkout\Cart\Price\Struct\QuantityPriceDefinition;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Checkout\Cart\Tax\Struct\CalculatedTax;
@@ -36,7 +37,9 @@ class TaxCalculationTypeTest extends TestCase
             ->get(SalesChannelContextFactory::class)
             ->create(Uuid::randomHex(), Defaults::SALES_CHANNEL);
 
-        $context->getCurrentCustomerGroup()->setDisplayGross(!$useNet);
+        $taxState = $useNet ? CartPrice::TAX_STATE_NET : CartPrice::TAX_STATE_GROSS;
+        $context->setTaxState($taxState);
+
         $calculator = $this->getContainer()->get(AmountCalculator::class);
         $cart = $this->createCart($items, $context);
 
@@ -153,7 +156,7 @@ class TaxCalculationTypeTest extends TestCase
         foreach ($items as $i => $item) {
             $lineItem = new LineItem('item-' . $i, 'test', 'item-' . $i, $item->quantity);
 
-            $definition = new QuantityPriceDefinition($item->price, new TaxRuleCollection([new TaxRule($item->taxRate)]), 2, $item->quantity, true);
+            $definition = new QuantityPriceDefinition($item->price, new TaxRuleCollection([new TaxRule($item->taxRate)]), $item->quantity);
 
             $lineItem->setPriceDefinition($definition);
 

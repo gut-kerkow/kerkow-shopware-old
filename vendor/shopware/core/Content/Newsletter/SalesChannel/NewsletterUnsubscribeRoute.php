@@ -3,6 +3,8 @@
 namespace Shopware\Core\Content\Newsletter\SalesChannel;
 
 use OpenApi\Annotations as OA;
+use Shopware\Core\Content\Newsletter\Aggregate\NewsletterRecipient\NewsletterRecipientEntity;
+use Shopware\Core\Content\Newsletter\Event\NewsletterUnsubscribeEvent;
 use Shopware\Core\Content\Newsletter\Exception\NewsletterRecipientNotFoundException;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -20,6 +22,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Validator\Constraints\Email;
 use Symfony\Component\Validator\Constraints\EqualTo;
 use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
  * @RouteScope(scopes={"store-api"})
@@ -36,12 +39,19 @@ class NewsletterUnsubscribeRoute extends AbstractNewsletterUnsubscribeRoute
      */
     private $validator;
 
+    /**
+     * @var EventDispatcherInterface
+     */
+    private $eventDispatcher;
+
     public function __construct(
         EntityRepositoryInterface $newsletterRecipientRepository,
-        DataValidator $validator
+        DataValidator $validator,
+        EventDispatcherInterface $eventDispatcher
     ) {
         $this->newsletterRecipientRepository = $newsletterRecipientRepository;
         $this->validator = $validator;
+        $this->eventDispatcher = $eventDispatcher;
     }
 
     public function getDecorated(): AbstractNewsletterUnsubscribeRoute
@@ -53,26 +63,40 @@ class NewsletterUnsubscribeRoute extends AbstractNewsletterUnsubscribeRoute
      * @Since("6.2.0.0")
      * @OA\Post(
      *      path="/newsletter/unsubscribe",
-     *      summary="Unsubscribe to newsletter",
+     *      summary="Remove a newsletter subscription",
+     *      description="Removes a newsletter recipient from the mailing lists.",
      *      operationId="unsubscribeToNewsletter",
      *      tags={"Store API", "Newsletter"},
-     *      @OA\Parameter(name="email", description="Email", in="query", @OA\Schema(type="string")),
+     *      @OA\RequestBody(
+     *          required=true,
+     *          @OA\JsonContent(
+     *              required={
+     *                  "email"
+     *              },
+     *              @OA\Property(
+     *                  property="email",
+     *                  type="string",
+     *                  description="Email address that should be removed from the mailing lists."
+     *              )
+     *          )
+     *      ),
      *      @OA\Response(
      *          response="200",
-     *          description="Success",
+     *          description="Unsubscribing was successful.",
      *     )
      * )
-     * @Route("/store-api/v{version}/newsletter/unsubscribe", name="store-api.newsletter.unsubscribe", methods={"POST"})
+     * @Route("/store-api/newsletter/unsubscribe", name="store-api.newsletter.unsubscribe", methods={"POST"})
      */
     public function unsubscribe(RequestDataBag $dataBag, SalesChannelContext $context): NoContentResponse
     {
         $data = $dataBag->only('email');
-        $data['id'] = $this->getNewsletterRecipientId($data['email'], $context);
+        $recipient = $this->getNewsletterRecipient($data['email'], $context);
 
-        if (empty($data['id'])) {
+        if (!$recipient) {
             throw new NewsletterRecipientNotFoundException('email', $data['email']);
         }
 
+        $data['id'] = $recipient->getId();
         $data['status'] = NewsletterSubscribeRoute::STATUS_OPT_OUT;
 
         $validator = $this->getOptOutValidation();
@@ -80,10 +104,13 @@ class NewsletterUnsubscribeRoute extends AbstractNewsletterUnsubscribeRoute
 
         $this->newsletterRecipientRepository->update([$data], $context->getContext());
 
+        $event = new NewsletterUnsubscribeEvent($context->getContext(), $recipient, $context->getSalesChannel()->getId());
+        $this->eventDispatcher->dispatch($event);
+
         return new NoContentResponse();
     }
 
-    private function getNewsletterRecipientId(string $email, SalesChannelContext $context): ?string
+    private function getNewsletterRecipient(string $email, SalesChannelContext $context): ?NewsletterRecipientEntity
     {
         $criteria = new Criteria();
         $criteria->addFilter(
@@ -94,8 +121,8 @@ class NewsletterUnsubscribeRoute extends AbstractNewsletterUnsubscribeRoute
         $criteria->setLimit(1);
 
         return $this->newsletterRecipientRepository
-            ->searchIds($criteria, $context->getContext())
-            ->firstId();
+            ->search($criteria, $context->getContext())
+            ->first();
     }
 
     private function getOptOutValidation(): DataValidationDefinition

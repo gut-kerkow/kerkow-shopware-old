@@ -3,7 +3,12 @@
 namespace Shopware\Core\Content\Test\ImportExport;
 
 use Doctrine\DBAL\Connection;
-use PHPUnit\Framework\TestCase;
+use Shopware\Core\Checkout\Customer\CustomerDefinition;
+use Shopware\Core\Checkout\Customer\CustomerEntity;
+use Shopware\Core\Checkout\Order\OrderDefinition;
+use Shopware\Core\Checkout\Promotion\Aggregate\PromotionIndividualCode\PromotionIndividualCodeDefinition;
+use Shopware\Core\Checkout\Promotion\Aggregate\PromotionIndividualCode\PromotionIndividualCodeEntity;
+use Shopware\Core\Checkout\Test\Customer\Rule\OrderFixture;
 use Shopware\Core\Content\Category\CategoryDefinition;
 use Shopware\Core\Content\ImportExport\Aggregate\ImportExportFile\ImportExportFileEntity;
 use Shopware\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLogEntity;
@@ -12,19 +17,14 @@ use Shopware\Core\Content\ImportExport\Event\ImportExportBeforeExportRecordEvent
 use Shopware\Core\Content\ImportExport\Event\ImportExportBeforeImportRecordEvent;
 use Shopware\Core\Content\ImportExport\Event\ImportExportExceptionImportRecordEvent;
 use Shopware\Core\Content\ImportExport\ImportExport;
-use Shopware\Core\Content\ImportExport\ImportExportFactory;
 use Shopware\Core\Content\ImportExport\Processing\Pipe\AbstractPipe;
 use Shopware\Core\Content\ImportExport\Processing\Reader\AbstractReader;
-use Shopware\Core\Content\ImportExport\Processing\Reader\CsvReader;
 use Shopware\Core\Content\ImportExport\Processing\Writer\AbstractWriter;
 use Shopware\Core\Content\ImportExport\Service\ImportExportService;
-use Shopware\Core\Content\ImportExport\Struct\Config;
 use Shopware\Core\Content\ImportExport\Struct\Progress;
-use Shopware\Core\Content\Media\File\FileSaver;
-use Shopware\Core\Content\Media\File\MediaFile;
 use Shopware\Core\Content\Newsletter\Aggregate\NewsletterRecipient\NewsletterRecipientDefinition;
 use Shopware\Core\Content\Newsletter\SalesChannel\NewsletterSubscribeRoute;
-use Shopware\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
+use Shopware\Core\Content\Product\Aggregate\ProductCrossSelling\ProductCrossSellingDefinition;
 use Shopware\Core\Content\Product\ProductDefinition;
 use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Content\Property\Aggregate\PropertyGroupOption\PropertyGroupOptionDefinition;
@@ -34,106 +34,34 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexerRegistry;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
-use Shopware\Core\Framework\Struct\ArrayEntity;
-use Shopware\Core\Framework\Test\TestCaseBase\BasicTestDataBehaviour;
-use Shopware\Core\Framework\Test\TestCaseBase\CacheTestBehaviour;
-use Shopware\Core\Framework\Test\TestCaseBase\FilesystemBehaviour;
-use Shopware\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
-use Shopware\Core\Framework\Test\TestCaseBase\RequestStackTestBehaviour;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\NotFilter;
+use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour;
-use Shopware\Core\Framework\Test\TestCaseBase\SessionTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
-use Symfony\Component\HttpKernel\Debug\TraceableEventDispatcher;
-use Symfony\Contracts\EventDispatcher\Event;
-use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
-class ImportExportTest extends TestCase
+class ImportExportTest extends ImportExportTestCase
 {
-    use KernelTestBehaviour;
-    use FilesystemBehaviour;
-    use CacheTestBehaviour;
-    use BasicTestDataBehaviour;
-    use SessionTestBehaviour;
-    use RequestStackTestBehaviour;
-
     use SalesChannelApiTestBehaviour;
-
-    public const TEST_IMAGE = __DIR__ . '/fixtures/shopware-logo.png';
-
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $productRepository;
-
-    /**
-     * @var TraceableEventDispatcher
-     */
-    private $listener;
-
-    public function setUp(): void
-    {
-        $this->productRepository = $this->getContainer()->get('product.repository');
-
-        $this->listener = $this->getContainer()->get(EventDispatcherInterface::class);
-
-        $connection = $this->getContainer()->get(Connection::class);
-
-        // required for the testInvalidFile test
-        $connection->setNestTransactionsWithSavepoints(true);
-
-        $connection->beginTransaction();
-    }
-
-    public function tearDown(): void
-    {
-        /** @var Connection $connection */
-        $connection = $this->getContainer()
-            ->get(Connection::class);
-
-        static::assertEquals(
-            1,
-            $connection->getTransactionNestingLevel(),
-            'Too many Nesting Levels.
-            Probably one transaction was not closed properly.
-            This may affect following Tests in an unpredictable manner!
-            Current nesting level: "' . $connection->getTransactionNestingLevel() . '".'
-        );
-
-        $connection->rollBack();
-
-        $connection->setNestTransactionsWithSavepoints(false);
-    }
+    use OrderFixture;
 
     public function testExportEvents(): void
     {
         $this->listener->addSubscriber(new StockSubscriber());
 
-        $factory = $this->getContainer()->get(ImportExportFactory::class);
         $filesystem = $this->getContainer()->get('shopware.filesystem.private');
-
-        /** @var ImportExportService $importExportService */
-        $importExportService = $this->getContainer()->get(ImportExportService::class);
-
-        $profileId = $this->getDefaultProfileId(ProductDefinition::ENTITY_NAME);
-
-        $expireDate = new \DateTimeImmutable('2099-01-01');
-        $logEntity = $importExportService->prepareExport(Context::createDefaultContext(), $profileId, $expireDate);
-
-        $importExport = $factory->create($logEntity->getId());
 
         $productId = Uuid::randomHex();
         $product = $this->getTestProduct($productId);
         $newStock = (int) $product['stock'] + 1;
 
         $criteria = new Criteria([$productId]);
-        $importExport->export(Context::createDefaultContext(), $criteria, 0);
+        $progress = $this->export(Context::createDefaultContext(), ProductDefinition::ENTITY_NAME, $criteria);
 
         $events = array_column($this->listener->getCalledListeners(), 'event');
         static::assertContains(ImportExportBeforeExportRecordEvent::class, $events);
 
-        $csv = $filesystem->read($logEntity->getFile()->getPath());
+        $csv = $filesystem->read($this->getLogEntity($progress->getLogId())->getFile()->getPath());
         static::assertStringContainsString(";{$newStock};", $csv);
     }
 
@@ -150,56 +78,34 @@ class ImportExportTest extends TestCase
 
     public function testImportExport(): void
     {
-        $factory = $this->getContainer()->get(ImportExportFactory::class);
         $filesystem = $this->getContainer()->get('shopware.filesystem.private');
-
-        /** @var ImportExportService $importExportService */
-        $importExportService = $this->getContainer()->get(ImportExportService::class);
-
-        $profileId = $this->getDefaultProfileId(ProductDefinition::ENTITY_NAME);
-
-        $expireDate = new \DateTimeImmutable('2099-01-01');
-        $logEntity = $importExportService->prepareExport(Context::createDefaultContext(), $profileId, $expireDate);
-
-        $importExport = $factory->create($logEntity->getId());
 
         $productId = Uuid::randomHex();
         $this->getTestProduct($productId);
         $criteria = new Criteria([$productId]);
-        $progress = $importExport->export(Context::createDefaultContext(), $criteria, 0);
+        $progress = $this->export(Context::createDefaultContext(), ProductDefinition::ENTITY_NAME, $criteria);
 
         static::assertTrue($progress->isFinished());
-        static::assertSame(Progress::STATE_SUCCEEDED, $progress->getState());
+        static::assertImportExportSucceeded($progress, $this->getInvalidLogContent($progress->getInvalidRecordsLogId()));
 
-        $importExport->export(Context::createDefaultContext(), $criteria);
+        $progress = $this->export(Context::createDefaultContext(), ProductDefinition::ENTITY_NAME, $criteria);
 
         /** @var EntityRepositoryInterface $fileRepository */
         $fileRepository = $this->getContainer()->get('import_export_file.repository');
         /** @var ImportExportFileEntity|null $file */
-        $file = $fileRepository->search(new Criteria([$logEntity->getFileId()]), Context::createDefaultContext())->first();
+        $file = $fileRepository->search(new Criteria([$this->getLogEntity($progress->getLogId())->getFileId()]), Context::createDefaultContext())->first();
 
         static::assertNotNull($file);
-        static::assertSame($filesystem->getSize($logEntity->getFile()->getPath()), $file->getSize());
+        static::assertSame($filesystem->getSize($this->getLogEntity($progress->getLogId())->getFile()->getPath()), $file->getSize());
 
         $this->productRepository->delete([['id' => $productId]], Context::createDefaultContext());
         $exportFileTmp = tempnam(sys_get_temp_dir(), '');
-        file_put_contents($exportFileTmp, $filesystem->read($logEntity->getFile()->getPath()));
+        file_put_contents($exportFileTmp, $filesystem->read($this->getLogEntity($progress->getLogId())->getFile()->getPath()));
 
-        $uploadedFile = new UploadedFile($exportFileTmp, 'test.csv', $logEntity->getProfile()->getFileType());
-
-        $expireDate = new \DateTimeImmutable('2099-01-01');
-        $logEntity = $importExportService->prepareImport(
-            Context::createDefaultContext(),
-            $profileId,
-            $expireDate,
-            $uploadedFile
-        );
-
-        $importExport = $factory->create($logEntity->getId());
-        $progress = $importExport->import(Context::createDefaultContext());
+        $progress = $this->import(Context::createDefaultContext(), ProductDefinition::ENTITY_NAME, $exportFileTmp, 'test.csv', null, false, true);
 
         static::assertTrue($progress->isFinished());
-        static::assertSame(Progress::STATE_SUCCEEDED, $progress->getState());
+        static::assertImportExportSucceeded($progress, $this->getInvalidLogContent($progress->getInvalidRecordsLogId()));
 
         $criteria = new Criteria([$productId]);
         $criteria->addAssociation('visibilities');
@@ -244,45 +150,24 @@ class ImportExportTest extends TestCase
         $categoryRepository->upsert($categories, Context::createDefaultContext());
 
         $filesystem = $this->getContainer()->get('shopware.filesystem.private');
-        $factory = $this->getContainer()->get(ImportExportFactory::class);
-
-        /** @var ImportExportService $importExportService */
-        $importExportService = $this->getContainer()->get(ImportExportService::class);
-
-        $profileId = $this->getDefaultProfileId(CategoryDefinition::ENTITY_NAME);
-
-        $expireDate = new \DateTimeImmutable('2099-01-01');
-        $logEntity = $importExportService->prepareExport(Context::createDefaultContext(), $profileId, $expireDate);
-
-        $importExport = $factory->create($logEntity->getId());
 
         $criteria = new Criteria([$rootId, $betweenId, $childId]);
-        $progress = $importExport->export(Context::createDefaultContext(), $criteria, 0);
+        $progress = $this->export(Context::createDefaultContext(), CategoryDefinition::ENTITY_NAME, $criteria);
         static::assertTrue($progress->isFinished());
-        static::assertSame(Progress::STATE_SUCCEEDED, $progress->getState());
+        static::assertImportExportSucceeded($progress, $this->getInvalidLogContent($progress->getInvalidRecordsLogId()));
 
-        $importExport->export(Context::createDefaultContext(), $criteria);
+        $progress = $this->export(Context::createDefaultContext(), CategoryDefinition::ENTITY_NAME, $criteria);
 
         $categoryRepository->delete([['id' => $childId], ['id' => $betweenId], ['id' => $rootId]], Context::createDefaultContext());
 
         $exportFileTmp = tempnam(sys_get_temp_dir(), '');
 
-        file_put_contents($exportFileTmp, $filesystem->read($logEntity->getFile()->getPath()));
-        $file = new UploadedFile($exportFileTmp, 'test.csv', $logEntity->getProfile()->getFileType());
+        file_put_contents($exportFileTmp, $filesystem->read($this->getLogEntity($progress->getLogId())->getFile()->getPath()));
 
-        $expireDate = new \DateTimeImmutable('2099-01-01');
-        $logEntity = $importExportService->prepareImport(
-            Context::createDefaultContext(),
-            $profileId,
-            $expireDate,
-            $file
-        );
-
-        $importExport = $factory->create($logEntity->getId());
-        $progress = $importExport->import(Context::createDefaultContext());
+        $this->import(Context::createDefaultContext(), CategoryDefinition::ENTITY_NAME, $exportFileTmp, 'test.csv', null, false, true);
 
         static::assertTrue($progress->isFinished());
-        static::assertSame(Progress::STATE_SUCCEEDED, $progress->getState());
+        static::assertImportExportSucceeded($progress, $this->getInvalidLogContent($progress->getInvalidRecordsLogId()));
 
         $ids = $categoryRepository->searchIds(new Criteria([$rootId, $betweenId, $childId]), Context::createDefaultContext());
         static::assertCount(3, $ids->getIds());
@@ -324,42 +209,21 @@ class ImportExportTest extends TestCase
         $context = Context::createDefaultContext();
         $repo->upsert([$testData], $context);
 
-        $factory = $this->getContainer()->get(ImportExportFactory::class);
-
-        /** @var ImportExportService $importExportService */
-        $importExportService = $this->getContainer()->get(ImportExportService::class);
-
-        $profileId = $this->getDefaultProfileId(NewsletterRecipientDefinition::ENTITY_NAME);
-
-        $expireDate = new \DateTimeImmutable('2099-01-01');
-        $logEntity = $importExportService->prepareExport($context, $profileId, $expireDate);
-
-        $importExport = $factory->create($logEntity->getId());
-
         $criteria = new Criteria([$testData['id']]);
-        $progress = $importExport->export(Context::createDefaultContext(), $criteria, 0);
+        $progress = $this->export($context, NewsletterRecipientDefinition::ENTITY_NAME, $criteria);
+
         static::assertTrue($progress->isFinished());
-        static::assertSame(Progress::STATE_SUCCEEDED, $progress->getState());
+        static::assertImportExportSucceeded($progress, $this->getInvalidLogContent($progress->getInvalidRecordsLogId()));
 
         $repo->delete([['id' => $testData['id']]], Context::createDefaultContext());
 
         $exportFileTmp = tempnam(sys_get_temp_dir(), '');
-        file_put_contents($exportFileTmp, $filesystem->read($logEntity->getFile()->getPath()));
+        file_put_contents($exportFileTmp, $filesystem->read($this->getLogEntity($progress->getLogId())->getFile()->getPath()));
 
-        $uploadedFile = new UploadedFile($exportFileTmp, 'test.csv', $logEntity->getProfile()->getFileType());
-        $expireDate = new \DateTimeImmutable('2099-01-01');
-        $logEntity = $importExportService->prepareImport(
-            $context,
-            $profileId,
-            $expireDate,
-            $uploadedFile
-        );
-
-        $importExport = $factory->create($logEntity->getId());
-        $progress = $importExport->import(Context::createDefaultContext());
+        $progress = $this->import($context, NewsletterRecipientDefinition::ENTITY_NAME, $exportFileTmp, 'test.csv', null, false, true);
 
         static::assertTrue($progress->isFinished());
-        static::assertSame(Progress::STATE_SUCCEEDED, $progress->getState());
+        static::assertImportExportSucceeded($progress, $this->getInvalidLogContent($progress->getInvalidRecordsLogId()));
 
         $actualNewsletter = $repo->search(new Criteria([$testData['id']]), Context::createDefaultContext());
         static::assertNotNull($actualNewsletter);
@@ -402,48 +266,20 @@ class ImportExportTest extends TestCase
         $context = Context::createDefaultContext();
         $repository->upsert($groups, $context);
 
-        $factory = $this->getContainer()->get(ImportExportFactory::class);
-
-        /** @var ImportExportService $importExportService */
-        $importExportService = $this->getContainer()->get(ImportExportService::class);
-
-        $profileId = $this->getDefaultProfileId(PropertyGroupOptionDefinition::ENTITY_NAME);
-
-        $expireDate = new \DateTimeImmutable('2099-01-01');
-        $logEntity = $importExportService->prepareExport($context, $profileId, $expireDate);
-
-        $progress = new Progress($logEntity->getId(), Progress::STATE_PROGRESS, 0, null);
-        do {
-            $importExport = $factory->create($logEntity->getId(), $groupSize - 1, $groupSize - 1);
-            $progress = $importExport->export(Context::createDefaultContext(), new Criteria(), $progress->getOffset());
-        } while (!$progress->isFinished());
+        $progress = $this->export($context, PropertyGroupOptionDefinition::ENTITY_NAME, null, $groupSize);
 
         static::assertSame($total, $progress->getTotal());
-        static::assertSame(Progress::STATE_SUCCEEDED, $progress->getState());
-        static::assertGreaterThan(0, $filesystem->getSize($logEntity->getFile()->getPath()));
+        static::assertImportExportSucceeded($progress, $this->getInvalidLogContent($progress->getInvalidRecordsLogId()));
+        static::assertGreaterThan(0, $filesystem->getSize($this->getLogEntity($progress->getLogId())->getFile()->getPath()));
 
         $exportFileTmp = tempnam(sys_get_temp_dir(), '');
-        file_put_contents($exportFileTmp, $filesystem->read($logEntity->getFile()->getPath()));
-
-        $expireDate = new \DateTimeImmutable('2099-01-01');
-        $uploadedFile = new UploadedFile($exportFileTmp, 'test.csv', $logEntity->getProfile()->getFileType());
-
-        $logEntity = $importExportService->prepareImport(
-            $context,
-            $profileId,
-            $expireDate,
-            $uploadedFile
-        );
+        file_put_contents($exportFileTmp, $filesystem->read($this->getLogEntity($progress->getLogId())->getFile()->getPath()));
 
         $connection = $this->getContainer()->get(Connection::class);
         $connection->executeUpdate('DELETE FROM `property_group`');
         $connection->executeUpdate('DELETE FROM `property_group_option`');
 
-        $progress = new Progress($logEntity->getId(), Progress::STATE_PROGRESS, 0, null);
-        do {
-            $importExport = $factory->create($logEntity->getId(), $groupSize - 1, $groupSize - 1);
-            $progress = $importExport->import($context, $progress->getOffset());
-        } while (!$progress->isFinished());
+        $this->import($context, PropertyGroupOptionDefinition::ENTITY_NAME, $exportFileTmp, 'test.csv', null, false, true);
 
         $ids = array_column($groups, 'id');
         $actual = $repository->searchIds(new Criteria($ids), Context::createDefaultContext());
@@ -461,93 +297,117 @@ class ImportExportTest extends TestCase
     public function importCategoryCsv(): void
     {
         $context = Context::createDefaultContext();
-        $context->addExtension(EntityIndexerRegistry::DISABLE_INDEXING, new ArrayEntity());
-        $factory = $this->getContainer()->get(ImportExportFactory::class);
+        $context->addState(EntityIndexerRegistry::DISABLE_INDEXING);
 
-        /** @var ImportExportService $importExportService */
-        $importExportService = $this->getContainer()->get(ImportExportService::class);
+        $progress = $this->import($context, CategoryDefinition::ENTITY_NAME, '/fixtures/categories.csv', 'categories.csv');
 
-        $profileId = $this->getDefaultProfileId(CategoryDefinition::ENTITY_NAME);
-
-        $expireDate = new \DateTimeImmutable('2099-01-01');
-        $file = new UploadedFile(__DIR__ . '/fixtures/categories.csv', 'categories.csv', 'text/csv');
-        $logEntity = $importExportService->prepareImport(
-            $context,
-            $profileId,
-            $expireDate,
-            $file
-        );
-        $progress = new Progress($logEntity->getId(), Progress::STATE_PROGRESS, 0, null);
-        $importExport = $factory->create($logEntity->getId(), 5, 5);
-        do {
-            $progress = $importExport->import($context, $progress->getOffset());
-        } while (!$progress->isFinished());
-
-        static::assertSame(Progress::STATE_SUCCEEDED, $progress->getState());
+        static::assertImportExportSucceeded($progress, $this->getInvalidLogContent($progress->getInvalidRecordsLogId()));
     }
 
     public function importPropertyCsv(): void
     {
         $context = Context::createDefaultContext();
-        $context->addExtension(EntityIndexerRegistry::DISABLE_INDEXING, new ArrayEntity());
-        $factory = $this->getContainer()->get(ImportExportFactory::class);
+        $context->addState(EntityIndexerRegistry::DISABLE_INDEXING);
 
-        /** @var ImportExportService $importExportService */
-        $importExportService = $this->getContainer()->get(ImportExportService::class);
+        $progress = $this->import($context, PropertyGroupOptionDefinition::ENTITY_NAME, '/fixtures/properties.csv', 'properties.csv');
 
-        $profileId = $this->getDefaultProfileId(PropertyGroupOptionDefinition::ENTITY_NAME);
-
-        $expireDate = new \DateTimeImmutable('2099-01-01');
-        $file = new UploadedFile(__DIR__ . '/fixtures/properties.csv', 'properties.csv', 'text/csv');
-        $logEntity = $importExportService->prepareImport(
-            $context,
-            $profileId,
-            $expireDate,
-            $file
-        );
-        $progress = new Progress($logEntity->getId(), Progress::STATE_PROGRESS, 0, null);
-        $importExport = $factory->create($logEntity->getId(), 5, 5);
-        do {
-            $progress = $importExport->import($context, $progress->getOffset());
-        } while (!$progress->isFinished());
-
-        static::assertSame(Progress::STATE_SUCCEEDED, $progress->getState());
+        static::assertImportExportSucceeded($progress, $this->getInvalidLogContent($progress->getInvalidRecordsLogId()));
     }
 
     public function importPropertyCsvWithoutIds(): void
     {
         $context = Context::createDefaultContext();
-        $context->addExtension(EntityIndexerRegistry::DISABLE_INDEXING, new ArrayEntity());
-        $factory = $this->getContainer()->get(ImportExportFactory::class);
+        $context->addState(EntityIndexerRegistry::DISABLE_INDEXING);
 
-        /** @var ImportExportService $importExportService */
-        $importExportService = $this->getContainer()->get(ImportExportService::class);
+        $progress = $this->import($context, PropertyGroupOptionDefinition::ENTITY_NAME, '/fixtures/propertieswithoutid.csv', 'properties.csv');
 
-        $profileId = $this->getDefaultProfileId(PropertyGroupOptionDefinition::ENTITY_NAME);
-
-        $expireDate = new \DateTimeImmutable('2099-01-01');
-        $file = new UploadedFile(__DIR__ . '/fixtures/propertieswithoutid.csv', 'properties.csv', 'text/csv');
-        $logEntity = $importExportService->prepareImport(
-            $context,
-            $profileId,
-            $expireDate,
-            $file
-        );
-        $progress = new Progress($logEntity->getId(), Progress::STATE_PROGRESS, 0, null);
-        $importExport = $factory->create($logEntity->getId(), 5, 5);
-        do {
-            $progress = $importExport->import($context, $progress->getOffset());
-        } while (!$progress->isFinished());
-
-        static::assertSame(Progress::STATE_SUCCEEDED, $progress->getState());
+        static::assertImportExportSucceeded($progress, $this->getInvalidLogContent($progress->getInvalidRecordsLogId()));
 
         /** @var EntityRepositoryInterface $propertyRepository */
-        $propertyRepository = $this->getContainer()->get($logEntity->getProfile()->getSourceEntity() . '.repository');
+        $propertyRepository = $this->getContainer()->get(PropertyGroupOptionDefinition::ENTITY_NAME . '.repository');
 
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('name', 'alicebluenew'));
         $property = $propertyRepository->search($criteria, $context);
         static::assertCount(1, $property);
+    }
+
+    public function importPropertyWithDefaultsCsv(): void
+    {
+        $context = Context::createDefaultContext();
+        $context->addState(EntityIndexerRegistry::DISABLE_INDEXING);
+
+        // setup profile
+        $clonedPropertyProfile = $this->cloneDefaultProfile(PropertyGroupOptionDefinition::ENTITY_NAME);
+        $mappings = $clonedPropertyProfile->getMapping();
+        foreach (array_keys($mappings) as $key) {
+            if ($mappings[$key]['mappedKey'] === 'name') {
+                $mappings[$key]['useDefaultValue'] = true;
+                $mappings[$key]['defaultValue'] = 'MyDefaultNameForProperties';
+
+                break;
+            }
+        }
+        $this->updateProfileMapping($clonedPropertyProfile->getId(), $mappings);
+
+        $progress = $this->import(
+            $context,
+            PropertyGroupOptionDefinition::ENTITY_NAME,
+            '/fixtures/properties_with_empty_names.csv',
+            'properties.csv',
+            $clonedPropertyProfile->getId()
+        );
+
+        // import should succeed even if required names are empty (they will be replaced by default values)
+        static::assertImportExportSucceeded($progress, $this->getInvalidLogContent($progress->getInvalidRecordsLogId()));
+
+        /** @var EntityRepositoryInterface $propertyRepository */
+        $propertyRepository = $this->getContainer()->get(PropertyGroupOptionDefinition::ENTITY_NAME . '.repository');
+
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('name', 'MyDefaultNameForProperties'));
+        $property = $propertyRepository->search($criteria, $context);
+        // import should create 7 properties with default name
+        static::assertCount(7, $property);
+    }
+
+    public function importPropertyWithUserRequiredCsv(): void
+    {
+        $context = Context::createDefaultContext();
+        $context->addState(EntityIndexerRegistry::DISABLE_INDEXING);
+
+        // setup profile
+        $clonedPropertyProfile = $this->cloneDefaultProfile(PropertyGroupOptionDefinition::ENTITY_NAME);
+        $mappings = $clonedPropertyProfile->getMapping();
+        foreach (array_keys($mappings) as $key) {
+            if ($mappings[$key]['mappedKey'] === 'media_url') {
+                $mappings[$key]['requiredByUser'] = true;
+
+                break;
+            }
+        }
+        $this->updateProfileMapping($clonedPropertyProfile->getId(), $mappings);
+
+        $progress = $this->import(
+            $context,
+            PropertyGroupOptionDefinition::ENTITY_NAME,
+            '/fixtures/properties.csv',
+            'properties.csv',
+            $clonedPropertyProfile->getId()
+        );
+
+        // import should fail even if all system required fields are set,
+        // there are rows that have no values for user required fields.
+        // Input CSV is the same as in the 'importPropertyCsv' test (which previously succeeded here).
+        static::assertImportExportFailed($progress);
+        static::assertSame(0, $progress->getProcessedRecords());
+
+        // check the errors
+        $invalid = $this->getInvalidLogContent($progress->getInvalidRecordsLogId());
+
+        static::assertGreaterThanOrEqual(1, \count($invalid)); // there could already be other errors
+        $first = $invalid[0];
+        static::assertStringContainsString('media_url is set to required by the user but has no value', $first['_error']);
     }
 
     /**
@@ -556,36 +416,224 @@ class ImportExportTest extends TestCase
     public function testProductsCsv(): void
     {
         $context = Context::createDefaultContext();
-        $context->addExtension(EntityIndexerRegistry::DISABLE_INDEXING, new ArrayEntity());
+        $context->addState(EntityIndexerRegistry::DISABLE_INDEXING);
 
         $this->importCategoryCsv();
         $this->importPropertyCsv();
         $this->importPropertyCsvWithoutIds();
 
-        $factory = $this->getContainer()->get(ImportExportFactory::class);
+        if (Feature::isActive('FEATURE_NEXT_8097')) {
+            $this->importPropertyWithDefaultsCsv();
+            $this->importPropertyWithUserRequiredCsv();
+        }
 
-        /** @var ImportExportService $importExportService */
-        $importExportService = $this->getContainer()->get(ImportExportService::class);
+        $progress = $this->import($context, ProductDefinition::ENTITY_NAME, '/fixtures/products.csv', 'products.csv');
 
-        $profileId = $this->getDefaultProfileId(ProductDefinition::ENTITY_NAME);
+        static::assertImportExportSucceeded($progress, $this->getInvalidLogContent($progress->getInvalidRecordsLogId()));
+    }
 
-        $expireDate = new \DateTimeImmutable('2099-01-01');
-        $file = new UploadedFile(__DIR__ . '/fixtures/products.csv', 'products.csv', 'text/csv');
+    /**
+     * @group slow
+     */
+    public function testProductsWithVariantsCsv(): void
+    {
+        Feature::skipTestIfInActive('FEATURE_NEXT_8097', $this);
 
-        $logEntity = $importExportService->prepareImport(
-            $context,
-            $profileId,
-            $expireDate,
-            $file
-        );
+        $connection = $this->getContainer()->get(Connection::class);
+        $connection->executeUpdate('DELETE FROM `product`');
 
-        $progress = new Progress($logEntity->getId(), Progress::STATE_PROGRESS, 0, null);
-        $importExport = $factory->create($logEntity->getId(), 5, 5);
-        do {
-            $progress = $importExport->import($context, $progress->getOffset());
-        } while (!$progress->isFinished());
+        $context = Context::createDefaultContext();
+        $context->addState(EntityIndexerRegistry::DISABLE_INDEXING);
 
-        static::assertSame(Progress::STATE_SUCCEEDED, $progress->getState());
+        $progress = $this->import($context, ProductDefinition::ENTITY_NAME, '/fixtures/products_with_variants.csv', 'products.csv');
+
+        static::assertImportExportSucceeded($progress, $this->getInvalidLogContent($progress->getInvalidRecordsLogId()));
+        static::assertEquals(2, $progress->getProcessedRecords());
+
+        $productRepository = $this->getContainer()->get('product.repository');
+        $criteria = new Criteria();
+        $criteria->addAssociation('options.group');
+        $criteria->addFilter(new NotFilter(NotFilter::CONNECTION_AND, [new EqualsFilter('parentId', null)]));
+
+        $result = $productRepository->search($criteria, Context::createDefaultContext());
+        static::assertEquals(32, $result->count());
+        static::assertCount(3, $result->first()->getVariation());
+        static::assertContains('color', array_column($result->first()->getVariation(), 'group'));
+        static::assertContains('size', array_column($result->first()->getVariation(), 'group'));
+        static::assertContains('material', array_column($result->first()->getVariation(), 'group'));
+
+        $criteria = new Criteria();
+        $criteria->addAssociation('configuratorSettings');
+        $criteria->addFilter(new EqualsFilter('parentId', null));
+
+        $result = $productRepository->search($criteria, Context::createDefaultContext());
+        static::assertEquals(10, $result->first()->getConfiguratorSettings()->count());
+    }
+
+    /**
+     * @group slow
+     */
+    public function testProductsWithInvalidVariantsCsv(): void
+    {
+        if (!Feature::isActive('FEATURE_NEXT_8097')) {
+            static::markTestSkipped();
+        }
+
+        $connection = $this->getContainer()->get(Connection::class);
+        $connection->executeUpdate('DELETE FROM `product`');
+
+        $context = Context::createDefaultContext();
+        $context->addState(EntityIndexerRegistry::DISABLE_INDEXING);
+
+        $progress = $this->import($context, ProductDefinition::ENTITY_NAME, '/fixtures/products_with_invalid_variants.csv', 'products.csv');
+
+        static::assertImportExportFailed($progress);
+
+        $invalid = $this->getInvalidLogContent($progress->getInvalidRecordsLogId());
+
+        static::assertCount(2, $invalid);
+
+        $first = $invalid[0];
+        static::assertStringContainsString('size: M, L, XL, XXL | oops', $first['_error']);
+        $second = $invalid[1];
+        static::assertStringContainsString('size: , | color: Green, White, Black, Purple', $second['_error']);
+    }
+
+    public function testProductsWithOwnIdentifier(): void
+    {
+        if (!Feature::isActive('FEATURE_NEXT_8097')) {
+            static::markTestSkipped('NEXT-8097');
+        }
+
+        $context = Context::createDefaultContext();
+        $context->addState(EntityIndexerRegistry::DISABLE_INDEXING);
+
+        $productIds = [
+            Uuid::fromStringToHex('product1'),
+            Uuid::fromStringToHex('product2'),
+            Uuid::fromStringToHex('product3'),
+            Uuid::fromStringToHex('product4'),
+        ];
+
+        /** @var EntityRepositoryInterface $categoryRepository */
+        $categoryRepository = $this->getContainer()->get(CategoryDefinition::ENTITY_NAME . '.repository');
+        $category1Id = Uuid::fromStringToHex('category1');
+        $category2Id = '0a600a2648b3486fbfdbc60993050103';
+        $category3Id = Uuid::fromStringToHex('category3');
+        $categoryRepository->upsert([
+            [
+                'id' => $category1Id,
+                'name' => 'First category',
+            ],
+
+            [
+                'id' => $category2Id,
+                'name' => 'Second category',
+            ],
+
+            [
+                'id' => $category3Id,
+                'name' => 'Third category',
+            ],
+        ], $context);
+
+        $progress = $this->import($context, ProductDefinition::ENTITY_NAME, '/fixtures/products_with_own_identifier.csv', 'products.csv');
+
+        static::assertImportExportSucceeded($progress, $this->getInvalidLogContent($progress->getInvalidRecordsLogId()));
+
+        /** @var EntityRepositoryInterface $productRepository */
+        $productRepository = $this->getContainer()->get(ProductDefinition::ENTITY_NAME . '.repository');
+        $count = $productRepository->search(new Criteria($productIds), $context)->count();
+        static::assertSame(4, $count);
+
+        $name = 'Name has changed';
+        $productRepository->upsert([
+            [
+                'id' => $productIds[0],
+                'name' => $name,
+            ],
+        ], $context);
+
+        $this->import($context, ProductDefinition::ENTITY_NAME, '/fixtures/products_with_own_identifier.csv', 'products.csv');
+
+        /** @var ProductEntity $product */
+        $criteria = new Criteria([$productIds[0]]);
+        $criteria->addAssociation('categories');
+        $product = $productRepository->search($criteria, $context)->first();
+
+        static::assertNotSame($name, $product->getName());
+        static::assertSame(Uuid::fromStringToHex('tax19'), $product->getTaxId());
+        static::assertSame(Uuid::fromStringToHex('manufacturer1'), $product->getManufacturerId());
+        static::assertSame(3, $product->getCategories()->count());
+        static::assertSame($category1Id, $product->getCategories()->get($category1Id)->getId());
+        static::assertSame($category2Id, $product->getCategories()->get($category2Id)->getId());
+        static::assertSame($category3Id, $product->getCategories()->get($category3Id)->getId());
+    }
+
+    public function testProductsWithCategoryPaths(): void
+    {
+        if (!Feature::isActive('FEATURE_NEXT_8097')) {
+            static::markTestSkipped('NEXT-8097');
+        }
+
+        $context = Context::createDefaultContext();
+        $context->addState(EntityIndexerRegistry::DISABLE_INDEXING);
+
+        /** @var EntityRepositoryInterface $categoryRepository */
+        $categoryRepository = $this->getContainer()->get(CategoryDefinition::ENTITY_NAME . '.repository');
+        $categoryHome = Uuid::fromStringToHex('home');
+        $categoryHomeFirst = Uuid::fromStringToHex('homeFirst');
+        $categoryHomeSecond = Uuid::fromStringToHex('homeSecond');
+        $categoryHomeFirstSecond = Uuid::fromStringToHex('homeFirstSecond');
+        $categoryHomeFirstNewSecondNew = Uuid::fromStringToHex('Main>First New>Second New');
+
+        $categoryRepository->upsert([
+            [
+                'id' => $categoryHome,
+                'name' => 'Main',
+            ],
+
+            [
+                'id' => $categoryHomeFirst,
+                'name' => 'First',
+                'parentId' => $categoryHome,
+            ],
+
+            [
+                'id' => $categoryHomeFirstSecond,
+                'name' => 'Second',
+                'parentId' => $categoryHomeFirst,
+            ],
+
+            [
+                'id' => $categoryHomeSecond,
+                'name' => 'Second',
+                'parentId' => $categoryHome,
+            ],
+        ], $context);
+
+        $progress = $this->import($context, ProductDefinition::ENTITY_NAME, '/fixtures/products_with_category_path.csv', 'products.csv');
+
+        static::assertImportExportSucceeded($progress, $this->getInvalidLogContent($progress->getInvalidRecordsLogId()));
+
+        $criteria = new Criteria([Uuid::fromStringToHex('meinhappyproduct')]);
+        $criteria->addAssociation('categories');
+
+        /** @var EntityRepositoryInterface $productRepository */
+        $productRepository = $this->getContainer()->get(ProductDefinition::ENTITY_NAME . '.repository');
+
+        /** @var ProductEntity $product */
+        $product = $productRepository->search($criteria, $context)->first();
+
+        $categories = $product->getCategories()->getElements();
+        static::assertSame(4, $product->getCategories()->count());
+        static::assertArrayHasKey($categoryHome, $categories);
+        static::assertArrayHasKey($categoryHomeFirstSecond, $categories);
+        static::assertArrayHasKey($categoryHomeSecond, $categories);
+        static::assertArrayHasKey($categoryHomeFirstNewSecondNew, $categories);
+
+        $newCategoryLeaf = $product->getCategories()->get($categoryHomeFirstNewSecondNew);
+        static::assertSame(Uuid::fromStringToHex('Main>First New'), $newCategoryLeaf->getParentId());
     }
 
     public function testInvalidFile(): void
@@ -593,39 +641,14 @@ class ImportExportTest extends TestCase
         $connection = $this->getContainer()->get(Connection::class);
         $connection->executeUpdate('DELETE FROM `product`');
 
-        $factory = $this->getContainer()->get(ImportExportFactory::class);
+        $progress = $this->import(Context::createDefaultContext(), ProductDefinition::ENTITY_NAME, '/fixtures/products_with_invalid.csv', 'products.csv');
 
-        /** @var ImportExportService $importExportService */
-        $importExportService = $this->getContainer()->get(ImportExportService::class);
-
-        $profileId = $this->getDefaultProfileId(ProductDefinition::ENTITY_NAME);
-
-        $expireDate = new \DateTimeImmutable('2099-01-01');
-        $uploadedFile = new UploadedFile(__DIR__ . '/fixtures/products_with_invalid.csv', 'products_with_invalid.csv', 'text/csv');
-        $logEntity = $importExportService->prepareImport(
-            Context::createDefaultContext(),
-            $profileId,
-            $expireDate,
-            $uploadedFile
-        );
-        $progress = $importExportService->getProgress($logEntity->getId(), 0);
-        do {
-            // simulate multiple requests
-            $progress = $importExportService->getProgress($logEntity->getId(), $progress->getOffset());
-            $importExport = $factory->create($logEntity->getId(), 2, 2);
-            $progress = $importExport->import(Context::createDefaultContext(), $progress->getOffset());
-        } while (!$progress->isFinished());
-
-        static::assertSame(Progress::STATE_FAILED, $progress->getState());
+        static::assertImportExportFailed($progress);
 
         $ids = $this->productRepository->searchIds(new Criteria(), Context::createDefaultContext());
         static::assertCount(8, $ids->getIds());
 
-        $config = Config::fromLog($importExport->getLogEntity()->getInvalidRecordsLog());
-        $reader = new CsvReader();
-        $filesystem = $this->getContainer()->get('shopware.filesystem.private');
-        $resource = $filesystem->readStream($logEntity->getFile()->getPath() . '_invalid');
-        $invalid = iterator_to_array($reader->read($config, $resource, 0));
+        $invalid = $this->getInvalidLogContent($progress->getInvalidRecordsLogId());
 
         static::assertCount(2, $invalid);
 
@@ -665,6 +688,7 @@ class ImportExportTest extends TestCase
             $logEntity,
             $this->getContainer()->get('shopware.filesystem.private'),
             $this->createMock(EventDispatcherInterface::class),
+            $this->getContainer()->get(Connection::class),
             $this->createMock(EntityRepositoryInterface::class),
             $pipe,
             $reader,
@@ -691,13 +715,78 @@ class ImportExportTest extends TestCase
         $importExport->export(Context::createDefaultContext(), new Criteria());
     }
 
-    public function testSalesChannelAssignment(): void
+    public function testDryRunImport(): void
+    {
+        if (!Feature::isActive('FEATURE_NEXT_8097')) {
+            static::markTestSkipped('NEXT-8097');
+        }
+
+        $connection = $this->getContainer()->get(Connection::class);
+
+        $connection->rollBack();
+        $connection->executeUpdate('DELETE FROM `product`');
+
+        $progress = $this->import(Context::createDefaultContext(), ProductDefinition::ENTITY_NAME, '/fixtures/products_with_invalid.csv', 'products.csv', null, true);
+        static::assertImportExportFailed($progress);
+
+        $ids = $this->productRepository->searchIds(new Criteria(), Context::createDefaultContext());
+        static::assertCount(0, $ids->getIds());
+
+        $result = $this->getLogEntity($progress->getLogId())->getResult();
+        static::assertEquals(2, $result['product_category']['insertError']);
+        static::assertEquals(8, $result['product']['insert']);
+
+        $connection->executeUpdate('DELETE FROM `import_export_log`');
+        $connection->executeUpdate('DELETE FROM `import_export_file`');
+        $connection->beginTransaction();
+    }
+
+    public function testProductWithListPrice(): void
+    {
+        $context = Context::createDefaultContext();
+        $profile = $this->cloneDefaultProfile(ProductDefinition::ENTITY_NAME);
+
+        $mapping = $profile->getMapping();
+        $mapping[] = [
+            'key' => 'price.DEFAULT.listPrice.linked',
+            'mappedKey' => 'list_price_linked',
+        ];
+        $mapping[] = [
+            'key' => 'price.DEFAULT.listPrice.gross',
+            'mappedKey' => 'list_price_gross',
+        ];
+        $mapping[] = [
+            'key' => 'price.DEFAULT.listPrice.net',
+            'mappedKey' => 'list_price_net',
+        ];
+        $this->updateProfileMapping($profile->getId(), $mapping);
+
+        $progress = $this->import($context, ProductDefinition::ENTITY_NAME, '/fixtures/products_with_list_price.csv', 'products_with_list_price.csv', $profile->getId());
+
+        static::assertImportExportSucceeded($progress, $this->getInvalidLogContent($progress->getInvalidRecordsLogId()));
+
+        $result = $this->productRepository->search(new Criteria(), Context::createDefaultContext());
+
+        static::assertSame(2, $result->count());
+        $products = $result->getElements();
+
+        static::assertSame(100.0, $products['bf44b430d7cd47fcac93310edf4fe4e1']->getPrice()->first()->getListPrice()->getNet());
+        static::assertSame(5000.0, $products['bf44b430d7cd47fcac93310edf4fe4e1']->getPrice()->first()->getListPrice()->getGross());
+        static::assertFalse($products['bf44b430d7cd47fcac93310edf4fe4e1']->getPrice()->first()->getListPrice()->getLinked());
+
+        static::assertSame(20.0, $products['bf44b430d7cd47fcac93310edf4fe4e2']->getPrice()->first()->getListPrice()->getNet());
+        static::assertSame(50.0, $products['bf44b430d7cd47fcac93310edf4fe4e2']->getPrice()->first()->getListPrice()->getGross());
+        static::assertTrue($products['bf44b430d7cd47fcac93310edf4fe4e2']->getPrice()->first()->getListPrice()->getLinked());
+    }
+
+    /**
+     * @dataProvider salesChannelAssignementCsvProvider
+     */
+    public function testSalesChannelAssignment($csvPath): void
     {
         $connection = $this->getContainer()->get(Connection::class);
         $connection->executeUpdate('DELETE FROM `product`');
         $connection->executeUpdate('DELETE FROM `product_visibility`');
-
-        $factory = $this->getContainer()->get(ImportExportFactory::class);
 
         $productAId = 'a5c8b8f701034e8dbea72ac0fc32521e';
         $productABId = 'abc8b8f701034e8dbea72ac0fc32521e';
@@ -706,6 +795,7 @@ class ImportExportTest extends TestCase
         $salesChannelAId = 'a8432def39fc4624b33213a56b8c944d';
         $this->createSalesChannel([
             'id' => $salesChannelAId,
+            'name' => 'First Sales Channel',
             'domains' => [[
                 'languageId' => Defaults::LANGUAGE_SYSTEM,
                 'currencyId' => Defaults::CURRENCY,
@@ -717,6 +807,7 @@ class ImportExportTest extends TestCase
         $salesChannelBId = 'b8432def39fc4624b33213a56b8c944d';
         $this->createSalesChannel([
             'id' => $salesChannelBId,
+            'name' => 'Second Sales Channel',
             'domains' => [[
                 'languageId' => Defaults::LANGUAGE_SYSTEM,
                 'currencyId' => Defaults::CURRENCY,
@@ -725,28 +816,9 @@ class ImportExportTest extends TestCase
             ]],
         ]);
 
-        /** @var ImportExportService $importExportService */
-        $importExportService = $this->getContainer()->get(ImportExportService::class);
+        $progress = $this->import(Context::createDefaultContext(), ProductDefinition::ENTITY_NAME, $csvPath, 'products_with_visibilities.csv');
 
-        $profileId = $this->getDefaultProfileId(ProductDefinition::ENTITY_NAME);
-
-        $expireDate = new \DateTimeImmutable('2099-01-01');
-        $uploadedFile = new UploadedFile(__DIR__ . '/fixtures/products_with_visibilities.csv', 'products_with_visibilities.csv', 'text/csv');
-        $logEntity = $importExportService->prepareImport(
-            Context::createDefaultContext(),
-            $profileId,
-            $expireDate,
-            $uploadedFile
-        );
-        $progress = $importExportService->getProgress($logEntity->getId(), 0);
-        do {
-            // simulate multiple requests
-            $progress = $importExportService->getProgress($logEntity->getId(), $progress->getOffset());
-            $importExport = $factory->create($logEntity->getId(), 2, 2);
-            $progress = $importExport->import(Context::createDefaultContext(), $progress->getOffset());
-        } while (!$progress->isFinished());
-
-        static::assertSame(Progress::STATE_SUCCEEDED, $progress->getState());
+        static::assertImportExportSucceeded($progress, $this->getInvalidLogContent($progress->getInvalidRecordsLogId()));
 
         $productRepository = $this->getContainer()->get('product.repository');
         $criteria = new Criteria([$productAId]);
@@ -783,220 +855,240 @@ class ImportExportTest extends TestCase
         static::assertNull($productC->getVisibilities()->filterBySalesChannelId($salesChannelBId)->first());
     }
 
-    private function getDefaultProfileId(string $entity): string
+    /**
+     * @dataProvider
+     */
+    public function salesChannelAssignementCsvProvider()
     {
-        /** @var EntityRepositoryInterface $profileRepository */
-        $profileRepository = $this->getContainer()->get('import_export_profile.repository');
-        $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('systemDefault', true));
-        $criteria->addFilter(new EqualsFilter('sourceEntity', $entity));
-
-        return $profileRepository->searchIds($criteria, Context::createDefaultContext())->firstId();
+        return [
+            ['/fixtures/products_with_visibilities.csv'],
+            ['/fixtures/products_with_visibility_names.csv'],
+        ];
     }
 
-    private function getTestProduct(string $id): array
+    /**
+     * @group slow
+     */
+    public function testCrossSellingCsv(): void
     {
-        $manufacturerId = Uuid::randomHex();
-        $catId1 = Uuid::randomHex();
-        $catId2 = Uuid::randomHex();
-        $taxId = Uuid::randomHex();
-
-        $manufacturerRepository = $this->getContainer()->get('product_manufacturer.repository');
-        $manufacturerRepository->upsert([
-            ['id' => $manufacturerId, 'name' => 'test'],
-        ], Context::createDefaultContext());
-
-        /** @var EntityRepositoryInterface $categoryRepository */
-        $categoryRepository = $this->getContainer()->get('category.repository');
-        $categoryRepository->upsert([
-            ['id' => $catId1, 'name' => 'test'],
-            ['id' => $catId2, 'name' => 'bar'],
-        ], Context::createDefaultContext());
-
-        /** @var EntityRepositoryInterface $taxRepository */
-        $taxRepository = $this->getContainer()->get('tax.repository');
-        $taxRepository->upsert([
-            ['id' => $taxId, 'name' => 'test', 'taxRate' => 15],
-        ], Context::createDefaultContext());
-
-        $tempFile = tempnam(sys_get_temp_dir(), '');
-        copy(self::TEST_IMAGE, $tempFile);
-
-        $fileSize = filesize($tempFile);
-        $mediaFile = new MediaFile($tempFile, 'image/png', 'png', $fileSize);
-
-        $mediaId = Uuid::randomHex();
         $context = Context::createDefaultContext();
+        $context->addState(EntityIndexerRegistry::DISABLE_INDEXING);
 
-        $mediaRepository = $this->getContainer()->get('media.repository');
-        $mediaRepository->create(
-            [
-                [
-                    'id' => $mediaId,
-                ],
-            ],
-            $context
+        if (Feature::isActive('FEATURE_NEXT_8097')) {
+            $csvPath = '/fixtures/cross_selling_products_with_own_identifier.csv';
+        } else {
+            $csvPath = '/fixtures/cross_selling_products.csv';
+        }
+
+        $progress = $this->import($context, ProductDefinition::ENTITY_NAME, $csvPath, 'products.csv');
+
+        static::assertImportExportSucceeded($progress, $this->getInvalidLogContent($progress->getInvalidRecordsLogId()));
+
+        if (Feature::isActive('FEATURE_NEXT_8097')) {
+            $csvPath = '/fixtures/cross_selling_with_own_identifier.csv';
+        } else {
+            $csvPath = '/fixtures/cross_selling.csv';
+        }
+
+        $progress = $this->import($context, ProductCrossSellingDefinition::ENTITY_NAME, $csvPath, 'cross_selling.csv');
+
+        static::assertImportExportSucceeded($progress, $this->getInvalidLogContent($progress->getInvalidRecordsLogId()));
+
+        $criteria = new Criteria(['cf682b73be1afad47d0f32559ac34627', 'c9a70321b66449abb54ba9306ad02835']);
+        $criteria->addAssociation('crossSellings.assignedProducts');
+
+        /** @var ProductEntity $productA */
+        $productA = $this->productRepository->search($criteria, Context::createDefaultContext())->get('cf682b73be1afad47d0f32559ac34627');
+        /** @var ProductEntity $productB */
+        $productB = $this->productRepository->search($criteria, Context::createDefaultContext())->get('c9a70321b66449abb54ba9306ad02835');
+
+        static::assertEquals('Lorem', $productA->getCrossSellings()->first()->getName());
+        static::assertEquals(3, $productA->getCrossSellings()->first()->getAssignedProducts()->count());
+        static::assertEquals('Ipsum', $productB->getCrossSellings()->first()->getName());
+        static::assertEquals(3, $productB->getCrossSellings()->first()->getAssignedProducts()->count());
+
+        $progress = $this->export($context, ProductCrossSellingDefinition::ENTITY_NAME);
+
+        static::assertImportExportSucceeded($progress, $this->getInvalidLogContent($progress->getInvalidRecordsLogId()));
+
+        $filesystem = $this->getContainer()->get('shopware.filesystem.private');
+        $csv = $filesystem->read($this->getLogEntity($progress->getLogId())->getFile()->getPath());
+
+        static::assertStringContainsString(
+            'f26b0d8f252a76f2f99337cced08314b|c1ace7586faa4342a4d3b33e6dd33b7c|c9a70321b66449abb54ba9306ad02835',
+            $csv
         );
 
-        try {
-            $this->getContainer()->get(FileSaver::class)->persistFileToMedia(
-                $mediaFile,
-                'test-file',
-                $mediaId,
-                $context
-            );
-        } finally {
-            if (file_exists($tempFile)) {
-                unlink($tempFile);
-            }
+        static::assertStringContainsString(
+            'c1ace7586faa4342a4d3b33e6dd33b7c|f26b0d8f252a76f2f99337cced08314b|cf682b73be1afad47d0f32559ac34627',
+            $csv
+        );
+    }
+
+    /**
+     * @group slow
+     */
+    public function testCustomersCsv(): void
+    {
+        $connection = $this->getContainer()->get(Connection::class);
+        $connection->executeUpdate('DELETE FROM `customer`');
+
+        $salesChannel = $this->createSalesChannel();
+
+        $context = Context::createDefaultContext();
+        $context->addState(EntityIndexerRegistry::DISABLE_INDEXING);
+
+        $progress = $this->import($context, CustomerDefinition::ENTITY_NAME, '/fixtures/customers.csv', 'customers.csv');
+
+        static::assertImportExportSucceeded($progress, $this->getInvalidLogContent($progress->getInvalidRecordsLogId()));
+
+        $criteria = new Criteria();
+        $criteria->addAssociation('addresses');
+        $criteria->addAssociation('defaultBillingAddress');
+        $criteria->addAssociation('defaultShippingAddress');
+        $repository = $this->getContainer()->get('customer.repository');
+        $result = $repository->search($criteria, Context::createDefaultContext());
+
+        static::assertSame(3, $result->count());
+
+        /** @var CustomerEntity $customerWithMultipleAddresses */
+        $customerWithMultipleAddresses = $result->get('0a1dea4bd2de43929ac210fd17339dde');
+
+        static::assertSame(4, $customerWithMultipleAddresses->getAddresses()->count());
+        static::assertSame('shopware AG', $customerWithMultipleAddresses->getDefaultBillingAddress()->getCompany());
+
+        /** @var CustomerEntity $customerWithUpdatedAddresses */
+        $customerWithUpdatedAddresses = $result->get('f3bb913bc8cc48479c3834a75e82920b');
+
+        static::assertSame(2, $customerWithUpdatedAddresses->getAddresses()->count());
+        static::assertSame('shopware AG', $customerWithUpdatedAddresses->getDefaultShippingAddress()->getCompany());
+
+        $progress = $this->export($context, CustomerDefinition::ENTITY_NAME);
+
+        static::assertImportExportSucceeded($progress, $this->getInvalidLogContent($progress->getInvalidRecordsLogId()));
+
+        $filesystem = $this->getContainer()->get('shopware.filesystem.private');
+        $csv = $filesystem->read($this->getLogEntity($progress->getLogId())->getFile()->getPath());
+
+        static::assertStringContainsString($salesChannel['name'], $csv);
+        static::assertStringContainsString('shopware AG', $csv);
+        static::assertStringContainsString('en-GB', $csv);
+        static::assertStringContainsString('Standard customer group', $csv);
+    }
+
+    public function testImportWithCreateAndUpdateConfig(): void
+    {
+        if (!Feature::isActive('FEATURE_NEXT_8097')) {
+            static::markTestSkipped('FEATURE_NEXT_8097');
         }
 
-        $scA = $this->createSalesChannel([
-            'domains' => [[
-                'languageId' => Defaults::LANGUAGE_SYSTEM,
-                'currencyId' => Defaults::CURRENCY,
-                'snippetSetId' => $this->getSnippetSetIdForLocale('en-GB'),
-                'url' => 'http://localhost.test/a',
-            ]],
+        // expect default upsert
+        $mockRepo = $this->runCustomerImportWithConfigAndMockedRepository([
+            'createEntities' => true,
+            'updateEntities' => true,
         ]);
-        $scB = $this->createSalesChannel([
-            'domains' => [[
-                'languageId' => Defaults::LANGUAGE_SYSTEM,
-                'currencyId' => Defaults::CURRENCY,
-                'snippetSetId' => $this->getSnippetSetIdForLocale('en-GB'),
-                'url' => 'http://localhost.test/b',
-            ]],
+        static::assertEquals(5, $mockRepo->upsertCalls);
+        static::assertEquals(0, $mockRepo->createCalls);
+        static::assertEquals(0, $mockRepo->updateCalls);
+
+        // expect create
+        $mockRepo = $this->runCustomerImportWithConfigAndMockedRepository([
+            'createEntities' => true,
+            'updateEntities' => false,
         ]);
-        $scC = $this->createSalesChannel([
-            'domains' => [[
-                'languageId' => Defaults::LANGUAGE_SYSTEM,
-                'currencyId' => Defaults::CURRENCY,
-                'snippetSetId' => $this->getSnippetSetIdForLocale('en-GB'),
-                'url' => 'http://localhost.test/c',
-            ]],
+        static::assertEquals(0, $mockRepo->upsertCalls);
+        static::assertEquals(5, $mockRepo->createCalls);
+        static::assertEquals(0, $mockRepo->updateCalls);
+
+        // expect update
+        $mockRepo = $this->runCustomerImportWithConfigAndMockedRepository([
+            'createEntities' => false,
+            'updateEntities' => true,
+        ]);
+        static::assertEquals(0, $mockRepo->upsertCalls);
+        static::assertEquals(0, $mockRepo->createCalls);
+        static::assertEquals(5, $mockRepo->updateCalls);
+
+        // expect upsert if both flags are false
+        $mockRepo = $this->runCustomerImportWithConfigAndMockedRepository([
+            'createEntities' => false,
+            'updateEntities' => false,
+        ]);
+        static::assertEquals(5, $mockRepo->upsertCalls);
+        static::assertEquals(0, $mockRepo->createCalls);
+        static::assertEquals(0, $mockRepo->updateCalls);
+    }
+
+    public function testPromotionCodeImportExport(): void
+    {
+        $connection = $this->getContainer()->get(Connection::class);
+        $connection->executeUpdate('DELETE FROM `promotion_individual_code`');
+
+        // create the promotion before the import
+        $promotion = $this->createPromotion([
+            'id' => 'c1a28776116d4431a2208eb2960ec340',
+            'name' => 'MyPromo',
         ]);
 
-        $data = [
-            'id' => $id,
-            'versionId' => Defaults::LIVE_VERSION,
-            'parentVersionId' => '0fa91ce3e96a4bc2be4bd9ce752c3425',
-            'productNumber' => Uuid::randomHex(),
-            'stock' => 10,
-            'price' => [
-                Defaults::CURRENCY => [
-                    'currencyId' => Defaults::CURRENCY,
-                    'gross' => 15,
-                    'net' => 10,
-                    'linked' => false,
-                    'listPrice' => null,
-                    'extensions' => [],
-                ],
-            ],
-            'cover' => ['mediaId' => $mediaId],
-            'manufacturerId' => $manufacturerId,
-            'productManufacturerVersionId' => '0fa91ce3e96a4bc2be4bd9ce752c3425',
-            'taxId' => $taxId,
-            'categories' => [
-                [
-                    'id' => $catId1,
-                ],
-                [
-                    'id' => $catId2,
-                ],
-            ],
-            'active' => false,
-            'isCloseout' => false,
-            'markAsTopseller' => false,
-            'maxPurchase' => 0,
-            'minPurchase' => 1,
-            'purchaseSteps' => 1,
-            'restockTime' => 3,
-            'shippingFree' => false,
-            'releaseDate' => $this->atomDate(),
-            'createdAt' => $this->atomDate(),
-            'translations' => [
-                'en-GB' => [
-                    'name' => 'Default name',
-                ],
-                Defaults::LANGUAGE_SYSTEM => [
-                    'name' => 'Default name',
-                ],
-                'de-DE' => [
-                    'name' => 'German',
-                    'description' => 'Beschreibung',
-                ],
-            ],
-            'visibilities' => [
-                [
-                    'salesChannelId' => Defaults::SALES_CHANNEL,
-                    'visibility' => ProductVisibilityDefinition::VISIBILITY_ALL,
-                ],
-                [
-                    'salesChannelId' => $scA['id'],
-                    'visibility' => ProductVisibilityDefinition::VISIBILITY_ALL,
-                ],
-                [
-                    'salesChannelId' => $scB['id'],
-                    'visibility' => ProductVisibilityDefinition::VISIBILITY_SEARCH,
-                ],
-                [
-                    'salesChannelId' => $scC['id'],
-                    'visibility' => ProductVisibilityDefinition::VISIBILITY_LINK,
-                ],
-            ],
-        ];
-        $this->productRepository->create([$data], Context::createDefaultContext());
+        // add one already generated code to the promotion
+        // already existing codes can only be updated by import
+        // -> code is unique
+        $this->createPromotionCode($promotion['id'], [
+            'code' => 'TestCode',
+        ]);
 
-        return $data;
-    }
+        $context = Context::createDefaultContext();
+        $context->addState(EntityIndexerRegistry::DISABLE_INDEXING);
 
-    private function atomDate($str = 'now'): \DateTimeInterface
-    {
-        return new \DateTimeImmutable((new \DateTimeImmutable($str))->format(\DateTime::ATOM));
-    }
-}
+        $progress = $this->import($context, PromotionIndividualCodeDefinition::ENTITY_NAME, '/fixtures/promotion_individual_codes.csv', 'promotion_individual_codes.csv');
 
-// phpcs:disable
-class TestSubscriber implements EventSubscriberInterface
-{
-    public static function getSubscribedEvents(): array
-    {
-        return [
-            ImportExportBeforeImportRecordEvent::class => 'foo',
-            ImportExportAfterImportRecordEvent::class => 'foo',
-            ImportExportExceptionImportRecordEvent::class => 'foo',
-        ];
-    }
+        // validate import
+        static::assertImportExportSucceeded($progress, $this->getInvalidLogContent($progress->getInvalidRecordsLogId()));
 
-    public function foo(Event $event): void
-    {
-        //will be called on foo
-    }
-}
+        $repository = $this->getContainer()->get('promotion_individual_code.repository');
+        $criteria = new Criteria();
+        $criteria->addAssociation('promotion');
+        $result = $repository->search($criteria, Context::createDefaultContext());
 
-class StockSubscriber implements EventSubscriberInterface
-{
-    public static function getSubscribedEvents(): array
-    {
-        return [
-            ImportExportBeforeExportRecordEvent::class => 'onExport',
-        ];
-    }
+        static::assertSame(13, $result->count());
 
-    public function onExport(ImportExportBeforeExportRecordEvent $event): void
-    {
-        if ($event->getConfig()->get('sourceEntity') !== 'product') {
-            return;
+        /** @var PromotionIndividualCodeEntity $promoCodeResult */
+        foreach ($result as $promoCodeResult) {
+            static::assertTrue($promoCodeResult->getPromotion()->isUseIndividualCodes(), 'Promotion should have useIndividualCodes set to true after import');
         }
 
-        $keys = $event->getConfig()->getMapping()->getKeys();
-        if (!\in_array('stock', $keys, true)) {
-            return;
-        }
+        // export
+        $progress = $this->export($context, PromotionIndividualCodeDefinition::ENTITY_NAME);
 
-        $record = $event->getRecord();
-        $record['stock'] = $record['stock'] + 1;
-        $event->setRecord($record);
+        static::assertImportExportSucceeded($progress, $this->getInvalidLogContent($progress->getInvalidRecordsLogId()));
+
+        $filesystem = $this->getContainer()->get('shopware.filesystem.private');
+        $csv = $filesystem->read($this->getLogEntity($progress->getLogId())->getFile()->getPath());
+
+        // validate export
+        /** @var PromotionIndividualCodeEntity $promoCodeResult */
+        foreach ($result as $promoCodeResult) {
+            static::assertStringContainsString($promoCodeResult->getId(), $csv);
+            static::assertStringContainsString($promoCodeResult->getPromotion()->getId(), $csv);
+            static::assertStringContainsString($promoCodeResult->getPromotion()->getName(), $csv);
+            static::assertStringContainsString($promoCodeResult->getCode(), $csv);
+        }
+    }
+
+    public function testExportOrders(): void
+    {
+        $orderId = Uuid::randomHex();
+        $testOrder = $this->getOrderData($orderId, Context::createDefaultContext())[0];
+        /** @var EntityRepositoryInterface $orderRepository */
+        $orderRepository = $this->getContainer()->get('order.repository');
+
+        $context = Context::createDefaultContext();
+        $orderRepository->upsert([$testOrder], $context);
+
+        $criteria = new Criteria([$testOrder['id']]);
+        $progress = $this->export(Context::createDefaultContext(), OrderDefinition::ENTITY_NAME, $criteria);
+
+        static::assertTrue($progress->isFinished());
+        static::assertImportExportSucceeded($progress, $this->getInvalidLogContent($progress->getInvalidRecordsLogId()));
     }
 }
-// phpcs:enable

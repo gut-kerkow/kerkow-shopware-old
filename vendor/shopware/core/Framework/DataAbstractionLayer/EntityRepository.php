@@ -5,7 +5,7 @@ namespace Shopware\Core\Framework\DataAbstractionLayer;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityAggregationResultLoadedEvent;
 use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityIdSearchResultLoadedEvent;
-use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityLoadedEvent;
+use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityLoadedEventFactory;
 use Shopware\Core\Framework\DataAbstractionLayer\Event\EntitySearchedEvent;
 use Shopware\Core\Framework\DataAbstractionLayer\Event\EntitySearchResultLoadedEvent;
 use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
@@ -18,6 +18,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\IdSearchResult;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\CloneBehavior;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\WriteContext;
+use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Struct\ArrayEntity;
 use Shopware\Core\Framework\Uuid\Exception\InvalidUuidException;
 use Shopware\Core\Framework\Uuid\Uuid;
@@ -55,13 +56,16 @@ class EntityRepository implements EntityRepositoryInterface
      */
     private $definition;
 
+    private ?EntityLoadedEventFactory $eventFactory;
+
     public function __construct(
         EntityDefinition $definition,
         EntityReaderInterface $reader,
         VersionManager $versionManager,
         EntitySearcherInterface $searcher,
         EntityAggregatorInterface $aggregator,
-        EventDispatcherInterface $eventDispatcher
+        EventDispatcherInterface $eventDispatcher,
+        ?EntityLoadedEventFactory $eventFactory = null
     ) {
         $this->reader = $reader;
         $this->searcher = $searcher;
@@ -69,6 +73,26 @@ class EntityRepository implements EntityRepositoryInterface
         $this->eventDispatcher = $eventDispatcher;
         $this->versionManager = $versionManager;
         $this->definition = $definition;
+
+        if ($eventFactory !== null) {
+            $this->eventFactory = $eventFactory;
+        } else {
+            Feature::throwException('FEATURE_NEXT_16155', sprintf('Repository for definition %s requires the event factory as __construct parameter', $definition->getEntityName()));
+        }
+    }
+
+    /**
+     * @deprecated tag:v6.5.0 - Will be removed, inject entity loaded event factory in __construct
+     */
+    public function setEntityLoadedEventFactory(EntityLoadedEventFactory $eventFactory): void
+    {
+        if ($this->eventFactory !== null) {
+            return;
+        }
+
+        Feature::throwException('FEATURE_NEXT_16155', sprintf('Repository for definition %s requires the event factory as __construct parameter', $this->definition->getEntityName()));
+
+        $this->eventFactory = $eventFactory;
     }
 
     public function getDefinition(): EntityDefinition
@@ -83,17 +107,23 @@ class EntityRepository implements EntityRepositoryInterface
         if ($criteria->getAggregations()) {
             $aggregations = $this->aggregate($criteria, $context);
         }
-        $page = !$criteria->getLimit() ? 1 : (int) ceil(($criteria->getOffset() ?? 0 + 1) / $criteria->getLimit());
+
         if (!RepositorySearchDetector::isSearchRequired($this->definition, $criteria)) {
             $this->eventDispatcher->dispatch(
                 new EntitySearchedEvent($criteria, $this->definition, $context)
             );
             $entities = $this->read($criteria, $context);
 
-            return new EntitySearchResult($entities->count(), $entities, $aggregations, $criteria, $context, $page, $criteria->getLimit());
+            return new EntitySearchResult($this->definition->getEntityName(), $entities->count(), $entities, $aggregations, $criteria, $context);
         }
 
         $ids = $this->searchIds($criteria, $context);
+
+        if (empty($ids->getIds())) {
+            $collection = $this->definition->getCollectionClass();
+
+            return new EntitySearchResult($this->definition->getEntityName(), $ids->getTotal(), new $collection(), $aggregations, $criteria, $context);
+        }
 
         $readCriteria = $criteria->cloneForRead($ids->getIds());
 
@@ -117,7 +147,8 @@ class EntityRepository implements EntityRepositoryInterface
             $element->addExtension('search', new ArrayEntity($data));
         }
 
-        $result = new EntitySearchResult($ids->getTotal(), $entities, $aggregations, $criteria, $context, $page, $criteria->getLimit());
+        $result = new EntitySearchResult($this->definition->getEntityName(), $ids->getTotal(), $entities, $aggregations, $criteria, $context);
+        $result->addState(...$ids->getStates());
 
         $event = new EntitySearchResultLoadedEvent($this->definition, $result);
         $this->eventDispatcher->dispatch($event, $event->getName());
@@ -185,8 +216,8 @@ class EntityRepository implements EntityRepositoryInterface
         $affected = $this->versionManager->delete($this->definition, $ids, WriteContext::createFromContext($context));
         $event = EntityWrittenContainerEvent::createWithDeletedEvents($affected->getDeleted(), $context, $affected->getNotFound());
 
-        if ($affected->getUpdated()) {
-            $updates = EntityWrittenContainerEvent::createWithWrittenEvents($affected->getUpdated(), $context, []);
+        if ($affected->getWritten()) {
+            $updates = EntityWrittenContainerEvent::createWithWrittenEvents($affected->getWritten(), $context, []);
             $event->addEvent(...$updates->getEvents());
         }
 
@@ -238,8 +269,12 @@ class EntityRepository implements EntityRepositoryInterface
     {
         $entities = $this->reader->read($this->definition, $criteria, $context);
 
-        $event = new EntityLoadedEvent($this->definition, $entities->getElements(), $context);
-        $this->eventDispatcher->dispatch($event, $event->getName());
+        if ($this->eventFactory === null) {
+            throw new \RuntimeException('Event loaded factory was not injected');
+        }
+
+        $event = $this->eventFactory->create($entities->getElements(), $context);
+        $this->eventDispatcher->dispatch($event);
 
         return $entities;
     }

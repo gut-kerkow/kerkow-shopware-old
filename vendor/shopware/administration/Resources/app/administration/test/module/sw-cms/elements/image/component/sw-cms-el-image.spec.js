@@ -14,13 +14,7 @@ function createWrapper() {
     return shallowMount(Shopware.Component.build('sw-cms-el-image'), {
         localVue,
         sync: false,
-        mocks: {
-            $tc: v => v
-        },
         provide: {
-            feature: {
-                isActive: () => true
-            },
             cmsService: {
                 getCmsBlockRegistry: () => {
                     return {};
@@ -86,7 +80,8 @@ describe('src/module/sw-cms/elements/image/component', () => {
         const wrapper = createWrapper();
 
         const img = wrapper.find('img');
-        expect(img.attributes('src')).toBe(wrapper.vm.assetFilter('administration/static/img/cms/preview_mountain_large.jpg'));
+        expect(img.attributes('src'))
+            .toBe(wrapper.vm.assetFilter('administration/static/img/cms/preview_mountain_large.jpg'));
     });
 
     it('should show media source regarding to media data', async () => {
@@ -128,6 +123,7 @@ describe('src/module/sw-cms/elements/image/component', () => {
         });
 
         const img = wrapper.find('img');
-        expect(img.attributes('src')).toBe(wrapper.vm.assetFilter('administration/static/img/cms/preview_mountain_large.jpg'));
+        expect(img.attributes('src'))
+            .toBe(wrapper.vm.assetFilter('administration/static/img/cms/preview_mountain_large.jpg'));
     });
 });

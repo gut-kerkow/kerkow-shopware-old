@@ -13,9 +13,7 @@ Component.register('sw-sales-channel-menu', {
     data() {
         return {
             salesChannels: [],
-            /** @deprecated tag:v6.4.0.0 will be read only in future version */
-            menuItems: [],
-            showModal: false
+            showModal: false,
         };
     },
 
@@ -38,17 +36,25 @@ Component.register('sw-sales-channel-menu', {
             return criteria;
         },
 
-        /** @deprecated tag:v6.4.0.0 will be removed in future version when menuItems are computed */
-        administrationLanguage() {
-            return State.get('session').languageId;
-        }
-    },
+        buildMenuTree() {
+            const flatTree = new FlatTree();
 
-    watch: {
-        /** @deprecated tag:v6.4.0.0 will be removed in future version when menuItems are computed */
-        administrationLanguage() {
-            this.loadEntityData();
-        }
+            this.salesChannels.forEach((salesChannel) => {
+                flatTree.add({
+                    id: salesChannel.id,
+                    path: 'sw.sales.channel.detail',
+                    params: { id: salesChannel.id },
+                    color: '#D8DDE6',
+                    label: { label: salesChannel.translated.name, translated: true },
+                    icon: salesChannel.type.iconName,
+                    children: [],
+                    domainLink: this.getDomainLink(salesChannel),
+                    active: salesChannel.active,
+                });
+            });
+
+            return flatTree.convertToTree();
+        },
     },
 
     created() {
@@ -76,35 +82,9 @@ Component.register('sw-sales-channel-menu', {
         },
 
         loadEntityData() {
-            this.salesChannelRepository.search(this.salesChannelCriteria, Shopware.Context.api).then((response) => {
+            this.salesChannelRepository.search(this.salesChannelCriteria).then((response) => {
                 this.salesChannels = response;
-                this.createMenuTree();
             });
-        },
-
-        buildMenuTree() {
-            const flatTree = new FlatTree();
-
-            this.salesChannels.forEach((salesChannel) => {
-                flatTree.add({
-                    id: salesChannel.id,
-                    path: 'sw.sales.channel.detail',
-                    params: { id: salesChannel.id },
-                    color: '#D8DDE6',
-                    label: { label: salesChannel.translated.name, translated: true },
-                    icon: salesChannel.type.iconName,
-                    children: [],
-                    domainLink: this.getDomainLink(salesChannel),
-                    active: salesChannel.active
-                });
-            });
-
-            return flatTree.convertToTree();
-        },
-
-        /** @deprecated tag:v6.4.0.0 will be removed. Decorate buildMenuTree instead */
-        createMenuTree() {
-            this.menuItems = this.buildMenuTree();
         },
 
         getDomainLink(salesChannel) {
@@ -135,6 +115,6 @@ Component.register('sw-sales-channel-menu', {
 
         openStorefrontLink(storeFrontLink) {
             window.open(storeFrontLink, '_blank');
-        }
-    }
+        },
+    },
 });

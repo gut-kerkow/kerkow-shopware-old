@@ -20,8 +20,6 @@ function createWrapper(privileges = []) {
             loginService: {}
         },
         mocks: {
-            $tc: v => v,
-            $router: { replace: () => {} },
             $route: { query: '' }
         },
         stubs: {
@@ -72,6 +70,7 @@ describe('module/sw-users-permissions/components/sw-users-permissions-user-listi
             label: 'sw-users-permissions.users.user-grid.labelLastName'
         }, {
             property: 'aclRoles',
+            sortable: false,
             label: 'sw-users-permissions.users.user-grid.labelRoles'
         }, {
             property: 'email',

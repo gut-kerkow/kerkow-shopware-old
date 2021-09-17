@@ -24,6 +24,10 @@ class DeliveryPositionCollection extends Collection
         $this->elements[$key] = $deliveryPosition;
     }
 
+    /**
+     * @param string|int       $key
+     * @param DeliveryPosition $deliveryPosition
+     */
     public function set($key, $deliveryPosition): void
     {
         parent::set($this->getKey($deliveryPosition), $deliveryPosition);
@@ -46,12 +50,9 @@ class DeliveryPositionCollection extends Collection
     public function getPrices(): PriceCollection
     {
         return new PriceCollection(
-            array_map(
-                function (DeliveryPosition $position) {
-                    return $position->getPrice();
-                },
-                $this->elements
-            )
+            array_map(static function (DeliveryPosition $position) {
+                return $position->getPrice();
+            }, $this->elements)
         );
     }
 
@@ -87,6 +88,47 @@ class DeliveryPositionCollection extends Collection
         });
 
         return array_sum($quantities);
+    }
+
+    public function getVolume(): float
+    {
+        $volumes = $this->getLineItems()->map(function (LineItem $deliverable) {
+            $information = $deliverable->getDeliveryInformation();
+            if ($information === null) {
+                return 0;
+            }
+
+            $length = $information->getLength();
+            $width = $information->getWidth();
+            $height = $information->getHeight();
+
+            if ($length === null || $length <= 0.0) {
+                return 0;
+            }
+
+            if ($width === null || $width <= 0.0) {
+                return 0;
+            }
+
+            if ($height === null || $height <= 0.0) {
+                return 0;
+            }
+
+            return ($length * $width * $height) * $deliverable->getQuantity();
+        });
+
+        return array_sum($volumes);
+    }
+
+    public function getWithoutDeliveryFree(): DeliveryPositionCollection
+    {
+        return $this->filter(function (DeliveryPosition $position) {
+            if ($position->getLineItem()->getDeliveryInformation() !== null && !$position->getLineItem()->getDeliveryInformation()->getFreeDelivery()) {
+                return $position;
+            }
+
+            return null;
+        });
     }
 
     public function getApiAlias(): string

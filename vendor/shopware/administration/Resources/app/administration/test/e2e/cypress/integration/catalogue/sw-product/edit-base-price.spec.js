@@ -1,4 +1,4 @@
-/// <reference types="Cypress" />
+// / <reference types="Cypress" />
 
 import ProductPageObject from '../../../support/pages/module/sw-product.page-object';
 
@@ -25,8 +25,8 @@ describe('Product: Base price', () => {
         // Request we want to wait for later
         cy.server();
         cy.route({
-            url: `${Cypress.env('apiPath')}/product/*`,
-            method: 'patch'
+            url: `${Cypress.env('apiPath')}/_action/sync`,
+            method: 'post'
         }).as('saveData');
 
         cy.clickContextMenuItem(
@@ -37,8 +37,9 @@ describe('Product: Base price', () => {
 
         // Set base price data
         cy.get('.sw-loader').should('not.exist');
-        cy.contains('.sw-card__title', 'Measures & Packaging').scrollIntoView();
-        cy.get('.sw-select-product__select_unit').typeSingleSelectAndCheck('Gramm','.sw-select-product__select_unit');
+        cy.get('.sw-product-detail__tab-specifications').scrollIntoView().click();
+        cy.contains('.sw-card__title', 'Measures & packaging').scrollIntoView();
+        cy.get('.sw-select-product__select_unit').typeSingleSelectAndCheck('Gramm', '.sw-select-product__select_unit');
         cy.get('.sw-product-packaging-form__purchase-unit-field').type('50');
         cy.get('.sw-product-packaging-form__pack-unit-field').type('Package');
         cy.get('.sw-product-packaging-form__pack-unit-plural-field').type('Packages');
@@ -47,7 +48,7 @@ describe('Product: Base price', () => {
         // Save product
         cy.get(page.elements.productSaveAction).click();
         cy.wait('@saveData').then((xhr) => {
-            expect(xhr).to.have.property('status', 204);
+            expect(xhr).to.have.property('status', 200);
         });
 
         // Verify in storefront
@@ -60,7 +61,7 @@ describe('Product: Base price', () => {
             .contains('Product name')
             .click();
 
-        cy.get('.product-detail-price-unit').contains('Content: 50 Gramm (€128.00* / 100 Gramm)')
+        cy.get('.product-detail-price-unit').contains('Content: 50 Gramm (€128.00* / 100 Gramm)');
         cy.get('.product-detail-price').contains('64.00');
 
         cy.get('.btn-buy').click();

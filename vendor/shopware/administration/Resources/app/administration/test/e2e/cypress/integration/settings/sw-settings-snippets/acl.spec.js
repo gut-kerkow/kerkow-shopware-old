@@ -20,10 +20,10 @@ describe('Snippets: Test acl privileges', () => {
                 key: 'snippet',
                 role: 'viewer'
             }
-        ]);
-
-        // visiting settings page to prove that snippets element is visible
-        cy.visit(`${Cypress.env('admin')}#/sw/settings/snippet/index`);
+        ]).then(() => {
+            // visiting settings page to prove that snippets element is visible
+            cy.visit(`${Cypress.env('admin')}#/sw/settings/snippet/index`);
+        });
 
         // go to snippet list
         cy.get('.sw-grid__row--0 > .sw-settings-snippet-set__column-name > .sw-grid__cell-content > a').click();
@@ -38,8 +38,8 @@ describe('Snippets: Test acl privileges', () => {
         cy.get(':nth-child(2) > .sw-card__content > .sw-loader').should('not.exist');
 
         // check content and disabled state of input fields
+        cy.get('#sw-field--translationKey').should('be.visible');
         cy.get('#sw-field--translationKey')
-            .should('to.have.prop', 'disabled', true)
             .invoke('val')
             .then(content => cy.expect(content).to.contain('aWonderful.customSnip'));
 
@@ -60,16 +60,16 @@ describe('Snippets: Test acl privileges', () => {
                 key: 'snippet',
                 role: 'editor'
             }
-        ]);
+        ]).then(() => {
+            // visiting settings page to prove that snippets element is visible
+            cy.visit(`${Cypress.env('admin')}#/sw/settings/snippet/index`);
+        });
 
         cy.server();
         cy.route({
-            url: '/api/v*/snippet/*',
+            url: `${Cypress.env('apiPath')}/snippet/*`,
             method: 'patch'
         }).as('saveData');
-
-        // visiting settings page to prove that snippets element is visible
-        cy.visit(`${Cypress.env('admin')}#/sw/settings/snippet/index`);
 
         cy.get('.sw-grid__row--0 > .sw-settings-snippet-set__column-name > .sw-grid__cell-content > a').click();
 
@@ -93,21 +93,23 @@ describe('Snippets: Test acl privileges', () => {
         });
     });
 
+    // TODO: Unskip with NEXT-15489
     it.skip('@settings: Create snippets', () => {
         cy.loginAsUserWithPermissions([
             {
                 key: 'snippet',
                 role: 'creator'
             }
-        ]);
+        ]).then(() => {
+            // visiting settings page to prove that snippets element is visible
+            cy.visit(`${Cypress.env('admin')}#/sw/settings/snippet/index`);
+        });
 
         cy.server();
         cy.route({
-            url: '/api/v*/snippet',
+            url: `${Cypress.env('apiPath')}/snippet`,
             method: 'post'
         }).as('saveData');
-
-        cy.visit(`${Cypress.env('admin')}#/sw/settings/snippet/index`);
 
         cy.get('.sw-grid__row--0 > .sw-settings-snippet-set__column-name > .sw-grid__cell-content > a').click();
 
@@ -121,6 +123,7 @@ describe('Snippets: Test acl privileges', () => {
         cy.get(':nth-child(2) > .sw-card__content > .sw-loader').should('not.be.exist');
 
         // fill out input fields
+        cy.get('#sw-field--translationKey').should('be.visible');
         cy.get('#sw-field--translationKey').typeAndCheck('random.snippet');
 
         cy.get(':nth-child(1) > .sw-field > .sw-block-field__block > #sw-field--snippet-value').typeAndCheck('Zufällig');
@@ -143,15 +146,16 @@ describe('Snippets: Test acl privileges', () => {
                 key: 'snippet',
                 role: 'creator'
             }
-        ]);
+        ]).then(() => {
+            // visiting settings page to prove that snippets element is visible
+            cy.visit(`${Cypress.env('admin')}#/sw/settings/snippet/index`);
+        });
 
         cy.server();
         cy.route({
-            url: '/api/v*/snippet-set',
+            url: `${Cypress.env('apiPath')}/snippet-set`,
             method: 'post'
         }).as('saveData');
-
-        cy.visit(`${Cypress.env('admin')}#/sw/settings/snippet/index`);
 
         cy.get('.sw-settings-snippet-set-list__action-add')
             .should('be.visible')

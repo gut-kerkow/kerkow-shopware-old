@@ -31,11 +31,32 @@
             <sw-card :isLoading="isLoading"
                      :title="$tc('dvsn-product-option.detail.card-product.title')">
                 <sw-field
-                    v-if="productOption" type="switch"
+                    v-if="productOption"
+                    type="switch"
                     :label="$tc('dvsn-product-option.detail.card-product.active')"
                     :noMarginTop="true"
                     v-model="productOption.active">
                 </sw-field>
+
+                <sw-container columns="1fr 1fr" style="column-gap: 40px">
+                    <sw-field
+                        v-if="productOption"
+                        type="switch"
+                        :label="$tc('dvsn-product-option.detail.card-product.mandatory')"
+                        :helpText="$tc('dvsn-product-option.detail.card-product.mandatory-help')"
+                        :noMarginTop="true"
+                        v-model="productOption.mandatory">
+                    </sw-field>
+
+                    <sw-field
+                        v-if="productOption"
+                        type="switch"
+                        :label="$tc('dvsn-product-option.detail.card-product.hidden')"
+                        :helpText="$tc('dvsn-product-option.detail.card-product.hidden-help')"
+                        :noMarginTop="true"
+                        v-model="productOption.hidden">
+                    </sw-field>
+                </sw-container>
 
                 <sw-field
                     type="text"
@@ -61,27 +82,6 @@
                     v-model="productOption.description"
                     :label="$t('dvsn-product-option.detail.card-product.description')"
                     :helpText="$tc('dvsn-product-option.detail.card-product.description-help')">
-                </sw-field>
-
-                <sw-media-field
-                    v-if="productOption"
-                    v-model="productOption.mediaId"
-                    :label="$t('dvsn-product-option.detail.card-product.media')">
-                </sw-media-field>
-
-                <sw-field
-                    v-if="productOption"
-                    v-model="productOption.icon"
-                    type="select"
-                    :helpText="$tc('dvsn-product-option.detail.card-product.icon-select-help')"
-                    :label="$tc('dvsn-product-option.detail.card-product.icon-select')">
-                    <option
-                        slot="options"
-                        v-for="option in icon"
-                        :key="option.value"
-                        :value="option.value">
-                        {{ option.label }}
-                    </option>
                 </sw-field>
 
                 <!--

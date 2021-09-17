@@ -4,6 +4,7 @@ namespace Shopware\Core\Checkout\Customer\SalesChannel;
 
 use OpenApi\Annotations as OA;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
+use Shopware\Core\Checkout\Customer\CustomerEntity;
 use Shopware\Core\Checkout\Customer\Event\CustomerLogoutEvent;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopware\Core\Framework\Routing\Annotation\LoginRequired;
@@ -64,31 +65,40 @@ class LogoutRoute extends AbstractLogoutRoute
      * @Since("6.2.0.0")
      * @OA\Post(
      *      path="/account/logout",
-     *      summary="Logouts current loggedin customer",
+     *      summary="Log out a customer",
+     *      description="Logs out a customer.",
      *      operationId="logoutCustomer",
-     *      tags={"Store API", "Account"},
+     *      tags={"Store API", "Login & Registration"},
      *      @OA\Response(
      *          response="200",
-     *          description=""
+     *          description="A successful logout returns a context token for the anonymous user. Use that as your `sw-context-token` header for subsequent requests.",
+     *          @OA\JsonContent(ref="#/components/schemas/ContextTokenResponse")
+     *     ),
+     *      @OA\Response(
+     *          response="403",
+     *          description="If the user is not logged in, a 403 error is returned.",
+     *          @OA\JsonContent(ref="#/components/responses/403")
      *     )
      * )
-     * @LoginRequired()
-     * @Route(path="/store-api/v{version}/account/logout", name="store-api.account.logout", methods={"POST"})
+     * @LoginRequired(allowGuest=true)
+     * @Route(path="/store-api/account/logout", name="store-api.account.logout", methods={"POST"})
      */
-    public function logout(SalesChannelContext $context, ?RequestDataBag $data = null): ContextTokenResponse
+    public function logout(SalesChannelContext $context, RequestDataBag $data): ContextTokenResponse
     {
+        /** @var CustomerEntity $customer */
+        $customer = $context->getCustomer();
         if ($this->shouldDelete($context)) {
             $this->cartService->deleteCart($context);
             $this->contextPersister->delete($context->getToken());
 
-            $event = new CustomerLogoutEvent($context, $context->getCustomer());
+            $event = new CustomerLogoutEvent($context, $customer);
             $this->eventDispatcher->dispatch($event);
 
             return new ContextTokenResponse($context->getToken());
         }
 
         $newToken = Random::getAlphanumericString(32);
-        if ($data && (bool) $data->get('replace-token')) {
+        if ((bool) $data->get('replace-token')) {
             $newToken = $this->contextPersister->replace($context->getToken(), $context);
         }
 
@@ -96,7 +106,7 @@ class LogoutRoute extends AbstractLogoutRoute
             'token' => $newToken,
         ]);
 
-        $event = new CustomerLogoutEvent($context, $context->getCustomer());
+        $event = new CustomerLogoutEvent($context, $customer);
         $this->eventDispatcher->dispatch($event);
 
         return new ContextTokenResponse($context->getToken());

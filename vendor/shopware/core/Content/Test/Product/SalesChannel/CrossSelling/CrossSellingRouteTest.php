@@ -15,14 +15,15 @@ use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\TaxAddToSalesChannelTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\PlatformRequest;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\SalesChannel\SalesChannelDefinition;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
+use Symfony\Component\HttpFoundation\Request;
 
 /**
  * @group slow
+ * @group store-api
  */
 class CrossSellingRouteTest extends TestCase
 {
@@ -85,7 +86,7 @@ class CrossSellingRouteTest extends TestCase
 
         $this->productRepository->create([$productData], $this->salesChannelContext->getContext());
 
-        $result = $this->route->load($productId, $this->salesChannelContext)
+        $result = $this->route->load($productId, new Request(), $this->salesChannelContext, new Criteria())
             ->getResult();
 
         static::assertEquals(1, $result->count());
@@ -118,7 +119,7 @@ class CrossSellingRouteTest extends TestCase
         $this->productRepository->create([$productData], $this->salesChannelContext->getContext());
 
         $product = $this->productRepository->search(new Criteria([$productId]), $this->salesChannelContext->getContext())->get($productId);
-        $result = $this->route->load($product->getId(), $this->salesChannelContext)->getResult();
+        $result = $this->route->load($product->getId(), new Request(), $this->salesChannelContext, new Criteria())->getResult();
 
         static::assertEquals(1, $result->count());
 
@@ -154,7 +155,7 @@ class CrossSellingRouteTest extends TestCase
         $this->productRepository->create([$productData], $this->salesChannelContext->getContext());
 
         $product = $this->productRepository->search(new Criteria([$productId]), $this->salesChannelContext->getContext())->get($productId);
-        $result = $this->route->load($product->getId(), $this->salesChannelContext)->getResult();
+        $result = $this->route->load($product->getId(), new Request(), $this->salesChannelContext, new Criteria())->getResult();
 
         static::assertEquals(1, $result->count());
 
@@ -191,7 +192,7 @@ class CrossSellingRouteTest extends TestCase
         $this->productRepository->create([$productData], $this->salesChannelContext->getContext());
 
         $product = $this->productRepository->search(new Criteria([$productId]), $this->salesChannelContext->getContext())->get($productId);
-        $result = $this->route->load($product->getId(), $this->salesChannelContext)->getResult();
+        $result = $this->route->load($product->getId(), new Request(), $this->salesChannelContext, new Criteria())->getResult();
 
         static::assertEquals(1, $result->count());
 
@@ -228,9 +229,9 @@ class CrossSellingRouteTest extends TestCase
         $this->productRepository->create([$productData], $this->salesChannelContext->getContext());
 
         $product = $this->productRepository->search(new Criteria([$productId]), $this->salesChannelContext->getContext())->get($productId);
-        $result = $this->route->load($product->getId(), $this->salesChannelContext)->getResult();
+        $result = $this->route->load($product->getId(), new Request(), $this->salesChannelContext, new Criteria())->getResult();
 
-        static::assertEquals(0, $result->count());
+        static::assertEquals(1, $result->count());
     }
 
     public function testLoadForProductWithProductCrossSellingAssignedProducts(): void
@@ -255,7 +256,7 @@ class CrossSellingRouteTest extends TestCase
         $this->productRepository->create([$productData], $this->salesChannelContext->getContext());
 
         $product = $this->productRepository->search(new Criteria([$productId]), $this->salesChannelContext->getContext())->get($productId);
-        $result = $this->route->load($product->getId(), $this->salesChannelContext)->getResult();
+        $result = $this->route->load($product->getId(), new Request(), $this->salesChannelContext, new Criteria())->getResult();
 
         static::assertEquals(1, $result->count());
 
@@ -320,7 +321,7 @@ class CrossSellingRouteTest extends TestCase
         $this->productRepository->create([$productData], $this->salesChannelContext->getContext());
 
         $product = $this->productRepository->search(new Criteria([$productId]), $this->salesChannelContext->getContext())->get($productId);
-        $result = $this->route->load($product->getId(), $this->salesChannelContext)->getResult();
+        $result = $this->route->load($product->getId(), new Request(), $this->salesChannelContext, new Criteria())->getResult();
 
         static::assertEquals(1, $result->count());
 
@@ -358,7 +359,7 @@ class CrossSellingRouteTest extends TestCase
 
         $this->productRepository->create([$productData], $this->salesChannelContext->getContext());
 
-        $result = $this->route->load($productId, $this->salesChannelContext)->getResult();
+        $result = $this->route->load($productId, new Request(), $this->salesChannelContext, new Criteria())->getResult();
 
         static::assertEquals(2, $result->count());
         foreach ($result as $index => $element) {
@@ -420,7 +421,7 @@ class CrossSellingRouteTest extends TestCase
         $this->salesChannelContext->getContext()->setConsiderInheritance(true);
         $this->productRepository->create([$productData], $this->salesChannelContext->getContext());
 
-        $result = $this->route->load($variantId, $this->salesChannelContext)->getResult();
+        $result = $this->route->load($variantId, new Request(), $this->salesChannelContext, new Criteria())->getResult();
 
         static::assertEquals(2, $result->count());
         foreach ($result as $index => $element) {
@@ -520,6 +521,6 @@ class CrossSellingRouteTest extends TestCase
 
     private function getUrl(string $productId): string
     {
-        return '/store-api/v' . PlatformRequest::API_VERSION . '/product/' . $productId . '/cross-selling';
+        return '/store-api/product/' . $productId . '/cross-selling';
     }
 }

@@ -24,45 +24,33 @@ Component.register('sw-radio-field', {
     template,
     inheritAttrs: false,
 
-    model: {
-        prop: 'value',
-        event: 'change'
-    },
-
     mixins: [
         Mixin.getByName('sw-form-field'),
-        Mixin.getByName('remove-api-error')
+        Mixin.getByName('remove-api-error'),
     ],
 
-    data() {
-        return {
-            /** @deprecated tag:v6.4.0 */
-            currentValue: this.value
-        };
-    },
-
-    watch: {
-        /** @deprecated tag:v6.4.0 */
-        value() { this.currentValue = this.value; }
+    model: {
+        prop: 'value',
+        event: 'change',
     },
 
     props: {
         bordered: {
             type: Boolean,
             required: false,
-            default: false
+            default: false,
         },
 
         block: {
             type: Boolean,
             required: false,
-            default: false
+            default: false,
         },
 
         description: {
             type: String,
             required: false,
-            default: null
+            default: null,
         },
 
         options: {
@@ -70,19 +58,20 @@ Component.register('sw-radio-field', {
             required: false,
             default: () => {
                 return [];
-            }
+            },
         },
-
+        // FIXME: add type and default attribute to property
+        // eslint-disable-next-line vue/require-prop-types, vue/require-default-prop
         value: {
-            required: false
-        }
+            required: false,
+        },
     },
 
     computed: {
         classes() {
             return [{
                 'sw-field--radio-bordered': this.bordered,
-                'sw-field--radio-block': this.block
+                'sw-field--radio-block': this.block,
             }];
         },
         currentIndex() {
@@ -93,7 +82,7 @@ Component.register('sw-radio-field', {
             }
 
             return foundIndex;
-        }
+        },
     },
 
     methods: {
@@ -105,6 +94,6 @@ Component.register('sw-radio-field', {
             }
 
             this.$emit('change', this.options[selectedIndex].value);
-        }
-    }
+        },
+    },
 });

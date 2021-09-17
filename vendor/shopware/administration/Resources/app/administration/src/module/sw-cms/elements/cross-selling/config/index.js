@@ -10,7 +10,7 @@ Component.register('sw-cms-el-config-cross-selling', {
     inject: ['repositoryFactory'],
 
     mixins: [
-        Mixin.getByName('cms-element')
+        Mixin.getByName('cms-element'),
     ],
 
     computed: {
@@ -21,7 +21,7 @@ Component.register('sw-cms-el-config-cross-selling', {
         productSelectContext() {
             return {
                 ...Shopware.Context.api,
-                inheritance: true
+                inheritance: true,
             };
         },
 
@@ -40,8 +40,8 @@ Component.register('sw-cms-el-config-cross-selling', {
         },
 
         isProductPageType() {
-            return this.cmsPageState.currentPage.type === 'product_detail';
-        }
+            return this.cmsPageState?.currentPage?.type === 'product_detail';
+        },
     },
 
     created() {
@@ -58,13 +58,14 @@ Component.register('sw-cms-el-config-cross-selling', {
                 this.element.config.product.value = null;
                 this.$set(this.element.data, 'product', null);
             } else {
-                this.productRepository.get(productId, this.productSelectContext, this.selectedProductCriteria).then((product) => {
-                    this.element.config.product.value = productId;
-                    this.$set(this.element.data, 'product', product);
-                });
+                this.productRepository.get(productId, this.productSelectContext, this.selectedProductCriteria)
+                    .then((product) => {
+                        this.element.config.product.value = productId;
+                        this.$set(this.element.data, 'product', product);
+                    });
             }
 
             this.$emit('element-update', this.element);
-        }
-    }
+        },
+    },
 });

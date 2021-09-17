@@ -3,11 +3,12 @@
 namespace Shopware\Core;
 
 use Composer\Autoload\ClassLoader;
+use Composer\InstalledVersions;
 use Doctrine\DBAL\Configuration;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\DriverManager;
-use PackageVersions\Versions;
+use Shopware\Core\DevOps\Environment\EnvironmentHelper;
 use Shopware\Core\Framework\Adapter\Cache\CacheIdLoader;
 use Shopware\Core\Framework\Event\BeforeSendRedirectResponseEvent;
 use Shopware\Core\Framework\Event\BeforeSendResponseEvent;
@@ -33,7 +34,7 @@ class HttpKernel
     protected static $connection;
 
     /**
-     * @var string
+     * @var class-string<Kernel>
      */
     protected static $kernelClass = Kernel::class;
 
@@ -106,14 +107,28 @@ class HttpKernel
             return self::$connection;
         }
 
-        $url = $_ENV['DATABASE_URL']
-            ?? $_SERVER['DATABASE_URL']
-            ?? getenv('DATABASE_URL');
+        $url = EnvironmentHelper::getVariable('DATABASE_URL', getenv('DATABASE_URL'));
 
         $parameters = [
             'url' => $url,
             'charset' => 'utf8mb4',
         ];
+
+        if ($sslCa = EnvironmentHelper::getVariable('DATABASE_SSL_CA')) {
+            $parameters['driverOptions'][\PDO::MYSQL_ATTR_SSL_CA] = $sslCa;
+        }
+
+        if ($sslCert = EnvironmentHelper::getVariable('DATABASE_SSL_CERT')) {
+            $parameters['driverOptions'][\PDO::MYSQL_ATTR_SSL_CERT] = $sslCert;
+        }
+
+        if ($sslCertKey = EnvironmentHelper::getVariable('DATABASE_SSL_KEY')) {
+            $parameters['driverOptions'][\PDO::MYSQL_ATTR_SSL_KEY] = $sslCertKey;
+        }
+
+        if (EnvironmentHelper::getVariable('DATABASE_SSL_DONT_VERIFY_SERVER_CERT')) {
+            $parameters['driverOptions'][\PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
+        }
 
         self::$connection = DriverManager::getConnection($parameters, new Configuration());
 
@@ -175,16 +190,17 @@ class HttpKernel
             return $this->kernel;
         }
 
-        $versions = Versions::VERSIONS;
-        if (isset($versions['shopware/core'])) {
-            $shopwareVersion = Versions::getVersion('shopware/core');
+        if (InstalledVersions::isInstalled('shopware/platform')) {
+            $shopwareVersion = InstalledVersions::getVersion('shopware/platform')
+                . '@' . InstalledVersions::getReference('shopware/platform');
         } else {
-            $shopwareVersion = Versions::getVersion('shopware/platform');
+            $shopwareVersion = InstalledVersions::getVersion('shopware/core')
+                . '@' . InstalledVersions::getReference('shopware/core');
         }
 
         $connection = self::getConnection();
 
-        if ($this->environment === 'dev') {
+        if ($this->environment !== 'prod') {
             $connection->getConfiguration()->setSQLLogger(new DebugStack());
         }
 
@@ -213,7 +229,7 @@ class HttpKernel
             }
 
             $dir = $rootDir = \dirname($dir);
-            while (!file_exists($dir . '/composer.json')) {
+            while (!file_exists($dir . '/vendor')) {
                 if ($dir === \dirname($dir)) {
                     return $this->projectDir = $rootDir;
                 }

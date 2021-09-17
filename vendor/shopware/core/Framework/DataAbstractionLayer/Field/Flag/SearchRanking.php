@@ -9,8 +9,6 @@ class SearchRanking extends Flag
 {
     public const ASSOCIATION_SEARCH_RANKING = 0.25;
     public const MIDDLE_SEARCH_RANKING = 250;
-    /** @deprecated tag:v6.4.0 Use LOW_SEARCH_RANKING instead */
-    public const LOW_SEARCH_RAKING = self::LOW_SEARCH_RANKING;
     public const LOW_SEARCH_RANKING = 80;
     public const HIGH_SEARCH_RANKING = 500;
 
@@ -19,9 +17,15 @@ class SearchRanking extends Flag
      */
     protected $ranking;
 
-    public function __construct(float $ranking)
+    /**
+     * @var bool
+     */
+    protected $tokenize;
+
+    public function __construct(float $ranking, bool $tokenize = true)
     {
         $this->ranking = $ranking;
+        $this->tokenize = $tokenize;
     }
 
     public function getRanking(): float
@@ -32,5 +36,10 @@ class SearchRanking extends Flag
     public function parse(): \Generator
     {
         yield 'search_ranking' => $this->ranking;
+    }
+
+    public function tokenize(): bool
+    {
+        return $this->tokenize;
     }
 }

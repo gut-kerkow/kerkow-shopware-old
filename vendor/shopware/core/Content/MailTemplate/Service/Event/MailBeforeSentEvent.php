@@ -10,6 +10,7 @@ use Shopware\Core\Framework\Event\EventData\EventDataCollection;
 use Shopware\Core\Framework\Event\EventData\ObjectType;
 use Shopware\Core\Framework\Event\EventData\ScalarValueType;
 use Shopware\Core\Framework\Log\LogAwareBusinessEventInterface;
+use Symfony\Component\Mime\Email;
 use Symfony\Contracts\EventDispatcher\Event;
 
 class MailBeforeSentEvent extends Event implements BusinessEventInterface, LogAwareBusinessEventInterface
@@ -22,7 +23,7 @@ class MailBeforeSentEvent extends Event implements BusinessEventInterface, LogAw
     private $data;
 
     /**
-     * @var \Swift_Message
+     * @var Email
      */
     private $message;
 
@@ -31,7 +32,7 @@ class MailBeforeSentEvent extends Event implements BusinessEventInterface, LogAw
      */
     private $context;
 
-    public function __construct(array $data, \Swift_Message $message, Context $context)
+    public function __construct(array $data, Email $message, Context $context)
     {
         $this->data = $data;
         $this->message = $message;
@@ -55,7 +56,7 @@ class MailBeforeSentEvent extends Event implements BusinessEventInterface, LogAw
         return $this->data;
     }
 
-    public function getMessage(): \Swift_Message
+    public function getMessage(): Email
     {
         return $this->message;
     }

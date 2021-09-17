@@ -1,4 +1,4 @@
-import template from './sw-product-list.twig';
+import template from './sw-product-list.html.twig';
 import './sw-product-list.scss';
 
 const { Component, Mixin } = Shopware;
@@ -8,17 +8,17 @@ Component.register('sw-product-list', {
     template,
 
     inject: [
+        'feature',
         'repositoryFactory',
         'numberRangeService',
         'acl',
         'filterFactory',
-        'feature'
     ],
 
     mixins: [
         Mixin.getByName('notification'),
         Mixin.getByName('listing'),
-        Mixin.getByName('placeholder')
+        Mixin.getByName('placeholder'),
     ],
 
     data() {
@@ -27,20 +27,34 @@ Component.register('sw-product-list', {
             currencies: [],
             sortBy: 'productNumber',
             sortDirection: 'DESC',
-            naturalSorting: true,
+            naturalSorting: false,
             isLoading: false,
             isBulkLoading: false,
             total: 0,
             product: null,
             cloning: false,
             productEntityVariantModal: false,
-            filterCriteria: new Criteria()
+            filterCriteria: [],
+            defaultFilters: [
+                'active-filter',
+                'product-without-images-filter',
+                'release-date-filter',
+                'stock-filter',
+                'price-filter',
+                'manufacturer-filter',
+                'visibilities-filter',
+                'categories-filter',
+                'tags-filter',
+            ],
+            storeKey: 'grid.filter.product',
+            activeFilterNumber: 0,
+            showBulkEditModal: false,
         };
     },
 
     metaInfo() {
         return {
-            title: this.$createTitle()
+            title: this.$createTitle(),
         };
     },
 
@@ -58,6 +72,7 @@ Component.register('sw-product-list', {
         },
 
         currenciesColumns() {
+            // eslint-disable-next-line vue/no-side-effects-in-computed-properties
             return this.currencies.sort((a, b) => {
                 return b.isSystemDefault ? 1 : -1;
             }).map(item => {
@@ -70,7 +85,7 @@ Component.register('sw-product-list', {
                     currencyId: item.id,
                     visible: item.isSystemDefault,
                     align: 'right',
-                    useCustomSort: true
+                    useCustomSort: true,
                 };
             });
         },
@@ -83,6 +98,11 @@ Component.register('sw-product-list', {
             productCriteria.addSorting(Criteria.sort(this.sortBy, this.sortDirection, this.naturalSorting));
             productCriteria.addAssociation('cover');
             productCriteria.addAssociation('manufacturer');
+            productCriteria.addAssociation('media');
+
+            this.filterCriteria.forEach(filter => {
+                productCriteria.addFilter(filter);
+            });
 
             return productCriteria;
         },
@@ -99,14 +119,68 @@ Component.register('sw-product-list', {
             return this.filterFactory.create('product', {
                 'active-filter': {
                     property: 'active',
-                    label: 'Active'
+                    label: this.$tc('sw-product.filters.activeFilter.label'),
+                    placeholder: this.$tc('sw-product.filters.activeFilter.placeholder'),
                 },
-                'category-filter': {
+                'stock-filter': {
+                    property: 'stock',
+                    label: this.$tc('sw-product.filters.stockFilter.label'),
+                    numberType: 'int',
+                    step: 1,
+                    min: 0,
+                    fromPlaceholder: this.$tc('sw-product.filters.fromPlaceholder'),
+                    toPlaceholder: this.$tc('sw-product.filters.toPlaceholder'),
+                },
+                'product-without-images-filter': {
+                    property: 'media',
+                    label: this.$tc('sw-product.filters.imagesFilter.label'),
+                    placeholder: this.$tc('sw-product.filters.imagesFilter.placeholder'),
+                    optionHasCriteria: this.$tc('sw-product.filters.imagesFilter.textHasCriteria'),
+                    optionNoCriteria: this.$tc('sw-product.filters.imagesFilter.textNoCriteria'),
+                },
+                'manufacturer-filter': {
+                    property: 'manufacturer',
+                    label: this.$tc('sw-product.filters.manufacturerFilter.label'),
+                    placeholder: this.$tc('sw-product.filters.manufacturerFilter.placeholder'),
+                },
+                'visibilities-filter': {
+                    property: 'visibilities.salesChannel',
+                    label: this.$tc('sw-product.filters.salesChannelsFilter.label'),
+                    placeholder: this.$tc('sw-product.filters.salesChannelsFilter.placeholder'),
+                },
+                'categories-filter': {
                     property: 'categories',
-                    label: 'Category'
-                }
+                    label: this.$tc('sw-product.filters.categoriesFilter.label'),
+                    placeholder: this.$tc('sw-product.filters.categoriesFilter.placeholder'),
+                    displayPath: true,
+                },
+                'price-filter': {
+                    property: 'price',
+                    label: this.$tc('sw-product.filters.priceFilter.label'),
+                    digits: 20,
+                    min: 0,
+                    fromPlaceholder: this.$tc('sw-product.filters.fromPlaceholder'),
+                    toPlaceholder: this.$tc('sw-product.filters.toPlaceholder'),
+                },
+                'tags-filter': {
+                    property: 'tags',
+                    label: this.$tc('sw-product.filters.tagsFilter.label'),
+                    placeholder: this.$tc('sw-product.filters.tagsFilter.placeholder'),
+                },
+                'release-date-filter': {
+                    property: 'releaseDate',
+                    label: this.$tc('sw-product.filters.releaseDateFilter.label'),
+                    dateType: 'datetime-local',
+                },
             });
-        }
+        },
+
+        productBulkEditColumns() {
+            return this.productColumns.map(item => {
+                const { inlineEdit, ...restParams } = item;
+                return restParams;
+            });
+        },
     },
 
     watch: {
@@ -114,22 +188,8 @@ Component.register('sw-product-list', {
             handler() {
                 this.getList();
             },
-            deep: true
-        }
-    },
-
-    filters: {
-        stockColorVariant(value) {
-            if (value >= 25) {
-                return 'success';
-            }
-
-            if (value < 25 && value > 0) {
-                return 'warning';
-            }
-
-            return 'error';
-        }
+            deep: true,
+        },
     },
 
     beforeRouteLeave(to, from, next) {
@@ -145,13 +205,20 @@ Component.register('sw-product-list', {
     },
 
     methods: {
-        getList() {
+        async getList() {
             this.isLoading = true;
 
-            return Promise.all([
-                this.productRepository.search(this.productCriteria, Shopware.Context.api),
-                this.currencyRepository.search(this.currencyCriteria, Shopware.Context.api)
-            ]).then((result) => {
+            const criteria = await Shopware.Service('filterService')
+                .mergeWithStoredFilters(this.storeKey, this.productCriteria);
+
+            this.activeFilterNumber = criteria.filters.length - 1;
+
+            try {
+                const result = await Promise.all([
+                    this.productRepository.search(criteria),
+                    this.currencyRepository.search(this.currencyCriteria),
+                ]);
+
                 const products = result[0];
                 const currencies = result[1];
 
@@ -161,9 +228,9 @@ Component.register('sw-product-list', {
                 this.currencies = currencies;
                 this.isLoading = false;
                 this.selection = {};
-            }).catch(() => {
+            } catch {
                 this.isLoading = false;
-            });
+            }
         },
 
         onInlineEditSave(promise, product) {
@@ -171,12 +238,12 @@ Component.register('sw-product-list', {
 
             return promise.then(() => {
                 this.createNotificationSuccess({
-                    message: this.$tc('sw-product.list.messageSaveSuccess', 0, { name: productName })
+                    message: this.$tc('sw-product.list.messageSaveSuccess', 0, { name: productName }),
                 });
             }).catch(() => {
                 this.getList();
                 this.createNotificationError({
-                    message: this.$tc('global.notification.notificationSaveErrorMessageRequiredFieldsInvalid')
+                    message: this.$tc('global.notification.notificationSaveErrorMessageRequiredFieldsInvalid'),
                 });
             });
         },
@@ -196,6 +263,7 @@ Component.register('sw-product-list', {
 
         updateCriteria(criteria) {
             this.page = 1;
+
             this.filterCriteria = criteria;
         },
 
@@ -210,7 +278,7 @@ Component.register('sw-product-list', {
                 currencyId: null,
                 gross: null,
                 linked: true,
-                net: null
+                net: null,
             };
         },
 
@@ -221,23 +289,23 @@ Component.register('sw-product-list', {
                 routerLink: 'sw.product.detail',
                 inlineEdit: 'string',
                 allowResize: true,
-                primary: true
+                primary: true,
             }, {
                 property: 'productNumber',
                 naturalSorting: true,
                 label: this.$tc('sw-product.list.columnProductNumber'),
                 align: 'right',
-                allowResize: true
+                allowResize: true,
             }, {
                 property: 'manufacturer.name',
                 label: this.$tc('sw-product.list.columnManufacturer'),
-                allowResize: true
+                allowResize: true,
             }, {
                 property: 'active',
                 label: this.$tc('sw-product.list.columnActive'),
                 inlineEdit: 'boolean',
                 allowResize: true,
-                align: 'center'
+                align: 'center',
             },
             ...this.currenciesColumns,
             {
@@ -245,12 +313,12 @@ Component.register('sw-product-list', {
                 label: this.$tc('sw-product.list.columnInStock'),
                 inlineEdit: 'number',
                 allowResize: true,
-                align: 'right'
+                align: 'right',
             }, {
                 property: 'availableStock',
                 label: this.$tc('sw-product.list.columnAvailableStock'),
                 allowResize: true,
-                align: 'right'
+                align: 'right',
             }];
         },
 
@@ -284,6 +352,18 @@ Component.register('sw-product-list', {
 
         closeVariantModal() {
             this.productEntityVariantModal = null;
-        }
-    }
+        },
+
+        onBulkEditItems() {
+            this.$router.push({ name: 'sw.bulk.edit.product' });
+        },
+
+        onBulkEditModalOpen() {
+            this.showBulkEditModal = true;
+        },
+
+        onBulkEditModalClose() {
+            this.showBulkEditModal = false;
+        },
+    },
 });

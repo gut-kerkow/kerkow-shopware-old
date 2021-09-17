@@ -1,10 +1,13 @@
+/**
+ * @deprecated tag:v6.5.0 - will be removed, use `sw-promotion-v2` instead
+ */
 export default {
     generateCode,
     getPermutationCount,
     getRandomCharacter,
     getRandomNumber,
     getCharacters,
-    getDigit
+    getDigit,
 };
 
 /**

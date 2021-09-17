@@ -20,7 +20,8 @@ function mockEventAction(id) {
         active: false,
         config: {
             mail_template_id: '555',
-            mail_template_type_id: 'b926ca5d4ace4efbae2d8474a04ead20'
+            mail_template_type_id: 'b926ca5d4ace4efbae2d8474a04ead20',
+            recipients: { 'mail1@example.com': 'Mail 1' }
         }
     };
 }
@@ -49,14 +50,6 @@ function createWrapper(eventActionId = null, privileges = []) {
 
     return shallowMount(Shopware.Component.build('sw-event-action-detail'), {
         localVue,
-        mocks: {
-            $tc: (translationPath) => translationPath,
-            $router: { replace: () => {} },
-            $route: { query: '' },
-            $device: {
-                getSystemKey: () => {}
-            }
-        },
         stubs: {
             'sw-page': {
                 template: '<div class="sw-page">' +
@@ -77,7 +70,10 @@ function createWrapper(eventActionId = null, privileges = []) {
             'sw-switch-field': true,
             'sw-event-action-detail-recipients': true,
             'router-link': true,
-            'sw-icon': true
+            'sw-icon': true,
+            'sw-select-rule-create': true,
+            'sw-field': true,
+            'sw-custom-field-set-renderer': true
         },
         propsData: {
             eventActionId: eventActionId
@@ -109,6 +105,9 @@ function createWrapper(eventActionId = null, privileges = []) {
                         return Promise.resolve();
                     })
                 })
+            },
+            customFieldDataProviderService: {
+                getCustomFieldSets: () => Promise.resolve([])
             }
         }
     });
@@ -163,7 +162,7 @@ describe('src/module/sw-event-action/page/sw-event-action-detail', () => {
         await wrapper.vm.$nextTick();
 
         // Expect to call `event_action` repository create with shopware context
-        expect(wrapper.vm.eventActionRepository.create).toHaveBeenCalledWith(Shopware.Context.api);
+        expect(wrapper.vm.eventActionRepository.create).toHaveBeenCalledWith();
 
         // Expect to call businessEventService to load all business events
         expect(wrapper.vm.businessEventService.getBusinessEvents).toHaveBeenCalledTimes(1);
@@ -227,7 +226,7 @@ describe('src/module/sw-event-action/page/sw-event-action-detail', () => {
         await wrapper.vm.$nextTick();
 
         // Ensure `event_action` repository save has been called
-        expect(wrapper.vm.eventActionRepository.save).toHaveBeenCalledWith(wrapper.vm.eventAction, Shopware.Context.api);
+        expect(wrapper.vm.eventActionRepository.save).toHaveBeenCalledWith(wrapper.vm.eventAction);
     });
 
     it('should not perform save action when no mail template id is given', async () => {
@@ -283,6 +282,44 @@ describe('src/module/sw-event-action/page/sw-event-action-detail', () => {
         // Verify recipients array gets converted and assigned to recipients key in config
         const expectedRecipients = { 'test@example.com': 'Example', 'info@domain.tld': 'Info' };
         expect(wrapper.vm.eventAction.config.recipients).toEqual(expectedRecipients);
+    });
+
+    it('should detect recipients are not be changed', async () => {
+        const wrapper = createWrapper('54321');
+
+        await wrapper.vm.$forceUpdate();
+        await wrapper.vm.$nextTick();
+
+        expect(wrapper.vm.recipients).toEqual([
+            {
+                email: 'mail1@example.com',
+                name: 'Mail 1'
+            }
+        ]);
+
+        // Execute safe method
+        wrapper.vm.onSave();
+
+        await wrapper.vm.$nextTick();
+        // Verify recipients array gets converted and assigned to recipients key in config
+        expect(wrapper.vm.eventAction.config.recipients).toEqual({
+            'mail1@example.com': 'Mail 1'
+        });
+    });
+
+    it('should update recipients when local variable recipients is changed', async () => {
+        const wrapper = createWrapper('54321');
+
+        await wrapper.vm.$forceUpdate();
+        await wrapper.vm.$nextTick();
+
+        wrapper.vm.onUpdateRecipientsList([]);
+        // Execute safe method
+        wrapper.vm.onSave();
+
+        await wrapper.vm.$nextTick();
+        // Verify recipients array gets converted and assigned to recipients key in config
+        expect(wrapper.vm.eventAction.config.recipients).toBeUndefined();
     });
 
     it('should disable all interactive buttons and fields with viewer privileges', async () => {

@@ -5,19 +5,16 @@ const { Component } = Shopware;
 Component.register('sw-settings-shopware-updates-plugins', {
     template,
 
+    inject: ['feature'],
+
     props: {
         isLoading: {
-            type: Boolean
+            type: Boolean,
         },
         plugins: {
-            type: Array
-        }
-    },
-
-    methods: {
-        openPluginManager() {
-            this.$router.push({ name: 'sw.plugin.index' });
-        }
+            type: Array,
+            default: () => [],
+        },
     },
     computed: {
         columns() {
@@ -25,14 +22,31 @@ Component.register('sw-settings-shopware-updates-plugins', {
                 {
                     property: 'name',
                     label: this.$tc('sw-settings-shopware-updates.plugins.columns.name'),
-                    rawData: true
+                    rawData: true,
                 },
                 {
                     property: 'icon',
                     label: this.$tc('sw-settings-shopware-updates.plugins.columns.available'),
-                    rawData: true
-                }
+                    rawData: true,
+                },
             ];
-        }
-    }
+        },
+
+        cardTitle() {
+            if (this.feature.isActive('FEATURE_NEXT_12608')) {
+                return this.$tc('sw-settings-shopware-updates.cards.extensions');
+            }
+
+            return this.$tc('sw-settings-shopware-updates.cards.plugins');
+        },
+    },
+
+    methods: {
+        openPluginManager() {
+            this.$router.push({ name: 'sw.plugin.index' });
+        },
+        openMyExtensions() {
+            this.$router.push({ name: 'sw.extension.my-extensions.listing.app' });
+        },
+    },
 });

@@ -23,6 +23,8 @@ Component.extend('dvsn-product-option-create', 'dvsn-product-option-detail', {
 
             // set default values
             this.productOption.active = true;
+            this.productOption.hidden = false;
+            this.productOption.mandatory = false;
             this.productOption.icon = 'arrow-circle-right';
             this.productOption.surcharge = 0;
             this.productOption.surchargeType = 'percental';
@@ -32,6 +34,8 @@ Component.extend('dvsn-product-option-create', 'dvsn-product-option-detail', {
         onClickSave() {
             // force valid boolean values
             this.productOption.active = Boolean(this.productOption.active);
+            this.productOption.hidden = Boolean(this.productOption.hidden);
+            this.productOption.mandatory = Boolean(this.productOption.mandatory);
 
             // check valid tax
             if (this.productOption.surchargeType === 'absolute' && (this.productOption.taxId === null || typeof this.productOption.taxId === "undefined")) {

@@ -4,32 +4,34 @@ import './sw-order-line-items-grid.scss';
 const { Component, Service, Utils } = Shopware;
 const { get, format } = Utils;
 
+// merge 16.11.2020
 Component.register('sw-order-line-items-grid', {
     template,
 
-    inject: ['orderService', 'acl'],
+    inject: ['repositoryFactory', 'orderService', 'acl', 'feature'],
+    props: {
+        order: {
+            type: Object,
+            required: true,
+        },
+        context: {
+            type: Object,
+            required: true,
+        },
+        editable: {
+            type: Boolean,
+            required: false,
+            default: true,
+        },
+    },
 
     data() {
         return {
             isLoading: false,
             selectedItems: {},
-            searchTerm: ''
+            searchTerm: '',
+            nestedLineItemsModal: null,
         };
-    },
-    props: {
-        order: {
-            type: Object,
-            required: true
-        },
-        context: {
-            type: Object,
-            required: true
-        },
-        editable: {
-            type: Boolean,
-            required: false,
-            default: true
-        }
     },
     computed: {
         canCreateDiscounts() {
@@ -84,7 +86,8 @@ Component.register('sw-order-line-items-grid', {
                 allowResize: false,
                 primary: true,
                 inlineEdit: true,
-                width: '200px'
+                multiLine: true,
+                width: '200px',
             }, {
                 property: 'unitPrice',
                 dataIndex: 'unitPrice',
@@ -92,7 +95,7 @@ Component.register('sw-order-line-items-grid', {
                 allowResize: false,
                 align: 'right',
                 inlineEdit: true,
-                width: '120px'
+                width: '120px',
             }, {
                 property: 'quantity',
                 dataIndex: 'quantity',
@@ -100,7 +103,7 @@ Component.register('sw-order-line-items-grid', {
                 allowResize: false,
                 align: 'right',
                 inlineEdit: true,
-                width: '80px'
+                width: '80px',
             }, {
                 property: 'totalPrice',
                 dataIndex: 'totalPrice',
@@ -109,7 +112,7 @@ Component.register('sw-order-line-items-grid', {
                     'sw-order.detailBase.columnTotalPriceNet',
                 allowResize: false,
                 align: 'right',
-                width: '80px'
+                width: '80px',
             }];
 
             if (this.taxStatus !== 'tax-free') {
@@ -119,7 +122,7 @@ Component.register('sw-order-line-items-grid', {
                     allowResize: false,
                     align: 'right',
                     inlineEdit: true,
-                    width: '100px'
+                    width: '100px',
                 }];
             }
 
@@ -127,8 +130,8 @@ Component.register('sw-order-line-items-grid', {
         },
 
         salesChannelId() {
-            return Utils.get(this.order, 'salesChannelId', '');
-        }
+            return this.order?.salesChannelId ?? '';
+        },
     },
     methods: {
         onInlineEditSave(item) {
@@ -140,7 +143,7 @@ Component.register('sw-order-line-items-grid', {
                             this.order.id,
                             this.order.versionId,
                             item.identifier,
-                            item.quantity
+                            item.quantity,
                         ).then((lineItem) => {
                             this.$emit('item-edit');
                             resolve(lineItem);
@@ -149,7 +152,7 @@ Component.register('sw-order-line-items-grid', {
                         this.orderService.addCreditItemToOrder(
                             this.order.id,
                             this.order.versionId,
-                            item
+                            item,
                         ).then((lineItem) => {
                             this.$emit('item-edit');
                             resolve(lineItem);
@@ -159,7 +162,7 @@ Component.register('sw-order-line-items-grid', {
                         this.orderService.addCustomLineItemToOrder(
                             this.order.id,
                             this.order.versionId,
-                            item
+                            item,
                         ).then((lineItem) => {
                             this.$emit('item-edit');
                             resolve(lineItem);
@@ -182,13 +185,13 @@ Component.register('sw-order-line-items-grid', {
             item.priceDefinition = {
                 isCalculated: false,
                 taxRules: [{ taxRate: 0, percentage: 100 }],
-                price: 0
+                price: 0,
             };
             item.price = {
                 taxRules: [{ taxRate: 0 }],
                 unitPrice: 0,
                 quantity: 1,
-                totalPrice: 0
+                totalPrice: 0,
             };
             item.quantity = 1;
             item.unitPrice = '...';
@@ -245,11 +248,6 @@ Component.register('sw-order-line-items-grid', {
             this.searchTerm = searchTerm.toLowerCase();
         },
 
-        /** @deprecated tag:v6.4.0 use isCreditItem instead */
-        itemIsCredit(id) {
-            return this.isCreditItem(id);
-        },
-
         isCreditItem(id) {
             const item = this.orderLineItems.find((elem) => { return elem.id === id; });
             return item.type === this.lineItemTypes.CREDIT;
@@ -265,13 +263,6 @@ Component.register('sw-order-line-items-grid', {
 
         getMinItemPrice(id) {
             if (this.isCreditItem(id)) {
-                return null;
-            }
-            return 0;
-        },
-        /** @deprecated tag:v6.4.0 */
-        getMaxItemPrice(id) {
-            if (!this.isCreditItem(id)) {
                 return null;
             }
             return 0;
@@ -300,14 +291,26 @@ Component.register('sw-order-line-items-grid', {
             const decorateTaxes = sortTaxes.map((taxItem) => {
                 return this.$tc('sw-order.detailBase.taxDetail', 0, {
                     taxRate: taxItem.taxRate,
-                    tax: format.currency(taxItem.tax, this.order.currency.shortName)
+                    tax: format.currency(taxItem.tax, this.order.currency.shortName),
                 });
             });
 
             return {
                 showDelay: 300,
-                message: `${this.$tc('sw-order.detailBase.tax')}<br>${decorateTaxes.join('<br>')}`
+                message: `${this.$tc('sw-order.detailBase.tax')}<br>${decorateTaxes.join('<br>')}`,
             };
+        },
+
+        openNestedLineItemsModal(item) {
+            this.nestedLineItemsModal = item;
+        },
+
+        closeNestedLineItemsModal() {
+            this.nestedLineItemsModal = null;
+        },
+
+        hasChildren(item) {
+            return item.children && item.children.length > 0;
         },
 
         hasMultipleTaxes(item) {
@@ -320,6 +323,13 @@ Component.register('sw-order-line-items-grid', {
             }
 
             item.priceDefinition.quantity = item.quantity;
-        }
-    }
+        },
+
+        showTaxRulesInlineEdit(item) {
+            return !this.itemCreatedFromProduct(item.id) &&
+                item.priceDefinition &&
+                item.priceDefinition.taxRules &&
+                !this.isCreditItem(item.id);
+        },
+    },
 });

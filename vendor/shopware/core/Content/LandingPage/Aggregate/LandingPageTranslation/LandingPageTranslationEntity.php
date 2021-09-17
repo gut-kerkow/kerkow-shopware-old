@@ -3,11 +3,13 @@
 namespace Shopware\Core\Content\LandingPage\Aggregate\LandingPageTranslation;
 
 use Shopware\Core\Content\LandingPage\LandingPageEntity;
-use Shopware\Core\Framework\DataAbstractionLayer\Entity;
-use Shopware\Core\System\Language\LanguageEntity;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
+use Shopware\Core\Framework\DataAbstractionLayer\TranslationEntity;
 
-class LandingPageTranslationEntity extends Entity
+class LandingPageTranslationEntity extends TranslationEntity
 {
+    use EntityCustomFieldsTrait;
+
     /**
      * @var string
      */
@@ -19,24 +21,14 @@ class LandingPageTranslationEntity extends Entity
     protected $landingPage;
 
     /**
-     * @var array|null
-     */
-    protected $customFields;
-
-    /**
-     * @var LanguageEntity|null
-     */
-    protected $language;
-
-    /**
-     * @var string|null
-     */
-    protected $languageId;
-
-    /**
      * @var string|null
      */
     protected $name;
+
+    /**
+     * @var string|null
+     */
+    protected $url;
 
     /**
      * @var string|null
@@ -78,36 +70,6 @@ class LandingPageTranslationEntity extends Entity
         $this->landingPage = $landingPage;
     }
 
-    public function getCustomFields(): ?array
-    {
-        return $this->customFields;
-    }
-
-    public function setCustomFields(?array $customFields): void
-    {
-        $this->customFields = $customFields;
-    }
-
-    public function getLanguage(): ?LanguageEntity
-    {
-        return $this->language;
-    }
-
-    public function setLanguage(?LanguageEntity $language): void
-    {
-        $this->language = $language;
-    }
-
-    public function getLanguageId(): ?string
-    {
-        return $this->languageId;
-    }
-
-    public function setLanguageId(?string $languageId): void
-    {
-        $this->languageId = $languageId;
-    }
-
     public function getName(): ?string
     {
         return $this->name;
@@ -116,6 +78,16 @@ class LandingPageTranslationEntity extends Entity
     public function setName(?string $name): void
     {
         $this->name = $name;
+    }
+
+    public function getUrl(): ?string
+    {
+        return $this->url;
+    }
+
+    public function setUrl(?string $url): void
+    {
+        $this->url = $url;
     }
 
     public function getMetaTitle(): ?string

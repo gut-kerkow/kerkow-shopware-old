@@ -4,10 +4,12 @@ namespace Shopware\Core\System\Country;
 
 use Shopware\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressDefinition;
 use Shopware\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressDefinition;
+use Shopware\Core\Defaults;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\BoolField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\CascadeDelete;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Deprecated;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\RestrictDelete;
@@ -17,11 +19,13 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\IntField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToManyAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\OneToManyAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\StringField;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\TaxFreeConfigField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\TranslatedField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\TranslationsAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\FieldCollection;
 use Shopware\Core\System\Country\Aggregate\CountryState\CountryStateDefinition;
 use Shopware\Core\System\Country\Aggregate\CountryTranslation\CountryTranslationDefinition;
+use Shopware\Core\System\Currency\Aggregate\CurrencyCountryRounding\CurrencyCountryRoundingDefinition;
 use Shopware\Core\System\SalesChannel\Aggregate\SalesChannelCountry\SalesChannelCountryDefinition;
 use Shopware\Core\System\SalesChannel\SalesChannelDefinition;
 use Shopware\Core\System\Tax\Aggregate\TaxRule\TaxRuleDefinition;
@@ -29,6 +33,10 @@ use Shopware\Core\System\Tax\Aggregate\TaxRule\TaxRuleDefinition;
 class CountryDefinition extends EntityDefinition
 {
     public const ENTITY_NAME = 'country';
+
+    public const TYPE_CUSTOMER_TAX_FREE = 'customer-tax-free';
+
+    public const TYPE_COMPANY_TAX_FREE = 'company-tax-free';
 
     public function getEntityName(): string
     {
@@ -45,6 +53,21 @@ class CountryDefinition extends EntityDefinition
         return CountryEntity::class;
     }
 
+    public function getDefaults(): array
+    {
+        $defaultTax = [
+            'enabled' => false,
+            'currencyId' => Defaults::CURRENCY,
+            'amount' => 0,
+        ];
+
+        return [
+            'vatIdRequired' => false,
+            'customerTax' => $defaultTax,
+            'companyTax' => $defaultTax,
+        ];
+    }
+
     public function since(): ?string
     {
         return '6.0.0.0';
@@ -54,6 +77,7 @@ class CountryDefinition extends EntityDefinition
     {
         return new FieldCollection([
             (new IdField('id', 'id'))->addFlags(new ApiAware(), new PrimaryKey(), new Required()),
+
             (new TranslatedField('name'))->addFlags(new ApiAware(), new SearchRanking(SearchRanking::HIGH_SEARCH_RANKING)),
             (new StringField('iso', 'iso'))->addFlags(new ApiAware(), new SearchRanking(SearchRanking::MIDDLE_SEARCH_RANKING)),
             (new IntField('position', 'position'))->addFlags(new ApiAware()),
@@ -65,16 +89,36 @@ class CountryDefinition extends EntityDefinition
             (new BoolField('force_state_in_registration', 'forceStateInRegistration'))->addFlags(new ApiAware()),
             (new BoolField('company_tax_free', 'companyTaxFree'))->addFlags(new ApiAware()),
             (new BoolField('check_vat_id_pattern', 'checkVatIdPattern'))->addFlags(new ApiAware()),
+            (new BoolField('vat_id_required', 'vatIdRequired'))->addFlags(new ApiAware()),
+            (new BoolField('tax_free', 'taxFree'))->addFlags(new ApiAware(), new Deprecated('v6.4.0', 'v6.5.0')),
+            (new BoolField('company_tax_free', 'companyTaxFree'))->addFlags(new ApiAware(), new Deprecated('v6.4.0', 'v6.5.0')),
             (new StringField('vat_id_pattern', 'vatIdPattern'))->addFlags(new ApiAware()),
             (new TranslatedField('customFields'))->addFlags(new ApiAware()),
-            (new OneToManyAssociationField('states', CountryStateDefinition::class, 'country_id', 'id'))->addFlags(new ApiAware(), new CascadeDelete()),
-            (new TranslationsAssociationField(CountryTranslationDefinition::class, 'country_id'))->addFlags(new ApiAware(), new Required()),
-            // Reverse Associations, not available in sales-channel-api
-            (new OneToManyAssociationField('customerAddresses', CustomerAddressDefinition::class, 'country_id', 'id'))->addFlags(new RestrictDelete()),
-            (new OneToManyAssociationField('orderAddresses', OrderAddressDefinition::class, 'country_id', 'id'))->addFlags(new RestrictDelete()),
-            (new OneToManyAssociationField('salesChannelDefaultAssignments', SalesChannelDefinition::class, 'country_id', 'id'))->addFlags(new RestrictDelete()),
+            (new TaxFreeConfigField('customer_tax', 'customerTax'))->addFlags(new ApiAware()),
+            (new TaxFreeConfigField('company_tax', 'companyTax'))->addFlags(new ApiAware()),
+
+            (new OneToManyAssociationField('states', CountryStateDefinition::class, 'country_id', 'id'))
+                ->addFlags(new ApiAware(), new CascadeDelete()),
+
+            (new TranslationsAssociationField(CountryTranslationDefinition::class, 'country_id'))
+                ->addFlags(new ApiAware(), new Required()),
+
+            (new OneToManyAssociationField('customerAddresses', CustomerAddressDefinition::class, 'country_id', 'id'))
+                ->addFlags(new RestrictDelete()),
+
+            (new OneToManyAssociationField('orderAddresses', OrderAddressDefinition::class, 'country_id', 'id'))
+                ->addFlags(new RestrictDelete()),
+
+            (new OneToManyAssociationField('salesChannelDefaultAssignments', SalesChannelDefinition::class, 'country_id', 'id'))
+                ->addFlags(new RestrictDelete()),
+
             (new ManyToManyAssociationField('salesChannels', SalesChannelDefinition::class, SalesChannelCountryDefinition::class, 'country_id', 'sales_channel_id')),
-            (new OneToManyAssociationField('taxRules', TaxRuleDefinition::class, 'country_id', 'id'))->addFlags(new RestrictDelete()),
+
+            (new OneToManyAssociationField('taxRules', TaxRuleDefinition::class, 'country_id', 'id'))
+                ->addFlags(new RestrictDelete()),
+
+            (new OneToManyAssociationField('currencyCountryRoundings', CurrencyCountryRoundingDefinition::class, 'country_id'))
+                ->addFlags(new CascadeDelete()),
         ]);
     }
 }

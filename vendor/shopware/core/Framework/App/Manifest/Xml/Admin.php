@@ -2,6 +2,8 @@
 
 namespace Shopware\Core\Framework\App\Manifest\Xml;
 
+use Shopware\Core\Framework\App\Exception\InvalidArgumentException;
+
 /**
  * @internal only for use by the app-system, will be considered internal from v6.4.0 onward
  */
@@ -10,12 +12,14 @@ class Admin extends XmlElement
     /**
      * @var ActionButton[]
      */
-    protected $actionButtons = [];
+    protected array $actionButtons = [];
 
     /**
      * @var Module[]
      */
-    protected $modules = [];
+    protected array $modules = [];
+
+    protected ?MainModule $mainModule;
 
     private function __construct(array $data)
     {
@@ -45,8 +49,17 @@ class Admin extends XmlElement
         return $this->modules;
     }
 
+    public function getMainModule(): ?MainModule
+    {
+        return $this->mainModule;
+    }
+
     private static function parseChilds(\DOMElement $element): array
     {
+        if (\count($element->getElementsByTagName('main-module')) > 1) {
+            throw new InvalidArgumentException('Main module must only appear once');
+        }
+
         $actionButtons = [];
         foreach ($element->getElementsByTagName('action-button') as $actionButton) {
             $actionButtons[] = ActionButton::fromXml($actionButton);
@@ -57,9 +70,16 @@ class Admin extends XmlElement
             $modules[] = Module::fromXml($module);
         }
 
+        $mainModule = null;
+        foreach ($element->getElementsByTagName('main-module') as $mainModuleNode) {
+            // main-module element has to be unique due to schema restrictions
+            $mainModule = MainModule::fromXml($mainModuleNode);
+        }
+
         return [
             'actionButtons' => $actionButtons,
             'modules' => $modules,
+            'mainModule' => $mainModule,
         ];
     }
 }

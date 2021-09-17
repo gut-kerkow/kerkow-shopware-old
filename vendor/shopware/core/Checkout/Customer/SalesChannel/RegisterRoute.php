@@ -5,6 +5,7 @@ namespace Shopware\Core\Checkout\Customer\SalesChannel;
 use OpenApi\Annotations as OA;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
 use Shopware\Core\Checkout\Customer\CustomerEvents;
+use Shopware\Core\Checkout\Customer\Event\CustomerConfirmRegisterUrlEvent;
 use Shopware\Core\Checkout\Customer\Event\CustomerDoubleOptInRegistrationEvent;
 use Shopware\Core\Checkout\Customer\Event\CustomerLoginEvent;
 use Shopware\Core\Checkout\Customer\Event\CustomerRegisterEvent;
@@ -33,9 +34,12 @@ use Shopware\Core\Framework\Validation\DataValidationFactoryInterface;
 use Shopware\Core\Framework\Validation\DataValidator;
 use Shopware\Core\Framework\Validation\Exception\ConstraintViolationException;
 use Shopware\Core\PlatformRequest;
+use Shopware\Core\System\Country\CountryEntity;
+use Shopware\Core\System\Country\Exception\CountryNotFoundException;
 use Shopware\Core\System\NumberRange\ValueGenerator\NumberRangeValueGeneratorInterface;
 use Shopware\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainEntity;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextPersister;
+use Shopware\Core\System\SalesChannel\Entity\SalesChannelRepositoryInterface;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\Routing\Annotation\Route;
@@ -92,6 +96,11 @@ class RegisterRoute extends AbstractRegisterRoute
      */
     private $contextPersister;
 
+    /**
+     * @var SalesChannelRepositoryInterface
+     */
+    private $countryRepository;
+
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         NumberRangeValueGeneratorInterface $numberRangeValueGenerator,
@@ -100,7 +109,8 @@ class RegisterRoute extends AbstractRegisterRoute
         DataValidationFactoryInterface $addressValidationFactory,
         SystemConfigService $systemConfigService,
         EntityRepositoryInterface $customerRepository,
-        SalesChannelContextPersister $contextPersister
+        SalesChannelContextPersister $contextPersister,
+        SalesChannelRepositoryInterface $countryRepository
     ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->numberRangeValueGenerator = $numberRangeValueGenerator;
@@ -110,6 +120,7 @@ class RegisterRoute extends AbstractRegisterRoute
         $this->systemConfigService = $systemConfigService;
         $this->customerRepository = $customerRepository;
         $this->contextPersister = $contextPersister;
+        $this->countryRepository = $countryRepository;
     }
 
     public function getDecorated(): AbstractRegisterRoute
@@ -121,27 +132,104 @@ class RegisterRoute extends AbstractRegisterRoute
      * @Since("6.2.0.0")
      * @OA\Post(
      *      path="/account/register",
-     *      summary="Register",
+     *      summary="Register a customer",
+     *      description="Registers a customer. Used both for normal customers and guest customers.
+
+See the Guide ""Register a customer"" for more information on customer registration.",
      *      operationId="register",
-     *      tags={"Store API", "Account"},
-     *      @OA\Parameter(name="guest", description="Create guest user", in="query", @OA\Schema(type="boolean")),
-     *      @OA\Parameter(name="title", description="Title", in="query", @OA\Schema(type="string")),
-     *      @OA\Parameter(name="salutationId", description="Salutation", in="query", @OA\Schema(type="string")),
-     *      @OA\Parameter(name="firstName", description="Firstname", in="query", @OA\Schema(type="string")),
-     *      @OA\Parameter(name="lastName", description="Lastname", in="query", @OA\Schema(type="string")),
-     *      @OA\Parameter(name="email", description="email", in="query", @OA\Schema(type="string")),
-     *      @OA\Parameter(name="affiliateCode", description="Affilicate Code", in="query", @OA\Schema(type="string")),
-     *      @OA\Parameter(name="campaignCode", description="Campaign Code", in="query", @OA\Schema(type="string")),
-     *      @OA\Parameter(name="password", description="Password", in="query", @OA\Schema(type="string")),
-     *      @OA\Parameter(name="billingAddress", description="Billingaddress", in="query", @OA\JsonContent(ref="#/components/schemas/customer_address_flat")),
-     *      @OA\Parameter(name="shippingAddress", description="Shippingaddress", in="query", @OA\JsonContent(ref="#/components/schemas/customer_address_flat")),
+     *      tags={"Store API", "Login & Registration"},
+     *      @OA\RequestBody(
+     *          required=true,
+     *          @OA\JsonContent(
+     *              required={
+     *                  "email",
+     *                  "password",
+     *                  "salutationId",
+     *                  "firstName",
+     *                  "lastName",
+     *                  "acceptedDataProtection",
+     *                  "storefrontUrl",
+     *                  "billingAddress"
+     *              },
+     *              @OA\Property(
+     *                  property="email",
+     *                  type="string",
+     *                  description="Email of the customer. Has to be unique, unless `guest` is `true`"),
+     *              @OA\Property(
+     *                  property="password",
+     *                  type="string",
+     *                  description="Password for the customer. Required, unless `guest` is `true`"),
+     *              @OA\Property(
+     *                  property="salutationId",
+     *                  type="string",
+     *                  description="Id of the salutation for the customer account. Fetch options using `salutation` endpoint."),
+     *              @OA\Property(
+     *                  property="firstName",
+     *                  type="string",
+     *                  description="Customer first name. Value will be reused for shipping and billing address if not provided explicitly."),
+     *              @OA\Property(
+     *                  property="lastName",
+     *                  type="string",
+     *                  description="Customer last name. Value will be reused for shipping and billing address if not provided explicitly."),
+     *              @OA\Property(
+     *                  property="acceptedDataProtection",
+     *                  type="boolean",
+     *                  description="Flag indicating accepted data protection"),
+     *              @OA\Property(
+     *                  property="storefrontUrl",
+     *                  type="string",
+     *                  description="URL of the storefront for that registration. Used in confirmation emails. Has to be one of the configured domains of the sales channel."),
+     *              @OA\Property(
+     *                  property="billingAddress",
+     *                  ref="#/components/schemas/CustomerAddress",
+     *                  description="Billing address of the customer. Values will be reused for shipping address if not provided explicitly."),
+     *              @OA\Property(
+     *                  property="shippingAddress",
+     *                  ref="#/components/schemas/CustomerAddress",
+     *                  description="Shipping address of the customer. If not set, billing address will be used."),
+     *              @OA\Property(
+     *                  property="accountType",
+     *                  type="string",
+     *                  default="private",
+     *                  description="Account type of the customer which can be either `private` or `business`."),
+     *              @OA\Property(
+     *                  property="guest",
+     *                  type="boolean",
+     *                  default=false,
+     *                  description="If set, will create a guest customer. Guest customers can re-use an email address and don't need a password."),
+     *              @OA\Property(
+     *                  property="birthdayDay",
+     *                  type="integer",
+     *                  description="Birthday day"),
+     *              @OA\Property(
+     *                  property="birthdayMonth",
+     *                  type="integer",
+     *                  description="Birthday month"),
+     *              @OA\Property(
+     *                  property="birthdayYear",
+     *                  type="integer",
+     *                  description="Birthday year"),
+     *              @OA\Property(
+     *                  property="title",
+     *                  type="string",
+     *                  description="(Academic) title of the customer"),
+     *              @OA\Property(
+     *                  property="affiliateCode",
+     *                  type="string",
+     *                  description="Field can be used to store an affiliate tracking code"),
+     *              @OA\Property(
+     *                  property="campaignCode",
+     *                  type="string",
+     *                  description="Field can be used to store a campaign tracking code")
+     *          )
+     *      ),
      *      @OA\Response(
      *          response="200",
      *          description="Success",
-     *          @OA\JsonContent(ref="#/components/schemas/customer_flat")
+     *          @OA\JsonContent(ref="#/components/schemas/Customer")
      *     )
      * )
-     * @Route("/store-api/v{version}/account/register", name="store-api.account.register", methods={"POST"})
+     * @Route("/store-api/account/register", name="store-api.account.register", methods={"POST"})
      */
     public function register(RequestDataBag $data, SalesChannelContext $context, bool $validateStorefrontUrl = true, ?DataValidationDefinition $additionalValidationDefinitions = null): CustomerResponse
     {
@@ -179,7 +267,6 @@ class RegisterRoute extends AbstractRegisterRoute
             $customer['company'] = $billingAddress['company'];
 
             if ($data->get('vatIds')) {
-                /* @var array $vatIds */
                 $vatIds = $data->get('vatIds');
                 $customer['vatIds'] = empty($vatIds) ? null : $vatIds;
             }
@@ -194,6 +281,12 @@ class RegisterRoute extends AbstractRegisterRoute
         $criteria = new Criteria([$customer['id']]);
         $criteria->addAssociation('addresses');
         $criteria->addAssociation('salutation');
+        $criteria->addAssociation('defaultBillingAddress.country');
+        $criteria->addAssociation('defaultBillingAddress.countryState');
+        $criteria->addAssociation('defaultBillingAddress.salutation');
+        $criteria->addAssociation('defaultShippingAddress.country');
+        $criteria->addAssociation('defaultShippingAddress.countryState');
+        $criteria->addAssociation('defaultShippingAddress.salutation');
 
         /** @var CustomerEntity $customerEntity */
         $customerEntity = $this->customerRepository->search($criteria, $context->getContext())->first();
@@ -210,6 +303,7 @@ class RegisterRoute extends AbstractRegisterRoute
 
         if (!$customerEntity->getDoubleOptInRegistration()) {
             $newToken = $this->contextPersister->replace($context->getToken(), $context);
+
             $this->contextPersister->save(
                 $newToken,
                 [
@@ -235,7 +329,7 @@ class RegisterRoute extends AbstractRegisterRoute
 
     private function getDoubleOptInEvent(CustomerEntity $customer, SalesChannelContext $context, string $url, ?string $redirectTo = null): Event
     {
-        $url .= sprintf('/registration/confirm?em=%s&hash=%s', hash('sha1', $customer->getEmail()), $customer->getHash());
+        $url .= $this->getConfirmUrl($context, $customer);
 
         if ($redirectTo) {
             $url .= '&redirectTo=' . $redirectTo;
@@ -279,7 +373,7 @@ class RegisterRoute extends AbstractRegisterRoute
         $addressData->set('lastName', $data->get('lastName'));
         $addressData->set('salutationId', $data->get('salutationId'));
 
-        $definition = $this->getCustomerCreateValidationDefinition($isGuest, $context);
+        $definition = $this->getCustomerCreateValidationDefinition($isGuest, $data, $context);
 
         if ($additionalValidations) {
             foreach ($additionalValidations->getProperties() as $key => $validation) {
@@ -293,10 +387,11 @@ class RegisterRoute extends AbstractRegisterRoute
         }
 
         $accountType = $data->get('accountType', CustomerEntity::ACCOUNT_TYPE_PRIVATE);
-        $definition->addSub('billingAddress', $this->getCreateAddressValidationDefinition($accountType, true, $context));
+        $definition->addSub('billingAddress', $this->getCreateAddressValidationDefinition($data, $accountType, true, $context));
 
         if ($data->has('shippingAddress')) {
-            $definition->addSub('shippingAddress', $this->getCreateAddressValidationDefinition($accountType, false, $context));
+            $shippingAccountType = $data->get('shippingAddress')->get('accountType', CustomerEntity::ACCOUNT_TYPE_PRIVATE);
+            $definition->addSub('shippingAddress', $this->getCreateAddressValidationDefinition($data, $shippingAccountType, true, $context));
         }
 
         $billingAddress = $addressData->all();
@@ -307,13 +402,17 @@ class RegisterRoute extends AbstractRegisterRoute
         }
 
         if ($data->get('vatIds') !== null && $accountType === CustomerEntity::ACCOUNT_TYPE_BUSINESS) {
-            if ($this->systemConfigService->get('core.loginRegistration.vatIdFieldRequired', $context->getSalesChannel()->getId())) {
+            if ($this->requiredVatIdField($billingAddress['countryId'], $context)) {
                 $definition->add('vatIds', new NotBlank());
             }
 
             $definition->add('vatIds', new Type('array'), new CustomerVatIdentification(
                 ['countryId' => $billingAddress['countryId']]
             ));
+        }
+
+        if ($this->systemConfigService->get('core.loginRegistration.requireDataProtectionCheckbox', $context->getSalesChannel()->getId())) {
+            $definition->add('acceptedDataProtection', new NotBlank());
         }
 
         $violations = $this->validator->getViolations($data->all(), $definition);
@@ -409,7 +508,7 @@ class RegisterRoute extends AbstractRegisterRoute
         return $customer;
     }
 
-    private function getCreateAddressValidationDefinition(string $accountType, bool $isBillingAddress, SalesChannelContext $context): DataValidationDefinition
+    private function getCreateAddressValidationDefinition(DataBag $data, string $accountType, bool $isBillingAddress, SalesChannelContext $context): DataValidationDefinition
     {
         $validation = $this->addressValidationFactory->create($context);
 
@@ -419,13 +518,13 @@ class RegisterRoute extends AbstractRegisterRoute
             $validation->add('company', new NotBlank());
         }
 
-        $validationEvent = new BuildValidationEvent($validation, $context->getContext());
+        $validationEvent = new BuildValidationEvent($validation, $data, $context->getContext());
         $this->eventDispatcher->dispatch($validationEvent, $validationEvent->getName());
 
         return $validation;
     }
 
-    private function getCustomerCreateValidationDefinition(bool $isGuest, SalesChannelContext $context): DataValidationDefinition
+    private function getCustomerCreateValidationDefinition(bool $isGuest, DataBag $data, SalesChannelContext $context): DataValidationDefinition
     {
         $validation = $this->accountValidationFactory->create($context);
 
@@ -445,7 +544,7 @@ class RegisterRoute extends AbstractRegisterRoute
             $validation->add('email', new CustomerEmailUnique($options));
         }
 
-        $validationEvent = new BuildValidationEvent($validation, $context->getContext());
+        $validationEvent = new BuildValidationEvent($validation, $data, $context->getContext());
         $this->eventDispatcher->dispatch($validationEvent, $validationEvent->getName());
 
         return $validation;
@@ -462,7 +561,6 @@ class RegisterRoute extends AbstractRegisterRoute
             'city',
             'company',
             'department',
-            'vatId',
             'countryStateId',
             'countryId',
             'additionalAddressLine1',
@@ -504,5 +602,39 @@ class RegisterRoute extends AbstractRegisterRoute
         $criteria->setLimit(1);
 
         return $this->customerRepository->search($criteria, $context->getContext())->count() > 0;
+    }
+
+    private function requiredVatIdField(string $countryId, SalesChannelContext $context): bool
+    {
+        /** @var CountryEntity|null $country */
+        $country = $this->countryRepository->search(new Criteria([$countryId]), $context)->get($countryId);
+
+        if (!$country) {
+            throw new CountryNotFoundException($countryId);
+        }
+
+        return $country->getVatIdRequired();
+    }
+
+    private function getConfirmUrl(SalesChannelContext $context, CustomerEntity $customer): string
+    {
+        $urlTemplate = $this->systemConfigService->get(
+            'core.loginRegistration.confirmationUrl',
+            $context->getSalesChannelId()
+        );
+        if (!\is_string($urlTemplate)) {
+            $urlTemplate = '/registration/confirm?em=%%HASHEDEMAIL%%&hash=%%SUBSCRIBEHASH%%';
+        }
+
+        $emailHash = hash('sha1', $customer->getEmail());
+
+        $urlEvent = new CustomerConfirmRegisterUrlEvent($context, $urlTemplate, $emailHash, $customer->getHash(), $customer);
+        $this->eventDispatcher->dispatch($urlEvent);
+
+        return str_replace(
+            ['%%HASHEDEMAIL%%', '%%SUBSCRIBEHASH%%'],
+            [$emailHash, $customer->getHash()],
+            $urlEvent->getConfirmUrl()
+        );
     }
 }

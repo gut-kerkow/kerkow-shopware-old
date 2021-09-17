@@ -6,15 +6,21 @@
       "c1051bb4-d103-4f74-8988-acbcafc7fdc3": "This field must not be empty.",
       "INVALID_MEDIA_URL": "Please enter a valid URL to upload a file.",
       "CONTENT__MISSING_RULE_TYPE_EXCEPTION": "You must choose a type for this rule.",
+      "CONTENT__INVALID_CATEGORY_TYPE_AS_ENTRY_POINT": "The type can not be assigned while category is an entry point.",
       "SHOPWARE_INVALID_IP": "Please enter a valid IP address.",
-      "INVALID_URL": "Please enter a valid url."
+      "INVALID_URL": "Please enter a valid url.",
+      "FRAMEWORK__RATE_LIMIT_EXCEEDED": "Too many requests. Please wait {seconds} seconds before trying again.",
+      "DUPLICATED_URL": "This URL is already in use. Please choose another URL."
     },
     "default": {
       "add": "Add",
       "apply": "Apply",
       "cancel": "Cancel",
       "delete": "Delete",
+      "remove": "Remove",
       "edit": "Edit",
+      "duplicate": "Duplicate",
+      "copy": "Copy",
       "error": "Error",
       "warning": "Warning",
       "save": "Save",
@@ -26,7 +32,11 @@
       "view": "View",
       "ascending": "Ascending",
       "descending": "Descending",
-      "xTimesIn": "{n} times in"
+      "xTimesIn": "{n} times in",
+      "open": "Open",
+      "close": "Close",
+      "from": "From",
+      "to": "To"
     },
     "notification": {
       "notificationSaveErrorMessage": "An error occurred while saving the entity \"{entityName}\".",
@@ -99,7 +109,7 @@
       },
       "plugin-updates-listener": {
         "updatesAvailableTitle": "Update(s) available",
-        "updatesAvailableMessage": "Download the latest versions of your plugins now."
+        "updatesAvailableMessage": "Download the latest versions of your extensions now."
       },
       "shopware-updates-listener": {
         "updatesAvailableTitle": "A new Shopware version {version} is available",
@@ -109,7 +119,7 @@
     },
     "sw-admin-menu": {
       "linkLogout": "Logout",
-      "linkMinimizeMenu": "Minimize menu",
+      "linkMinimizeMenu": "Collapse menu",
       "textShopwareAdmin": "Shopware Administration",
       "textProjectName": "Administration",
       "administrator": "Administrator",
@@ -158,16 +168,26 @@
       },
       "caption": "Drag a file here to upload"
     },
+    "sw-gtc-checkbox": {
+      "label": "I accept the",
+      "link": "terms and conditions.",
+      "url": "https://www.shopware.com/en/gtc"
+    },
     "sw-price-field": {
       "labelPriceGross": "Price (gross)",
       "labelPriceNet": "Price (net)"
     },
     "sw-list-price-field": {
       "labelListPriceGross": "List price (gross)",
+      "helpTextListPriceGross": "List prices indicate a discounted product. List prices are denoted as the \"original\" price which is crossed out and coloured in red. The actual and discounted price will be displayed alongside in the default text colour.",
       "labelListPriceNet": "List price (net)"
     },
     "sw-text-editor": {
       "labelTextLength": "{count} character | {count} characters"
+    },
+    "sw-code-editor": {
+      "sanitizeInfo": "Potentially harmful code will be sanitised and removed from the editor automatically.",
+      "sanitizedHint": "Some of your inputs have been sanitised. Please double check your content."
     },
     "sw-tag-field": {
       "title": "Tags",
@@ -378,6 +398,7 @@
     },
     "sw-media-upload-v2": {
       "buttonFileUpload": "Upload file",
+      "buttonFilesUpload": "Upload files",
       "buttonUrlUpload": "Upload file from URL",
       "buttonSwitchToFileUpload": "Upload file from your computer",
       "buttonSwitchToUrlUpload": "Upload file from url",
@@ -451,6 +472,10 @@
       "messageNoResults": "No results found for \"{term}\".",
       "valuePlaceholder": "Select..."
     },
+    "sw-meteor-single-select": {
+      "messageNoResults": "No results found for \"{term}\".",
+      "valuePlaceholder": "Select..."
+    },
     "sw-multi-select": {
       "messageNoResults": "No results found for \"{term}\"."
     },
@@ -460,14 +485,10 @@
     },
     "sw-multi-tag-ip-select": {
       "enterValidIp": "Please enter a valid IPv4 or IPv6 address",
-      "addIpAdress": "Add IP address",
+      "addIpAddress": "Add IP address",
       "knownIps": {
         "you": "You"
       }
-    },
-    "sw-multi-ip-select": {
-      "enterValidIp": "Please enter a valid IPv4 or IPv6 address",
-      "addIpAdress": "Add IP address"
     },
     "sw-entity-multi-select": {
       "messageNoResults": "No results found for \"{term}\"."
@@ -475,15 +496,17 @@
     "sw-entity-many-to-many-select": {
       "messageNoResults": "No results found for \"{term}\"."
     },
-    "sw-label": {
-      "buttonDismiss": "Dismiss"
-    },
     "sw-search-bar": {
       "messageNoResults": "No results found for \"{term}\".",
       "messageNoTypeResults": "No type found.",
       "placeholderSearchField": "Find products, customers, orders...",
       "placeholderTypeSearchField": "Search \"{entity}\"...",
-      "placeholderShortcutInfo": "Tip: Press the \"f\" key to get to the search bar faster."
+      "placeholderShortcutInfo": "Hint: Press the \"f\" key to get to the search bar faster.",
+      "placeholderSearchShortcutInfo": "Hint: Press the <span>f</span> key to get to the search bar faster.",
+      "moduleFiltersHeadline": "Module filters",
+      "placeholderFilterShortcutInfo": "Type <span>#</span> in the search to quickly set a module filter.",
+      "searchTypeAll": "All",
+      "moduleFilter": "Module filter"
     },
     "sw-search-bar-item": {
       "typeLabelCustomer": "Customer",
@@ -494,7 +517,8 @@
       "typeLabelCms": "CMS"
     },
     "sw-search-more-results": {
-      "labelShowResultsInModule": "Show results in module({count})"
+      "labelShowResultsInModule": "Show results in module({count})",
+      "labelShowResultsInModuleV2": "Show all {count} matching results in {entityName}..."
     },
     "sw-tagged-field": {
       "text-default-placeholder": "Press the enter key to add values."
@@ -510,7 +534,8 @@
         "isOneOf": "Is one of",
         "isNoneOf": "Is none of",
         "gross": "Gross",
-        "net": "Net"
+        "net": "Net",
+        "empty": "Is empty"
       },
       "placeholderErrorMessage": "Placeholder cannot be saved.",
       "dataErrorMessage": "Required fields not filled.",
@@ -537,9 +562,10 @@
         "shippingCountryRule": "Shipping country",
         "shippingStreetRule": "Shipping street",
         "shippingZipCodeRule": "Shipping postal code",
+        "customerLoggedInRule": "Customer logged in",
         "cartAmountRule": "Cart amount",
-        "goodsCountRule": "Goods count",
-        "goodsPriceRule": "Goods price",
+        "goodsCountRule": "Distinct products in cart",
+        "goodsPriceRule": "Total product price in cart",
         "lineItemOfTypeRule": {
           "label": "Line item of type",
           "product": "Product",
@@ -578,7 +604,7 @@
         "alwaysValidRule": "Always valid",
         "lineItemPropertyRule": "Line item property",
         "lineItemNoveltyRule": "Novelties",
-        "lineItemCustomFieldRule": "Line item with attribute",
+        "lineItemCustomFieldRule": "Line item with custom field",
         "lineItemIsNewRule": "Line item is new",
         "lineItemOfManufacturerRule": "Manufacturer",
         "lineItemPurchasePriceRule": "Line item purchase price",
@@ -595,6 +621,8 @@
         "lineItemListPriceRule": "Line item list price",
         "paymentMethodRule": "Payment method",
         "shippingMethodRule": "Shipping method",
+        "lineItemGoodsTotalRule": "Total number of products in cart",
+        "orderTotalAmountRule": "Total value of completed orders",
         "lineItemCustomField": {
           "field": {
             "fieldSetSelect": {
@@ -610,7 +638,8 @@
     "sw-product-image": {
       "context": {
         "buttonAsCover": "Use as cover",
-        "buttonRemove": "Remove"
+        "buttonRemove": "Remove",
+        "buttonPreviewImage": "Preview image"
       }
     },
     "sw-simple-search-field": {
@@ -620,6 +649,7 @@
       "tooltipTabHasErrors": "This page contains errors."
     },
     "entities": {
+      "all": "All",
       "custom_field": "Custom field | Custom fields",
       "cart": "Cart | Carts",
       "category": "Category | Categories",
@@ -676,10 +706,13 @@
       "theme": "Theme | Themes",
       "unit": "Unit | Units",
       "user": "User | Users",
+      "landing_page": "Landing page | Landing pages",
       "delivery_time": "Delivery time | Delivery times",
       "import_export_profile": "Import/Export Profile | Import/Export Profiles",
       "feature_set": "Template | Templates",
-      "event_action": "Business events"
+      "event_action": "Business events",
+      "property_group": "Property group | Property groups",
+      "document_base_config": "Document base config | Document base configs"
     },
     "day-of-week": {
       "monday": "Monday",
@@ -701,6 +734,7 @@
       "checkout_customer_logout": "Customer logs off",
       "checkout_customer_register": "Customer account registered",
       "checkout_order_placed": "Order placed",
+      "checkout_order_payment_method_changed": "Order payment method changed",
       "contact_form_send": "Contact form sent",
       "customer_group_registration_accepted": "Customer group registration request accepted",
       "customer_group_registration_declined": "Customer group registration request declined",
@@ -710,6 +744,7 @@
       "mail_sent": "Email sent",
       "newsletter_confirm": "Newsletter sign-up confirmed",
       "newsletter_register": "Newsletter sign-up registered",
+      "newsletter_unsubscribe": "Newsletter unsubscribed",
       "newsletter_update": "Newsletter sign-up updated",
       "product_export_log": "Product export executed",
       "state_enter_order_state_cancelled": "Order enters status cancelled",
@@ -733,6 +768,7 @@
       "state_enter_order_transaction_state_refunded": "Payment enters status refunded",
       "state_enter_order_transaction_state_refunded_partially": "Payment enters status partially refunded",
       "state_enter_order_transaction_state_reminded": "Payment enters status reminder sent",
+      "state_enter_order_transaction_state_unconfirmed": "Payment enters status unconfirmed",
       "state_leave_order_state_cancelled": "Order leaves status cancelled",
       "state_leave_order_state_completed": "Order leaves status completed",
       "state_leave_order_state_in_progress": "Order leaves status in progress",
@@ -754,7 +790,18 @@
       "state_leave_order_transaction_state_refunded": "Payment leaves status refunded",
       "state_leave_order_transaction_state_refunded_partially": "Payment leaves status partially refunded",
       "state_leave_order_transaction_state_reminded": "Payment leaves status reminder sent",
+      "state_leave_order_transaction_state_unconfirmed": "Payment leaves status unconfirmed",
       "user_recovery_request": "User recovery request sent"
+    },
+    "tax-rates": {
+      "Standard rate": "Standard rate",
+      "Reduced rate": "Reduced rate",
+      "Reduced rate 2": "Super-reduced rate"
+    },
+    "sw-bulk-edit-modal": {
+      "bulkEdit": "Bulk edit",
+      "startBulkEdit": "Start bulk edit",
+      "bulkEditModalTitle": "Bulk edit - {count} item selected | Bulk edit - {count} items selected"
     }
   },
   "sw-text-editor-toolbar": {
@@ -801,7 +848,7 @@
       "insert-unordered-list": "Insert unordered list",
       "insert-ordered-list": "Insert ordered list",
       "link": "Link",
-      "data-mapping": "Data mapping",
+      "data-mapping": "Insert variable",
       "undo": "Undo",
       "redo": "Redo",
       "insert-table": "Insert table",
@@ -837,10 +884,10 @@
     }
   },
   "sw-property-search": {
-    "placeholderSearch": "Search properties...",
-    "selected": "{count} option selected | {count} options selected",
-    "noPropertiesFound": "No properties found",
-    "noPropertiesFoundDescription": "Try another search phrase."
+    "placeholderSearch": "Search values...",
+    "selected": "{count} value selected | {count} values selected",
+    "noPropertiesFound": "No property values found",
+    "noPropertiesFoundDescription": "Try a different search term."
   },
   "sw-property-assignment": {
     "columnGroup": "Property",
@@ -862,16 +909,17 @@
     "infoTextInheritedField": "{moduleName} has inherited fields. Meaning that as long as the inherited state is active the content will be inherited. Inherited fields can be unlinked by clicking the link symbol. Clicking the symbol again will set the inherited state back."
   },
   "sw-license-violation": {
-    "title": "Plugin warning(s)",
+    "title": "Extension warning",
     "reload": "Reload",
-    "alertText": "We have detected a license violation for at least one of your plugins in this installation. To fix the license violation and avoid legal consequences, book a plugin subscription or buy/rent the plugin (according to inflicted violation type). You do not use the plugin anymore? Then delete it via the Plugin Manager. If none of these measures are taken, shopware AG reserves itself the right to charge penalty fees for any license violation.",
-    "deletePlugin": "Delete plugin permanently",
-    "messageDeleteConfirm": "Do you want to delete the plugin \"{pluginName} \" completely?",
+    "alertText": "We have detected a license violation for at least one of your extensions in this installation. To fix the license violation and avoid legal consequences, book a subscription or buy/rent the extension (according to inflicted violation type). You do not use the extension anymore? Then delete it via the \"Delete extension permanently\" button or via My Extensions. If none of these measures are taken, shopware AG reserves the right to charge penalty fees for any license violation.",
+    "deletePlugin": "Delete extension permanently",
+    "messageDeleteConfirm": "Do you want to delete the extension \"{pluginName}\" completely?",
     "checkboxMessage": "I have taken notice of this message and eventually accruing consequences.",
     "closeModal": "Close notification",
     "ignorePlugin": "Ignore permanently",
+    "successfullyDeleted": "Extension has been deleted",
     "table": {
-      "plugin": "Plugin",
+      "plugin": "Extension",
       "warning": "Warning"
     }
   },
@@ -972,7 +1020,7 @@
     "keyboardShortcutGoToShipping": "G S S",
     "functionGoToRuleBuilder": "Go to rule builder",
     "keyboardShortcutGoToRuleBuilder": "G S R",
-    "functionGoToPlugins": "Go to plugins",
+    "functionGoToPlugins": "Go to \"My Extensions\"",
     "keyboardShortcutGoToPlugins": "G A",
     "functionSpecialShortcutFocusSearch": "Focus search",
     "keyboardShortcutSpecialShortcutFocusSearch": "F",
@@ -1026,7 +1074,11 @@
   "sw-app": {
     "component": {
       "sw-app-actions": {
-        "messageErrorFetchButtons": "An error occurred while fetching your app actions."
+        "messageErrorFetchButtons": "An error occurred while fetching your app actions.",
+        "closeWindow": "Close window",
+        "iframeModalConfirmMessage": "Are you sure you want to close \"{title}\"?",
+        "iframeModalConfirmMessageDescription": "Please make sure that all processes are completed.",
+        "dontAskMeAgain": "Don't ask me again"
       },
       "sw-app-app-url-changed-modal": {
         "move-shop-permanently": {
@@ -1035,7 +1087,7 @@
         },
         "reinstall-apps": {
           "name": "Copy apps to current domain",
-          "description": "If you want to keep your apps working on both domains, this reinstalls all apps on your new domain. Note: App data on your old domain will still be available, non-free apps may require additional charges for each domain."
+          "description": "If you want to keep your apps working on both domains, this re-installs all apps on your new domain. Note: App data on your old domain will still be available, non-free apps may require additional charges for each domain."
         },
         "uninstall-apps": {
           "name": "Uninstall apps",
@@ -1063,5 +1115,24 @@
     "navigation": {
       "backButton": "Back"
     }
+  },
+  "sw-base-filter": {
+    "resetButton": "Reset"
+  },
+  "sw-boolean-filter": {
+    "placeholder": "All",
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "sw-existence-filter": {
+    "placeholder": "All",
+    "noCriteria": "No {criteriaName}",
+    "hasCriteria": "Has {criteriaName}"
+  },
+  "sw-filter-panel": {
+    "titleSidebarItemFilter": "Filters"
+  },
+  "sw-sidebar-filter-panel": {
+    "resetButton": "Reset all"
   }
 }

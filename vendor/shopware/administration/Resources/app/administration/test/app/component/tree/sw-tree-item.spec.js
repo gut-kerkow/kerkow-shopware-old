@@ -26,15 +26,9 @@ function createWrapper(customOptions = {}) {
             'sw-icon': true,
             'sw-field': true,
             'sw-context-button': true,
-            'sw-context-menu-item': true
+            'sw-context-menu-item': true,
+            'sw-checkbox-field': true
         },
-        mocks: {
-            $route: {
-                params: {}
-            },
-            $tc: v => v
-        },
-        provide: {},
         propsData: {
             item: {
                 data: {
@@ -52,6 +46,10 @@ describe('src/app/component/tree/sw-tree-item', () => {
 
     beforeEach(() => {
         wrapper = createWrapper();
+    });
+
+    afterEach(() => {
+        if (wrapper) wrapper.destroy();
     });
 
     it('should be a Vue.js component', async () => {
@@ -97,6 +95,20 @@ describe('src/app/component/tree/sw-tree-item', () => {
         expect(contextButton.find('.sw-tree-item__before-action').attributes().disabled).toBeUndefined();
         expect(contextButton.find('.sw-tree-item__after-action').attributes().disabled).toBeUndefined();
         expect(contextButton.find('.sw-tree-item__sub-action').attributes().disabled).toBeUndefined();
+        expect(contextButton.find('.sw-tree-item__without-position-action').exists()).toBeFalsy();
+    });
+
+    it('should not be able to create new categories with position', async () => {
+        await wrapper.setProps({
+            allowCreateWithoutPosition: true
+        });
+
+        const contextButton = wrapper.find('.sw-tree-item__context_button');
+
+        expect(contextButton.find('.sw-tree-item__before-action').exists()).toBeFalsy();
+        expect(contextButton.find('.sw-tree-item__after-action').exists()).toBeFalsy();
+        expect(contextButton.find('.sw-tree-item__sub-action').exists()).toBeFalsy();
+        expect(contextButton.find('.sw-tree-item__without-position-action').exists()).toBeTruthy();
     });
 
     it('should be unable to create new categories', async () => {
@@ -148,5 +160,21 @@ describe('src/app/component/tree/sw-tree-item', () => {
         const treeLink = wrapper.find('.tree-link');
         expect(treeLink.attributes().href).not.toEqual('detail/1a2b');
         expect(treeLink.attributes().href).toEqual('detail/1a2b3c');
+    });
+
+    it('should be able to duplicate items', async () => {
+        const contextButton = wrapper.find('.sw-tree-item__context_button');
+
+        await wrapper.setProps({
+            allowDuplicate: true
+        });
+
+        expect(contextButton.find('.sw-context-menu__duplicate-action').exists()).toBeTruthy();
+    });
+
+    it('should be unable to duplicate items', async () => {
+        const contextButton = wrapper.find('.sw-tree-item__context_button');
+
+        expect(contextButton.find('.sw-context-menu__duplicate-action').exists()).toBeFalsy();
     });
 });

@@ -10,6 +10,7 @@ use Shopware\Core\Checkout\Cart\Delivery\Struct\DeliveryDate;
 use Shopware\Core\Checkout\Cart\Delivery\Struct\DeliveryPosition;
 use Shopware\Core\Checkout\Cart\Delivery\Struct\DeliveryPositionCollection;
 use Shopware\Core\Checkout\Cart\Delivery\Struct\ShippingLocation;
+use Shopware\Core\Checkout\Cart\Exception\CustomerNotLoggedInException;
 use Shopware\Core\Checkout\Cart\Exception\InvalidPayloadException;
 use Shopware\Core\Checkout\Cart\Exception\InvalidQuantityException;
 use Shopware\Core\Checkout\Cart\Exception\LineItemNotStackableException;
@@ -24,6 +25,7 @@ use Shopware\Core\Checkout\Cart\Order\Transformer\DeliveryTransformer;
 use Shopware\Core\Checkout\Cart\Order\Transformer\LineItemTransformer;
 use Shopware\Core\Checkout\Cart\Order\Transformer\TransactionTransformer;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
+use Shopware\Core\Checkout\Customer\Exception\AddressNotFoundException;
 use Shopware\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryCollection;
 use Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryStates;
@@ -40,7 +42,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaI
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\NumberRange\ValueGenerator\NumberRangeValueGeneratorInterface;
-use Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory;
+use Shopware\Core\System\SalesChannel\Context\AbstractSalesChannelContextFactory;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\StateMachine\StateMachineRegistry;
@@ -56,13 +58,14 @@ class OrderConverter
 
     public const ORIGINAL_ORDER_NUMBER = 'originalOrderNumber';
 
-    private const ADMIN_EDIT_ORDER_PERMISSIONS = [
+    public const ADMIN_EDIT_ORDER_PERMISSIONS = [
         ProductCartProcessor::ALLOW_PRODUCT_PRICE_OVERWRITES => true,
         ProductCartProcessor::SKIP_PRODUCT_RECALCULATION => true,
         DeliveryProcessor::SKIP_DELIVERY_PRICE_RECALCULATION => true,
         DeliveryProcessor::SKIP_DELIVERY_TAX_RECALCULATION => true,
         PromotionCollector::SKIP_PROMOTION => true,
         ProductCartProcessor::SKIP_PRODUCT_STOCK_VALIDATION => true,
+        ProductCartProcessor::KEEP_INACTIVE_PRODUCT => true,
     ];
 
     /**
@@ -71,7 +74,7 @@ class OrderConverter
     protected $customerRepository;
 
     /**
-     * @var SalesChannelContextFactory
+     * @var AbstractSalesChannelContextFactory
      */
     protected $salesChannelContextFactory;
 
@@ -80,29 +83,17 @@ class OrderConverter
      */
     protected $eventDispatcher;
 
-    /**
-     * @var StateMachineRegistry
-     */
-    private $stateMachineRegistry;
+    private StateMachineRegistry $stateMachineRegistry;
 
-    /**
-     * @var NumberRangeValueGeneratorInterface
-     */
-    private $numberRangeValueGenerator;
+    private NumberRangeValueGeneratorInterface $numberRangeValueGenerator;
 
-    /**
-     * @var OrderDefinition
-     */
-    private $orderDefinition;
+    private OrderDefinition $orderDefinition;
 
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $orderAddressRepository;
+    private EntityRepositoryInterface $orderAddressRepository;
 
     public function __construct(
         EntityRepositoryInterface $customerRepository,
-        SalesChannelContextFactory $salesChannelContextFactory,
+        AbstractSalesChannelContextFactory $salesChannelContextFactory,
         StateMachineRegistry $stateMachineRegistry,
         EventDispatcherInterface $eventDispatcher,
         NumberRangeValueGeneratorInterface $numberRangeValueGenerator,
@@ -133,11 +124,17 @@ class OrderConverter
         $data = CartTransformer::transform(
             $cart,
             $context,
-            $this->stateMachineRegistry->getInitialState(OrderStates::STATE_MACHINE, $context->getContext())->getId()
+            $this->stateMachineRegistry->getInitialState(OrderStates::STATE_MACHINE, $context->getContext())->getId(),
+            $conversionContext->shouldIncludeOrderDate()
         );
 
         if ($conversionContext->shouldIncludeCustomer()) {
-            $data['orderCustomer'] = CustomerTransformer::transform($context->getCustomer());
+            $customer = $context->getCustomer();
+            if ($customer === null) {
+                throw new CustomerNotLoggedInException();
+            }
+
+            $data['orderCustomer'] = CustomerTransformer::transform($customer);
         }
 
         $data['languageId'] = $context->getSalesChannel()->getLanguageId();
@@ -157,12 +154,21 @@ class OrderConverter
         }
 
         if ($conversionContext->shouldIncludeBillingAddress()) {
-            $customerAddressId = $context->getCustomer()->getActiveBillingAddress()->getId();
+            $customer = $context->getCustomer();
+            if ($customer === null) {
+                throw new CustomerNotLoggedInException();
+            }
+
+            $activeBillingAddress = $customer->getActiveBillingAddress();
+            if ($activeBillingAddress === null) {
+                throw new AddressNotFoundException('');
+            }
+            $customerAddressId = $activeBillingAddress->getId();
 
             if (\array_key_exists($customerAddressId, $shippingAddresses)) {
                 $billingAddressId = $shippingAddresses[$customerAddressId]['id'];
             } else {
-                $billingAddress = AddressTransformer::transform($context->getCustomer()->getActiveBillingAddress());
+                $billingAddress = AddressTransformer::transform($activeBillingAddress);
                 $data['addresses'] = [$billingAddress];
                 $billingAddressId = $billingAddress['id'];
             }
@@ -252,7 +258,7 @@ class OrderConverter
     /**
      * @throws InconsistentCriteriaIdsException
      */
-    public function assembleSalesChannelContext(OrderEntity $order, Context $context): SalesChannelContext
+    public function assembleSalesChannelContext(OrderEntity $order, Context $context, array $overrideOptions = []): SalesChannelContext
     {
         if ($order->getTransactions() === null) {
             throw new MissingOrderRelationException('transactions');
@@ -267,11 +273,17 @@ class OrderConverter
         if ($customerId) {
             /** @var CustomerEntity|null $customer */
             $customer = $this->customerRepository->search(new Criteria([$customerId]), $context)->get($customerId);
-            $customerGroupId = $customer->getGroupId() ?? null;
+            if ($customer !== null) {
+                $customerGroupId = $customer->getGroupId();
+            }
         }
 
+        $billingAddressId = $order->getBillingAddressId();
         /** @var OrderAddressEntity|null $billingAddress */
-        $billingAddress = $this->orderAddressRepository->search(new Criteria([$order->getBillingAddressId()]), $context)->get($order->getBillingAddressId());
+        $billingAddress = $this->orderAddressRepository->search(new Criteria([$billingAddressId]), $context)->get($billingAddressId);
+        if ($billingAddress === null) {
+            throw new AddressNotFoundException($billingAddressId);
+        }
 
         $options = [
             SalesChannelContextService::CURRENCY_ID => $order->getCurrencyId(),
@@ -282,6 +294,11 @@ class OrderConverter
             SalesChannelContextService::PERMISSIONS => self::ADMIN_EDIT_ORDER_PERMISSIONS,
             SalesChannelContextService::VERSION_ID => $context->getVersionId(),
         ];
+
+        $delivery = $order->getDeliveries() !== null ? $order->getDeliveries()->first() : null;
+        if ($delivery !== null) {
+            $options[SalesChannelContextService::SHIPPING_METHOD_ID] = $delivery->getShippingMethodId();
+        }
 
         //get the first not paid transaction or, if all paid, the last transaction
         if ($order->getTransactions() !== null) {
@@ -296,9 +313,22 @@ class OrderConverter
             }
         }
 
-        $salesChannelContext = $this->salesChannelContextFactory->create(Uuid::randomHex(), $order->getSalesChannelId(), $options);
+        $options = array_merge($options, $overrideOptions);
 
+        $salesChannelContext = $this->salesChannelContextFactory->create(Uuid::randomHex(), $order->getSalesChannelId(), $options);
         $salesChannelContext->getContext()->addExtensions($context->getExtensions());
+
+        if ($order->getItemRounding() !== null) {
+            $salesChannelContext->setItemRounding($order->getItemRounding());
+        }
+
+        if ($order->getTotalRounding() !== null) {
+            $salesChannelContext->setTotalRounding($order->getTotalRounding());
+        }
+
+        if ($order->getRuleIds() !== null) {
+            $salesChannelContext->setRuleIds($order->getRuleIds());
+        }
 
         return $salesChannelContext;
     }
@@ -315,11 +345,23 @@ class OrderConverter
 
             $deliveryPositions = new DeliveryPositionCollection();
 
+            if ($orderDelivery->getPositions() === null) {
+                continue;
+            }
+
             foreach ($orderDelivery->getPositions() as $position) {
+                if ($position->getOrderLineItem() === null) {
+                    continue;
+                }
+
                 $identifier = $position->getOrderLineItem()->getIdentifier();
 
                 // line item has been removed and will not be added to delivery
                 if ($lineItems->get($identifier) === null) {
+                    continue;
+                }
+
+                if ($position->getPrice() === null) {
                     continue;
                 }
 
@@ -333,6 +375,13 @@ class OrderConverter
                 $deliveryPosition->addExtension(self::ORIGINAL_ID, new IdStruct($position->getId()));
 
                 $deliveryPositions->add($deliveryPosition);
+            }
+
+            if ($orderDelivery->getShippingMethod() === null
+                || $orderDelivery->getShippingOrderAddress() === null
+                || $orderDelivery->getShippingOrderAddress()->getCountry() === null
+            ) {
+                continue;
             }
 
             $cartDelivery = new Delivery(

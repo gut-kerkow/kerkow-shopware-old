@@ -1,8 +1,8 @@
 import { createLocalVue, shallowMount } from '@vue/test-utils';
 import 'src/module/sw-order/page/sw-order-list';
 import 'src/app/component/data-grid/sw-data-grid';
-import EntityCollection from 'src/core/data-new/entity-collection.data';
-import Criteria from 'src/core/data-new/criteria.data';
+import EntityCollection from 'src/core/data/entity-collection.data';
+import Criteria from 'src/core/data/criteria.data';
 
 const mockItem = {
     orderNumber: '1',
@@ -20,6 +20,9 @@ const mockItem = {
     stateMachineState: {
         translated: { name: 'Open' },
         name: 'Open'
+    },
+    salesChannel: {
+        name: 'Test'
     },
     transactions: new EntityCollection(null, null, null, new Criteria(), [
         {
@@ -90,14 +93,11 @@ function createWrapper(privileges = []) {
             },
             repositoryFactory: {
                 create: () => ({ search: () => Promise.resolve([]) })
-            }
+            },
+            filterFactory: {}
         },
         mocks: {
-            $tc: v => v,
-            $te: v => v,
-            $route: { query: '' },
-            $router: { replace: () => {} },
-            $device: { onResize: key => key }
+            $route: { query: '' }
         }
     });
 }

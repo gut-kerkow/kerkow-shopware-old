@@ -2,18 +2,23 @@
 
 namespace Shopware\Core\Framework;
 
+use Shopware\Core\Framework\Compatibility\AnnotationReaderCompilerPass;
 use Shopware\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopware\Core\Framework\DataAbstractionLayer\ExtensionRegistry;
 use Shopware\Core\Framework\DependencyInjection\CompilerPass\ActionEventCompilerPass;
 use Shopware\Core\Framework\DependencyInjection\CompilerPass\AssetRegistrationCompilerPass;
+use Shopware\Core\Framework\DependencyInjection\CompilerPass\DefaultTransportCompilerPass;
 use Shopware\Core\Framework\DependencyInjection\CompilerPass\DisableTwigCacheWarmerCompilerPass;
 use Shopware\Core\Framework\DependencyInjection\CompilerPass\EntityCompilerPass;
 use Shopware\Core\Framework\DependencyInjection\CompilerPass\FeatureFlagCompilerPass;
 use Shopware\Core\Framework\DependencyInjection\CompilerPass\FilesystemConfigMigrationCompilerPass;
+use Shopware\Core\Framework\DependencyInjection\CompilerPass\RateLimiterCompilerPass;
 use Shopware\Core\Framework\DependencyInjection\CompilerPass\RouteScopeCompilerPass;
 use Shopware\Core\Framework\DependencyInjection\CompilerPass\TwigLoaderConfigCompilerPass;
 use Shopware\Core\Framework\DependencyInjection\FrameworkExtension;
 use Shopware\Core\Framework\Migration\MigrationCompilerPass;
+use Shopware\Core\Framework\Migration\MigrationSource;
+use Shopware\Core\Framework\Test\RateLimiter\DisableRateLimiterCompilerPass;
 use Shopware\Core\Kernel;
 use Shopware\Core\System\SalesChannel\Entity\SalesChannelDefinitionInstanceRegistry;
 use Symfony\Component\Config\FileLocator;
@@ -56,6 +61,7 @@ class Framework extends Bundle
         $loader->load('data-abstraction-layer.xml');
         $loader->load('demodata.xml');
         $loader->load('event.xml');
+        $loader->load('hydrator.xml');
         $loader->load('filesystem.xml');
         $loader->load('message-queue.xml');
         $loader->load('plugin.xml');
@@ -66,9 +72,11 @@ class Framework extends Bundle
         $loader->load('update.xml');
         $loader->load('seo.xml');
         $loader->load('webhook.xml');
+        $loader->load('rate-limiter.xml');
 
         if ($container->getParameter('kernel.environment') === 'test') {
             $loader->load('services_test.xml');
+            $loader->load('store_test.xml');
         }
 
         // make sure to remove services behind a feature flag, before some other compiler passes may reference them, therefore the high priority
@@ -77,12 +85,31 @@ class Framework extends Bundle
         $container->addCompilerPass(new MigrationCompilerPass(), PassConfig::TYPE_AFTER_REMOVING);
         $container->addCompilerPass(new ActionEventCompilerPass());
         $container->addCompilerPass(new DisableTwigCacheWarmerCompilerPass());
+        $container->addCompilerPass(new DefaultTransportCompilerPass());
         $container->addCompilerPass(new TwigLoaderConfigCompilerPass());
         $container->addCompilerPass(new RouteScopeCompilerPass());
         $container->addCompilerPass(new AssetRegistrationCompilerPass());
         $container->addCompilerPass(new FilesystemConfigMigrationCompilerPass());
+        $container->addCompilerPass(new AnnotationReaderCompilerPass());
+        $container->addCompilerPass(new RateLimiterCompilerPass());
 
-        $this->addCoreMigrationPath($container, __DIR__ . '/../Migration', 'Shopware\Core\Migration');
+        if ($container->getParameter('kernel.environment') === 'test') {
+            $container->addCompilerPass(new DisableRateLimiterCompilerPass());
+        }
+
+        // configure migration directories
+        $migrationSourceV3 = $container->getDefinition(MigrationSource::class . '.core.V6_3');
+        $migrationSourceV3->addMethodCall('addDirectory', [__DIR__ . '/../Migration/V6_3', 'Shopware\Core\Migration\V6_3']);
+
+        // we've moved the migrations from Shopware\Core\Migration to Shopware\Core\Migration\V6_3
+        $migrationSourceV3->addMethodCall('addReplacementPattern', ['#^(Shopware\\\\Core\\\\Migration\\\\)V6_3\\\\([^\\\\]*)$#', '$1$2']);
+
+        $migrationSourceV4 = $container->getDefinition(MigrationSource::class . '.core.V6_4');
+        $migrationSourceV4->addMethodCall('addDirectory', [__DIR__ . '/../Migration/V6_4', 'Shopware\Core\Migration\V6_4']);
+        $migrationSourceV3->addMethodCall('addReplacementPattern', ['#^(Shopware\\\\Core\\\\Migration\\\\)V6_4\\\\([^\\\\]*)$#', '$1$2']);
+
+        $migrationSourceV5 = $container->getDefinition(MigrationSource::class . '.core.V6_5');
+        $migrationSourceV5->addMethodCall('addDirectory', [__DIR__ . '/../Migration/V6_5', 'Shopware\Core\Migration\V6_5']);
 
         parent::build($container);
     }
@@ -142,6 +169,9 @@ class Framework extends Bundle
 
         $configLoader->load($confDir . '/{packages}/*' . Kernel::CONFIG_EXTS, 'glob');
         $configLoader->load($confDir . '/{packages}/' . $environment . '/*' . Kernel::CONFIG_EXTS, 'glob');
+        if ($environment === 'e2e') {
+            $configLoader->load($confDir . '/{packages}/prod/*' . Kernel::CONFIG_EXTS, 'glob');
+        }
         $shopwareFeaturesPath = $cacheDir . '/shopware_features.php';
         if (is_readable($shopwareFeaturesPath)) {
             $configLoader->load($shopwareFeaturesPath, 'php');

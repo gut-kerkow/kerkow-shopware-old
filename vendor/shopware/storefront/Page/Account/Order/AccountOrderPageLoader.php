@@ -4,8 +4,9 @@ namespace Shopware\Storefront\Page\Account\Order;
 
 use Shopware\Core\Checkout\Cart\Exception\CustomerNotLoggedInException;
 use Shopware\Core\Checkout\Customer\SalesChannel\AccountService;
+use Shopware\Core\Checkout\Order\Exception\GuestNotAuthenticatedException;
+use Shopware\Core\Checkout\Order\Exception\WrongGuestCredentialsException;
 use Shopware\Core\Checkout\Order\SalesChannel\AbstractOrderRoute;
-use Shopware\Core\Checkout\Order\SalesChannel\OrderRouteResponseStruct;
 use Shopware\Core\Content\Category\Exception\CategoryNotFoundException;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -22,25 +23,13 @@ use Symfony\Component\HttpFoundation\Request;
 
 class AccountOrderPageLoader
 {
-    /**
-     * @var GenericPageLoaderInterface
-     */
-    private $genericLoader;
+    private GenericPageLoaderInterface $genericLoader;
 
-    /**
-     * @var EventDispatcherInterface
-     */
-    private $eventDispatcher;
+    private EventDispatcherInterface $eventDispatcher;
 
-    /**
-     * @var AbstractOrderRoute
-     */
-    private $orderRoute;
+    private AbstractOrderRoute $orderRoute;
 
-    /**
-     * @var AccountService
-     */
-    private $accountService;
+    private AccountService $accountService;
 
     public function __construct(
         GenericPageLoaderInterface $genericLoader,
@@ -57,8 +46,10 @@ class AccountOrderPageLoader
     /**
      * @throws CategoryNotFoundException
      * @throws CustomerNotLoggedInException
+     * @throws GuestNotAuthenticatedException
      * @throws InconsistentCriteriaIdsException
      * @throws MissingRequestParameterException
+     * @throws WrongGuestCredentialsException
      */
     public function load(Request $request, SalesChannelContext $salesChannelContext): AccountOrderPage
     {
@@ -93,6 +84,11 @@ class AccountOrderPageLoader
         return $page;
     }
 
+    /**
+     * @throws CustomerNotLoggedInException
+     * @throws GuestNotAuthenticatedException
+     * @throws WrongGuestCredentialsException
+     */
     private function getOrders(Request $request, SalesChannelContext $context): EntitySearchResult
     {
         $criteria = $this->createCriteria($request);
@@ -107,18 +103,18 @@ class AccountOrderPageLoader
         $event = new OrderRouteRequestEvent($request, $apiRequest, $context, $criteria);
         $this->eventDispatcher->dispatch($event);
 
-        /** @var OrderRouteResponseStruct $responseStruct */
         $responseStruct = $this->orderRoute
-            ->load($event->getStoreApiRequest(), $context, $criteria)
-            ->getObject();
+            ->load($event->getStoreApiRequest(), $context, $criteria);
 
         return $responseStruct->getOrders();
     }
 
     private function createCriteria(Request $request): Criteria
     {
-        $limit = (int) $request->query->get('limit', 10);
-        $page = (int) $request->query->get('p', 1);
+        $limit = $request->get('limit');
+        $limit = $limit ? (int) $limit : 10;
+        $page = $request->get('p');
+        $page = $page ? (int) $page : 1;
 
         $criteria = (new Criteria())
             ->addSorting(new FieldSorting('order.createdAt', FieldSorting::DESCENDING))
@@ -132,7 +128,7 @@ class AccountOrderPageLoader
             ->addAssociation('documents.documentType')
             ->setLimit($limit)
             ->setOffset(($page - 1) * $limit)
-            ->setTotalCountMode(Criteria::TOTAL_COUNT_MODE_NEXT_PAGES);
+            ->setTotalCountMode(Criteria::TOTAL_COUNT_MODE_EXACT);
 
         $criteria
             ->getAssociation('transactions')

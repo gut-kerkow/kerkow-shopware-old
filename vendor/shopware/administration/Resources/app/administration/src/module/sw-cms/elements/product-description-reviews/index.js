@@ -8,8 +8,6 @@ criteria.addAssociation('properties');
 
 Shopware.Service('cmsService').registerCmsElement({
     name: 'product-description-reviews',
-    flag: Shopware.Service('feature').isActive('FEATURE_NEXT_10078'),
-    hidden: !Shopware.Service('feature').isActive('FEATURE_NEXT_10078'),
     label: 'sw-cms.elements.productDescriptionReviews.label',
     component: 'sw-cms-el-product-description-reviews',
     configComponent: 'sw-cms-el-config-product-description-reviews',
@@ -22,18 +20,18 @@ Shopware.Service('cmsService').registerCmsElement({
             required: true,
             entity: {
                 name: 'product',
-                criteria: criteria
-            }
+                criteria: criteria,
+            },
         },
         alignment: {
             source: 'static',
-            value: null
-        }
+            value: null,
+        },
     },
     collect: function collect(elem) {
         const context = {
             ...Shopware.Context.api,
-            inheritance: true
+            inheritance: true,
         };
 
         const criteriaList = {};
@@ -57,7 +55,7 @@ Shopware.Service('cmsService').registerCmsElement({
                 value: [configValue],
                 key: configKey,
                 searchCriteria: configEntity.criteria ? configEntity.criteria : new Criteria(),
-                ...configEntity
+                ...configEntity,
             };
 
             entityData.searchCriteria.setIds(entityData.value);
@@ -67,5 +65,5 @@ Shopware.Service('cmsService').registerCmsElement({
         });
 
         return criteriaList;
-    }
+    },
 });

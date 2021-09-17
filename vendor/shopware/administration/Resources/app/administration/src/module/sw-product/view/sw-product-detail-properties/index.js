@@ -5,6 +5,7 @@ const { Component } = Shopware;
 const { Criteria } = Shopware.Data;
 const { mapState, mapGetters } = Shopware.Component.getComponentHelper();
 
+// @deprecated tag:v6.5.0 - Will be removed and has been replaced by sw-product-properties
 Component.register('sw-product-detail-properties', {
     template,
 
@@ -13,24 +14,37 @@ Component.register('sw-product-detail-properties', {
     data() {
         return {
             propertiesAvailable: true,
-            isInherited: false
+            isInherited: false,
         };
     },
 
     computed: {
         ...mapState('swProductDetail', [
             'product',
-            'parentProduct'
+            'parentProduct',
         ]),
 
         ...mapGetters('swProductDetail', [
             'isLoading',
-            'isChild'
+            'isChild',
         ]),
 
         propertyRepository() {
             return this.repositoryFactory.create('property_group_option');
-        }
+        },
+    },
+
+    watch: {
+        'product.options': {
+            handler(value) {
+                if (!value) {
+                    return;
+                }
+
+                this.isInherited = this.isChild && !this.product.options.total;
+            },
+            immediate: true,
+        },
     },
 
     created() {
@@ -51,7 +65,7 @@ Component.register('sw-product-detail-properties', {
         },
 
         checkIfPropertiesExists() {
-            this.propertyRepository.search(new Criteria(1, 1), Shopware.Context.api).then((res) => {
+            this.propertyRepository.search(new Criteria(1, 1)).then((res) => {
                 this.propertiesAvailable = res.total > 0;
             });
         },
@@ -62,6 +76,6 @@ Component.register('sw-product-detail-properties', {
 
         removeInheritance() {
             this.isInherited = false;
-        }
-    }
+        },
+    },
 });

@@ -25,6 +25,8 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
+use Shopware\Core\System\SalesChannel\Context\SalesChannelContextServiceInterface;
+use Shopware\Core\System\SalesChannel\Context\SalesChannelContextServiceParameters;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -66,6 +68,16 @@ class PaymentService
      */
     private $logger;
 
+    /**
+     * @var EntityRepositoryInterface
+     */
+    private $orderRepository;
+
+    /**
+     * @var SalesChannelContextServiceInterface
+     */
+    private $contextService;
+
     public function __construct(
         PaymentTransactionChainProcessor $paymentProcessor,
         TokenFactoryInterfaceV2 $tokenFactory,
@@ -73,7 +85,9 @@ class PaymentService
         PaymentHandlerRegistry $paymentHandlerRegistry,
         EntityRepositoryInterface $orderTransactionRepository,
         OrderTransactionStateHandler $transactionStateHandler,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        EntityRepositoryInterface $orderRepository,
+        SalesChannelContextServiceInterface $contextService
     ) {
         $this->paymentProcessor = $paymentProcessor;
         $this->tokenFactory = $tokenFactory;
@@ -82,6 +96,8 @@ class PaymentService
         $this->orderTransactionRepository = $orderTransactionRepository;
         $this->transactionStateHandler = $transactionStateHandler;
         $this->logger = $logger;
+        $this->orderRepository = $orderRepository;
+        $this->contextService = $contextService;
     }
 
     /**
@@ -101,6 +117,25 @@ class PaymentService
             throw new InvalidOrderException($orderId);
         }
 
+        $order = $this->orderRepository
+            ->search(new Criteria([$orderId]), $context->getContext())
+            ->first();
+
+        if ($order === null) {
+            throw new InvalidOrderException($orderId);
+        }
+
+        if ($context->getCurrency()->getId() !== $order->getCurrencyId()) {
+            $context = $this->contextService->get(
+                new SalesChannelContextServiceParameters(
+                    $context->getSalesChannelId(),
+                    $context->getToken(),
+                    $context->getContext()->getLanguageId(),
+                    $order->getCurrencyId()
+                )
+            );
+        }
+
         try {
             return $this->paymentProcessor->process($orderId, $dataBag, $context, $finishUrl, $errorUrl);
         } catch (PaymentProcessException $e) {
@@ -108,7 +143,7 @@ class PaymentService
             $this->logger->error('An error occurred during processing the payment', ['orderTransactionId' => $transactionId, 'exceptionMessage' => $e->getMessage()]);
             $this->transactionStateHandler->fail($transactionId, $context->getContext());
             if ($errorUrl !== null) {
-                $errorUrl .= (parse_url($errorUrl, PHP_URL_QUERY) ? '&' : '?') . 'error-code=' . $e->getErrorCode();
+                $errorUrl .= (parse_url($errorUrl, \PHP_URL_QUERY) ? '&' : '?') . 'error-code=' . $e->getErrorCode();
 
                 return new RedirectResponse($errorUrl);
             }
@@ -123,42 +158,38 @@ class PaymentService
      * @throws TokenExpiredException
      * @throws UnknownPaymentMethodException
      */
-    public function finalizeTransaction(
-        string $paymentToken,
-        Request $request,
-        SalesChannelContext $salesChannelContext
-    ): TokenStruct {
-        $paymentTokenStruct = $this->parseToken($paymentToken);
-        $transactionId = $paymentTokenStruct->getTransactionId();
+    public function finalizeTransaction(string $paymentToken, Request $request, SalesChannelContext $context): TokenStruct
+    {
+        $token = $this->parseToken($paymentToken);
+
+        $transactionId = $token->getTransactionId();
+
         if ($transactionId === null || !Uuid::isValid($transactionId)) {
             throw new AsyncPaymentProcessException((string) $transactionId, "Payment JWT didn't contain a valid orderTransactionId");
         }
 
-        $context = $salesChannelContext->getContext();
-        $paymentTransactionStruct = $this->getPaymentTransactionStruct($transactionId, $context);
+        $transaction = $this->getPaymentTransactionStruct($transactionId, $context->getContext());
 
-        $paymentHandler = $this->getPaymentHandlerById($paymentTokenStruct->getPaymentMethodId(), $context);
+        $paymentHandler = $this->getPaymentHandlerById($token->getPaymentMethodId(), $context->getContext());
 
         if (!$paymentHandler) {
-            throw new UnknownPaymentMethodException($paymentTokenStruct->getPaymentMethodId());
+            throw new UnknownPaymentMethodException($token->getPaymentMethodId());
         }
 
         try {
-            $paymentHandler->finalize($paymentTransactionStruct, $request, $salesChannelContext);
+            $paymentHandler->finalize($transaction, $request, $context);
         } catch (CustomerCanceledAsyncPaymentException $e) {
-            $this->transactionStateHandler->cancel($transactionId, $context);
-            $paymentTokenStruct->setException($e);
-
-            return $paymentTokenStruct;
+            $this->transactionStateHandler->cancel($transactionId, $context->getContext());
+            $token->setException($e);
         } catch (PaymentProcessException $e) {
             $this->logger->error('An error occurred during finalizing async payment', ['orderTransactionId' => $transactionId, 'exceptionMessage' => $e->getMessage()]);
-            $this->transactionStateHandler->fail($transactionId, $context);
-            $paymentTokenStruct->setException($e);
-
-            return $paymentTokenStruct;
+            $this->transactionStateHandler->fail($transactionId, $context->getContext());
+            $token->setException($e);
+        } finally {
+            $this->tokenFactory->invalidateToken($token->getToken());
         }
 
-        return $paymentTokenStruct;
+        return $token;
     }
 
     /**
@@ -172,8 +203,6 @@ class PaymentService
             throw new TokenExpiredException($tokenStruct->getToken());
         }
 
-        $this->tokenFactory->invalidateToken($tokenStruct->getToken());
-
         return $tokenStruct;
     }
 
@@ -182,7 +211,9 @@ class PaymentService
      */
     private function getPaymentHandlerById(string $paymentMethodId, Context $context): ?AsynchronousPaymentHandlerInterface
     {
-        $paymentMethods = $this->paymentMethodRepository->search(new Criteria([$paymentMethodId]), $context);
+        $criteria = new Criteria([$paymentMethodId]);
+        $criteria->addAssociation('appPaymentMethod.app');
+        $paymentMethods = $this->paymentMethodRepository->search($criteria, $context);
 
         /** @var PaymentMethodEntity|null $paymentMethod */
         $paymentMethod = $paymentMethods->get($paymentMethodId);
@@ -190,7 +221,7 @@ class PaymentService
             throw new UnknownPaymentMethodException($paymentMethodId);
         }
 
-        return $this->paymentHandlerRegistry->getAsyncHandler($paymentMethod->getHandlerIdentifier());
+        return $this->paymentHandlerRegistry->getAsyncHandlerForPaymentMethod($paymentMethod);
     }
 
     /**
@@ -200,6 +231,7 @@ class PaymentService
     {
         $criteria = new Criteria([$orderTransactionId]);
         $criteria->addAssociation('order');
+        $criteria->addAssociation('paymentMethod.appPaymentMethod.app');
         /** @var OrderTransactionEntity|null $orderTransaction */
         $orderTransaction = $this->orderTransactionRepository->search($criteria, $context)->first();
 

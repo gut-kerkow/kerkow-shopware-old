@@ -3,7 +3,7 @@
  */
 
 import VariantSwitchPlugin from 'src/plugin/variant-switch/variant-switch.plugin';
-import NativeEventEmitter from '../../../src/helper/emitter.helper';
+import NativeEventEmitter from 'src/helper/emitter.helper';
 
 describe('VariantSwitchPlugin tests', () => {
     let variantSwitchPlugin = undefined;
@@ -101,6 +101,42 @@ describe('VariantSwitchPlugin tests', () => {
         mockInput.click();
 
         expect(spy).not.toHaveBeenCalled();
+
+        // Reset mock
+        variantSwitchPlugin._redirectToVariant.mockRestore();
+    });
+
+    test('_redirectVariant should not get called if cms elementId exists and page type is not product detail', () => {
+        variantSwitchPlugin._elementId = '1';
+        variantSwitchPlugin._pageType = 'landingpage';
+
+        // Mock the function which should be called on click
+        variantSwitchPlugin._redirectToVariant = jest.fn();
+        const spy = jest.spyOn(variantSwitchPlugin, '_redirectToVariant');
+
+        // simulate click
+        const mockInput = variantSwitchPlugin.el.firstChild;
+        mockInput.click();
+
+        expect(spy).not.toHaveBeenCalled();
+
+        // Reset mock
+        variantSwitchPlugin._redirectToVariant.mockRestore();
+    });
+
+    test('_redirectVariant should get called if cms elementId exists and page type is product detail', () => {
+        variantSwitchPlugin._elementId = '1';
+        variantSwitchPlugin._pageType = 'product_detail';
+
+        // Mock the function which should be called on click
+        variantSwitchPlugin._redirectToVariant = jest.fn();
+        const spy = jest.spyOn(variantSwitchPlugin, '_redirectToVariant');
+
+        // simulate click
+        const mockInput = variantSwitchPlugin.el.firstChild;
+        mockInput.click();
+
+        expect(spy).toHaveBeenCalled();
 
         // Reset mock
         variantSwitchPlugin._redirectToVariant.mockRestore();

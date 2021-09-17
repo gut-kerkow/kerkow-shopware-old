@@ -1,72 +1,72 @@
 import ApiService from 'src/core/service/api.service';
 
 export default class ExtensionStoreActionService extends ApiService {
-    constructor(httpClient, loginService, apiEndpoint = 'plugin') {
+    constructor(httpClient, loginService, apiEndpoint = 'extension') {
         super(httpClient, loginService, apiEndpoint);
         this.name = 'extensionStoreActionService';
     }
 
     downloadExtension(technicalName) {
         return this.httpClient
-            .post(`_action/extension/download/${technicalName}`, {}, {
-                headers: this.basicHeaders(),
-                version: 3
+            .post(`_action/${this.getApiBasePath()}/download/${technicalName}`, {}, {
+                headers: this.basicHeaders(Shopware.Context.api),
+                version: 3,
             });
     }
 
     installExtension(technicalName, type) {
         return this.httpClient
-            .post(`_action/extension/install/${type}/${technicalName}`, {}, {
+            .post(`_action/${this.getApiBasePath()}/install/${type}/${technicalName}`, {}, {
                 headers: this.basicHeaders(),
-                version: 3
+                version: 3,
             });
     }
 
     updateExtension(technicalName, type) {
         return this.httpClient
-            .post(`_action/extension/update/${type}/${technicalName}`, {}, {
+            .post(`_action/${this.getApiBasePath()}/update/${type}/${technicalName}`, {}, {
                 headers: this.basicHeaders(),
-                version: 3
+                version: 3,
             });
     }
 
     activateExtension(technicalName, type) {
         return this.httpClient
-            .put(`_action/extension/activate/${type}/${technicalName}`, {}, {
+            .put(`_action/${this.getApiBasePath()}/activate/${type}/${technicalName}`, {}, {
                 headers: this.basicHeaders(),
-                version: 3
+                version: 3,
             });
     }
 
     deactivateExtension(technicalName, type) {
         return this.httpClient
-            .put(`_action/extension/deactivate/${type}/${technicalName}`, {}, {
+            .put(`_action/${this.getApiBasePath()}/deactivate/${type}/${technicalName}`, {}, {
                 headers: this.basicHeaders(),
-                version: 3
+                version: 3,
             });
     }
 
     uninstallExtension(technicalName, type, removeData) {
         return this.httpClient
-            .post(`_action/extension/uninstall/${type}/${technicalName}`, { keepUserData: !removeData }, {
+            .post(`_action/${this.getApiBasePath()}/uninstall/${type}/${technicalName}`, { keepUserData: !removeData }, {
                 headers: this.basicHeaders(),
-                version: 3
+                version: 3,
             });
     }
 
     removeExtension(technicalName, type) {
         return this.httpClient
-            .delete(`_action/extension/remove/${type}/${technicalName}`, {
+            .delete(`_action/${this.getApiBasePath()}/remove/${type}/${technicalName}`, {
                 headers: this.basicHeaders(),
-                version: 3
+                version: 3,
             });
     }
 
-    cancelAndRemoveExtension(licenseId) {
+    cancelLicense(licenseId) {
         return this.httpClient
             .delete(`/license/cancel/${licenseId}`, {
                 headers: this.basicHeaders(),
-                version: 3
+                version: 3,
             })
             .then(({ data }) => {
                 return data;
@@ -79,8 +79,8 @@ export default class ExtensionStoreActionService extends ApiService {
             { authorName, headline, rating, text, tocAccepted, version },
             {
                 headers: this.basicHeaders(),
-                version: 3
-            }
+                version: 3,
+            },
         );
     }
 
@@ -88,13 +88,48 @@ export default class ExtensionStoreActionService extends ApiService {
         const headers = {
             'Content-Type': 'application/json',
             Accept: 'application/json',
-            Authorization: `Bearer ${this.loginService.getToken()}`
+            Authorization: `Bearer ${this.loginService.getToken()}`,
         };
 
-        if (context && context.languageId) {
+        if (context?.languageId) {
             headers['sw-language-id'] = context.languageId;
         }
 
         return headers;
+    }
+
+    async getMyExtensions() {
+        const headers = this.getBasicHeaders();
+
+        const { data } = await this.httpClient.get(`/_action/${this.getApiBasePath()}/installed`, {
+            headers,
+            version: 3,
+        });
+
+        return data;
+    }
+
+    upload(formData) {
+        const additionalHeaders = { 'Content-Type': 'application/zip' };
+        const headers = this.getBasicHeaders(additionalHeaders);
+
+        return this.httpClient.post(
+            `/_action/${this.getApiBasePath()}/upload`,
+            formData,
+            { headers },
+        )
+            .then((response) => {
+                return ApiService.handleResponse(response);
+            });
+    }
+
+    refresh() {
+        const headers = this.getBasicHeaders();
+
+        return this.httpClient
+            .post(`/_action/${this.getApiBasePath()}/refresh`, {}, { params: { }, headers })
+            .then((response) => {
+                return ApiService.handleResponse(response);
+            });
     }
 }

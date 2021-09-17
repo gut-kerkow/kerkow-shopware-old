@@ -8,8 +8,12 @@ use Shopware\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InvalidAggregationQueryException;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\AssociationField;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\Field;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\FkField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\IdField;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToManyAssociationField;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\OneToManyAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Aggregation\Aggregation;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Aggregation\Bucket\BucketAggregation;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Aggregation\Bucket\DateHistogramAggregation;
@@ -44,36 +48,28 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
  */
 class EntityAggregator implements EntityAggregatorInterface
 {
-    /**
-     * @var Connection
-     */
-    private $connection;
+    private Connection $connection;
 
-    /**
-     * @var EntityDefinitionQueryHelper
-     */
-    private $helper;
+    private EntityDefinitionQueryHelper $helper;
 
-    /**
-     * @var DefinitionInstanceRegistry
-     */
-    private $registry;
+    private DefinitionInstanceRegistry $registry;
 
-    /**
-     * @var CriteriaQueryBuilder
-     */
-    private $criteriaQueryBuilder;
+    private CriteriaQueryBuilder $criteriaQueryBuilder;
+
+    private bool $timeZoneSupportEnabled;
 
     public function __construct(
         Connection $connection,
         EntityDefinitionQueryHelper $queryHelper,
         DefinitionInstanceRegistry $registry,
-        CriteriaQueryBuilder $criteriaQueryBuilder
+        CriteriaQueryBuilder $criteriaQueryBuilder,
+        bool $timeZoneSupportEnabled
     ) {
         $this->connection = $connection;
         $this->helper = $queryHelper;
         $this->registry = $registry;
         $this->criteriaQueryBuilder = $criteriaQueryBuilder;
+        $this->timeZoneSupportEnabled = $timeZoneSupportEnabled;
     }
 
     public function aggregate(EntityDefinition $definition, Criteria $criteria, Context $context): AggregationResultCollection
@@ -121,7 +117,12 @@ class EntityAggregator implements EntityAggregatorInterface
 
         $query = new QueryBuilder($this->connection);
 
-        $query = $this->criteriaQueryBuilder->build($query, $definition, $clone, $context);
+        // If an aggregation is to be created on a to many association that is already stored as a filter.
+        // The association is therefore referenced twice in the query and would have to be created as a sub-join in each case. But since only the filters are considered, the association is referenced only once.
+        // In this case we add the aggregation field as path to the criteria builder and the join group builder will consider this path for the sub-join logic
+        $paths = [$this->findToManyPath($aggregation, $definition)];
+
+        $query = $this->criteriaQueryBuilder->build($query, $definition, $clone, $context, array_filter($paths));
         $query->resetQueryPart('orderBy');
 
         if ($criteria->getTitle()) {
@@ -133,7 +134,7 @@ class EntityAggregator implements EntityAggregatorInterface
         $table = $definition->getEntityName();
 
         foreach ($aggregation->getFields() as $fieldName) {
-            $this->helper->resolveAccessor($fieldName, $definition, $table, $query, $context);
+            $this->helper->resolveAccessor($fieldName, $definition, $table, $query, $context, $aggregation);
         }
 
         $query->resetQueryPart('groupBy');
@@ -145,65 +146,101 @@ class EntityAggregator implements EntityAggregatorInterface
         return $this->hydrateResult($aggregation, $definition, $rows, $context);
     }
 
+    private function findToManyPath(Aggregation $aggregation, EntityDefinition $definition): ?string
+    {
+        $fields = EntityDefinitionQueryHelper::getFieldsOfAccessor($definition, $aggregation->getField(), false);
+
+        $fields = array_filter($fields);
+
+        if (\count($fields) === 0) {
+            return null;
+        }
+
+        // contains later the path to the first to many association
+        $path = [$definition->getEntityName()];
+
+        $found = false;
+
+        /** @var Field $field */
+        foreach ($fields as $field) {
+            if (!($field instanceof AssociationField)) {
+                break;
+            }
+
+            // if to many not already detected, continue with path building
+            $path[] = $field->getPropertyName();
+
+            if ($field instanceof ManyToManyAssociationField || $field instanceof OneToManyAssociationField) {
+                $found = true;
+            }
+        }
+
+        if ($found) {
+            return implode('.', $path);
+        }
+
+        return null;
+    }
+
     private function extendQuery(Aggregation $aggregation, QueryBuilder $query, EntityDefinition $definition, Context $context): void
     {
         switch (true) {
             case $aggregation instanceof DateHistogramAggregation:
-                /* @var DateHistogramAggregation $aggregation */
+
                 $this->parseDateHistogramAggregation($aggregation, $query, $definition, $context);
 
                 break;
 
             case $aggregation instanceof TermsAggregation:
-                /* @var TermsAggregation $aggregation */
+
                 $this->parseTermsAggregation($aggregation, $query, $definition, $context);
 
                 break;
 
             case $aggregation instanceof FilterAggregation:
-                /* @var FilterAggregation $aggregation */
+
                 $this->parseFilterAggregation($aggregation, $query, $definition, $context);
 
                 break;
 
             case $aggregation instanceof AvgAggregation:
-                /* @var AvgAggregation $aggregation */
+
                 $this->parseAvgAggregation($aggregation, $query, $definition, $context);
 
                 break;
 
             case $aggregation instanceof SumAggregation:
-                /* @var SumAggregation $aggregation */
+
                 $this->parseSumAggregation($aggregation, $query, $definition, $context);
 
                 break;
 
             case $aggregation instanceof MaxAggregation:
-                /* @var MaxAggregation $aggregation */
+
                 $this->parseMaxAggregation($aggregation, $query, $definition, $context);
 
                 break;
 
             case $aggregation instanceof MinAggregation:
-                /* @var MinAggregation $aggregation */
+
                 $this->parseMinAggregation($aggregation, $query, $definition, $context);
 
                 break;
 
             case $aggregation instanceof CountAggregation:
-                /* @var CountAggregation $aggregation */
+
                 $this->parseCountAggregation($aggregation, $query, $definition, $context);
 
                 break;
 
             case $aggregation instanceof StatsAggregation:
-                /* @var StatsAggregation $aggregation */
+
                 $this->parseStatsAggregation($aggregation, $query, $definition, $context);
 
                 break;
 
             case $aggregation instanceof EntityAggregation:
-                /* @var EntityAggregation $aggregation */
+
                 $this->parseEntityAggregation($aggregation, $query, $definition, $context);
 
                 break;
@@ -225,6 +262,10 @@ class EntityAggregator implements EntityAggregatorInterface
     private function parseDateHistogramAggregation(DateHistogramAggregation $aggregation, QueryBuilder $query, EntityDefinition $definition, Context $context): void
     {
         $accessor = $this->helper->getFieldAccessor($aggregation->getField(), $definition, $definition->getEntityName(), $context);
+
+        if ($this->timeZoneSupportEnabled && $aggregation->getTimeZone()) {
+            $accessor = 'CONVERT_TZ(' . $accessor . ', "UTC", "' . $aggregation->getTimeZone() . '")';
+        }
 
         switch ($aggregation->getInterval()) {
             case DateHistogramAggregation::PER_MINUTE:
@@ -379,15 +420,15 @@ class EntityAggregator implements EntityAggregatorInterface
 
         switch (true) {
             case $aggregation instanceof DateHistogramAggregation:
-                /* @var DateHistogramAggregation $aggregation */
+
                 return $this->hydrateDateHistogramAggregation($aggregation, $definition, $rows, $context);
 
             case $aggregation instanceof TermsAggregation:
-                /* @var TermsAggregation $aggregation */
+
                 return $this->hydrateTermsAggregation($aggregation, $definition, $rows, $context);
 
             case $aggregation instanceof FilterAggregation:
-                /* @var FilterAggregation $aggregation */
+
                 return $this->hydrateResult($aggregation->getAggregation(), $definition, $rows, $context);
 
             case $aggregation instanceof AvgAggregation:
@@ -428,7 +469,7 @@ class EntityAggregator implements EntityAggregatorInterface
                 return new StatsResult($aggregation->getName(), $min, $max, $avg, $sum);
 
             case $aggregation instanceof EntityAggregation:
-                /* @var EntityAggregation $aggregation */
+
                 return $this->hydrateEntityAggregation($aggregation, $rows, $context);
             default:
                 throw new InvalidAggregationQueryException(sprintf('Aggregation of type %s not supported', \get_class($aggregation)));

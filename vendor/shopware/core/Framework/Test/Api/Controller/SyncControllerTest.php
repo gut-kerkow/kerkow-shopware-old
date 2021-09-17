@@ -10,9 +10,9 @@ use Shopware\Core\Content\Product\ProductDefinition;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Api\Controller\SyncController;
 use Shopware\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexerRegistry;
+use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Test\TestCaseBase\AdminFunctionalTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\PlatformRequest;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -63,149 +63,22 @@ class SyncControllerTest extends TestCase
             ],
         ];
 
-        $this->getBrowser()->request('POST', '/api/v' . PlatformRequest::API_VERSION . '/_action/sync', [], [], [], json_encode($data));
+        $this->getBrowser()->request('POST', '/api/_action/sync', [], [], [], json_encode($data));
         $response = $this->getBrowser()->getResponse();
 
         static::assertSame(200, $response->getStatusCode(), $response->getContent());
 
-        $this->getBrowser()->request('GET', '/api/v' . PlatformRequest::API_VERSION . '/product/' . $id1);
+        $this->getBrowser()->request('GET', '/api/product/' . $id1);
         static::assertSame(Response::HTTP_OK, $this->getBrowser()->getResponse()->getStatusCode());
 
-        $this->getBrowser()->request('GET', '/api/v' . PlatformRequest::API_VERSION . '/product/' . $id2);
+        $this->getBrowser()->request('GET', '/api/product/' . $id2);
         static::assertSame(Response::HTTP_OK, $this->getBrowser()->getResponse()->getStatusCode());
 
-        $this->getBrowser()->request('DELETE', '/api/v' . PlatformRequest::API_VERSION . '/product/' . $id1);
+        $this->getBrowser()->request('DELETE', '/api/product/' . $id1);
         static::assertSame(Response::HTTP_NO_CONTENT, $this->getBrowser()->getResponse()->getStatusCode());
 
-        $this->getBrowser()->request('DELETE', '/api/v' . PlatformRequest::API_VERSION . '/product/' . $id2);
+        $this->getBrowser()->request('DELETE', '/api/product/' . $id2);
         static::assertSame(Response::HTTP_NO_CONTENT, $this->getBrowser()->getResponse()->getStatusCode());
-    }
-
-    public function testDuplicateProductNumberInsert(): void
-    {
-        $id1 = Uuid::randomHex();
-        $id2 = Uuid::randomHex();
-        $productNumber = Uuid::randomHex();
-
-        $data = [
-            [
-                'action' => SyncController::ACTION_UPSERT,
-                'entity' => $this->getContainer()->get(ProductDefinition::class)->getEntityName(),
-                'payload' => [
-                    [
-                        'id' => $id1,
-                        'productNumber' => $productNumber,
-                        'stock' => 1,
-                        'manufacturer' => ['name' => 'test'],
-                        'tax' => ['name' => 'test', 'taxRate' => 15],
-                        'name' => 'CREATE-1',
-                        'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 50, 'net' => 25, 'linked' => false]],
-                    ],
-                ],
-            ],
-            [
-                'action' => SyncController::ACTION_UPSERT,
-                'entity' => $this->getContainer()->get(ProductDefinition::class)->getEntityName(),
-                'payload' => [
-                    [
-                        'id' => $id2,
-                        'productNumber' => $productNumber,
-                        'stock' => 1,
-                        'manufacturer' => ['name' => 'test'],
-                        'name' => 'CREATE-2',
-                        'tax' => ['name' => 'test', 'taxRate' => 15],
-                        'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 50, 'net' => 25, 'linked' => false]],
-                    ],
-                ],
-            ],
-        ];
-        $this->getBrowser()->setServerParameter('HTTP_fail-on-error', 'false');
-        $this->getBrowser()->request('POST', '/api/v' . PlatformRequest::API_VERSION . '/_action/sync', [], [], [], json_encode($data));
-        $response = $this->getBrowser()->getResponse();
-        $this->getBrowser()->setServerParameter('HTTP_fail-on-error', 'true');
-        static::assertSame(200, $response->getStatusCode(), $response->getContent());
-        static::assertStringContainsString('Product with number \u0022' . $productNumber . '\u0022 already exists.', $response->getContent());
-
-        $this->getBrowser()->request('GET', '/api/v' . PlatformRequest::API_VERSION . '/product/' . $id1);
-        static::assertSame(Response::HTTP_OK, $this->getBrowser()->getResponse()->getStatusCode());
-
-        $this->getBrowser()->request('GET', '/api/v' . PlatformRequest::API_VERSION . '/product/' . $id2);
-        static::assertSame(Response::HTTP_NOT_FOUND, $this->getBrowser()->getResponse()->getStatusCode());
-
-        $this->getBrowser()->request('DELETE', '/api/v' . PlatformRequest::API_VERSION . '/product/' . $id1);
-        static::assertSame(Response::HTTP_NO_CONTENT, $this->getBrowser()->getResponse()->getStatusCode());
-
-        $this->getBrowser()->request('GET', '/api/v' . PlatformRequest::API_VERSION . '/product/' . $id1);
-        static::assertSame(Response::HTTP_NOT_FOUND, $this->getBrowser()->getResponse()->getStatusCode());
-    }
-
-    public function testDuplicateProductNumberInsertKeyChanged(): void
-    {
-        $this->connection->rollBack();
-        $this->connection->executeUpdate('
-            ALTER TABLE `product` DROP INDEX `uniq.product.product_number__version_id`
-        ');
-        $this->connection->executeUpdate('
-            ALTER TABLE `product` ADD CONSTRAINT `uniq.product.product_number__version_idTEST` UNIQUE (`product_number`, `version_id`)
-        ');
-        $this->connection->beginTransaction();
-
-        $id1 = Uuid::randomHex();
-        $id2 = Uuid::randomHex();
-        $productNumber = Uuid::randomHex();
-
-        $data = [
-            [
-                'action' => SyncController::ACTION_UPSERT,
-                'entity' => $this->getContainer()->get(ProductDefinition::class)->getEntityName(),
-                'payload' => [
-                    [
-                        'id' => $id1,
-                        'productNumber' => $productNumber,
-                        'stock' => 1,
-                        'manufacturer' => ['name' => 'test'],
-                        'tax' => ['name' => 'test', 'taxRate' => 15],
-                        'name' => 'CREATE-KeyChanged-1',
-                        'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 50, 'net' => 25, 'linked' => false]],
-                    ],
-                ],
-            ],
-            [
-                'action' => SyncController::ACTION_UPSERT,
-                'entity' => $this->getContainer()->get(ProductDefinition::class)->getEntityName(),
-                'payload' => [
-                    [
-                        'id' => $id2,
-                        'productNumber' => $productNumber,
-                        'stock' => 1,
-                        'manufacturer' => ['name' => 'test'],
-                        'name' => 'CREATE-KeyChanged-2',
-                        'tax' => ['name' => 'test', 'taxRate' => 15],
-                        'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 50, 'net' => 25, 'linked' => false]],
-                    ],
-                ],
-            ],
-        ];
-        $this->getBrowser()->setServerParameter('HTTP_fail-on-error', 'false');
-        $this->getBrowser()->request('POST', '/api/v' . PlatformRequest::API_VERSION . '/_action/sync', [], [], [], json_encode($data));
-        $response = $this->getBrowser()->getResponse();
-        $this->getBrowser()->setServerParameter('HTTP_fail-on-error', 'true');
-
-        static::assertSame(200, $response->getStatusCode(), $response->getContent());
-        static::assertStringNotContainsString('Product with number \u0022' . $productNumber . '\u0022 already exists.', $response->getContent());
-
-        $this->getBrowser()->request('DELETE', '/api/v' . PlatformRequest::API_VERSION . '/product/' . $id1);
-        static::assertSame(Response::HTTP_NO_CONTENT, $this->getBrowser()->getResponse()->getStatusCode());
-
-        $this->connection->rollBack();
-        $this->connection->executeUpdate('
-            ALTER TABLE `product` DROP INDEX `uniq.product.product_number__version_idTEST`
-        ');
-
-        $this->connection->executeUpdate('
-            ALTER TABLE `product` ADD CONSTRAINT `uniq.product.product_number__version_id` UNIQUE (`product_number`, `version_id`)
-        ');
-        $this->connection->beginTransaction();
     }
 
     public function testInsertAndUpdateSameEntity(): void
@@ -241,16 +114,16 @@ class SyncControllerTest extends TestCase
             ],
         ];
 
-        $this->getBrowser()->request('POST', '/api/v' . PlatformRequest::API_VERSION . '/_action/sync', [], [], [], json_encode($data));
+        $this->getBrowser()->request('POST', '/api/_action/sync', [], [], [], json_encode($data));
         static::assertSame(200, $this->getBrowser()->getResponse()->getStatusCode(), $this->getBrowser()->getResponse()->getContent());
 
-        $this->getBrowser()->request('GET', '/api/v' . PlatformRequest::API_VERSION . '/product/' . $id);
+        $this->getBrowser()->request('GET', '/api/product/' . $id);
         static::assertSame(Response::HTTP_OK, $this->getBrowser()->getResponse()->getStatusCode());
 
         $responseData = json_decode($this->getBrowser()->getResponse()->getContent(), true);
         static::assertFalse($responseData['data']['attributes']['active']);
 
-        $this->getBrowser()->request('DELETE', '/api/v' . PlatformRequest::API_VERSION . '/product/' . $id);
+        $this->getBrowser()->request('DELETE', '/api/product/' . $id);
         static::assertSame(Response::HTTP_NO_CONTENT, $this->getBrowser()->getResponse()->getStatusCode());
     }
 
@@ -291,12 +164,12 @@ class SyncControllerTest extends TestCase
             ],
         ];
 
-        $this->getBrowser()->request('POST', '/api/v' . PlatformRequest::API_VERSION . '/_action/sync', [], [], [], json_encode($data));
+        $this->getBrowser()->request('POST', '/api/_action/sync', [], [], [], json_encode($data));
 
         $response = $this->getBrowser()->getResponse();
         static::assertSame(200, $response->getStatusCode());
 
-        $this->getBrowser()->request('GET', '/api/v' . PlatformRequest::API_VERSION . '/product/' . $productId . '/categories');
+        $this->getBrowser()->request('GET', '/api/product/' . $productId . '/categories');
         $responseData = json_decode($this->getBrowser()->getResponse()->getContent(), true);
 
         static::assertSame(Response::HTTP_OK, $this->getBrowser()->getResponse()->getStatusCode());
@@ -305,10 +178,10 @@ class SyncControllerTest extends TestCase
         static::assertContains($categoryId, $categories);
         static::assertCount(1, $categories, 'Category Ids should not contain: ' . print_r(array_diff($categories, [$categoryId]), true));
 
-        $this->getBrowser()->request('DELETE', '/api/v' . PlatformRequest::API_VERSION . '/category/' . $categoryId);
+        $this->getBrowser()->request('DELETE', '/api/category/' . $categoryId);
         static::assertSame(Response::HTTP_NO_CONTENT, $this->getBrowser()->getResponse()->getStatusCode(), $this->getBrowser()->getResponse()->getContent());
 
-        $this->getBrowser()->request('DELETE', '/api/v' . PlatformRequest::API_VERSION . '/product/' . $productId);
+        $this->getBrowser()->request('DELETE', '/api/product/' . $productId);
         static::assertSame(Response::HTTP_NO_CONTENT, $this->getBrowser()->getResponse()->getStatusCode(), $this->getBrowser()->getResponse()->getContent());
     }
 
@@ -351,22 +224,22 @@ class SyncControllerTest extends TestCase
             ],
         ];
 
-        $this->getBrowser()->request('POST', '/api/v' . PlatformRequest::API_VERSION . '/_action/sync', [], [], [], json_encode($data));
+        $this->getBrowser()->request('POST', '/api/_action/sync', [], [], [], json_encode($data));
 
-        $this->getBrowser()->request('GET', '/api/v' . PlatformRequest::API_VERSION . '/product/' . $product . '/categories');
+        $this->getBrowser()->request('GET', '/api/product/' . $product . '/categories');
         $responseData = json_decode($this->getBrowser()->getResponse()->getContent(), true);
         $categories = array_column($responseData['data'], 'id');
         static::assertContains($category, $categories);
         static::assertCount(1, $categories);
 
-        $this->getBrowser()->request('GET', '/api/v' . PlatformRequest::API_VERSION . '/product/' . $product2 . '/categories');
+        $this->getBrowser()->request('GET', '/api/product/' . $product2 . '/categories');
         $responseData = json_decode($this->getBrowser()->getResponse()->getContent(), true);
 
         $categories = array_column($responseData['data'], 'id');
         static::assertContains($category, $categories);
         static::assertCount(1, $categories);
 
-        $this->getBrowser()->request('GET', '/api/v' . PlatformRequest::API_VERSION . '/category/' . $category . '/products/');
+        $this->getBrowser()->request('GET', '/api/category/' . $category . '/products/');
         $responseData = json_decode($this->getBrowser()->getResponse()->getContent(), true);
         static::assertSame(Response::HTTP_OK, $this->getBrowser()->getResponse()->getStatusCode());
 
@@ -408,7 +281,7 @@ class SyncControllerTest extends TestCase
             ],
         ];
 
-        $this->getBrowser()->request('POST', '/api/v' . PlatformRequest::API_VERSION . '/_action/sync', [], [], [], json_encode($data));
+        $this->getBrowser()->request('POST', '/api/_action/sync', [], [], [], json_encode($data));
 
         $exists = $this->connection->fetchAll(
             'SELECT * FROM product WHERE id IN(:id)',
@@ -428,7 +301,7 @@ class SyncControllerTest extends TestCase
             ],
         ];
 
-        $this->getBrowser()->request('POST', '/api/v' . PlatformRequest::API_VERSION . '/_action/sync', [], [], [], json_encode($data));
+        $this->getBrowser()->request('POST', '/api/_action/sync', [], [], [], json_encode($data));
 
         $exists = $this->connection->fetchAll(
             'SELECT * FROM product WHERE id IN (:id)',
@@ -440,6 +313,8 @@ class SyncControllerTest extends TestCase
 
     public function testItThrows400OnFailOnError(): void
     {
+        Feature::skipTestIfActive('FEATURE_NEXT_15815', $this);
+
         $product = Uuid::randomHex();
         $product2 = Uuid::randomHex();
 
@@ -467,7 +342,7 @@ class SyncControllerTest extends TestCase
             ],
         ];
 
-        $this->getBrowser()->request('POST', '/api/v' . PlatformRequest::API_VERSION . '/_action/sync', [], [], ['HTTP_Fail-On-Error' => 'true'], json_encode($data));
+        $this->getBrowser()->request('POST', '/api/_action/sync', [], [], ['HTTP_Fail-On-Error' => 'true'], json_encode($data));
 
         $exists = $this->connection->fetchAll(
             'SELECT * FROM product WHERE id IN(:id)',
@@ -489,6 +364,8 @@ class SyncControllerTest extends TestCase
 
     public function testItReturns200WhenFailOnErrorIsFalse(): void
     {
+        Feature::skipTestIfActive('FEATURE_NEXT_15815', $this);
+
         $product = Uuid::randomHex();
 
         $data = [
@@ -507,7 +384,7 @@ class SyncControllerTest extends TestCase
             ],
         ];
 
-        $this->getBrowser()->request('POST', '/api/v' . PlatformRequest::API_VERSION . '/_action/sync', [], [], ['HTTP_Fail-On-Error' => 'false'], json_encode($data));
+        $this->getBrowser()->request('POST', '/api/_action/sync', [], [], ['HTTP_Fail-On-Error' => 'false'], json_encode($data));
 
         $exists = $this->connection->fetchAll(
             'SELECT * FROM product WHERE id IN(:id)',
@@ -551,7 +428,7 @@ class SyncControllerTest extends TestCase
         $this->connection->executeUpdate('DELETE FROM enqueue;');
         $this->connection->executeUpdate('DELETE FROM message_queue_stats;');
 
-        $this->getBrowser()->request('POST', '/api/v' . PlatformRequest::API_VERSION . '/_action/sync', [], [], ['HTTP_Fail-On-Error' => 'false', 'HTTP_indexing-behavior' => EntityIndexerRegistry::USE_INDEXING_QUEUE], json_encode($data));
+        $this->getBrowser()->request('POST', '/api/_action/sync', [], [], ['HTTP_Fail-On-Error' => 'false', 'HTTP_indexing-behavior' => EntityIndexerRegistry::USE_INDEXING_QUEUE], json_encode($data));
 
         $exists = $this->connection->fetchAll(
             'SELECT * FROM product WHERE id IN(:id)',
@@ -594,7 +471,7 @@ class SyncControllerTest extends TestCase
         $this->connection->executeUpdate('DELETE FROM enqueue;');
         $this->connection->executeUpdate('DELETE FROM message_queue_stats;');
 
-        $this->getBrowser()->request('POST', '/api/v' . PlatformRequest::API_VERSION . '/_action/sync', [], [], ['HTTP_Fail-On-Error' => 'false'], json_encode($data));
+        $this->getBrowser()->request('POST', '/api/_action/sync', [], [], ['HTTP_Fail-On-Error' => 'false'], json_encode($data));
 
         $exists = $this->connection->fetchAll(
             'SELECT * FROM product WHERE id IN(:id)',

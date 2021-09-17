@@ -46,14 +46,14 @@ describe('Shipping: Test acl privileges', () => {
                 key: 'shipping',
                 role: 'editor'
             }
-        ]);
-
-        cy.visit(`${Cypress.env('admin')}#/sw/settings/shipping/index`);
+        ]).then(() => {
+            cy.visit(`${Cypress.env('admin')}#/sw/settings/shipping/index`);
+        });
 
         // Request we want to wait for later
         cy.server();
         cy.route({
-            url: '/api/v*/shipping-method/*',
+            url: `${Cypress.env('apiPath')}/shipping-method/*`,
             method: 'patch'
         }).as('saveData');
 
@@ -92,14 +92,14 @@ describe('Shipping: Test acl privileges', () => {
                 key: 'shipping',
                 role: 'creator'
             }
-        ]);
-
-        cy.visit(`${Cypress.env('admin')}#/sw/settings/shipping/index`);
+        ]).then(() => {
+            cy.visit(`${Cypress.env('admin')}#/sw/settings/shipping/index`);
+        });
 
         // Request we want to wait for later
         cy.server();
         cy.route({
-            url: '/api/v*/shipping-method',
+            url: `${Cypress.env('apiPath')}/shipping-method`,
             method: 'post'
         }).as('saveData');
 
@@ -130,14 +130,14 @@ describe('Shipping: Test acl privileges', () => {
                 key: 'shipping',
                 role: 'deleter'
             }
-        ]);
-
-        cy.visit(`${Cypress.env('admin')}#/sw/settings/shipping/index`);
+        ]).then(() => {
+            cy.visit(`${Cypress.env('admin')}#/sw/settings/shipping/index`);
+        });
 
         // Request we want to wait for later
         cy.server();
         cy.route({
-            url: '/api/v*/shipping-method/*',
+            url: `${Cypress.env('apiPath')}/shipping-method/*`,
             method: 'delete'
         }).as('deleteData');
 

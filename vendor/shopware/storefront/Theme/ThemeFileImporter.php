@@ -3,6 +3,7 @@
 namespace Shopware\Storefront\Theme;
 
 use Shopware\Core\Framework\Adapter\Filesystem\Plugin\CopyBatchInput;
+use Shopware\Core\Framework\Feature;
 use Shopware\Core\System\Annotation\Concept\ExtensionPattern\Decoratable;
 use Shopware\Storefront\Theme\Exception\ThemeCompileException;
 use Shopware\Storefront\Theme\StorefrontPluginConfiguration\File;
@@ -14,6 +15,13 @@ use Symfony\Component\Finder\Finder;
  */
 class ThemeFileImporter implements ThemeFileImporterInterface
 {
+    private string $projectDir;
+
+    public function __construct(string $projectDir)
+    {
+        $this->projectDir = $projectDir;
+    }
+
     public function fileExists(string $filePath): bool
     {
         return file_exists($filePath) && !is_dir($filePath);
@@ -21,7 +29,11 @@ class ThemeFileImporter implements ThemeFileImporterInterface
 
     public function getRealPath(string $filePath): string
     {
-        return $filePath;
+        if ($filePath[0] === '/' || !file_exists($this->projectDir . '/' . $filePath)) {
+            return $filePath;
+        }
+
+        return $this->projectDir . '/' . $filePath;
     }
 
     public function getConcatenableStylePath(File $file, StorefrontPluginConfiguration $configuration): string
@@ -43,21 +55,29 @@ class ThemeFileImporter implements ThemeFileImporterInterface
             );
         }
 
-        $finder = new Finder();
-        $files = $finder->files()->in($assetPath);
+        $files = (new Finder())->files()->in($assetPath);
         $assets = [];
 
         foreach ($files as $file) {
             $relativePathname = $file->getRelativePathname();
             $assetDir = basename($assetPath);
 
-            $assets[] = new CopyBatchInput(
-                $assetPath . \DIRECTORY_SEPARATOR . $relativePathname,
-                [
-                    'bundles' . \DIRECTORY_SEPARATOR . mb_strtolower($configuration->getTechnicalName()) . \DIRECTORY_SEPARATOR . $assetDir . \DIRECTORY_SEPARATOR . $relativePathname,
-                    $outputPath . \DIRECTORY_SEPARATOR . $assetDir . \DIRECTORY_SEPARATOR . $relativePathname,
-                ]
-            );
+            if (Feature::isActive('FEATURE_NEXT_14699')) {
+                $assets[] = new CopyBatchInput(
+                    $assetPath . \DIRECTORY_SEPARATOR . $relativePathname,
+                    [
+                        $outputPath . \DIRECTORY_SEPARATOR . $assetDir . \DIRECTORY_SEPARATOR . $relativePathname,
+                    ]
+                );
+            } else {
+                $assets[] = new CopyBatchInput(
+                    $assetPath . \DIRECTORY_SEPARATOR . $relativePathname,
+                    [
+                        'bundles' . \DIRECTORY_SEPARATOR . mb_strtolower($configuration->getTechnicalName()) . \DIRECTORY_SEPARATOR . $assetDir . \DIRECTORY_SEPARATOR . $relativePathname,
+                        $outputPath . \DIRECTORY_SEPARATOR . $assetDir . \DIRECTORY_SEPARATOR . $relativePathname,
+                    ]
+                );
+            }
         }
 
         return $assets;

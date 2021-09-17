@@ -98,7 +98,7 @@ Cypress.Commands.add('setShippingMethodInSalesChannel', (name, salesChannel = 'S
  * @param {Object} data - Necessary data for the API request
  */
 Cypress.Commands.add('updateViaAdminApi', (endpoint, id, data) => {
-    return cy.requestAdminApi('PATCH', `api/v2/${endpoint}/${id}`, data).then((responseData) => {
+    return cy.requestAdminApi('PATCH', `api/${endpoint}/${id}`, data).then((responseData) => {
         return responseData;
     });
 });
@@ -110,6 +110,7 @@ Cypress.Commands.add('updateViaAdminApi', (endpoint, id, data) => {
  * @function
  */
 Cypress.Commands.add('prepareAdminForScreenshot', () => {
+    // Hide version information, as it could change
     cy.changeElementStyling(
         '.sw-version__info',
         'visibility: hidden'
@@ -122,6 +123,7 @@ Cypress.Commands.add('prepareAdminForScreenshot', () => {
     }
     cy.get('body').then(($body) => {
         if ($body.find('.sw-alert').length) {
+            // Hide notifications for visual testing
             cy.changeElementStyling(
                 '.sw-alert',
                 'display: none'

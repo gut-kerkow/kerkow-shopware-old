@@ -25,7 +25,7 @@ class ConfigurationService implements Configuration, EntityQueueNameAware
 {
     public const INTEGRATION_NAME = 'shopware6';
     public const DEFAULT_BATCH_SIZE = 100;
-    public const DEFAULT_MAX_STARTED_TASK_LIMIT = 4;
+    public const DEFAULT_MAX_STARTED_TASK_LIMIT = 8;
     public const TOKEN_VALID_FOR = 3600;
     public const CONFIG_VALID_FOR = 86400;
     public const ASYNC_PROCESS_TIMEOUT = 1000;
@@ -70,7 +70,8 @@ class ConfigurationService implements Configuration, EntityQueueNameAware
         ConfigEntityRepository $configRepository,
         UrlGeneratorInterface $urlGenerator,
         SystemConfigurationRepository $systemConfigurationRepository
-    ) {
+    )
+    {
         $this->configRepository = $configRepository;
         $this->urlGenerator = $urlGenerator;
         $this->systemConfigurationRepository = $systemConfigurationRepository;
@@ -711,6 +712,7 @@ class ConfigurationService implements Configuration, EntityQueueNameAware
     public function getCompletedTasksRetentionPeriod(): int
     {
         $configValue = $this->configRepository->getValue('SENDCLOUD_COMPLETED_TASKS_RETENTION_PERIOD');
+
         return $configValue ?? self::COMPLETED_TASKS_RETENTION_PERIOD;
     }
 
@@ -730,6 +732,7 @@ class ConfigurationService implements Configuration, EntityQueueNameAware
     public function getFailedTasksRetentionPeriod(): int
     {
         $configValue = $this->configRepository->getValue('SENDCLOUD_FAILED_TASKS_RETENTION_PERIOD');
+
         return $configValue ?? self::FAILED_TASKS_RETENTION_PERIOD;
     }
 
@@ -749,6 +752,7 @@ class ConfigurationService implements Configuration, EntityQueueNameAware
     public function getOldTaskCleanupTimeThreshold(): int
     {
         $configValue = $this->configRepository->getValue('SENDCLOUD_OLD_TASKS_CLEANUP_THRESHOLD');
+
         return $configValue ?? self::OLD_TASKS_CLEANUP_THRESHOLD;
     }
 
@@ -768,7 +772,106 @@ class ConfigurationService implements Configuration, EntityQueueNameAware
     {
         return 'oldTaskCleanup';
     }
-    
+
+    /**
+     * Gets default shipment type
+     *
+     * @throws DBALException
+     */
+    public function getDefaultShipmentType(): ?string
+    {
+        return  $this->configRepository->getCustomsField('SENDCLOUD_DEFAULT_SHIPMENT_TYPE');
+    }
+
+    /**
+     * Sets default shipment type
+     *
+     * @param string $defaultShipmentType
+     * @throws DBALException
+     */
+    public function setDefaultShipmentType(string $defaultShipmentType): void
+    {
+        $this->configRepository->updateValue('SENDCLOUD_DEFAULT_SHIPMENT_TYPE', $defaultShipmentType);
+    }
+
+    /**
+     * Gets default hs code
+     *
+     * @throws DBALException
+     */
+    public function getDefaultHsCode(): ?string
+    {
+        return $this->configRepository->getCustomsField('SENDCLOUD_DEFAULT_HS_CODE');
+    }
+
+    /**
+     * Sets default hs code
+     *
+     * @param string $defaultHsCode
+     * @throws DBALException
+     */
+    public function setDefaultHsCode(string $defaultHsCode): void
+    {
+        $this->configRepository->updateValue('SENDCLOUD_DEFAULT_HS_CODE', $defaultHsCode);
+    }
+
+    /**
+     * Gets default country of origin
+     */
+    public function getDefaultOriginCountry(): ?string
+    {
+        return $this->configRepository->getCustomsField('SENDCLOUD_DEFAULT_ORIGIN_COUNTRY');
+    }
+
+    /**
+     * Sets default country of origin
+     *
+     * @param string $defaultOriginCountry
+     * @throws DBALException
+     */
+    public function setDefaultOriginCountry(string $defaultOriginCountry): void
+    {
+        $this->configRepository->updateValue('SENDCLOUD_DEFAULT_ORIGIN_COUNTRY', $defaultOriginCountry);
+    }
+
+    /**
+     * Gets product attribute that hs code is mapped to
+     */
+    public function getMappedHsCode(): ?string
+    {
+        return $this->configRepository->getCustomsField('SENDCLOUD_MAPPED_HS_CODE');
+    }
+
+    /**
+     * Sets product attribute that hs code is mapped to
+     *
+     * @param $mappedHsCode
+     * @throws DBALException
+     */
+    public function setMappedHsCode(string $mappedHsCode): void
+    {
+        $this->configRepository->updateValue('SENDCLOUD_MAPPED_HS_CODE', $mappedHsCode);
+    }
+
+    /**
+     * Gets product attribute that country of origin is mapped to
+     */
+    public function getMappedOriginCountry(): ?string
+    {
+        return $this->configRepository->getCustomsField('SENDCLOUD_MAPPED_ORIGIN_COUNTRY');
+    }
+
+    /**
+     * Sets product attribute that country of origin is mapped to
+     *
+     * @param string $mappedOriginCountry
+     * @throws DBALException
+     */
+    public function setMappedOriginCountry(string $mappedOriginCountry): void
+    {
+        $this->configRepository->updateValue('SENDCLOUD_MAPPED_ORIGIN_COUNTRY', $mappedOriginCountry);
+    }
+
     /**
      * Provides entity specific queue name.
      *

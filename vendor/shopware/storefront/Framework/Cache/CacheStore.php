@@ -2,14 +2,14 @@
 
 namespace Shopware\Storefront\Framework\Cache;
 
-use Shopware\Core\SalesChannelRequest;
-use Shopware\Storefront\Framework\Cache\Event\HttpCacheGenerateKeyEvent;
+use Shopware\Core\Framework\Adapter\Cache\AbstractCacheTracer;
+use Shopware\Core\Framework\Adapter\Cache\CacheCompressor;
+use Shopware\Core\System\SalesChannel\StoreApiResponse;
 use Shopware\Storefront\Framework\Cache\Event\HttpCacheHitEvent;
 use Shopware\Storefront\Framework\Cache\Event\HttpCacheItemWrittenEvent;
-use Shopware\Storefront\Framework\Routing\RequestTransformer;
+use Shopware\Storefront\Framework\Routing\MaintenanceModeResolver;
 use Shopware\Storefront\Framework\Routing\StorefrontResponse;
 use Symfony\Component\Cache\Adapter\TagAwareAdapterInterface;
-use Symfony\Component\Cache\CacheItem;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\HttpCache\StoreInterface;
@@ -17,53 +17,50 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 class CacheStore implements StoreInterface
 {
-    /**
-     * @var TagAwareAdapterInterface
-     */
-    private $cache;
+    private TagAwareAdapterInterface $cache;
+
+    private array $locks = [];
+
+    private CacheStateValidator $stateValidator;
+
+    private EventDispatcherInterface $eventDispatcher;
 
     /**
-     * @var array
+     * @var AbstractCacheTracer<StoreApiResponse>
      */
-    private $locks = [];
+    private AbstractCacheTracer $tracer;
+
+    private AbstractHttpCacheKeyGenerator $cacheKeyGenerator;
+
+    private MaintenanceModeResolver $maintenanceResolver;
 
     /**
-     * @var CacheStateValidator
+     * @param AbstractCacheTracer<StoreApiResponse> $tracer
      */
-    private $stateValidator;
-
-    /**
-     * @var EventDispatcherInterface
-     */
-    private $eventDispatcher;
-
-    /**
-     * @var string
-     */
-    private $cacheHash;
-
-    /**
-     * @var CacheTagCollection
-     */
-    private $cacheTagCollection;
-
     public function __construct(
-        string $cacheHash,
         TagAwareAdapterInterface $cache,
         CacheStateValidator $stateValidator,
         EventDispatcherInterface $eventDispatcher,
-        CacheTagCollection $cacheTagCollection
+        AbstractCacheTracer $tracer,
+        AbstractHttpCacheKeyGenerator $cacheKeyGenerator,
+        MaintenanceModeResolver $maintenanceModeResolver
     ) {
         $this->cache = $cache;
         $this->stateValidator = $stateValidator;
         $this->eventDispatcher = $eventDispatcher;
-        $this->cacheHash = $cacheHash;
-        $this->cacheTagCollection = $cacheTagCollection;
+        $this->tracer = $tracer;
+        $this->cacheKeyGenerator = $cacheKeyGenerator;
+        $this->maintenanceResolver = $maintenanceModeResolver;
     }
 
     public function lookup(Request $request)
     {
-        $key = $this->generateCacheKey($request);
+        // maintenance mode active and current ip is whitelisted > disable caching
+        if ($this->maintenanceResolver->isMaintenanceRequest($request)) {
+            return null;
+        }
+
+        $key = $this->cacheKeyGenerator->generate($request);
 
         $item = $this->cache->getItem($key);
 
@@ -72,7 +69,7 @@ class CacheStore implements StoreInterface
         }
 
         /** @var Response $response */
-        $response = unserialize($item->get());
+        $response = CacheCompressor::uncompress($item);
 
         if (!$this->stateValidator->isValid($request, $response)) {
             return null;
@@ -87,21 +84,40 @@ class CacheStore implements StoreInterface
 
     public function write(Request $request, Response $response)
     {
-        $key = $this->generateCacheKey($request);
+        $key = $this->cacheKeyGenerator->generate($request);
+
+        // maintenance mode active and current ip is whitelisted > disable caching
+        if ($this->maintenanceResolver->isMaintenanceRequest($request)) {
+            return $key;
+        }
+
         if ($response instanceof StorefrontResponse) {
             $response->setData(null);
             $response->setContext(null);
         }
 
         $item = $this->cache->getItem($key);
-        $item->set(serialize($response));
+
+        $item = CacheCompressor::compress($item, $response);
         $item->expiresAt($response->getExpires());
 
-        $tags = $this->cacheTagCollection->getTags();
+        $tags = $this->tracer->get('all');
 
-        if (!empty($tags) && $item instanceof CacheItem) {
-            $item->tag($tags);
-        }
+        $tags = array_filter($tags, static function (string $tag): bool {
+            // remove tag for global theme cache, http cache will be invalidate for each key which gets accessed in the request
+            if (strpos($tag, 'theme-config') !== false) {
+                return false;
+            }
+
+            // remove tag for global config cache, http cache will be invalidate for each key which gets accessed in the request
+            if (strpos($tag, 'system-config') !== false) {
+                return false;
+            }
+
+            return true;
+        });
+
+        $item->tag($tags);
 
         $this->cache->save($item);
 
@@ -115,7 +131,7 @@ class CacheStore implements StoreInterface
     public function invalidate(Request $request): void
     {
         $this->cache->deleteItem(
-            $this->generateCacheKey($request)
+            $this->cacheKeyGenerator->generate($request)
         );
     }
 
@@ -178,10 +194,17 @@ class CacheStore implements StoreInterface
         );
     }
 
-    public function purge($url)
+    public function purge(string $url)
     {
         $http = preg_replace('#^https:#', 'http:', $url);
+        if ($http === null) {
+            return false;
+        }
+
         $https = preg_replace('#^http:#', 'https:', $url);
+        if ($https === null) {
+            return false;
+        }
 
         $httpPurged = $this->unlock(Request::create($http));
         $httpsPurged = $this->unlock(Request::create($https));
@@ -191,68 +214,6 @@ class CacheStore implements StoreInterface
 
     private function getLockKey(Request $request): string
     {
-        return 'http_lock_' . $this->generateCacheKey($request);
-    }
-
-    /**
-     * Generates a cache key for the given Request.
-     *
-     * This method should return a key that must only depend on a
-     * normalized version of the request URI.
-     *
-     * If the same URI can have more than one representation, based on some
-     * headers, use a Vary header to indicate them, and each representation will
-     * be stored independently under the same cache key.
-     *
-     * @return string A key for the given Request
-     */
-    private function generateCacheKey(Request $request): string
-    {
-        $uri = $this->getRequestUri($request) . $this->cacheHash;
-
-        $event = new HttpCacheGenerateKeyEvent($request, 'md' . hash('sha256', $uri));
-
-        $this->eventDispatcher->dispatch($event);
-
-        $hash = $event->getHash();
-
-        if ($request->cookies->has(CacheResponseSubscriber::CONTEXT_CACHE_COOKIE)) {
-            return hash('sha256', $hash . '-' . $request->cookies->get(CacheResponseSubscriber::CONTEXT_CACHE_COOKIE));
-        }
-
-        if ($request->cookies->has(CacheResponseSubscriber::CURRENCY_COOKIE)) {
-            return hash('sha256', $hash . '-' . $request->cookies->get(CacheResponseSubscriber::CURRENCY_COOKIE));
-        }
-
-        if ($request->attributes->has(SalesChannelRequest::ATTRIBUTE_DOMAIN_CURRENCY_ID)) {
-            return hash('sha256', $hash . '-' . $request->attributes->get(SalesChannelRequest::ATTRIBUTE_DOMAIN_CURRENCY_ID));
-        }
-
-        return $hash;
-    }
-
-    private function getRequestUri(Request $request): string
-    {
-        $params = $request->query->all();
-        if (\count($params) === 0) {
-            return sprintf(
-                '%s%s%s',
-                $request->getSchemeAndHttpHost(),
-                $request->attributes->get(RequestTransformer::SALES_CHANNEL_BASE_URL),
-                $request->getPathInfo()
-            );
-        }
-
-        $params = $request->query->all();
-        ksort($params);
-        $params = http_build_query($params);
-
-        return sprintf(
-            '%s%s%s%s',
-            $request->getSchemeAndHttpHost(),
-            $request->attributes->get(RequestTransformer::SALES_CHANNEL_BASE_URL),
-            $request->getPathInfo(),
-            '?' . $params
-        );
+        return 'http_lock_' . $this->cacheKeyGenerator->generate($request);
     }
 }

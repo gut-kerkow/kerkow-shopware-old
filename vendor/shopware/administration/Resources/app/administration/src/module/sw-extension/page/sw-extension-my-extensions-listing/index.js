@@ -3,127 +3,237 @@ import './sw-extension-my-extensions-listing.scss';
 
 const { Component } = Shopware;
 
+/**
+ * @private
+ */
 Component.register('sw-extension-my-extensions-listing', {
     template,
 
     inject: ['shopwareExtensionService'],
 
+    data() {
+        return {
+            filterByActiveState: false,
+            sortingOption: 'updated-at',
+        };
+    },
+
     computed: {
         isLoading() {
             const state = Shopware.State.get('shopwareExtensions');
 
-            return state.licensedExtensions.loading || state.installedExtensions.loading;
+            return state.myExtensions.loading;
         },
 
-        licensedExtensions() {
-            return Shopware.State.get('shopwareExtensions').licensedExtensions.data;
-        },
-
-        installedExtensions() {
-            return Shopware.State.get('shopwareExtensions').installedExtensions.data.reduce((acc, extension) => {
-                acc[extension.name.toLowerCase()] = extension;
-
-                return acc;
-            }, {});
+        myExtensions() {
+            return Shopware.State.get('shopwareExtensions').myExtensions.data;
         },
 
         extensionList() {
-            const installedExtensions = Object.assign({}, this.installedExtensions);
-            const sortedActiveExtensions = [];
-            const sortedInstalledExtensions = [];
-            const sortedOtherExtensions = [];
+            const byTypeFilteredExtensions = this.filterExtensionsByType(this.myExtensions);
+            const sortedExtensions = this.sortExtensions(byTypeFilteredExtensions, this.sortingOption);
 
+            if (this.filterByActiveState) {
+                return this.filterExtensionsByActiveState(sortedExtensions);
+            }
 
-            this.licensedExtensions.forEach(license => {
-                let extension = null;
-                let updateLocation = null;
-                if (installedExtensions.hasOwnProperty(license.licensedExtension.name.toLowerCase())) {
-                    extension = installedExtensions[license.licensedExtension.name.toLowerCase()];
-                    if (extension.latestVersion) {
-                        updateLocation = 'local';
-                    } else if (license.licensedExtension.latestVersion && extension.version !== license.licensedExtension.latestVersion) {
-                        updateLocation = 'store';
+            return sortedExtensions;
+        },
+
+        extensionListPaginated() {
+            const begin = (this.page - 1) * this.limit;
+
+            return this.extensionListSearched
+                .slice(begin, begin + this.limit);
+        },
+
+        extensionListSearched() {
+            return this.extensionList
+                .filter(extension => {
+                    const searchTerm = this.term && this.term.toLowerCase();
+                    if (!this.term) {
+                        return true;
                     }
-                }
 
-                const item = {
-                    license,
-                    extension,
-                    key: license.licensedExtension.name,
-                    isLocalAvailable: extension !== null,
-                    updateLocation
-                };
+                    const label = extension.label || '';
+                    const name = extension.name || '';
 
-                if (extension && extension.active) {
-                    sortedActiveExtensions.push(item);
-                } else if (extension && extension.installedAt !== null) {
-                    sortedInstalledExtensions.push(item);
-                } else {
-                    sortedOtherExtensions.push(item);
-                }
+                    return label.toLowerCase().includes(searchTerm) ||
+                        name.toLowerCase().includes(searchTerm);
+                });
+        },
 
-                delete installedExtensions[license.licensedExtension.name.toLowerCase()];
-            });
+        isAppRoute() {
+            return this.$route.name === 'sw.extension.my-extensions.listing.app';
+        },
 
-            Object.values(installedExtensions).forEach(extension => {
-                const item = {
-                    license: null,
-                    extension,
-                    key: extension.name,
-                    isLocalAvailable: true,
-                    updateLocation: 'local'
-                };
+        isThemeRoute() {
+            return this.$route.name === 'sw.extension.my-extensions.listing.theme';
+        },
 
-                if (extension.active) {
-                    sortedActiveExtensions.push(item);
-                } else if (extension.installedAt !== null) {
-                    sortedInstalledExtensions.push(item);
-                } else {
-                    sortedOtherExtensions.push(item);
-                }
-            });
+        total() {
+            return this.extensionListSearched.length || 0;
+        },
 
-            this.sortByLocale(sortedActiveExtensions);
-            this.sortByLocale(sortedInstalledExtensions);
-            this.sortByLocale(sortedOtherExtensions);
-            const allExtensions = [].concat(sortedActiveExtensions, sortedInstalledExtensions, sortedOtherExtensions);
-            const listExtension = [];
+        limit: {
+            get() {
+                return Number(this.$route.query.limit) || 25;
+            },
+            set(newLimit) {
+                this.updateRouteQuery({ limit: newLimit });
+            },
+        },
 
-            allExtensions.forEach(extension => {
-                const isTheme = (extension.extension ? extension.extension.isTheme : false) || (extension.license ? extension.license.licensedExtension.isTheme : false);
+        page: {
+            get() {
+                return Number(this.$route.query.page) || 1;
+            },
+            set(newPage) {
+                this.updateRouteQuery({ page: newPage });
+            },
+        },
 
-                if (this.$route.name === 'sw.extension.my-extensions.listing.app' && !isTheme) {
-                    listExtension.push(extension);
-                } else if (this.$route.name === 'sw.extension.my-extensions.listing.theme' && isTheme) {
-                    listExtension.push(extension);
-                }
-            });
+        term: {
+            get() {
+                return this.$route.query.term || undefined;
+            },
 
-            return listExtension;
-        }
+            set(newTerm) {
+                this.updateRouteQuery({
+                    term: newTerm,
+                    page: 1,
+                });
+            },
+        },
+    },
+
+    watch: {
+        '$route.name'() {
+            this.updateList();
+            this.filterByActiveState = false;
+        },
+    },
+
+    mounted() {
+        this.mountedComponent();
     },
 
     methods: {
+        mountedComponent() {
+            this.updateList();
+            this.updateRouteQuery();
+        },
+
         updateList() {
             this.shopwareExtensionService.updateExtensionData();
         },
 
         openStore() {
             this.$router.push({
-                name: 'sw.extension.store.index'
+                name: 'sw.extension.store.listing',
             });
         },
 
-        getTitle(extension) {
-            if (extension.extension) {
-                return extension.extension.label;
-            }
+        updateRouteQuery(query = {}) {
+            const routeQuery = this.$route.query;
+            const limit = query.limit || this.$route.query.limit;
+            const page = query.page || this.$route.query.page;
+            const term = query.term || this.$route.query.term;
 
-            return extension.license.licensedExtension.label;
+            // Create new route
+            const route = {
+                name: this.$route.name,
+                params: this.$route.params,
+                query: {
+                    limit: limit || 25,
+                    page: page || 1,
+                    term: term || undefined,
+                },
+            };
+
+            // If query is empty then replace route, otherwise push
+            if (Shopware.Utils.types.isEmpty(routeQuery)) {
+                this.$router.replace(route);
+            } else {
+                this.$router.push(route);
+            }
         },
 
-        sortByLocale(array) {
-            return array.sort((a, b) => this.getTitle(a).localeCompare(this.getTitle(b)));
-        }
-    }
+        changePage({ page, limit }) {
+            this.updateRouteQuery({ page, limit });
+        },
+
+        filterExtensionsByType(extensions) {
+            return extensions.filter(extension => {
+                // app route and no theme
+                if (this.isAppRoute && !extension.isTheme) {
+                    return true;
+                }
+
+                // theme route and theme
+                if (this.isThemeRoute && extension.isTheme) {
+                    return true;
+                }
+
+                return false;
+            });
+        },
+
+        sortExtensions(extensions, sortingOption) {
+            return extensions.sort((firstExtension, secondExtension) => {
+                if (sortingOption === 'name-asc') {
+                    return firstExtension.label.localeCompare(secondExtension.label, { sensitivity: 'base' });
+                }
+
+                if (sortingOption === 'name-desc') {
+                    return firstExtension.label.localeCompare(secondExtension.label, { sensitivity: 'base' }) * -1;
+                }
+
+                if (sortingOption === 'updated-at') {
+                    if (firstExtension.updatedAt === null && secondExtension.updatedAt !== null) {
+                        return 1;
+                    }
+
+                    if (firstExtension.updatedAt !== null && secondExtension.updatedAt === null) {
+                        return -1;
+                    }
+
+                    if (secondExtension.updatedAt === null && firstExtension.updatedAt === null) {
+                        return 0;
+                    }
+
+                    const firstExtensionDate = new Date(firstExtension.updatedAt.date);
+                    const secondExtensionDate = new Date(secondExtension.updatedAt.date);
+
+                    if (firstExtensionDate > secondExtensionDate) {
+                        return -1;
+                    }
+
+                    if (firstExtensionDate < secondExtensionDate) {
+                        return 1;
+                    }
+
+                    if (firstExtensionDate === secondExtensionDate) {
+                        return 0;
+                    }
+                }
+
+                return 0;
+            });
+        },
+
+        changeSortingOption(value) {
+            this.sortingOption = value;
+        },
+
+        changeActiveState(value) {
+            this.filterByActiveState = value;
+        },
+
+        filterExtensionsByActiveState(extensions) {
+            return extensions.filter(extension => {
+                return extension.active;
+            });
+        },
+    },
 });

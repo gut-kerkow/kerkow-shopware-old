@@ -8,15 +8,17 @@ use Shopware\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressCollection;
 use Shopware\Core\Checkout\Order\Aggregate\OrderCustomer\OrderCustomerCollection;
 use Shopware\Core\Content\Newsletter\Aggregate\NewsletterRecipient\NewsletterRecipientCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopware\Core\System\Salutation\Aggregate\SalutationTranslation\SalutationTranslationCollection;
 
 class SalutationEntity extends Entity
 {
     use EntityIdTrait;
+    use EntityCustomFieldsTrait;
 
     /**
-     * @var string
+     * @var string|null
      */
     protected $salutationKey;
 
@@ -36,22 +38,22 @@ class SalutationEntity extends Entity
     protected $translations;
 
     /**
-     * @return CustomerCollection|null
+     * @var CustomerCollection|null
      */
     protected $customers;
 
     /**
-     * @return CustomerAddressCollection|null
+     * @var CustomerAddressCollection|null
      */
     protected $customerAddresses;
 
     /**
-     * @return OrderCustomerCollection|null
+     * @var OrderCustomerCollection|null
      */
     protected $orderCustomers;
 
     /**
-     * @return OrderAddressCollection|null
+     * @var OrderAddressCollection|null
      */
     protected $orderAddresses;
 
@@ -60,7 +62,7 @@ class SalutationEntity extends Entity
      */
     protected $newsletterRecipients;
 
-    public function getSalutationKey(): string
+    public function getSalutationKey(): ?string
     {
         return $this->salutationKey;
     }

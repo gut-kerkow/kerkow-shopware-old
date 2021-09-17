@@ -1,6 +1,5 @@
 {
     "name": "shopware/administration",
-    "version": "6.3.5.2",
     "description": "Administration frontend for the Shopware Core",
     "type": "library",
     "license": "MIT",
@@ -11,20 +10,30 @@
     },
     "config": {
         "platform": {
-            "php": "7.2.9"
+            "php": "7.4.3"
         },
         "sort-packages": true
     },
+    "support": {
+        "issues": "https://issues.shopware.com",
+        "forum": "https://forum.shopware.com",
+        "wiki": "https://developer.shopware.com",
+        "docs": "https://developer.shopware.com",
+        "chat": "https://slack.shopware.com"
+    },
     "extra": {
         "branch-alias": {
-            "dev-master": "6.3.x-dev"
+            "dev-master": "6.4.x-dev",
+            "dev-trunk": "6.4.x-dev"
         }
     },
     "require": {
-        "shopware/core": "*",
-        "symfony/framework-bundle": "~4.4.13",
-        "symfony/http-foundation": "~4.4.13",
-        "symfony/routing": "~4.4.13",
-        "symfony/mime": "~4.4.13"
-    }
+        "php": "^7.4.3 || ^8.0",
+        "shopware/core": "v6.4.4.0",
+        "symfony/framework-bundle": "~5.3.0",
+        "symfony/http-foundation": "~5.3.0",
+        "symfony/mime": "~5.3.0",
+        "symfony/routing": "~5.3.0"
+    },
+    "version": "6.4.4.0"
 }

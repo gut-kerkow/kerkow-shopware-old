@@ -7,6 +7,7 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Storefront\Theme\ConfigLoader\StaticFileConfigDumper;
 use Shopware\Storefront\Theme\StorefrontPluginRegistryInterface;
 use Shopware\Storefront\Theme\ThemeEntity;
 use Shopware\Storefront\Theme\ThemeFileResolver;
@@ -20,41 +21,26 @@ class ThemeDumpCommand extends Command
 {
     protected static $defaultName = 'theme:dump';
 
-    /**
-     * @var StorefrontPluginRegistryInterface
-     */
-    private $pluginRegistry;
+    private StorefrontPluginRegistryInterface$pluginRegistry;
 
-    /**
-     * @var ThemeFileResolver
-     */
-    private $themeFileResolver;
+    private ThemeFileResolver $themeFileResolver;
 
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $themeRepository;
+    private EntityRepositoryInterface $themeRepository;
 
-    /**
-     * @var string
-     */
-    private $projectDir;
+    private string $projectDir;
 
-    /**
-     * @var Context
-     */
-    private $context;
+    private Context $context;
 
-    /**
-     * @var SymfonyStyle
-     */
-    private $io;
+    private SymfonyStyle $io;
+
+    private StaticFileConfigDumper $staticFileConfigDumper;
 
     public function __construct(
         StorefrontPluginRegistryInterface $pluginRegistry,
         ThemeFileResolver $themeFileResolver,
         EntityRepositoryInterface $themeRepository,
-        string $projectDir
+        string $projectDir,
+        StaticFileConfigDumper $staticFileConfigDumper
     ) {
         parent::__construct();
 
@@ -63,6 +49,7 @@ class ThemeDumpCommand extends Command
         $this->themeRepository = $themeRepository;
         $this->projectDir = $projectDir;
         $this->context = Context::createDefaultContext();
+        $this->staticFileConfigDumper = $staticFileConfigDumper;
     }
 
     protected function configure(): void
@@ -79,11 +66,7 @@ class ThemeDumpCommand extends Command
 
         $id = $input->getArgument('theme-id');
         if ($id !== null) {
-            if (\is_array($id)) {
-                $criteria->setIds($id);
-            } else {
-                $criteria->setIds([$id]);
-            }
+            $criteria->setIds([$id]);
         }
 
         $themes = $this->themeRepository->search($criteria, $this->context);
@@ -91,12 +74,24 @@ class ThemeDumpCommand extends Command
         if ($themes->count() === 0) {
             $this->io->error('No theme found which is connected to a storefront sales channel');
 
-            return 1;
+            return self::FAILURE;
         }
 
         /** @var ThemeEntity $themeEntity */
         $themeEntity = $themes->first();
-        $themeConfig = $this->pluginRegistry->getConfigurations()->getByTechnicalName($this->getTechnicalName($themeEntity->getId()));
+        $technicalName = $this->getTechnicalName($themeEntity->getId());
+        if ($technicalName === null) {
+            $this->io->error('No theme found');
+
+            return self::FAILURE;
+        }
+
+        $themeConfig = $this->pluginRegistry->getConfigurations()->getByTechnicalName($technicalName);
+        if ($themeConfig === null) {
+            $this->io->error(sprintf('No theme config found for theme "%s"', $themeEntity->getName()));
+
+            return self::FAILURE;
+        }
 
         $dump = $this->themeFileResolver->resolveFiles(
             $themeConfig,
@@ -108,10 +103,12 @@ class ThemeDumpCommand extends Command
 
         file_put_contents(
             $this->projectDir . \DIRECTORY_SEPARATOR . 'var' . \DIRECTORY_SEPARATOR . 'theme-files.json',
-            json_encode($dump, JSON_PRETTY_PRINT)
+            json_encode($dump, \JSON_PRETTY_PRINT)
         );
 
-        return 0;
+        $this->staticFileConfigDumper->dumpConfig($this->context);
+
+        return self::SUCCESS;
     }
 
     private function getTechnicalName(string $themeId): ?string

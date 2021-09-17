@@ -1,14 +1,13 @@
 @import "~scss/variables";
 @import "~scss/mixins";
 
-$sw-media-modal-move-breadcrumbs-hover-background-color:      $color-cadet-blue;
-$sw-media-modal-move-breadcrumbs-right-arrow-color:           $color-gutenberg;
-$sw-media-modal-move-breadcrumbs-default-color:               $color-gutenberg;
-$sw-media-modal-move-breadcrumbs-target-color:                $color-shopware-blue;
-$sw-media-modal-move-breadcrumbs-parent-color:                $color-steam-cloud;
+$sw-media-modal-move-breadcrumbs-hover-background-color:      $color-shopware-brand-50;
+$sw-media-modal-move-breadcrumbs-right-arrow-color:           $color-darkgray-200;
+$sw-media-modal-move-breadcrumbs-default-color:               $color-darkgray-200;
+$sw-media-modal-move-breadcrumbs-target-color:                $color-shopware-brand-500;
+$sw-media-modal-move-breadcrumbs-parent-color:                $color-gray-300;
 
-.sw-media-modal-move{
-
+.sw-media-modal-move {
     .sw-media-modal-move-folder-breadcrumbs {
         font-size: 14px;
         line-height: 22px;
@@ -22,21 +21,24 @@ $sw-media-modal-move-breadcrumbs-parent-color:                $color-steam-cloud
         padding: 8px 6px 8px 0;
         color: $sw-media-modal-move-breadcrumbs-default-color;
         max-width: 400px;
+
         @include truncate();
 
         &:hover {
             background-color: $sw-media-modal-move-breadcrumbs-hover-background-color;
         }
 
-        &.--target{
+        &.--target {
             color: $sw-media-modal-move-breadcrumbs-target-color;
+
             .sw-icon {
                 color: $sw-media-modal-move-breadcrumbs-right-arrow-color;
             }
         }
 
-        &.--parent{
+        &.--parent {
             color: $sw-media-modal-move-breadcrumbs-parent-color;
+
             .sw-icon {
                 color: $sw-media-modal-move-breadcrumbs-right-arrow-color;
             }

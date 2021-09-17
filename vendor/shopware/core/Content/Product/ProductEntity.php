@@ -19,12 +19,15 @@ use Shopware\Core\Content\Product\Aggregate\ProductReview\ProductReviewCollectio
 use Shopware\Core\Content\Product\Aggregate\ProductSearchKeyword\ProductSearchKeywordCollection;
 use Shopware\Core\Content\Product\Aggregate\ProductTranslation\ProductTranslationCollection;
 use Shopware\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityCollection;
+use Shopware\Core\Content\Product\DataAbstractionLayer\CheapestPrice\CheapestPrice;
+use Shopware\Core\Content\Product\DataAbstractionLayer\CheapestPrice\CheapestPriceContainer;
+use Shopware\Core\Content\ProductStream\ProductStreamCollection;
 use Shopware\Core\Content\Property\Aggregate\PropertyGroupOption\PropertyGroupOptionCollection;
 use Shopware\Core\Content\Seo\MainCategory\MainCategoryCollection;
 use Shopware\Core\Content\Seo\SeoUrl\SeoUrlCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
-use Shopware\Core\Framework\DataAbstractionLayer\Pricing\ListingPriceCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Pricing\Price;
 use Shopware\Core\Framework\DataAbstractionLayer\Pricing\PriceCollection;
 use Shopware\Core\System\CustomField\Aggregate\CustomFieldSet\CustomFieldSetCollection;
@@ -36,6 +39,7 @@ use Shopware\Core\System\Unit\UnitEntity;
 class ProductEntity extends Entity
 {
     use EntityIdTrait;
+    use EntityCustomFieldsTrait;
 
     /**
      * @var string|null
@@ -68,7 +72,7 @@ class ProductEntity extends Entity
     protected $unitId;
 
     /**
-     * @var bool
+     * @var bool|null
      */
     protected $active;
 
@@ -168,13 +172,6 @@ class ProductEntity extends Entity
     protected $shippingFree;
 
     /**
-     * @deprecated tag:v6.4.0 use $purchasePrices instead
-     *
-     * @var float|null
-     */
-    protected $purchasePrice;
-
-    /**
      * @var PriceCollection|null
      */
     protected $purchasePrices;
@@ -270,11 +267,6 @@ class ProductEntity extends Entity
     protected $configuratorGroupConfig;
 
     /**
-     * @var bool
-     */
-    protected $grouped = false;
-
-    /**
      * @var string|null
      */
     protected $mainVariantId;
@@ -305,9 +297,14 @@ class ProductEntity extends Entity
     protected $prices;
 
     /**
-     * @var ListingPriceCollection|null
+     * The container will be resolved on product.loaded event and
+     * the detected cheapest price will be set for the current context rules
+     *
+     * @feature-deprecated  (flag:FEATURE_NEXT_15815) tag:v6.5.0 - CheapestPrice will only be available for SalesChannelProductEntity
+     *
+     * @var CheapestPrice|CheapestPriceContainer|null
      */
-    protected $listingPrices;
+    protected $cheapestPrice;
 
     /**
      * @var ProductMediaEntity|null
@@ -330,8 +327,6 @@ class ProductEntity extends Entity
     protected $media;
 
     /**
-     * @internal (flag:FEATURE_NEXT_10078)
-     *
      * @var string|null
      */
     protected $cmsPageId;
@@ -340,6 +335,11 @@ class ProductEntity extends Entity
      * @var CmsPageEntity|null
      */
     protected $cmsPage;
+
+    /**
+     * @var array|null
+     */
+    protected $slotConfig;
 
     /**
      * @var ProductSearchKeywordCollection|null
@@ -402,11 +402,6 @@ class ProductEntity extends Entity
     protected $whitelistIds;
 
     /**
-     * @var array|null
-     */
-    protected $customFields;
-
-    /**
      * @var ProductVisibilityCollection|null
      */
     protected $visibilities;
@@ -415,6 +410,11 @@ class ProductEntity extends Entity
      * @var array|null
      */
     protected $tagIds;
+
+    /**
+     * @var array|null
+     */
+    protected $categoryIds;
 
     /**
      * @var ProductReviewCollection|null
@@ -486,6 +486,18 @@ class ProductEntity extends Entity
      */
     protected $canonicalProduct;
 
+    /**
+     * @feature-deprecated  (flag:FEATURE_NEXT_15815) tag:v6.5.0 - CheapestPrice will only be available for SalesChannelProductEntity
+     *
+     * @var CheapestPriceContainer|null
+     */
+    protected $cheapestPriceContainer;
+
+    /**
+     * @var ProductStreamCollection|null
+     */
+    protected $streams;
+
     public function __construct()
     {
         $this->prices = new ProductPriceCollection();
@@ -546,12 +558,12 @@ class ProductEntity extends Entity
         $this->unitId = $unitId;
     }
 
-    public function getActive(): bool
+    public function getActive(): ?bool
     {
         return $this->active;
     }
 
-    public function setActive(bool $active): void
+    public function setActive(?bool $active): void
     {
         $this->active = $active;
     }
@@ -683,22 +695,6 @@ class ProductEntity extends Entity
     public function setShippingFree(?bool $shippingFree): void
     {
         $this->shippingFree = $shippingFree;
-    }
-
-    /**
-     * @deprecated tag:v6.4.0 use getPurchasePrices() instead
-     */
-    public function getPurchasePrice(): ?float
-    {
-        return $this->purchasePrice;
-    }
-
-    /**
-     * @deprecated tag:v6.4.0 use setPurchasePrices() instead
-     */
-    public function setPurchasePrice(?float $purchasePrice): void
-    {
-        $this->purchasePrice = $purchasePrice;
     }
 
     public function getPurchasePrices(): ?PriceCollection
@@ -881,16 +877,6 @@ class ProductEntity extends Entity
         $this->prices = $prices;
     }
 
-    public function getListingPrices(): ?ListingPriceCollection
-    {
-        return $this->listingPrices;
-    }
-
-    public function setListingPrices(ListingPriceCollection $listingPrices): void
-    {
-        $this->listingPrices = $listingPrices;
-    }
-
     public function getRestockTime(): ?int
     {
         return $this->restockTime;
@@ -958,36 +944,34 @@ class ProductEntity extends Entity
         $this->cover = $cover;
     }
 
-    /**
-     * @internal (flag:FEATURE_NEXT_10078)
-     */
     public function getCmsPage(): ?CmsPageEntity
     {
         return $this->cmsPage;
     }
 
-    /**
-     * @internal (flag:FEATURE_NEXT_10078)
-     */
     public function setCmsPage(CmsPageEntity $cmsPage): void
     {
         $this->cmsPage = $cmsPage;
     }
 
-    /**
-     * @internal (flag:FEATURE_NEXT_10078)
-     */
     public function getCmsPageId(): ?string
     {
         return $this->cmsPageId;
     }
 
-    /**
-     * @internal (flag:FEATURE_NEXT_10078)
-     */
     public function setCmsPageId(string $cmsPageId): void
     {
         $this->cmsPageId = $cmsPageId;
+    }
+
+    public function getSlotConfig(): ?array
+    {
+        return $this->slotConfig;
+    }
+
+    public function setSlotConfig(array $slotConfig): void
+    {
+        $this->slotConfig = $slotConfig;
     }
 
     public function getParent(): ?ProductEntity
@@ -1100,16 +1084,6 @@ class ProductEntity extends Entity
         $this->configuratorSettings = $configuratorSettings;
     }
 
-    public function setGrouped(bool $grouped): void
-    {
-        $this->grouped = $grouped;
-    }
-
-    public function isGrouped(): bool
-    {
-        return $this->grouped;
-    }
-
     public function getCategoriesRo(): ?CategoryCollection
     {
         return $this->categoriesRo;
@@ -1158,16 +1132,6 @@ class ProductEntity extends Entity
     public function setWhitelistIds(?array $whitelistIds): void
     {
         $this->whitelistIds = $whitelistIds;
-    }
-
-    public function getCustomFields(): ?array
-    {
-        return $this->customFields;
-    }
-
-    public function setCustomFields(?array $customFields): void
-    {
-        $this->customFields = $customFields;
     }
 
     public function getVisibilities(): ?ProductVisibilityCollection
@@ -1438,5 +1402,59 @@ class ProductEntity extends Entity
     public function setCanonicalProduct(ProductEntity $product): void
     {
         $this->canonicalProduct = $product;
+    }
+
+    /**
+     * @feature-deprecated  (flag:FEATURE_NEXT_15815) tag:v6.5.0 - CheapestPrice will only be available for SalesChannelProductEntity
+     *
+     * @return CheapestPrice|CheapestPriceContainer|null
+     */
+    public function getCheapestPrice()
+    {
+        return $this->cheapestPrice;
+    }
+
+    /**
+     * @feature-deprecated  (flag:FEATURE_NEXT_15815) tag:v6.5.0 - CheapestPrice will only be available for SalesChannelProductEntity
+     */
+    public function setCheapestPrice(?CheapestPrice $cheapestPrice): void
+    {
+        $this->cheapestPrice = $cheapestPrice;
+    }
+
+    /**
+     * @feature-deprecated  (flag:FEATURE_NEXT_15815) tag:v6.5.0 - CheapestPrice will only be available for SalesChannelProductEntity
+     */
+    public function setCheapestPriceContainer(CheapestPriceContainer $container): void
+    {
+        $this->cheapestPriceContainer = $container;
+    }
+
+    /**
+     * @feature-deprecated  (flag:FEATURE_NEXT_15815) tag:v6.5.0 - CheapestPrice will only be available for SalesChannelProductEntity
+     */
+    public function getCheapestPriceContainer(): ?CheapestPriceContainer
+    {
+        return $this->cheapestPriceContainer;
+    }
+
+    public function getStreams(): ?ProductStreamCollection
+    {
+        return $this->streams;
+    }
+
+    public function setStreams(ProductStreamCollection $streams): void
+    {
+        $this->streams = $streams;
+    }
+
+    public function getCategoryIds(): ?array
+    {
+        return $this->categoryIds;
+    }
+
+    public function setCategoryIds(?array $categoryIds): void
+    {
+        $this->categoryIds = $categoryIds;
     }
 }

@@ -7,9 +7,6 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopware\Core\Framework\Uuid\Uuid;
 
-/**
- * @internal (flag:FEATURE_NEXT_10552)
- */
 class TokenFilter extends AbstractTokenFilter
 {
     private const DEFAULT_MIN_SEARCH_TERM_LENGTH = 2;
@@ -45,7 +42,6 @@ class TokenFilter extends AbstractTokenFilter
         if (empty($config)) {
             return $tokens;
         }
-
         $tokens = $this->searchTermLengthFilter($tokens, $config['min_search_length']);
         $tokens = $this->excludedTermsFilter($tokens, $config['excluded_terms']);
 
@@ -72,7 +68,7 @@ class TokenFilter extends AbstractTokenFilter
     {
         $filtered = [];
         foreach ($tokens as $tag) {
-            $tag = trim($tag);
+            $tag = trim((string) $tag);
 
             if (empty($tag) || mb_strlen($tag) < $minSearchTermLength) {
                 continue;
@@ -104,7 +100,7 @@ class TokenFilter extends AbstractTokenFilter
         }
 
         return $this->config[$languageId] = [
-            'excluded_terms' => \is_string($config['excluded_terms']) ? array_flip(\json_decode($config['excluded_terms'], true)) : [],
+            'excluded_terms' => \is_string($config['excluded_terms']) ? array_flip(json_decode($config['excluded_terms'], true)) : [],
             'min_search_length' => (int) ($config['min_search_length'] ?? self::DEFAULT_MIN_SEARCH_TERM_LENGTH),
         ];
     }

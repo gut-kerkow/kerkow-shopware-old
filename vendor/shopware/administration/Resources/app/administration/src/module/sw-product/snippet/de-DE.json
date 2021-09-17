@@ -3,12 +3,15 @@
     "visibility": {
       "textHeadline": "Sichtbarkeit je Verkaufskanal festlegen",
       "placeholderVisibility": "Weise Verkaufskanäle zu ...",
-      "columnAll": "Überall",
-      "columnSearchOnly": "Nur in der Suche sichtbar",
-      "columnLinkOnly": "Versteckt",
-      "linkAdvancedVisibility": "Erweitere Sichtbarkeit konfigurieren",
+      "columnAll": "Sichtbar",
+      "columnSearchOnly": "In Produktlisten ausblenden",
+      "columnLinkOnly": "In Produktlisten und der Suche ausblenden",
+      "visibilityModalDescription": "Mit der Option “In Produktlisten ausblenden” wird das Produkt von Übersichtslisten, sowie Produkt-Slidern und Cross Sellings ausgeblendet. Mit der Option “In Produktlisten und der Suche ausblenden” wird das Produkt auch über die Suche nicht mehr angezeigt. Augeblendete Produkte können immer noch über die URL erreicht werden.",
+      "linkAdvancedVisibility": "Sichtbarkeit für ausgewählte Verkaufskanäle einstellen",
       "labelVisibility": "Sichtbarkeit",
-      "closeModal": "Übernehmen"
+      "closeModal": "Übernehmen",
+      "bodyVisibility": "Füge Verkaufskanäle hinzu, die dieses Produkt anzeigen. Über den unten stehenden Link kannst Du die Sichtbarkeit des Produktes in Deinen Storefront-Verkausfkanälen weiter beeinflussen.",
+      "errorMessage": "Die Standardkonfiguration des Verkaufskanals konnte nicht geladen werden."
     },
     "general": {
       "mainMenuItemGeneral": "Produkte",
@@ -18,10 +21,12 @@
       "placeholderSearchBar": "Durchsuche alle Produkte ...",
       "inheritanceModuleName": "Dieses Produkt",
       "backToParent": "zurück zur Variantenübersicht",
-      "copy": "Kopie",
+      "backToGeneralOverview": "Zurück zur allgemeinen Übersicht",
       "cloneSuffix": "Varianten",
       "cloneNotice": "Die Produktvarianten werden dupliziert. Sollte dieser Prozess unterbrochen werden, kann es sein, dass nicht alle Varianten vollständig dupliziert werden. In diesem Fall kannst Du die Varianten im neuen Produkt erneut generieren.",
-      "cloneTitle": "Varianten duplizieren"
+      "cloneTitle": "Varianten duplizieren",
+      "tooltipModeSettings": "Moduseinstellungen",
+      "textAdvancedMode": "Erweiterter Modus"
     },
     "basicForm": {
       "labelTitle": "Titel",
@@ -31,17 +36,30 @@
       "placeholderName": "Gib einen Produktnamen ein ...",
       "placeholderDescriptionLong": "Gib eine Produktbeschreibung ein ...",
       "placeholderId": "Gib eine Produktnummer ein ...",
-      "placeholderManufacturer": "Gib einen Produkthersteller ein ..."
+      "placeholderManufacturer": "Gib einen Produkthersteller ein ...",
+      "productNumberHelpText": {
+        "label": "Produktnummern können helfen, Deine Produkte zu identifizieren und zu verwalten. Dazu solltest Du eine durchgängige Struktur für Deine Produktnummern verwenden. Du kannst Produktnummer-Templates in den {link} definieren.",
+        "linkText": "Einstellungen"
+      },
+      "highlightHelpText": {
+        "label": "Hervorgehobene Produkte werden in Produktlisten mit einem farbigen Etikett und der Aufschrift \"Tipp\" markiert. Du kannst die Farbe des Etiketts mit der Einstellung \"Notice\" in den {themesLink} Einstellungen ändern. Die Aufschrift kannst Du über den entsprechenden {snippetLink} anpassen.",
+        "themeLinkText": "Themes",
+        "snippetLinkText": "Textbaustein"
+      }
     },
     "categoryForm": {
       "labelCategory": "Kategorie",
       "placeholderCategory": "Weise Kategorien zu ...",
       "placeholderTags": "Gib Tags ein ...",
-      "labelSearchKeyword": "Such Schlagwörter",
+      "labelSearchKeyword": "Such-Schlagwörter",
       "placeholderSearchKeywords": "Gib Schlagwörter ein, die diese Produkt finden ...",
       "textAddSearchKeyword": "Hier klicken, um Schlagwörter hinzuzufügen",
       "textEnterValidSearchKeyword": "Suchbare Schlagwörter",
-      "helpTextSearchKeyword": "Das Produkt in der Storefront wird ebenfalls über diese Begriffe gefunden."
+      "helpTextSearchKeyword": "Das Produkt in der Storefront wird ebenfalls über diese Begriffe gefunden.",
+      "helpTextTags": "Tags sind nur für den internen Gebrauch gedacht. Sie helfen dabei, Produkte zu gruppieren, Regeln anzuwenden oder dienen als individuelle Suchbegriffe.",
+      "categoriesTitle": "Kategorien und Tags",
+      "descriptionCategories": "Füge Kategorien hinzu, damit das Produkt in der Hauptnavigation der Storefront oder von API-Verbindungen gefunden werden kann. Kategorien, die Du hinzufügen möchtest sollten verfügbar und im jeweiligen Verkaufskanal aktiv sein, damit Du sie hier auswählen kannst.",
+      "descriptionTags": "Tags helfen Dir dabei Produkte schneller zu finden. Mit ihnen ist es einfach, Produkte zu gruppieren and sie können mit dem Rule Builder verwendet werden, um Aufgaben zu automatisieren"
     },
     "priceForm": {
       "labelTaxRate": "Steuersatz",
@@ -51,7 +69,7 @@
       "labelPurchaseUnit": "Verkaufseinheit",
       "labelReferenceUnit": "Grundeinheit",
       "labelPackUnit": "Verpackungseinheit",
-      "labelPackUnitPlural": "Verpackungseinheit Mehrzahl",
+      "labelPackUnitPlural": "Verpackungseinheit-Mehrzahl",
       "placeholderTaxRate": "Wähle einen Steuersatz aus ...",
       "placeholderPurchasePriceGross": "Einkaufspreis eingeben ...",
       "placeholderPriceGross": "Bruttopreis eingeben ...",
@@ -59,10 +77,14 @@
       "placeholderPurchaseUnit": "Verkaufseinheit eingeben ...",
       "placeholderReferenceUnit": "Grundeinheit eingeben ...",
       "placeholderPackUnit": "Verpackungseinheit eingeben ...",
-      "placeholderPackUnitPlural": "Verpackungseinheit Mehrzahl eingeben ...",
+      "placeholderPackUnitPlural": "Verpackungseinheit-Mehrzahl eingeben ...",
       "optionLitre": "Liter",
       "optionKilogram": "Kilogramm",
-      "optionMetre": "Meter"
+      "optionMetre": "Meter",
+      "taxRateHelpText": {
+        "label": "Passe den anzuwendenden Umsatzsteuersatz an. Jeweils ein Standard-Umsatzsteuersatz und bis zu zwei ermäßigte Steuersätze sind für die meisten Länder vordefiniert. Du kannst die genauen Steuersätze {link} einsehen. Dort kannst Du auch Steuersätze anpassen, zusätzliche Steuersätze anlegen und Länder zuweisen.",
+        "linkText": "Einstellungen"
+      }
     },
     "seoForm": {
       "labelMetaTitle": "Meta-Titel",
@@ -73,7 +95,10 @@
       "labelCanonicalProduct": "Variante für Canonical-URL",
       "placeholderMetaDescription": "Gib eine Meta-Beschreibung ein ...",
       "placeholderKeywords": "Gib ein oder mehrere Schlüsselwörter ein ...",
-      "placeholderCanonicalProduct": "Wähle eine Variante aus ..."
+      "placeholderCanonicalProduct": "Wähle eine Variante aus ...",
+      "helpTextMetaTitle": "Der Meta-Titel ist das wichtigste SEO-Element und sollte für jede Seite einzigartig sein. Du solltest Dich in der Länge auf max. 56 Zeichen begrenzen. Dein Schlüsselwort sollte idealerweise ganz vorne platziert werden.",
+      "helpTextMetaDescription": "Mit der Meta-Beschreibung bestätigst Du Deinen Kunden, dass sie in Deinem Shop richtig sind. Du schaffst Anreize, baust Vertrauen auf und forderst zu einer Aktion auf. Du solltest Dich auf max. 155 Zeichen begrenzen.",
+      "helpTextKeywords": "Hier kannst Du optional drei bis fünf Schlüsselwörter definieren unter denen Dein Produkt gefunden werden soll."
     },
     "settingsForm": {
       "labelCreatedAt": "Erstelldatum",
@@ -131,7 +156,21 @@
       "cardTitleReviews": "Bewertungen",
       "cardTitleMedia": "Medien",
       "labelContextMenuAddToProduct": "Zu Produkt hinzufügen",
+      "cardTitleSeo": "SEO",
+      "cardTitleVisibilityStructure": "Sichtbarkeitsstruktur"
+    },
+    "specifications": {
+      "cardTitleMeasuresPackaging": "Maße & Verpackung",
+      "cardTitleEssentialCharacteristics": "Wesentliche Merkmale",
+      "cardTitleCustomFields": "Zusatzfelder",
+      "cardTitleProperties": "Eigenschaften",
+      "cardTitleCustomProduct": "Custom Products"
+    },
+    "seo": {
       "cardTitleSeo": "SEO"
+    },
+    "reviews": {
+      "cardTitleReviews": "Bewertungen"
     },
     "reviewForm": {
       "labelStatus": "Sichtbar",
@@ -183,6 +222,7 @@
       "columnInStock": "Lagerbestand",
       "columnAvailableStock": "Verfügbar",
       "columnActions": "Aktion(en)",
+      "columnMedia": "Medien",
       "contextMenuEdit": "Bearbeiten",
       "contextMenuDelete": "Löschen",
       "contextMenuDuplicate": "Duplizieren",
@@ -196,11 +236,11 @@
       "multipleVariantsDeleteModalText": "Bist du dir sicher, dass du {amount} Varianten löschen willst?",
       "multipleVariantsDeleteModalSubline": "Dies kann eine kurze Zeit dauern.",
       "notificationVariantDeleteSuccess": "\"{variantName}\" wurde erfolgreich gelöscht. | Erfolgreich {amount} Varianten gelöscht.",
-      "notificationVariantDeleteError": "Beim löschen von \"{variantName}\" ist etwas schiefgelaufen. | Beim löschen mehrerer Varianten ist etwas schiefgelaufen.",
+      "notificationVariantDeleteError": "Beim Löschen von \"{variantName}\" ist etwas schiefgelaufen. | Beim Löschen mehrerer Varianten ist etwas schiefgelaufen.",
       "notificationVariantDeleteErrorCanonicalUrl": "\"{variantName}\" kann nicht gelöscht werden, weil es als Canonical-URL-Template verwendet wird. | Varianten konnten nicht gelöscht werden, da eine Variante als Canonical-URl-Template verwendet wird.",
       "notificationVariantSaveSuccess": "\"{variantName}\" wurde erfolgreich gespeichert.",
       "variantDeleteModalTitle": "Variante löschen",
-      "variantDeleteModalText": "Bist du dir sicher ob du die Variante \"{variantName}\" löschen willst?",
+      "variantDeleteModalText": "Bist Du Dir sicher, dass Du die Variante \"{variantName}\" löschen willst?",
       "messageEmpty": "Noch keine Produkte",
       "textDeleteConfirm": "Möchtest Du das Produkt \"{name}\" wirklich löschen? | Möchtest Du diese {count} Produkte wirklich löschen?",
       "titleSidebarItemRefresh": "Aktualisieren",
@@ -213,11 +253,14 @@
       "buttonSaveDuplicate": "Speichern und duplizieren",
       "buttonSaveAndNew": "Speichern und neues erstellen",
       "tabGeneral": "Allgemein",
+      "tabSpecifications": "Spezifikationen",
       "tabAdvancedPrices": "Erweiterte Preise",
       "tabProperties": "Eigenschaften zuweisen",
       "tabVariation": "Varianten",
       "tabLayout": "Layout",
+      "tabSeo": "SEO",
       "tabCrossSelling": "Cross Selling",
+      "tabReviews": "Bewertungen",
       "messageSaveSuccess": "Das Produkt \"{name}\" wurde erfolgreich gespeichert.",
       "messageUploadSuccess": "{count} von {total} Dateien erfolgreich gespeichert.",
       "messageSaveWarning": "Keine Änderung vorgenommen.",
@@ -226,7 +269,7 @@
     "mediaForm": {
       "errorHeadline": "Fehler",
       "errorNoImage": "\"{file}\" ist kein Bild.",
-      "errorMediaItemDuplicated": "Medium bereits verwendet.",
+      "errorMediaItemDuplicated": "Medium \"{fileName}\" bereits verwendet.",
       "coverSubline": "Cover"
     },
     "advancedPrices": {
@@ -243,7 +286,7 @@
       "advancedPricesNotInherited": "Du kannst jetzt benutzerdefinierte Preisregeln für diese Variante verwenden.",
       "advancedListPricePriceLabel": "Preis",
       "advancedListPriceLabel": "Streichpreis",
-      "advancedPriceDisabledTooltip": "Der Start-Wert bei der ersten Preisstaffel muss den Wert 1 haben."
+      "advancedPriceDisabledTooltip": "Der Start-Wert der ersten Preisstaffel muss den Wert 1 haben."
     },
     "properties": {
       "cardTitleProperties": "Eigenschaften",
@@ -253,9 +296,25 @@
       "emptyStateNoSelectedOptionsDescription": "Bitte wähle Ausprägungen aus der Suche aus.",
       "propertiesInherited": "Dieses Produkt hat vererbte Eigenschaften vom Hauptprodukt.",
       "linkPropertiesOfParent": "Zeige die Eigenschaften des Hauptprodukts",
-      "inheritSwitchLabel": "Nutze die Eigfenschaften des Hauptprodukts",
+      "inheritSwitchLabel": "Nutze die Eigenschaften des Hauptprodukts",
       "propertiesNotInherited": "Du kannst jetzt benutzerdefinierte Eigenschaften für diese Variante verwenden.",
-      "propertiesNotExisting": "Diesem Produkt sind noch keine Eigenschaften zugewiesen."
+      "propertiesNotExisting": "Diesem Produkt sind noch keine Eigenschaften zugewiesen.",
+      "cardTitle": "Eigenschaften",
+      "buttonAddProperty": "Eigenschaft konfigurieren",
+      "buttonAddProperties": "Eigenschaften konfigurieren",
+      "titleEmptyState": "Diesem Produkt sind noch keine Eigenschaften zugewiesen worden.",
+      "titleEmptyStateList": "Keine passenden Eigenschaften gefunden.",
+      "columnProperty": "Eigenschaft",
+      "columnValue": "Eigenschaftsausprägung",
+      "placeholderSearchAddedProperties": "Hinzugefügte Eigenschaften durchsuchen ...",
+      "placeholderSearchProperties": "Eigenschaften durchsuchen ...",
+      "addPropertiesModal": {
+        "title": "Eigenschaften hinzufügen",
+        "titleEmptyState": "Du musst zuerst Eigenschaften und deren Ausprägungen erstellen, um diese hier zuordnen zu können.",
+        "selectedProperties": "{count} Ausprägung gewählt | {count} Ausprägungen gewählt",
+        "titleEmptyPropertyValues": "Keine Eigenschaftsausprägungen verfügbar.",
+        "titleNoPropertySelected": "Keine Eigenschaft ausgewählt."
+      }
     },
     "variations": {
       "emptyStateDescription": "Dieses Produkt hat noch keine Varianten.",
@@ -264,7 +323,7 @@
       "deleteVariationsButton": "Alle Produktvarianten löschen",
       "cancelVariationsButton": "Abbrechen",
       "configuratorCardTitle": "Varianten generieren",
-      "generatedVariationCardTitle": "Generierte Varianten",
+      "generatedVariationCardTitle": "Verfügbare Varianten",
       "progressTypeOf": "von",
       "progressTypeDeleted": "gelöscht",
       "progressTypeGenerated": "generiert",
@@ -280,6 +339,7 @@
       "generatedListColumnVariation": "Variante",
       "generatedListColumnPrice": "Preis (Brutto / Netto)",
       "generatedListColumnProductNumber": "Produktnummer",
+      "generatedListColumnMedia": "Medien",
       "generatedListColumnActive": "Aktiv",
       "generatedListColumnStock": "Lagerbestand",
       "generatedListContextMenuEdit": "Bearbeiten",
@@ -289,7 +349,7 @@
       "generatedListDeleteModalButtonDelete": "Löschen",
       "generatedListMessageSaveSuccess": "Die Variante wurde gespeichert.",
       "generatedListMessageSaveError": "Die Variante konnte nicht gespeichert werden.",
-      "generatedListMessageDeleteErrorCanonicalUrl": "Die Variante konnte nicht gelöscht werden da sie als Canonical-URL Template dient.",
+      "generatedListMessageDeleteErrorCanonicalUrl": "Die Variante konnte nicht gelöscht werden, da sie als Canonical-URL-Template dient.",
       "generatedListMessageDeleteSuccess": "Die Variante wurde gelöscht.",
       "overview": {
         "filterReset": "Zurücksetzen",
@@ -299,24 +359,26 @@
       },
       "configuratorModal": {
         "title": "Varianten generieren",
-        "selectOptions": "Ausprägungen auswählen",
-        "selectOptionsExplanation": "Beginne mit der Auswahl der Eigenschaftsausprägungen, aus denen die Varianten generiert werden sollen.",
-        "priceSurcharges": "Preis Auf-/Abschläge",
-        "resetSurcharges": "Auf- /Abschläge löschen",
-        "defineRestrictions": "Ausschlüsse definieren",
-        "priceOptions": "Ausprägungen",
+        "selectOptions": "Ausprägungsauswahl",
+        "selectOptionsExplanation": "Wähle Eigenschaftsausprägungen, aus denen die Varianten generiert werden sollen.",
+        "selectRestrictionsExplanation": "Wähle Eigenschaftsausprägungen, die von der Varianten-Generierung ausgeschlossen werden sollen.",
+        "selectPricesExplanation": "Definiere Aufschläge für Eigenschaftsausprägungen oder Währungen.",
+        "priceSurcharges": "Preis-Aufschläge",
+        "resetSurcharges": "Aufschläge löschen",
+        "defineRestrictions": "Ausprägungsausschluss",
+        "priceOptions": "Ausprägung",
         "restrictedCombinations": "Ausgeschlossene Eigenschaftsausprägungen",
-        "searchRestrictions": "Durchsuche Eigenschaften ...",
-        "addNewRestriction": "Ausschluss hinzufügen",
-        "editRestriction": "Ausschluss bearbeiten",
-        "deleteRestriction": "Ausschluss löschen",
+        "searchRestrictions": "Durchsuche ausgeschlossene Ausprägungen ...",
+        "addNewRestriction": "Ausprägungen ausschließen",
+        "editRestriction": "Bearbeiten",
+        "deleteRestriction": "Löschen",
         "singleRestrictionSeperation": "Und",
-        "deleteCombination": "Kombination entfernen",
+        "deleteCombination": "Löschen",
         "isOneFrom": "ist eine von",
         "cancel": "Abbrechen",
         "save": "Speichern",
         "searchPlaceholder": "Durchsuche Ausprägungen ...",
-        "singleRestrictionAddTitle": "Ausschluss hinzufügen",
+        "singleRestrictionAddTitle": "Ausprägungen ausschließen",
         "surchargeNotice": "Änderungen an den Aufschlägen haben keine Auswirkungen auf bereits generierte Varianten. Bitte nutze die Varianten-Detailseite um Änderungen an den Preisen vorzunehmen."
       },
       "deliveryModal": {
@@ -339,11 +401,14 @@
     },
     "layout": {
       "title": "Layout-Zuweisung",
-      "subtitle": "Du kannst die Anzeige der Produkt-Detailseite mit eigenen Layouts anpassen.  Wenn Du kein eigenes Layout zuweisen möchtest, wird das Standard-Layout für Produkt-Detailseiten verwendet."
+      "subtitle": "Du kannst die Anzeige der Produkt-Detailseite mit eigenen Layouts anpassen.  Wenn Du kein eigenes Layout zuweisen möchtest, wird das Standard-Layout für Produkt-Detailseiten verwendet.",
+      "textNoConfig": "Das aktuell ausgewählte Layout hat keine bearbeitbaren Elemente.",
+      "textContentInfo": "Standard-Produktblöcke werden automatisch mit Produktdaten befüllt. Diese Inhalte werden daher hier nicht aufgelistet."
     },
     "crossselling": {
       "cardTitleCrossSelling": "Cross Selling",
       "buttonAddCrossSelling": "Neues Cross Selling hinzufügen",
+      "buttonAddCrossSellingLanguageWarning": "Du kannst neue Cross-Sellings nur in Deiner Standardsprache erstellen",
       "buttonDeleteCrossSelling": "Löschen",
       "inputCrossSellingTitle": "Titel",
       "inputCrossSellingActive": "Aktiv",
@@ -369,26 +434,70 @@
       "deleteButtonCancel": "Zurück",
       "deleteButtonDelete": "Löschen",
       "linkOpenStreamPreview": "Vorschau öffnen",
-      "emptyStateDescription": "Für dieses Produkt existiert noch keine Cross Selling-Konfiguration.",
+      "emptyStateDescription": "Für dieses Produkt existiert noch keine Cross-Selling-Konfiguration.",
       "assignEmptyStateDescription": "Das Cross Selling muss zunächst gespeichert werden, bevor Du Produkte hinzufügen kannst.",
       "assignPlaceholder": "Durchsuche Produkte ..."
     },
     "featureSets": {
       "cardTitle": "Wesentliche Merkmale",
       "descriptionTitle": "Wesentliche Merkmale",
-      "descriptionBody": "Wesentliche Merkmale helfen Dir relevante Merkmale Deiner Produkte festzulegen. Diese Merkmale werden deutlich im Warenkorb und Checkout dargestellt.",
+      "descriptionBody": "Wesentliche Merkmale helfen Dir, relevante Merkmale Deiner Produkte festzulegen. Diese Merkmale werden hervorgehoben im Warenkorb und Checkout dargestellt.",
       "configInformation": "Lege zuerst Vorlagen für {0} an und weise sie dann dem Produkt mittels des Auswahlfeldes unten hinzu.",
       "linkFeatureSetsConfig": "Wesentliche Merkmale",
       "templateSelectFieldLabel": "Vorlagen",
-      "templateSelectFieldPlaceholder": "Wähle eine Vorlage aus..."
+      "templateSelectFieldPlaceholder": "Wähle eine Vorlage aus ..."
     },
     "layoutAssignment": {
-      "title": "Standard fallback",
+      "title": "Standardwert",
       "subtitle": "Produktseite",
       "textAssignLayout": "Layout zuweisen",
       "textChangeLayout": "Layout ändern",
       "textCreateNewLayout": "Neues Layout erstellen",
       "textEditInDesigner": "Im Designer bearbeiten"
+    },
+    "filters": {
+      "fromPlaceholder": "Startwert eingeben ...",
+      "toPlaceholder": "Endwert eingeben ...",
+      "activeFilter": {
+        "label": "Aktiv",
+        "placeholder": "Wähle einen Status ..."
+      },
+      "imagesFilter": {
+        "label": "Bild",
+        "placeholder": "Wähle einen Bildstatus ...",
+        "textHasCriteria": "Verfügt über mind. eine Produktbildzuordnung",
+        "textNoCriteria": "Keine Produktbilder zugeordnet"
+      },
+      "releaseDateFilter": {
+        "label": "Erscheinungsdatum"
+      },
+      "stockFilter": {
+        "label": "Lagerbestand"
+      },
+      "priceFilter": {
+        "label": "Preis"
+      },
+      "manufacturerFilter": {
+        "label": "Hersteller",
+        "placeholder": "Hersteller auswählen ..."
+      },
+      "salesChannelsFilter": {
+        "label": "Verkaufskanäle",
+        "placeholder": "Verkaufskanäle auswählen ..."
+      },
+      "categoriesFilter": {
+        "label": "Kategorien",
+        "placeholder": "Kategorien auswählen ..."
+      },
+      "tagsFilter": {
+        "label": "Tags",
+        "placeholder": "Tags auswählen ..."
+      },
+      "messageEmptyTitle": "Nichts gefunden",
+      "messageEmptySubline": "Bearbeite Deine Filter, um Ergebnisse zu finden."
+    },
+    "notification": {
+      "notificationSaveErrorProductNoAlreadyExists": "Die Produktnummer \"{productNo}\" ist bereits vergeben."
     }
   },
   "sw-privileges": {

@@ -16,15 +16,15 @@ describe('Number Range: Test crud number range', () => {
     it('@settings: create and read number range', () => {
         cy.server();
         cy.route({
-            url: '/api/v*/number-range',
+            url: `${Cypress.env('apiPath')}/number-range`,
             method: 'post'
         }).as('saveData');
         cy.route({
-            url: '/api/v*/search/number-range-type',
+            url: `${Cypress.env('apiPath')}/search/number-range-type`,
             method: 'post'
         }).as('searchNumberRangeType');
         cy.route({
-            url: '/api/v*/search/sales-channel',
+            url: `${Cypress.env('apiPath')}/search/sales-channel`,
             method: 'post'
         }).as('searchSalesChannel');
 
@@ -34,18 +34,19 @@ describe('Number Range: Test crud number range', () => {
         cy.get('input[name=sw-field--numberRange-name]').typeAndCheck('Name e2e');
         cy.get('input[name=sw-field--numberRange-description]').type('Description e2e');
 
-        cy.wait('@searchNumberRangeType').then(({ response }) => {
-            const { attributes } = response.body.data[0];
-            cy.get('#numberRangeTypes')
-                .typeSingleSelectAndCheck(
-                    attributes.typeName,
-                    '#numberRangeTypes'
-                );
-        })
+        cy.get('#numberRangeTypes')
+            .typeSingleSelectAndCheck(
+                'Cancellation',
+                '#numberRangeTypes'
+            );
+
+        cy.wait('@searchNumberRangeType').then((xhr) => {
+            expect(xhr).to.have.property('status', 200);
+        });
         cy.wait('@searchSalesChannel').then(({ response }) => {
             const { attributes } = response.body.data[0];
             cy.get('.sw-multi-select').typeMultiSelectAndCheck(attributes.name);
-        })
+        });
         cy.get(page.elements.numberRangeSaveAction).click();
 
         // Verify creation
@@ -64,7 +65,7 @@ describe('Number Range: Test crud number range', () => {
         // Request we want to wait for later
         cy.server();
         cy.route({
-            url: '/api/v*/number-range/*',
+            url: `${Cypress.env('apiPath')}/number-range/*`,
             method: 'patch'
         }).as('saveData');
 
@@ -94,7 +95,7 @@ describe('Number Range: Test crud number range', () => {
         // Request we want to wait for later
         cy.server();
         cy.route({
-            url: '/api/v*/number-range/*',
+            url: `${Cypress.env('apiPath')}/number-range/*`,
             method: 'delete'
         }).as('deleteData');
 
@@ -108,7 +109,7 @@ describe('Number Range: Test crud number range', () => {
         cy.get(`${page.elements.dataGridRow}--0 ${page.elements.numberRangeColumnName}`).then(row => {
             cy.get('.sw-modal__body')
                 .contains(`Are you sure you want to delete the number range "${row.text().trim()}"?`);
-        })
+        });
         cy.get(`${page.elements.modal}__footer button${page.elements.dangerButton}`).click();
 
         // Verify deletion

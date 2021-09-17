@@ -43,7 +43,7 @@ class Migration1572012839CreateConfigsTable extends MigrationStep
         DEFAULT CHARSET = utf8
         COLLATE = utf8_general_ci;';
 
-        $connection->executeQuery($sql);
+        $connection->executeUpdate($sql);
     }
 
     /**
@@ -56,6 +56,6 @@ class Migration1572012839CreateConfigsTable extends MigrationStep
     public function updateDestructive(Connection $connection): void
     {
         $sql = 'DROP TABLE IF EXISTS `' . self::CONFIGS_TABLE . '`';
-        $connection->executeQuery($sql);
+        $connection->executeUpdate($sql);
     }
 }

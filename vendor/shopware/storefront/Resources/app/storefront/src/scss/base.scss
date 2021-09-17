@@ -61,16 +61,19 @@ https://sass-guidelin.es/#the-7-1-pattern
 @import 'component/delivery-status';
 @import 'component/quickview-modal';
 @import 'component/payment-method';
+@import 'component/shipping-method';
 @import 'component/filter-panel';
 @import 'component/filter-multi-select';
 @import 'component/filter-property-select';
 @import 'component/filter-boolean';
 @import 'component/filter-range';
-@import 'component/filter-rating';
+@import 'component/filter-rating-select';
 @import 'component/ellipsis';
 @import 'component/product-feature';
 @import 'component/notification-dot';
 @import 'component/product-wishlist';
+@import 'component/fading-plugin';
+@import 'component/basic-captcha';
 
 /*
  * Layout-related sections
@@ -89,6 +92,7 @@ https://sass-guidelin.es/#the-7-1-pattern
 @import 'layout/cookie-permission';
 @import 'layout/cookie-configuration';
 @import 'layout/scroll-up';
+@import 'layout/recaptcha';
 
 /*
  * Page-specific styles
@@ -111,11 +115,15 @@ https://sass-guidelin.es/#the-7-1-pattern
 
 @import 'page/checkout/checkout';
 @import 'page/checkout/aside';
+@import 'page/checkout/aside-children';
 @import 'page/checkout/cart';
 @import 'page/checkout/cart-item';
+@import 'page/checkout/cart-item-children';
 @import 'page/checkout/register';
 @import 'page/checkout/confirm';
 @import 'page/checkout/finish';
+
+@import 'page/content/breadcrumb';
 
 @import 'page/contact/contact';
 @import 'page/newsletter/newsletter';

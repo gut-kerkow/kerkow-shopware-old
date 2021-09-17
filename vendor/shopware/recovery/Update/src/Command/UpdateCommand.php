@@ -42,7 +42,7 @@ class UpdateCommand extends Command
     /**
      * {@inheritdoc}
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->container = $this->getApplication()->getContainer();
         $this->container->setParameter('update.config', []);
@@ -56,7 +56,7 @@ class UpdateCommand extends Command
         if (!is_dir(UPDATE_ASSET_PATH)) {
             $ioService->writeln('No update files found.');
 
-            return 1;
+            return self::FAILURE;
         }
 
         $version = $this->container->get('shopware.version');
@@ -85,6 +85,8 @@ class UpdateCommand extends Command
         $ioService->writeln('Your shop is currently in maintenance mode.');
         $ioService->writeln(sprintf('Please delete <question>%s</question> to finish the update.', UPDATE_ASSET_PATH));
         $ioService->writeln('');
+
+        return self::SUCCESS;
     }
 
     private function unpackFiles(): void
@@ -123,7 +125,16 @@ class UpdateCommand extends Command
     {
         /** @var MigrationCollectionLoader $migrationCollectionLoader */
         $migrationCollectionLoader = $this->container->get('migration.collection.loader');
-        $coreCollection = $migrationCollectionLoader->collect('core');
+
+        $versionSelectionMode = $modus === MigrationStep::UPDATE_DESTRUCTIVE
+            // only execute safe destructive migrations
+            ? MigrationCollectionLoader::VERSION_SELECTION_SAFE
+            : MigrationCollectionLoader::VERSION_SELECTION_ALL;
+
+        $coreCollection = $migrationCollectionLoader->collectAllForVersion(
+            (string) $this->container->get('shopware.version'),
+            $versionSelectionMode
+        );
 
         if ($modus === MigrationStep::UPDATE) {
             $versions = $coreCollection->getExecutableMigrations();

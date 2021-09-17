@@ -105,10 +105,6 @@ function createWrapper(privileges = [
                     return privileges.includes(key);
                 }
             }
-        },
-        mocks: {
-            $tc: (value) => value,
-            $device: { onResize: () => {} }
         }
     });
 }
@@ -232,7 +228,7 @@ describe('module/sw-settings/page/sw-settings-index', () => {
 
         const wrapper = createWrapper('system.foo_bar');
 
-        const settingsGroups = wrapper.vm.defaultSettingsGroups.shop;
+        const settingsGroups = wrapper.vm.settingsGroups.shop;
         const barSetting = settingsGroups.find(setting => setting.id === 'sw-settings-bar');
 
         expect(barSetting).toBeDefined();
@@ -253,7 +249,7 @@ describe('module/sw-settings/page/sw-settings-index', () => {
 
         const wrapper = createWrapper();
 
-        const settingsGroups = wrapper.vm.defaultSettingsGroups.shop;
+        const settingsGroups = wrapper.vm.settingsGroups.shop;
         const barSetting = settingsGroups.find(setting => setting.id === 'sw-settings-bar');
 
         expect(barSetting).toBeUndefined();

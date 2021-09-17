@@ -1,6 +1,6 @@
 import template from './sw-custom-field-detail-base.html.twig';
 
-const { Component, StateDeprecated } = Shopware;
+const { Component } = Shopware;
 
 Component.register('sw-custom-field-set-detail-base', {
     template,
@@ -13,15 +13,15 @@ Component.register('sw-custom-field-set-detail-base', {
             required: true,
             default() {
                 return {};
-            }
-        }
+            },
+        },
     },
 
     data() {
         return {
             propertyNames: {
-                label: this.$tc('sw-settings-custom-field.customField.detail.labelLabel')
-            }
+                label: this.$tc('sw-settings-custom-field.customField.detail.labelLabel'),
+            },
         };
     },
 
@@ -34,11 +34,6 @@ Component.register('sw-custom-field-set-detail-base', {
             return [this.$root.$i18n.fallbackLocale];
         },
 
-        // @deprecated tag:v6.4.0.0
-        localeStore() {
-            return StateDeprecated.getStore('locale');
-        },
-
         customFieldSetRelationRepository() {
             if (!this.set.relations) {
                 return undefined;
@@ -46,7 +41,7 @@ Component.register('sw-custom-field-set-detail-base', {
 
             return Shopware.Service('repositoryFactory').create(
                 this.set.relations.entity,
-                this.set.relations.source
+                this.set.relations.source,
             );
         },
 
@@ -78,22 +73,16 @@ Component.register('sw-custom-field-set-detail-base', {
                     this.$set(
                         relation.searchField,
                         locale,
-                        this.$tc(`global.entities.${entityName}`, 2, locale)
+                        this.$tc(`global.entities.${entityName}`, 2, locale),
                     );
                 });
 
                 return relation;
             });
-        }
-    },
-
-    created() {
-        this.createdComponent();
+        },
     },
 
     methods: {
-        // @deprecated tag:v6.4.0
-        createdComponent() {},
 
         onAddRelation(relation) {
             this.set.relations.push(relation);
@@ -119,6 +108,6 @@ Component.register('sw-custom-field-set-detail-base', {
                     return label.toLowerCase().includes(lowerSearchTerm);
                 });
             });
-        }
-    }
+        },
+    },
 });

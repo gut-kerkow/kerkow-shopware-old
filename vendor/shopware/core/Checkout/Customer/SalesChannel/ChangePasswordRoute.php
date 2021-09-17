@@ -78,33 +78,43 @@ class ChangePasswordRoute extends AbstractChangePasswordRoute
      * @Since("6.2.0.0")
      * @OA\Post(
      *      path="/account/change-password",
-     *      summary="Change password",
+     *      summary="Change the customer's password",
+     *      description="Changes a customer's password using their current password as a validation.",
      *      operationId="changePassword",
-     *      tags={"Store API", "Account"},
+     *      tags={"Store API", "Profile"},
      *      @OA\RequestBody(
      *          required=true,
      *          @OA\JsonContent(
-     *              @OA\Property(property="password", description="Password", type="string"),
-     *              @OA\Property(property="newPassword", description="New Password", type="string"),
-     *              @OA\Property(property="newPasswordConfirm", description="New Password Confirm", type="string")
+     *              required={
+     *                  "password",
+     *                  "newPassword",
+     *                  "newPasswordConfirm"
+     *              },
+     *              @OA\Property(
+     *                  property="password",
+     *                  description="Current password of the customer",
+     *                  type="string"),
+     *              @OA\Property(
+     *                  property="newPassword",
+     *                  description="New Password for the customer",
+     *                  type="string"),
+     *              @OA\Property(
+     *                  property="newPasswordConfirm",
+     *                  description="Confirmation of the new password",
+     *                  type="string")
      *          )
      *      ),
      *      @OA\Response(
      *          response="200",
-     *          description="Successfully changed the password",
+     *          description="Returns a success response indicating a successful update.",
      *          @OA\JsonContent(ref="#/components/schemas/SuccessResponse")
      *     )
      * )
      * @LoginRequired()
-     * @Route(path="/store-api/v{version}/account/change-password", name="store-api.account.change-password", methods={"POST"})
+     * @Route(path="/store-api/account/change-password", name="store-api.account.change-password", methods={"POST"})
      */
-    public function change(RequestDataBag $requestDataBag, SalesChannelContext $context, ?CustomerEntity $customer = null): ContextTokenResponse
+    public function change(RequestDataBag $requestDataBag, SalesChannelContext $context, CustomerEntity $customer): ContextTokenResponse
     {
-        /* @deprecated tag:v6.4.0 - Parameter $customer will be mandatory when using with @LoginRequired() */
-        if (!$customer) {
-            $customer = $context->getCustomer();
-        }
-
         $this->validatePasswordFields($requestDataBag, $context);
 
         $customerData = [
@@ -117,9 +127,9 @@ class ChangePasswordRoute extends AbstractChangePasswordRoute
         return new ContextTokenResponse($context->getToken());
     }
 
-    private function dispatchValidationEvent(DataValidationDefinition $definition, Context $context): void
+    private function dispatchValidationEvent(DataValidationDefinition $definition, DataBag $data, Context $context): void
     {
-        $validationEvent = new BuildValidationEvent($definition, $context);
+        $validationEvent = new BuildValidationEvent($definition, $data, $context);
         $this->eventDispatcher->dispatch($validationEvent, $validationEvent->getName());
     }
 
@@ -136,7 +146,7 @@ class ChangePasswordRoute extends AbstractChangePasswordRoute
             ->add('newPassword', new NotBlank(), new Length(['min' => $minPasswordLength]), new EqualTo(['propertyPath' => 'newPasswordConfirm']))
             ->add('password', new CustomerPasswordMatches(['context' => $context]));
 
-        $this->dispatchValidationEvent($definition, $context->getContext());
+        $this->dispatchValidationEvent($definition, $data, $context->getContext());
 
         $this->validator->validate($data->all(), $definition);
 

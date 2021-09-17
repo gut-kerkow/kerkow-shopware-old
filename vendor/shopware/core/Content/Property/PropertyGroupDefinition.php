@@ -30,14 +30,13 @@ class PropertyGroupDefinition extends EntityDefinition
 
     public const DISPLAY_TYPE_COLOR = 'color';
 
-    /** @deprecated tag:v6.4.0 - SORTING_TYPE_NUMERIC will be removed in 6.4.0 */
-    public const SORTING_TYPE_NUMERIC = 'numeric';
-
     public const SORTING_TYPE_ALPHANUMERIC = 'alphanumeric';
 
     public const SORTING_TYPE_POSITION = 'position';
 
     public const FILTERABLE = true;
+
+    public const VISIBLE_ON_PRODUCT_DETAIL_PAGE = true;
 
     public function getEntityName(): string
     {
@@ -60,12 +59,18 @@ class PropertyGroupDefinition extends EntityDefinition
             'displayType' => self::DISPLAY_TYPE_TEXT,
             'sortingType' => self::SORTING_TYPE_ALPHANUMERIC,
             'filterable' => self::FILTERABLE,
+            'visibleOnProductDetailPage' => self::VISIBLE_ON_PRODUCT_DETAIL_PAGE,
         ];
     }
 
     public function since(): ?string
     {
         return '6.0.0.0';
+    }
+
+    public function getHydratorClass(): string
+    {
+        return PropertyGroupHydrator::class;
     }
 
     protected function defineFields(): FieldCollection
@@ -77,6 +82,7 @@ class PropertyGroupDefinition extends EntityDefinition
             (new StringField('display_type', 'displayType'))->addFlags(new ApiAware(), new Required()),
             (new StringField('sorting_type', 'sortingType'))->addFlags(new ApiAware(), new Required()),
             (new BoolField('filterable', 'filterable'))->addFlags(new ApiAware()),
+            (new BoolField('visible_on_product_detail_page', 'visibleOnProductDetailPage'))->addFlags(new ApiAware()),
             (new TranslatedField('position'))->addFlags(new ApiAware()),
             (new TranslatedField('customFields'))->addFlags(new ApiAware()),
             (new OneToManyAssociationField('options', PropertyGroupOptionDefinition::class, 'property_group_id', 'id'))->addFlags(new ApiAware(), new CascadeDelete(), new SearchRanking(SearchRanking::ASSOCIATION_SEARCH_RANKING)),

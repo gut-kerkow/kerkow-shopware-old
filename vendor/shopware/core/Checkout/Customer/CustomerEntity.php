@@ -12,6 +12,7 @@ use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Checkout\Promotion\PromotionCollection;
 use Shopware\Core\Content\Product\Aggregate\ProductReview\ProductReviewCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopware\Core\System\Language\LanguageEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
@@ -21,6 +22,7 @@ use Shopware\Core\System\Tag\TagCollection;
 class CustomerEntity extends Entity
 {
     use EntityIdTrait;
+    use EntityCustomFieldsTrait;
 
     public const ACCOUNT_TYPE_PRIVATE = 'private';
     public const ACCOUNT_TYPE_BUSINESS = 'business';
@@ -66,7 +68,7 @@ class CustomerEntity extends Entity
     protected $customerNumber;
 
     /**
-     * @var string
+     * @var string|null
      */
     protected $salutationId;
 
@@ -157,6 +159,8 @@ class CustomerEntity extends Entity
 
     /**
      * @var bool
+     *
+     * @deprecated tag:v6.5.0 (flag:FEATURE_NEXT_16106) $newsletter will be removed use the newsletterRecipents instead
      */
     protected $newsletter;
 
@@ -174,6 +178,8 @@ class CustomerEntity extends Entity
      * @var int
      */
     protected $orderCount;
+
+    protected float $orderTotalAmount;
 
     /**
      * @var \DateTimeInterface|null
@@ -279,11 +285,6 @@ class CustomerEntity extends Entity
      * @var CustomerRecoveryEntity|null
      */
     protected $recoveryCustomer;
-
-    /**
-     * @var array|null
-     */
-    protected $customFields;
 
     /**
      * @var ProductReviewCollection|null
@@ -405,7 +406,7 @@ class CustomerEntity extends Entity
         $this->customerNumber = $customerNumber;
     }
 
-    public function getSalutationId(): string
+    public function getSalutationId(): ?string
     {
         return $this->salutationId;
     }
@@ -565,11 +566,17 @@ class CustomerEntity extends Entity
         $this->lastLogin = $lastLogin;
     }
 
+    /**
+     * @deprecated tag:v6.5.0 (flag:FEATURE_NEXT_16106) getNewsletter will be removed use the newsletterRecipents instead
+     */
     public function getNewsletter(): bool
     {
         return $this->newsletter;
     }
 
+    /**
+     * @deprecated tag:v6.5.0 (flag:FEATURE_NEXT_16106) getNewsletter will be removed use the newsletterRecipents instead
+     */
     public function setNewsletter(bool $newsletter): void
     {
         $this->newsletter = $newsletter;
@@ -603,6 +610,16 @@ class CustomerEntity extends Entity
     public function setOrderCount(int $orderCount): void
     {
         $this->orderCount = $orderCount;
+    }
+
+    public function getOrderTotalAmount(): float
+    {
+        return $this->orderTotalAmount;
+    }
+
+    public function setOrderTotalAmount(float $orderTotalAmount): void
+    {
+        $this->orderTotalAmount = $orderTotalAmount;
     }
 
     public function getLegacyEncoder(): ?string
@@ -766,16 +783,6 @@ class CustomerEntity extends Entity
     public function setAutoIncrement(int $autoIncrement): void
     {
         $this->autoIncrement = $autoIncrement;
-    }
-
-    public function getCustomFields(): ?array
-    {
-        return $this->customFields;
-    }
-
-    public function setCustomFields(?array $customFields): void
-    {
-        $this->customFields = $customFields;
     }
 
     public function getTags(): ?TagCollection

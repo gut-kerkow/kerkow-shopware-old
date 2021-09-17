@@ -9,8 +9,6 @@ use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
 
 class Checkout extends Bundle
 {
-    protected $name = 'Checkout';
-
     /**
      * {@inheritdoc}
      */

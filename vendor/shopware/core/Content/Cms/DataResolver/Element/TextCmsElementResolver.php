@@ -7,9 +7,18 @@ use Shopware\Core\Content\Cms\DataResolver\CriteriaCollection;
 use Shopware\Core\Content\Cms\DataResolver\ResolverContext\EntityResolverContext;
 use Shopware\Core\Content\Cms\DataResolver\ResolverContext\ResolverContext;
 use Shopware\Core\Content\Cms\SalesChannel\Struct\TextStruct;
+use Shopware\Core\Framework\Feature;
+use Shopware\Core\Framework\Util\HtmlSanitizer;
 
 class TextCmsElementResolver extends AbstractCmsElementResolver
 {
+    private HtmlSanitizer $sanitizer;
+
+    public function __construct(HtmlSanitizer $sanitizer)
+    {
+        $this->sanitizer = $sanitizer;
+    }
+
     public function getType(): string
     {
         return 'text';
@@ -26,42 +35,30 @@ class TextCmsElementResolver extends AbstractCmsElementResolver
         $slot->setData($text);
 
         $config = $slot->getFieldConfig()->get('content');
-        if (!$config) {
+        if ($config === null) {
             return;
         }
 
-        if ($config->isMapped() && $resolverContext instanceof EntityResolverContext) {
-            $content = $this->resolveEntityValue($resolverContext->getEntity(), $config->getValue());
+        $content = null;
 
-            $text->setContent((string) $content);
+        if ($config->isMapped() && $resolverContext instanceof EntityResolverContext) {
+            $content = $this->resolveEntityValueToString($resolverContext->getEntity(), $config->getStringValue(), $resolverContext);
         }
 
         if ($config->isStatic()) {
             if ($resolverContext instanceof EntityResolverContext) {
-                $content = $this->resolveEntityValues($resolverContext, (string) $config->getValue());
-
-                $text->setContent((string) $content);
+                $content = (string) $this->resolveEntityValues($resolverContext, $config->getStringValue());
             } else {
-                $text->setContent((string) $config->getValue());
+                $content = $config->getStringValue();
             }
         }
-    }
 
-    private function resolveEntityValues(EntityResolverContext $resolverContext, string $content): ?string
-    {
-        // https://regex101.com/r/idIfbk/1
-        $content = preg_replace_callback(
-            '/{{\s*(?<property>[\w.\d]+)\s*}}/',
-            function ($matches) use ($resolverContext) {
-                try {
-                    return $this->resolveEntityValue($resolverContext->getEntity(), $matches['property']);
-                } catch (\InvalidArgumentException $e) {
-                    return $matches[0];
-                }
-            },
-            $content
-        );
-
-        return $content;
+        if ($content !== null) {
+            if (Feature::isActive('FEATURE_NEXT_15172')) {
+                $text->setContent($this->sanitizer->sanitize($content));
+            } else {
+                $text->setContent($content);
+            }
+        }
     }
 }

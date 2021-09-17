@@ -1,26 +1,15 @@
-import { createLocalVue, shallowMount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import 'src/module/sw-settings-currency/page/sw-settings-currency-list';
 
 function createWrapper(privileges = []) {
-    const localVue = createLocalVue();
-    localVue.directive('tooltip', {});
-
     return shallowMount(Shopware.Component.build('sw-settings-currency-list'), {
-        localVue,
         mocks: {
-            $tc: () => {},
             $route: {
                 query: {
                     page: 1,
                     limit: 25
                 }
-            },
-            $router: {
-                replace: () => {}
             }
-            // $device: {
-            //     getSystemKey: () => {}
-            // }
         },
         provide: {
             repositoryFactory: {
@@ -115,7 +104,7 @@ describe('module/sw-settings-currency/page/sw-settings-currency-list', () => {
 
         const entityListing = wrapper.find('.sw-settings-currency-list-grid');
         expect(entityListing.exists()).toBeTruthy();
-        expect(entityListing.attributes().allowinlineedit).toBeFalsy();
+        expect(entityListing.attributes()['allow-inline-edit']).toBeFalsy();
     });
 
     it('should be able to inline edit', async () => {
@@ -126,7 +115,7 @@ describe('module/sw-settings-currency/page/sw-settings-currency-list', () => {
 
         const entityListing = wrapper.find('.sw-settings-currency-list-grid');
         expect(entityListing.exists()).toBeTruthy();
-        expect(entityListing.attributes().allowinlineedit).toBeTruthy();
+        expect(entityListing.attributes()['allow-inline-edit']).toBeTruthy();
     });
 
     it('should not be able to delete', async () => {

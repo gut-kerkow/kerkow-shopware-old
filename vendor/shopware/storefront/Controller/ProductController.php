@@ -2,10 +2,10 @@
 
 namespace Shopware\Storefront\Controller;
 
+use Shopware\Core\Content\Product\Exception\ProductNotFoundException;
 use Shopware\Core\Content\Product\Exception\ReviewNotActiveExeption;
-use Shopware\Core\Content\Product\SalesChannel\ProductReviewService;
+use Shopware\Core\Content\Product\SalesChannel\Review\AbstractProductReviewSaveRoute;
 use Shopware\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface;
-use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Routing\Annotation\LoginRequired;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Core\Framework\Routing\Annotation\Since;
@@ -22,6 +22,7 @@ use Shopware\Storefront\Page\Product\Review\ProductReviewLoader;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\EventListener\AbstractSessionListener;
 use Symfony\Component\Routing\Annotation\Route;
 
 /**
@@ -45,11 +46,6 @@ class ProductController extends StorefrontController
     private $minimalQuickViewPageLoader;
 
     /**
-     * @var ProductReviewService
-     */
-    private $productReviewService;
-
-    /**
      * @var SeoUrlPlaceholderHandlerInterface
      */
     private $seoUrlPlaceholderHandler;
@@ -64,11 +60,13 @@ class ProductController extends StorefrontController
      */
     private $systemConfigService;
 
+    private AbstractProductReviewSaveRoute $productReviewSaveRoute;
+
     public function __construct(
         ProductPageLoader $productPageLoader,
         ProductCombinationFinder $combinationFinder,
         MinimalQuickViewPageLoader $minimalQuickViewPageLoader,
-        ProductReviewService $productReviewService,
+        AbstractProductReviewSaveRoute $productReviewSaveRoute,
         SeoUrlPlaceholderHandlerInterface $seoUrlPlaceholderHandler,
         ProductReviewLoader $productReviewLoader,
         SystemConfigService $systemConfigService
@@ -76,10 +74,10 @@ class ProductController extends StorefrontController
         $this->productPageLoader = $productPageLoader;
         $this->combinationFinder = $combinationFinder;
         $this->minimalQuickViewPageLoader = $minimalQuickViewPageLoader;
-        $this->productReviewService = $productReviewService;
         $this->seoUrlPlaceholderHandler = $seoUrlPlaceholderHandler;
         $this->productReviewLoader = $productReviewLoader;
         $this->systemConfigService = $systemConfigService;
+        $this->productReviewSaveRoute = $productReviewSaveRoute;
     }
 
     /**
@@ -92,10 +90,6 @@ class ProductController extends StorefrontController
         $page = $this->productPageLoader->load($request, $context);
 
         $ratingSuccess = $request->get('success');
-
-        if (!Feature::isActive('FEATURE_NEXT_10078')) {
-            return $this->renderStorefront('@Storefront/storefront/page/product-detail/index.html.twig', ['page' => $page, 'ratingSuccess' => $ratingSuccess]);
-        }
 
         // Fallback layout for non-assigned product layout
         if (!$page->getCmsPage()) {
@@ -112,11 +106,18 @@ class ProductController extends StorefrontController
      */
     public function switch(string $productId, Request $request, SalesChannelContext $salesChannelContext): JsonResponse
     {
-        $switchedOption = $request->query->get('switched');
+        $switchedOption = $request->query->has('switched') ? (string) $request->query->get('switched') : null;
 
-        $newOptions = json_decode($request->query->get('options'), true);
+        $options = (string) $request->query->get('options');
+        $newOptions = $options !== '' ? json_decode($options, true) : [];
 
-        $redirect = $this->combinationFinder->find($productId, $switchedOption, $newOptions, $salesChannelContext);
+        try {
+            $redirect = $this->combinationFinder->find($productId, $switchedOption, $newOptions, $salesChannelContext);
+
+            $productId = $redirect->getVariantId();
+        } catch (ProductNotFoundException $productNotFoundException) {
+            //nth
+        }
 
         $host = $request->attributes->get(RequestTransformer::SALES_CHANNEL_ABSOLUTE_BASE_URL)
             . $request->attributes->get(RequestTransformer::SALES_CHANNEL_BASE_URL);
@@ -124,13 +125,16 @@ class ProductController extends StorefrontController
         $url = $this->seoUrlPlaceholderHandler->replace(
             $this->seoUrlPlaceholderHandler->generate(
                 'frontend.detail.page',
-                ['productId' => $redirect->getVariantId()]
+                ['productId' => $productId]
             ),
             $host,
             $salesChannelContext
         );
 
-        return new JsonResponse(['url' => $url]);
+        $response = new JsonResponse(['url' => $url]);
+        $response->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, '1');
+
+        return $response;
     }
 
     /**
@@ -154,7 +158,7 @@ class ProductController extends StorefrontController
         $this->checkReviewsActive($context);
 
         try {
-            $this->productReviewService->save($productId, $data, $context);
+            $this->productReviewSaveRoute->save($productId, $data, $context);
         } catch (ConstraintViolationException $formViolations) {
             return $this->forwardToRoute('frontend.product.reviews', [
                 'productId' => $productId,

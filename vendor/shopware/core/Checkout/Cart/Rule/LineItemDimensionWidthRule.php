@@ -15,15 +15,9 @@ use Symfony\Component\Validator\Constraints\Type;
 
 class LineItemDimensionWidthRule extends Rule
 {
-    /**
-     * @var float
-     */
-    protected $amount;
+    protected ?float $amount;
 
-    /**
-     * @var string
-     */
-    protected $operator;
+    protected string $operator;
 
     public function __construct(string $operator = self::OPERATOR_EQ, ?float $amount = null)
     {
@@ -48,7 +42,7 @@ class LineItemDimensionWidthRule extends Rule
             return false;
         }
 
-        foreach ($scope->getCart()->getLineItems() as $lineItem) {
+        foreach ($scope->getCart()->getLineItems()->getFlat() as $lineItem) {
             if ($this->matchWidthDimension($lineItem)) {
                 return true;
             }
@@ -59,8 +53,7 @@ class LineItemDimensionWidthRule extends Rule
 
     public function getConstraints(): array
     {
-        return [
-            'amount' => [new NotBlank(), new Type('numeric')],
+        $constraints = [
             'operator' => [
                 new NotBlank(),
                 new Choice(
@@ -71,10 +64,19 @@ class LineItemDimensionWidthRule extends Rule
                         self::OPERATOR_EQ,
                         self::OPERATOR_GT,
                         self::OPERATOR_LT,
+                        self::OPERATOR_EMPTY,
                     ]
                 ),
             ],
         ];
+
+        if ($this->operator === self::OPERATOR_EMPTY) {
+            return $constraints;
+        }
+
+        $constraints['amount'] = [new NotBlank(), new Type('numeric')];
+
+        return $constraints;
     }
 
     /**
@@ -92,12 +94,11 @@ class LineItemDimensionWidthRule extends Rule
         $width = $deliveryInformation->getWidth();
 
         if ($width === null) {
-            return false;
+            return $this->operator === self::OPERATOR_EMPTY;
         }
 
         $this->amount = (float) $this->amount;
 
-        /* @var float $width */
         switch ($this->operator) {
             case self::OPERATOR_GTE:
                 return FloatComparator::greaterThanOrEquals($width, $this->amount);
@@ -116,6 +117,9 @@ class LineItemDimensionWidthRule extends Rule
 
             case self::OPERATOR_NEQ:
                 return FloatComparator::notEquals($width, $this->amount);
+
+            case self::OPERATOR_EMPTY:
+                return false;
 
             default:
                 throw new UnsupportedOperatorException($this->operator, self::class);
