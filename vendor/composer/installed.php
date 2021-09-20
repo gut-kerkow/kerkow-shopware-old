@@ -1,12 +1,12 @@
 <?php return array (
   'root' => 
   array (
-    'pretty_version' => 'dev-461b3f6dccc12c31224da063892a0149d7f79a8e',
-    'version' => 'dev-461b3f6dccc12c31224da063892a0149d7f79a8e',
+    'pretty_version' => 'dev-d9a6945aac53e1afad98e00d41dabf2232e8fcd4',
+    'version' => 'dev-d9a6945aac53e1afad98e00d41dabf2232e8fcd4',
     'aliases' => 
     array (
     ),
-    'reference' => '461b3f6dccc12c31224da063892a0149d7f79a8e',
+    'reference' => 'd9a6945aac53e1afad98e00d41dabf2232e8fcd4',
     'name' => 'shopware/production',
   ),
   'versions' => 
@@ -76,12 +76,12 @@
     ),
     'composer/package-versions-deprecated' => 
     array (
-      'pretty_version' => '1.11.99.3',
-      'version' => '1.11.99.3',
+      'pretty_version' => '1.11.99.4',
+      'version' => '1.11.99.4',
       'aliases' => 
       array (
       ),
-      'reference' => 'fff576ac850c045158a250e7e27666e146e78d18',
+      'reference' => 'b174585d1fe49ceed21928a945138948cb394600',
     ),
     'composer/semver' => 
     array (
@@ -736,12 +736,12 @@
     ),
     'phpspec/prophecy' => 
     array (
-      'pretty_version' => '1.13.0',
-      'version' => '1.13.0.0',
+      'pretty_version' => '1.14.0',
+      'version' => '1.14.0.0',
       'aliases' => 
       array (
       ),
-      'reference' => 'be1996ed8adc35c3fd795488a653f4b518be70ea',
+      'reference' => 'd86dfc2e2a3cd366cee475e52c6bb3bbc371aa0e',
     ),
     'phpunit/php-code-coverage' => 
     array (
@@ -1178,57 +1178,57 @@
     ),
     'shopware/administration' => 
     array (
-      'pretty_version' => '6.4.4.0',
-      'version' => '6.4.4.0',
+      'pretty_version' => '6.4.4.1',
+      'version' => '6.4.4.1',
       'aliases' => 
       array (
       ),
-      'reference' => '28d0036246450265b9a5cf23ab7c707a99faea2f',
+      'reference' => 'b187b8ebb94dcee6d0a9cf58cbe868715aacdd6f',
     ),
     'shopware/core' => 
     array (
-      'pretty_version' => '6.4.4.0',
-      'version' => '6.4.4.0',
+      'pretty_version' => '6.4.4.1',
+      'version' => '6.4.4.1',
       'aliases' => 
       array (
       ),
-      'reference' => 'e947f5e90f8b11f39cfcd64cea5b91cb25902f40',
+      'reference' => '202d65961eea13f60806e91b7f2ac92fd0364452',
     ),
     'shopware/elasticsearch' => 
     array (
-      'pretty_version' => '6.4.4.0',
-      'version' => '6.4.4.0',
+      'pretty_version' => '6.4.4.1',
+      'version' => '6.4.4.1',
       'aliases' => 
       array (
       ),
-      'reference' => '1c062579ca396d11d6472fe63fcc59529f5caaa7',
+      'reference' => '32e431c5ee270a8803b217567045e9a2c9c359b5',
     ),
     'shopware/production' => 
     array (
-      'pretty_version' => 'dev-461b3f6dccc12c31224da063892a0149d7f79a8e',
-      'version' => 'dev-461b3f6dccc12c31224da063892a0149d7f79a8e',
+      'pretty_version' => 'dev-d9a6945aac53e1afad98e00d41dabf2232e8fcd4',
+      'version' => 'dev-d9a6945aac53e1afad98e00d41dabf2232e8fcd4',
       'aliases' => 
       array (
       ),
-      'reference' => '461b3f6dccc12c31224da063892a0149d7f79a8e',
+      'reference' => 'd9a6945aac53e1afad98e00d41dabf2232e8fcd4',
     ),
     'shopware/recovery' => 
     array (
-      'pretty_version' => '6.4.4.0',
-      'version' => '6.4.4.0',
+      'pretty_version' => '6.4.4.1',
+      'version' => '6.4.4.1',
       'aliases' => 
       array (
       ),
-      'reference' => '7c8cefc43d275694e04e10d7e7d9f7b2376c0fbc',
+      'reference' => '5bfb4a0dbf66f3950a69dd9d755ee52cf5c15c82',
     ),
     'shopware/storefront' => 
     array (
-      'pretty_version' => '6.4.4.0',
-      'version' => '6.4.4.0',
+      'pretty_version' => '6.4.4.1',
+      'version' => '6.4.4.1',
       'aliases' => 
       array (
       ),
-      'reference' => '5c5e3585cd7bface2f874ef0b2fdf259eee5e491',
+      'reference' => '1986807c781a86b388c4cac7d6b581a048c9cd44',
     ),
     'smalot/pdfparser' => 
     array (

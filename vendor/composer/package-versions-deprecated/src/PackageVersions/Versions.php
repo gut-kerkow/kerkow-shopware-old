@@ -39,7 +39,7 @@ final class Versions
   'composer/ca-bundle' => '1.2.10@9fdb22c2e97a614657716178093cd1da90a64aa8',
   'composer/composer' => '2.0.14@92b2ccbef65292ba9f2004271ef47c7231e2eed5',
   'composer/metadata-minifier' => '1.0.0@c549d23829536f0d0e984aaabbf02af91f443207',
-  'composer/package-versions-deprecated' => '1.11.99.3@fff576ac850c045158a250e7e27666e146e78d18',
+  'composer/package-versions-deprecated' => '1.11.99.4@b174585d1fe49ceed21928a945138948cb394600',
   'composer/semver' => '3.2.5@31f3ea725711245195f62e54ffa402d8ef2fdba9',
   'composer/spdx-licenses' => '1.5.5@de30328a7af8680efdc03e396aad24befd513200',
   'composer/xdebug-handler' => '2.0.2@84674dd3a7575ba617f5a76d7e9e29a7d3891339',
@@ -113,11 +113,11 @@ final class Versions
   'seld/jsonlint' => '1.8.3@9ad6ce79c342fbd44df10ea95511a1b24dee5b57',
   'seld/phar-utils' => '1.1.2@749042a2315705d2dfbbc59234dd9ceb22bf3ff0',
   'sensio/framework-extra-bundle' => 'v5.5.6@b49f079d8a87a6e6dd434062085ff5a132af466b',
-  'shopware/administration' => '6.4.4.0@28d0036246450265b9a5cf23ab7c707a99faea2f',
-  'shopware/core' => '6.4.4.0@e947f5e90f8b11f39cfcd64cea5b91cb25902f40',
-  'shopware/elasticsearch' => '6.4.4.0@1c062579ca396d11d6472fe63fcc59529f5caaa7',
-  'shopware/recovery' => '6.4.4.0@7c8cefc43d275694e04e10d7e7d9f7b2376c0fbc',
-  'shopware/storefront' => '6.4.4.0@5c5e3585cd7bface2f874ef0b2fdf259eee5e491',
+  'shopware/administration' => '6.4.4.1@b187b8ebb94dcee6d0a9cf58cbe868715aacdd6f',
+  'shopware/core' => '6.4.4.1@202d65961eea13f60806e91b7f2ac92fd0364452',
+  'shopware/elasticsearch' => '6.4.4.1@32e431c5ee270a8803b217567045e9a2c9c359b5',
+  'shopware/recovery' => '6.4.4.1@5bfb4a0dbf66f3950a69dd9d755ee52cf5c15c82',
+  'shopware/storefront' => '6.4.4.1@1986807c781a86b388c4cac7d6b581a048c9cd44',
   'sroze/messenger-enqueue-transport' => '0.4.0@a698418e702ecb29aa51ee2e40e40c90798057f0',
   'superbalist/flysystem-google-storage' => '7.2.2@87e2f450c0e4b5200fef9ffe6863068cc873d734',
   'symfony/amqp-messenger' => 'v5.3.7@7bf38ef8c72d51163aa9048d7a8abe03be33f2b4',
@@ -200,7 +200,7 @@ final class Versions
   'phpdocumentor/reflection-common' => '2.2.0@1d01c49d4ed62f25aa84a747ad35d5a16924662b',
   'phpdocumentor/reflection-docblock' => '5.2.2@069a785b2141f5bcf49f3e353548dc1cce6df556',
   'phpdocumentor/type-resolver' => '1.4.0@6a467b8989322d92aa1c8bf2bebcc6e5c2ba55c0',
-  'phpspec/prophecy' => '1.13.0@be1996ed8adc35c3fd795488a653f4b518be70ea',
+  'phpspec/prophecy' => '1.14.0@d86dfc2e2a3cd366cee475e52c6bb3bbc371aa0e',
   'phpunit/php-code-coverage' => '9.2.6@f6293e1b30a2354e8428e004689671b83871edde',
   'phpunit/php-file-iterator' => '3.0.5@aa4be8575f26070b100fccb67faabb28f21f66f8',
   'phpunit/php-invoker' => '3.1.1@5a10147d0aaf65b58940a0b72f71c9ac0423cc67',
@@ -232,7 +232,7 @@ final class Versions
   'tecnickcom/tcpdf' => '6.4.2@172540dcbfdf8dc983bc2fe78feff48ff7ec1c76',
   'theseer/tokenizer' => '1.2.1@34a41e998c2183e22995f158c581e7b5e755ab9e',
   'webmozart/assert' => '1.10.0@6964c76c7804814a842473e0c8fd15bab0f18e25',
-  'shopware/production' => 'dev-461b3f6dccc12c31224da063892a0149d7f79a8e@461b3f6dccc12c31224da063892a0149d7f79a8e',
+  'shopware/production' => 'dev-d9a6945aac53e1afad98e00d41dabf2232e8fcd4@d9a6945aac53e1afad98e00d41dabf2232e8fcd4',
 );
 
     private function __construct()
@@ -292,7 +292,7 @@ final class Versions
             }
         } else {
             $rawData = InstalledVersions::getRawData();
-            if ($rawData === []) {
+            if ($rawData === null || $rawData === []) {
                 return false;
             }
         }
