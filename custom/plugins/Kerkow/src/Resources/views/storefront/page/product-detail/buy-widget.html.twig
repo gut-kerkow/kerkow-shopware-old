@@ -117,20 +117,20 @@
 							<div class="product-detail-delivery-container">
 								<p>
 									{{ "kerkow.deliveryDateHeadline"|trans }}
-								</p>
 
-								<span class="product-detail-deliver-tomorrow">
-									{{ "kerkow.actualDeliverTomorrow"|trans|raw }}
-								</span>
+									<span class="product-detail-deliver-tomorrow">
+										{{ "kerkow.actualDeliverTomorrow"|trans|raw }}
+									</span>
+								</p>
 							</div>
 						{% else %}
 							<div class="product-detail-delivery-container">
 								<p>
 									{{ "kerkow.deliveryDateHeadline"|trans }}
+									<span class="product-detail-deliver-date">
+										{{ "kerkow.actualDeliverTime"|trans({'%day%': day, '%date%': deliveryInfos.date|date("d"), '%month%': month}) }}
+									</span>
 								</p>
-								<span class="product-detail-deliver-date">
-									{{ "kerkow.actualDeliverTime"|trans({'%day%': day, '%date%': deliveryInfos.date|date("d"), '%month%': month}) }}
-								</span>
 							</div>
 							{% block page_product_detail_delivery_notice %}
 								<span class="product-detail-custom-delivery-time">

@@ -11,7 +11,7 @@ import DatePickerExtensionPlugin from "./checkout-confirm/date-picker-extension.
 import ChangeDeliveryDatePlugin from "./checkout-confirm/change-delivery-date.plugin";
 import ContentFlyoutPlugin from "./content-flyout/content-flyout.plugin";
 import SurchargeInfo from "./surcharge-info/surcharge-info.plugin";
-import GoogleAnalyticsPluginExtension from "./google-analytics/google-analytics-extension.plugin";
+//import GoogleAnalyticsPluginExtension from "./google-analytics/google-analytics-extension.plugin";
 import FilterCustomSelectPlugin from "./listing/filter-custom-select.plugin";
 
 // Register them via the existing PluginManager
@@ -39,7 +39,7 @@ PluginManager.override(
   OffCanvasCartPluginExtension,
   "[data-offcanvas-cart]"
 );
-PluginManager.override("GoogleAnalytics", GoogleAnalyticsPluginExtension);
+//PluginManager.override("GoogleAnalytics", GoogleAnalyticsPluginExtension);
 PluginManager.register(
   "ToggleLoginRegister",
   toggleLoginRegisterPlugin,

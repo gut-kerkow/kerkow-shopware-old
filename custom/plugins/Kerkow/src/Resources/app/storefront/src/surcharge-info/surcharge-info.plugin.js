@@ -5,6 +5,7 @@ export default class SurchargeInfo extends Plugin {
   static options = {
     buttonSelector: "#js-surcharge-info-selector",
     modalSelector: "#kerkowSurchargeInfo",
+    surchargeBoxSelector: "[data-dvsn-product-option]",
   };
 
   init() {
