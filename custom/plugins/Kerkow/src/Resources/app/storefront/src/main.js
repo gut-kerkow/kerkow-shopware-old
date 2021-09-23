@@ -13,6 +13,7 @@ import ContentFlyoutPlugin from "./content-flyout/content-flyout.plugin";
 import SurchargeInfo from "./surcharge-info/surcharge-info.plugin";
 //import GoogleAnalyticsPluginExtension from "./google-analytics/google-analytics-extension.plugin";
 import FilterCustomSelectPlugin from "./listing/filter-custom-select.plugin";
+import FormCmsHandlerExtension from "./forms/form-cms-handler-extension.plugin";
 
 // Register them via the existing PluginManager
 const PluginManager = window.PluginManager;
@@ -71,4 +72,10 @@ PluginManager.register(
   "FilterCustomSelect",
   FilterCustomSelectPlugin,
   "[data-filter-custom-select]"
+);
+
+PluginManager.override(
+  "FormCmsHandler",
+  FormCmsHandlerExtension,
+  ".cms-element-form form"
 );
