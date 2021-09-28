@@ -280,5 +280,41 @@
             "webpack": null,
             "styleFiles": []
         }
+    },
+    "SwagExtensionStore": {
+        "basePath": "custom\/plugins\/SwagExtensionStore\/src\/",
+        "views": [
+            "Resources\/views"
+        ],
+        "technicalName": "swag-extension-store",
+        "administration": {
+            "path": "Resources\/app\/administration\/src",
+            "entryFilePath": "Resources\/app\/administration\/src\/main.js",
+            "webpack": "Resources\/app\/administration\/build\/webpack.config.js"
+        },
+        "storefront": {
+            "path": "Resources\/app\/storefront\/src",
+            "entryFilePath": null,
+            "webpack": null,
+            "styleFiles": []
+        }
+    },
+    "DtgsGoogleTagManagerSw6": {
+        "basePath": "custom\/plugins\/DtgsGoogleTagManagerSw6\/src\/",
+        "views": [
+            "Resources\/views"
+        ],
+        "technicalName": "dtgs-google-tag-manager-sw6",
+        "administration": {
+            "path": "Resources\/app\/administration\/src",
+            "entryFilePath": null,
+            "webpack": null
+        },
+        "storefront": {
+            "path": "Resources\/app\/storefront\/src",
+            "entryFilePath": "Resources\/app\/storefront\/src\/main.js",
+            "webpack": null,
+            "styleFiles": []
+        }
     }
 }

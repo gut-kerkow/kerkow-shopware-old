@@ -1,0 +1,15 @@
+{% sw_extends '@Storefront/storefront/component/product/card/action.html.twig' %}
+
+{% block component_product_box_action_meta %}
+    {{ parent() }}
+
+    {% block shop_studio_google_tag_manager_cloud_component_product_box_action_meta %}
+        <template data-shop-studio-google-tag-manager-cloud-product-number="{{ product.productNumber }}"></template>
+
+        {% if product.calculatedCheapestPrice is not empty %}
+            <template data-shop-studio-google-tag-manager-cloud-product-price="{{ product.calculatedCheapestPrice.unitPrice }}"></template>
+        {% elseif product.calculatedPrice is not empty %}
+            <template data-shop-studio-google-tag-manager-cloud-product-price="{{ product.calculatedPrice.unitPrice }}"></template>
+        {% endif %}
+    {% endblock %}
+{% endblock %}
