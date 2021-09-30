@@ -316,5 +316,23 @@
             "webpack": null,
             "styleFiles": []
         }
+    },
+    "IdowaproProductfeed": {
+        "basePath": "custom\/plugins\/IdowaproProductfeed\/src\/",
+        "views": [
+            "Resources\/views"
+        ],
+        "technicalName": "idowapro-productfeed",
+        "administration": {
+            "path": "Resources\/app\/administration\/src",
+            "entryFilePath": "Resources\/app\/administration\/src\/main.js",
+            "webpack": null
+        },
+        "storefront": {
+            "path": "Resources\/app\/storefront\/src",
+            "entryFilePath": null,
+            "webpack": null,
+            "styleFiles": []
+        }
     }
 }

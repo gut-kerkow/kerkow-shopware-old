@@ -1,0 +1,7 @@
+{% autoescape 'csv' %}
+id,title,description,image_link,link,price,brand,mpn,availability,condition
+{% for product in products %}
+{{ product.id }},{{ product.name }},{{ product.description }},{{product.image_link}},{{product.url}},{{ product.gross }},{{ product.manufacturer.name }},{{product.manufacturerNumber}},{% if product.availability %}in_stock{% else %}out_of_stock{% endif %},{% if product.customProperties.condition != null %}{{product.customProperties.condition}}{% else %}new{% endif %}
+
+{% endfor %}
+{% endautoescape %}

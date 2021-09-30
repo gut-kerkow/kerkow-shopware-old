@@ -1,0 +1,455 @@
+<sw-page class="product-feed-detail" v-if="loaded && feed && feed.notification">
+    <template slot="smart-bar-header">
+        {% block idowapro_feed_generator_smart_bar_header %}
+        <h2>{{ $tc('product-feed.detail.title') }}</h2>
+        {% endblock %}
+    </template>
+    <template slot="smart-bar-actions">
+        {% block idowapro_feed_generator_smart_bar_actions %}
+        <sw-button :routerLink="{ name: 'product.feed.list' }">
+            {{ $t('product-feed.detail.cancelButtonText') }}
+        </sw-button>
+        <sw-button-process
+            variant="primary"
+            @click="saveFeed"
+            @process="saveFinish"
+            :processSuccess="processSuccess"
+            :isLoading="isLoading"
+        >
+            {{ $tc('product-feed.detail.save') }}
+        </sw-button-process>
+
+        <sw-button-process
+            variant="primary"
+            @click="onBtnGenerate"
+            @process="saveFinish"
+            :processSuccess="generateSuccess"
+            :isLoading="isLoading"
+            v-if="detailMode && feed.executionMode === manualExecutionMode && feed.enabled"
+        >
+            {{ $tc('product-feed.detail.generateFeed') }}
+        </sw-button-process>
+        {% endblock %}
+    </template>
+    <template slot="content">
+
+        <!-- Modal -->
+        {% block idowapro_feed_generator_popover %}
+        <sw-modal v-if="showPopover"
+                  :title="$t('product-feed.create.selectTemplate')"
+                  variant="small"
+                  @modal-close="closeModal">
+
+            <sw-grid :items="[
+                {label:'product-feed.create.templates.google', name:'google'},
+                {label:'product-feed.create.templates.idealo', name:'idealo'},
+                {label:'product-feed.create.templates.empty', name:'empty'}]"
+                    :selectable='false'
+                    variant="table"
+                    :header="true"
+                >
+                <template #header>
+                    <div class="template-modal__header">
+                        <h4>
+                          {{ $tc('product-feed.detail.chooseTemplateDescription') }}
+                        </h4>
+                    </div>
+                </template>
+
+                <template #columns="{ item }">
+                    <sw-grid-column flex="minmax(200px, 1fr)">
+                        <strong>{{ $tc(item.label) }}</strong>
+                    </sw-grid-column>
+            
+                    <sw-grid-column flex="minmax(200px, 1fr)" class="template-modal__right-column">
+                        <sw-button 
+                          variant="primary"
+                          @click="selectTemplate(item.name)"
+                        >
+                          {{ $tc('product-feed.create.choose') }}
+                        </sw-button>
+                    </sw-grid-column>
+                </template>
+
+                <template #pagination>
+                    <div class="template-modal__help-text" style="height: fit-content">
+                        <span>
+                            {{ $tc('product-feed.detail.seeDocumentation') }}
+                            <a 
+                                rel="noopener"
+                                target="_blank"
+                                href="https://idowapro.de/product-feed-generator-documentation/"
+                            >
+                            {{ $tc('product-feed.detail.documentation') }}
+                            </a>
+                            <br/>
+                            {{ $tc('product-feed.detail.preSuggestion') }}
+                            <a href="mailto:ecom@idowa.de"
+                                rel="noopener"
+                                target="_blank"
+                            >
+                                {{ $tc('product-feed.detail.linkSuggestion') }}
+                            </a>
+                            {{ $tc('product-feed.detail.afterSuggestion') }}
+                        </span>
+                    </div>
+                </template>
+            </sw-grid>
+        </sw-modal>
+        {% endblock %}
+
+        <!-- Overwrite changes modal -->
+        <sw-modal variant="small"
+                  :title="$t('product-feed.detail.overwriteCurrentData')"
+                  v-if="showDiscardChangesModal"
+                  @modal-close="closeDiscardChangesModal">
+            {% block sw_discard_changes_modal_text %}
+                <p class="sw-discard-changes-modal-delete-text">
+                    {{ $t('product-feed.detail.overwriteCurrentDataMessage') }}
+                </p>
+            {% endblock %}
+
+            {% block sw_discard_changes_modal_footer %}
+                <template #modal-footer>
+                    {% block sw_discard_changes_modal_discard_changes_modal_cancel %}
+                        <sw-button @click="closeDiscardChangesModal">
+                            {{ $t('product-feed.detail.cancelOverwrite') }}
+                        </sw-button>
+
+                        <sw-button variant="danger"
+                                   @click="deleteChanges">
+                            {{ $t('product-feed.detail.overwrite') }}
+                        </sw-button>
+                    {% endblock %}
+                </template>
+            {% endblock %}
+        </sw-modal>
+
+
+
+        <!-- General -->
+        <sw-card-view>
+            {% block idowapro_feed_generator_general_card %}
+            <sw-card v-if="feed" :title="$t('product-feed.detail.titleGeneral')" :large="true">
+                <sw-container slot="grid" rows="auto auto">
+                    <sw-card-section v-if="!isLoading" divider="bottom">
+                        <sw-switch-field
+                            :label="$t('product-feed.detail.enabled')" v-model="feed.enabled">
+                        </sw-switch-field>
+                        <sw-container columns="repeat(auto-fit, minmax(250px, 1fr)" gap="30px 30px">
+                            {% block idowapro_feed_generator_general_content %}
+
+                            <sw-text-field :copyable="false"
+                                           :copyableTooltip="false"
+                                           :label="$t('product-feed.detail.feedname')"
+                                           v-model="feed.name"
+                                           validation="required"
+                                           required
+                                           :error="feedNameError">
+                            </sw-text-field>
+                            <sw-text-field :copyable="false" :copyableTooltip="false"
+                                           :label="$t('product-feed.detail.filename')" v-model="feed.filename"
+                                           :error="feedFilenameError"
+                                           validation="required"
+                                           required
+                            >
+                            </sw-text-field>
+
+                            <div v-if="latestFile">
+                                <dt>{{ $t('product-feed.detail.lastGeneratedFile') }}</dt>
+                                <dd><a :href="'./feeds/' + latestFile.fileName" class="log_file">{{ latestFile.fileName }}</a></dd>
+                            </div>
+                        </sw-container>
+                        <sw-container columns="repeat(auto-fit, minmax(250px, 1fr)" gap="30px 30px">
+
+                            <sw-select-field :label="$t('product-feed.detail.salesChannel')"
+                                             v-model="feed.salesChannelId" v-if="salesChannel">
+                                <option :value="channel.id" v-for="channel in salesChannel">{{ channel.name }}</option>
+                            </sw-select-field>
+
+                            
+                            <sw-entity-single-select
+                                :label="$t('product-feed.detail.language')" 
+                                v-if="salesChannel"
+                                v-model="feed.languageId"
+                                entity="language"
+                                :criteria="nameCriteria"
+                            >
+                            </sw-entity-single-select>
+
+                            <sw-entity-single-select
+                                :label="$t('product-feed.detail.currency')" 
+                                v-if="salesChannel"
+                                v-model="feed.currencyId"
+                                entity="currency"
+                                :criteria="nameCriteria"
+                            >
+                            </sw-entity-single-select>
+                            {% endblock %}
+                        </sw-container>
+                    </sw-card-section>
+                </sw-container>
+            </sw-card>
+            {% endblock %}
+
+            <!-- Template -->
+            {% block idowapro_feed_generator_template_card %}
+                <sw-card v-if="feed" :title="$t('product-feed.detail.titleTemplate')" :large="true">
+                    <sw-container slot="grid" rows="auto auto">
+                        <sw-card-section v-if="!isLoading" divider="bottom">
+                            <sw-container>
+                            {% block idowapro_feed_generator_template_content %}
+                                <sw-select-field :label="$t('product-feed.detail.filetype')"
+                                    v-model="feed.filetype">
+                                    <option :value="item.value"
+                                        v-for="(item, index) in formattedFileTypes">{{ item.label }}
+                                    </option>
+                                </sw-select-field>
+                                <sw-code-editor 
+                                    :completerFunction="null" 
+                                    completionMode="text" 
+                                    mode="twig"
+                                    :softWraps="true" 
+                                    :setFocus="false" 
+                                    v-model="feed.template"
+                                    :helpText="$tc('product-feed.detail.separateWithCommas')"
+                                    id="template-editor">
+                                </sw-code-editor>
+                                <sw-button @click="showTemplateModal()">
+                                    {{ $tc('product-feed.create.selectTemplate')  }}
+                                </sw-button>
+                                <sw-alert
+                                    variant="error"
+                                    appearance="default"
+                                    :showIcon="true"
+                                    :closable="false"
+                                    v-if="templateError">
+                                        {{ $tc(templateError.detail) }}
+                                </sw-alert>
+                            {% endblock %}
+                        </sw-container>
+                    </sw-card-section>
+                </sw-container>
+            </sw-card>
+            {% endblock %}
+
+            <!-- Filter -->
+            {% block idowapro_feed_generator_filter_card %}
+                <sw-card v-if="feed && rule && conditions" :title="$t('product-feed.detail.titleFilter')" :large="true">
+                {% block idowapro_feed_generator_filter_content %}
+
+                    <sw-tabs :small="false" defaultItem="rule">
+                        <template #default="{ active }">
+                            {% block idowapro_feed_generator_filter_rule %}
+                                <sw-tabs-item name="rule"
+                                              :title="$tc('product-feed.detail.rule')"
+                                              :activeTab="active">
+                                    {{ $tc('product-feed.detail.rule') }}
+                                </sw-tabs-item>
+                            {% endblock %}
+
+                            {% block idowapro_feed_generator_filter_product_group %}
+                                <sw-tabs-item name="stream"
+                                              :title="$tc('product-feed.detail.productGroup')"
+                                              :activeTab="active">
+                                    {{ $tc('product-feed.detail.productGroup') }}
+                                </sw-tabs-item>
+                            {% endblock %}
+                        </template>
+
+                        <template #content="{ active }">
+                            {% block idowapro_feed_generator_filter_rule_content %}
+                                <sw-container v-if="active === 'rule'">
+
+                                    <sw-switch-field
+                                        :label="$t('product-feed.detail.ruleEnabled')" v-model="feed.ruleFilterEnabled">
+                                    </sw-switch-field>
+
+                                    <sw-condition-tree
+                                        :initialConditions="conditions"
+                                        :conditionDataProviderService="feedConditionDataProviderService"
+                                        associationField="ruleId"
+                                        :associationValue="rule.id"
+                                        :conditionRepository="conditionRepository"
+                                        :rootCondition="null"
+                                        @conditions-changed="conditionsChanged"
+                                    ></sw-condition-tree>
+
+                                </sw-container>
+                            {% endblock %}
+
+                            {% block idowapro_feed_generator_filter_product_group_content %}
+                                <sw-container v-if="active === 'stream'">
+                                    <sw-switch-field
+                                        :label="$t('product-feed.detail.productGroupEnabled')" v-model="feed.productStreamFilterEnabled">
+                                    </sw-switch-field>
+
+                                <sw-entity-multi-select
+                                    entity="product_stream"
+                                    :entityCollection="dynamicProductGroups"
+                                    @change="setDynamicProductGroups">
+                                </sw-entity-multi-select>
+
+                                </sw-container>
+                            {% endblock %}
+                        </template>
+                    </sw-tabs>
+
+                {% endblock %}
+                </sw-card>
+            {% endblock %}
+
+            <!-- execution mode -->
+            {% block idowapro_feed_generator_execution_mode_card %}
+                <sw-card v-if="feed" :title="$t('product-feed.detail.titleExecution')" :large="true"
+                         @change="resetFirstTry">
+                    <sw-container slot="grid" rows="auto auto">
+                        <sw-card-section divider="bottom">
+                            <sw-container columns="repeat(auto-fit, minmax(250px, 1fr)" gap="30px 30px">
+                            {% block idowapro_feed_generator_exeution_mode_content %}
+                                <sw-select-field
+                                    :label="$t('product-feed.detail.executionMode')"
+                                    v-model="feed.executionMode">
+                                    <option :value="item.value" v-for="(item, index) in formattedExecutionModes">
+                                        {{ item.label }}
+                                    </option>
+                                </sw-select-field>
+                                <sw-number-field
+                                    v-model="interval.time"
+                                    :label="$t('product-feed.detail.generateEvery')"
+                                    :required="feed.executionMode == 'execution_type_cron'"
+                                    :error="executionTimeError"
+                                    :disabled="feed.executionMode !== 'execution_type_cron'">
+                                </sw-number-field>
+                                <sw-select-field
+                                v-model="interval.multiplicator"
+                                :disabled="feed.executionMode !== 'execution_type_cron'"
+                                :label="$t('product-feed.detail.interval')"
+                                >
+                                <option :value="item.value" v-for="(item, index) in timeIntervals">{{ item.label }}</option>
+                                </sw-select-field>
+                            {% endblock %}
+                           </sw-container>
+                        </sw-card-section>
+                    </sw-container>
+                </sw-card>
+            {% endblock %}
+
+            <!-- Notifications -->
+            {% block idowapro_feed_generator_notification_card %}
+                <sw-card v-if="feed" :title="$t('product-feed.detail.titleEmailAlert')" :large="true">
+                    <sw-container slot="grid" rows="auto auto">
+                        <sw-card-section v-if="!isLoading" divider="bottom">
+                            <sw-container>
+                                {% block idowapro_feed_generator_notification_content %}
+                                    <sw-switch-field :label="$t('product-feed.detail.enabled')"
+                                                     v-model="feed.notificationsEnabled"
+                                                     @change="resetFirstTry"
+                                    >
+                                    </sw-switch-field>
+
+                                    <sw-container rows="auto auto">
+                                        <sw-text-field
+                                            :copyable="false"
+                                            :copyableTooltip="false"
+                                            :label="$t('product-feed.detail.emailAddress')"
+                                            v-model="feed.notificationAddresses"
+                                            :required="feed.notificationsEnabled === true"
+                                            :disabled="this.feed.notificationsEnabled !== true"
+                                            :error="emailAddressesError"
+                                            :helpText="$tc('product-feed.detail.separateWithCommas')"
+                                            v-if="feed.notification"
+                                        >
+                                        </sw-text-field>
+                                    </sw-container>
+
+                                    <sw-multi-select
+                                        :label="$t('product-feed.detail.notificationEvents')"
+                                        :options="formattedNotificationEvents"
+                                        :value="selectedMessageEvents"
+                                        v-model="feed.notificationEvents"
+                                        :required="feed.notificationsEnabled === true"
+                                        :error="emailEventsError"
+                                        :disabled="this.feed.notificationsEnabled !== true"
+                                    >
+                                    </sw-multi-select>
+                                {% endblock %}
+                            </sw-container>
+                        </sw-card-section>
+                    </sw-container>
+                </sw-card>
+            {% endblock %}
+
+                    <!-- Delivery -->
+            {% block idowapro_feed_generator_delivery_card %}
+            <sw-card v-if="feed" :title="$t('product-feed.detail.titleDelivery')" :large="true">
+                <sw-container slot="grid" rows="auto auto">
+                    <sw-card-section v-if="!isLoading" divider="bottom">
+                        <sw-switch-field
+                            :label="$t('product-feed.detail.enabled')"
+                            v-model="feed.deliveryEnabled"
+                            @change="resetFirstTry">
+                        </sw-switch-field>
+                        <sw-container columns="repeat(auto-fit, minmax(250px, 1fr)" gap="30px 30px">
+                        {% block idowapro_feed_generator_delivery_content %}
+                        <sw-select-field
+                            :label="$t('product-feed.detail.deliveryProtocol')"
+                            v-model="feed.fileTransferProtocol"
+                            :required="feed.deliveryEnabled === true"
+                            :disabled="feed.deliveryEnabled == false">
+                            <option
+                                :value="item.value"
+                                v-for="item in formattedFileTransferProtocols">
+                                {{ item.label }}
+                            </option>
+                        </sw-select-field>
+                        <sw-text-field
+                            :copyable="false"
+                            :copyableTooltip="false"
+                            :label="$t('product-feed.detail.hostUrl')"
+                            v-model="feed.hostUrl"
+                            :required="feed.deliveryEnabled === true"
+                            :validation="feed.deliveryEnabled ?? required"
+                            :error="hostUrlError"
+                            :disabled="feed.deliveryEnabled == false"
+                        ></sw-text-field>
+                        <sw-text-field
+                            :copyable="false"
+                            :copyableTooltip="false"
+                            :label="$t('product-feed.detail.hostUsername')"
+                            v-model="feed.hostUsername"
+                            :required="feed.deliveryEnabled === true"
+                            :validation="feed.deliveryEnabled ?? required"
+                            :error="hostUsernameError"
+                            :disabled="feed.deliveryEnabled == false"
+                        >
+                        </sw-text-field>
+                        <sw-password-field
+                            type="password"
+                            :label="$t('product-feed.detail.hostPassword')"
+                            v-model="feed.hostPassword"
+                            :disabled="feed.deliveryEnabled == false"
+                            :required="feed.deliveryEnabled === true"
+                            :error="hostPasswordError"
+                        >
+                        </sw-password-field>
+                        <sw-text-field
+                            :copyable="false"
+                            :copyableTooltip="false"
+                            :label="$t('product-feed.detail.hostDirectoryPath')"
+                            :disabled="feed.deliveryEnabled == false"
+                            v-model="feed.hostDirectoryPath"
+                            :required="feed.deliveryEnabled === true"
+                            :error="hostDirectoryError"
+                        >
+                        </sw-text-field>
+                {% endblock %}
+                    </sw-container>
+                    </sw-card-section>
+                </sw-container>
+                </sw-card>
+            {% endblock %}
+
+        </sw-card-view>
+    </template>
+</sw-page>

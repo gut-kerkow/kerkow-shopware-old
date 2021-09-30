@@ -1,0 +1,28 @@
+<!-- block name has to be exactly this to override a block in the rule component -->
+{% block sw_condition_value_content %}
+    <div class="sw-condition-goods-price">
+        {% block idowapro_feed_generator_condition_product_price_operator %}
+            <sw-condition-operator-select v-bind="{ operators, condition }"></sw-condition-operator-select>
+        {% endblock %}
+
+        {% block idowapro_feed_generator_condition_product_price_number_field %}
+            <sw-number-field size="medium" numberType="float" :step="0.01" v-model="value"></sw-number-field>
+        {% endblock %}
+
+        {% block idowapro_feed_generator_condition_product_price_filter %}
+            <div class="sw-condition-goods-price__filter">
+                <sw-button @click="showFilterModal = true"
+                           v-tooltip="{ message: $tc('sw-settings-rule.conditionFilter.infoText') }">
+                    <sw-icon name="small-default-stack-filter" small></sw-icon>
+                </sw-button>
+            </div>
+        {% endblock %}
+    </div>
+
+    {% block idowapro_feed_generator_condition_product_price_condition_model %}
+        <sw-condition-modal v-if="showFilterModal"
+                            @modal-close="showFilterModal = false"
+                            v-bind="{ condition, conditionDataProviderService }">
+        </sw-condition-modal>
+    {% endblock %}
+{% endblock %}

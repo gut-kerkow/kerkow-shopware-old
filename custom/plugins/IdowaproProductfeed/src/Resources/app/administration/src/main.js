@@ -1,0 +1,10 @@
+import './rule/custom-rules';
+import './init/productfeed-service.init';
+import './init/template-service.init';
+import './decorater/condition-data-provider.decorater';
+import './module/product-feed/index';
+import './module/product-feed/page/product-feed-list/index';
+import './module/product-feed/page/product-feed-detail/index';
+import './module/product-feed/page/product-feed-create/index';
+import './module/product-feed/page/product-feed-logs/index';
+import './module/product-feed/page/product-feed-logs-detail/index';

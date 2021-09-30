@@ -1,0 +1,121 @@
+<?xml version="1.0" ?>
+
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+
+    <services>
+
+        <service id="Productfeed\Core\Content\Productfeed\ProductfeedDefinition" public="true">
+            <tag name="shopware.entity.definition" entity="productfeed_productfeed"/>
+        </service>
+
+        <service id="Productfeed\Core\Content\File\FileDefinition" public="true">
+            <tag name="shopware.entity.definition" entity="productfeed_file"/>
+        </service>
+
+        <service id="Productfeed\Core\Content\NotificationEmail\NotificationEmailDefinition" public="true">
+            <tag name="shopware.entity.definition" entity="productfeed_notification"/>
+        </service>
+
+        <service id="Productfeed\Core\Content\ProductfeedProductStream\ProductfeedProductStreamDefinition" public="true">
+            <tag name="shopware.entity.definition" entity="productfeed_product_stream"/>
+        </service>
+
+        <service id="Productfeed\Service\ProductfeedNotificationService" public="true">
+            <argument type="service" id="Productfeed\Service\ProductfeedMailService"/>
+            <argument type="service" id="productfeed_notification.repository"/>
+        </service>
+
+        <service id="Productfeed\Service\ProductfeedMailService" public="true">
+            <argument type="service" id="mail_template.repository"/>
+            <argument type="service" id="Shopware\Core\Content\Mail\Service\MailService"/>
+            <argument type="service" id="sales_channel.repository"/>
+        </service>
+
+        <service id="Productfeed\Service\ProductfeedFilterService" public="true">
+            <argument type="service" id="productfeed_product_stream.repository"/>
+        </service>
+
+        <service id="Productfeed\Service\ProductfeedService" public="true">
+            <argument type="service" id="Productfeed\Service\ProductfeedNotificationService"/>
+            <argument type="service" id="Productfeed\Service\ProductfeedFilterService"/>
+            <argument type="service" id="productfeed_file.repository"/>
+            <argument type="service" id="product.repository"/>
+            <argument type="service" id="category.repository"/>
+            <argument type="service" id="productfeed_productfeed.repository"/>
+            <argument type="service" id="payment_method.repository"/>
+            <argument type="service" id="Productfeed\Service\ProductfeedProductExtensionService"/>
+            <argument type="service" id="monolog.logger"/>
+        </service>
+
+        <service id="Productfeed\Service\ProductfeedProductExtensionService">
+            <argument type="service" id="property_group.repository"/>
+            <argument type="service" id="seo_url.repository"/>
+            <argument type="service" id="category.repository"/>
+            <argument type="service" id="Shopware\Core\Checkout\Cart\SalesChannel\CartService"/>
+            <argument type="service" id="Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory"/>
+            <argument type="service" id="Shopware\Core\System\Currency\CurrencyFormatter"/>
+            <argument type="service" id="Shopware\Core\Checkout\Cart\Delivery\DeliveryCalculator"/>
+            <argument type="service" id="Shopware\Core\Checkout\Cart\Delivery\DeliveryBuilder"/>
+            <argument type="service" id="tax.repository"/>
+            <argument type="service" id="customer.repository"/>
+            <argument type="service" id="salutation.repository"/>
+            <argument type="service" id="Shopware\Core\Content\Product\SalesChannel\Price\ProductPriceCalculator"/>
+        </service>
+
+        <service id="Productfeed\Service\ProductfeedTemplateService">
+            <argument type="service" id="country.repository"/>
+        </service>
+
+        <service id="Productfeed\ScheduledTask\FeedgeneratorTask" public="true">
+            <tag name="shopware.scheduled.task"/>
+        </service>
+
+        <service id="Productfeed\ScheduledTask\FeedgeneratorHandler" public="true">
+            <argument type="service" id="scheduled_task.repository"/>
+            <argument type="service" id="productfeed_productfeed.repository"/>
+            <argument type="service" id="Productfeed\Service\ProductfeedService"/>
+            <tag name="messenger.message_handler"/>
+        </service>
+
+        <service id="Productfeed\Core\Api\ProductfeedController" public="true">
+            <argument type="service" id="productfeed_productfeed.repository"/>
+            <argument type="service" id="productfeed_file.repository"/>
+            <argument type="service" id="productfeed_notification.repository"/>
+            <argument type="service" id="Productfeed\Service\ProductfeedService"/>
+            <argument type="service" id="Productfeed\Service\ProductfeedTemplateService"/>
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
+        </service>
+
+        <service id="Productfeed\Core\Rule\ProductNameRule">
+            <tag name="shopware.rule.definition"/>
+        </service>
+
+        <service id="Productfeed\Core\Rule\ProductIdRule">
+            <tag name="shopware.rule.definition"/>
+        </service>
+
+        <service id="Productfeed\Core\Rule\ProductPriceRule">
+            <tag name="shopware.rule.definition"/>
+        </service>
+
+        <service id="Productfeed\Core\Rule\ProductOfCategoryRule">
+            <tag name="shopware.rule.definition"/>
+        </service>
+
+        <service id="Productfeed\Core\Rule\CategoryNameRule">
+            <tag name="shopware.rule.definition"/>
+        </service>
+
+        <service id="Productfeed\Core\Rule\ProductEnabledRule">
+            <tag name="shopware.rule.definition"/>
+        </service>
+
+        <service id="Productfeed\Core\Rule\ManufacturerNameRule">
+            <tag name="shopware.rule.definition"/>
+        </service>
+    </services>
+</container>

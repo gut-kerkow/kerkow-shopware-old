@@ -1,0 +1,33 @@
+{
+    "name": "idowapro/feed-generator",
+    "description": "Product Feed Generator",
+    "version": "v1.0.0",
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "idowapro Agentur GmbH & Co. KG"
+        }
+    ],
+    "type": "shopware-platform-plugin",
+    "autoload": {
+        "psr-4": {
+            "Productfeed\\": "src/",
+            "phpseclib\\": "vendor/phpseclib/phpseclib/"
+        }
+    },
+    "extra": {
+        "shopware-plugin-class": "Productfeed\\IdowaproProductfeed",
+        "coyright": "(c) by idowapro Agentur GmbH & Co. KG",
+        "plugin-icon": "src/Resources/config/plugin.png",
+        "label": {
+            "de-DE": "Produkt Feed Generator",
+            "en-GB": "Product Feed Generator"
+        }
+    },
+    "require": {
+        "phpseclib/phpseclib": "~2.0",
+        "ext-json": "*",
+        "ext-simplexml": "*",
+        "shopware/core": "~6.4.0"
+    }
+}
