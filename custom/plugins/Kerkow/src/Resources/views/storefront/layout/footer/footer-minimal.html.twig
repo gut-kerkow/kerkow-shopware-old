@@ -17,16 +17,16 @@
 					<div class="footer-legal">
 						<div class="flex-row d-sm-flex justify-content-between">
 							<div class="col-xs-12 center">
-								{{ "kerkow.footerPrivacy"|trans({'%url%': path('frontend.cms.page',{ id: shopware.config.core.basicInformation.privacyPage })})|raw }}
+								{{ "kerkow.footerPrivacy"|trans({'%url%': path('frontend.cms.page',{ id: config('core.basicInformation.privacyPage')  })})|raw }}
 							</div>
 							<div class="col-xs-12 center">
-								{{ "kerkow.footerRevocation"|trans({'%url%': path('frontend.cms.page',{ id: shopware.config.core.basicInformation.revocationPage })})|raw }}
+								{{ "kerkow.footerRevocation"|trans({'%url%': path('frontend.cms.page',{ id: config('core.basicInformation.revocationPage') })})|raw }}
 							</div>
 							<div class="col-xs-12 center">
-								{{ "kerkow.footerTos"|trans({'%url%': path('frontend.cms.page',{ id: shopware.config.core.basicInformation.tosPage })})|raw }}
+								{{ "kerkow.footerTos"|trans({'%url%': path('frontend.cms.page',{ id: config('core.basicInformation.tosPage') })})|raw }}
 							</div>
 							<div class="col-xs-12 center">
-								{{ "kerkow.footerImprint"|trans({'%url%': path('frontend.cms.page',{ id: shopware.config.core.basicInformation.imprintPage })})|raw }}
+								{{ "kerkow.footerImprint"|trans({'%url%': path('frontend.cms.page',{ id: config('core.basicInformation.imprintPage') })})|raw }}
 							</div>
 						</div>
 					</div>
