@@ -147,6 +147,7 @@ class DatalayerService
             $seoCategory = $product->getSeoCategory();
             if($seoCategory) {
                 $detailTags['productCategory'] = $seoCategory->getTranslation('name');
+                $detailTags['productCategoryID'] = $seoCategory->getId();
             }
 
 		}
@@ -162,12 +163,18 @@ class DatalayerService
     /**
      * SW6 ready
      *
+     * @param $navigationId
+     * @param SalesChannelContext $context
      * @return array
      */
-    public function getNavigationTags()
+    public function getNavigationTags($navigationId, SalesChannelContext $context): array
     {
         //no explicit navigation Tags so far
         $tags = [];
+
+        $category = $this->categoryHelper->getCategoryById($navigationId, $context);
+
+        $tags['pageCategoryID'] = $category->getId();
 
         if($this->loggingHelper->loggingType('debug')) $this->loggingHelper->logMsg('Navigation-Tags: ' . json_encode($tags));
 
@@ -199,13 +206,16 @@ class DatalayerService
      */
 	public function getCheckoutTags($cartOrOrder, SalesChannelContext $context) {
 
+        $pluginConfig = $this->getGtmConfig($context->getSalesChannel()->getId());
+        $useNetPrices = isset($pluginConfig['showPriceType']) && $pluginConfig['showPriceType'] == 'netto';
+
         $checkoutTags = [];
 
 		//Conversion Data
         $checkoutTags['conversionDate'] = date('Ymd');
 
 		//New in 1.3.5 - select if brutto/netto
-		if($this->priceHelper->getPriceType() == 'netto') $checkoutTags['conversionValue'] = $cartOrOrder->getPrice()->getNetPrice();
+		if($useNetPrices) $checkoutTags['conversionValue'] = $cartOrOrder->getPrice()->getNetPrice();
 		else $checkoutTags['conversionValue'] = $cartOrOrder->getPrice()->getTotalPrice();
 
         $checkoutTags['conversionType'] = ''; //???
@@ -219,7 +229,7 @@ class DatalayerService
         $checkoutTags['transactionAffiliation'] = $context->getSalesChannel()->getName(); //Shopname
 
 		//New in 1.3.5 - select if brutto/netto
-		if($this->priceHelper->getPriceType() == 'netto') $checkoutTags['transactionTotal'] = $cartOrOrder->getPrice()->getNetPrice();
+		if($useNetPrices) $checkoutTags['transactionTotal'] = $cartOrOrder->getPrice()->getNetPrice();
 		else $checkoutTags['transactionTotal'] = $cartOrOrder->getPrice()->getTotalPrice();
 
 		$taxRate = $cartOrOrder->getPrice()->getCalculatedTaxes()->first();
@@ -234,7 +244,7 @@ class DatalayerService
 
 
 		//New in 1.3.5 - select if brutto/netto
-		if($this->priceHelper->getPriceType() == 'netto') {
+		if($useNetPrices) {
             $taxRate = $cartOrOrder->getShippingCosts()->getTaxRules()->first();
             if($taxRate) {
                 $tax = $taxRate->getTaxRate();
@@ -261,10 +271,6 @@ class DatalayerService
 
         $checkoutTags['transactionProducts'] = array();
 
-		//New in 1.3.5 - select if brutto/netto
-		if($this->priceHelper->getPriceType() == 'netto') $priceIndex = 'netprice';
-		else $priceIndex = 'price';
-
 		//Transaction Product Data
 		foreach($cartOrOrder->getLineItems() as $item) {
             if (isset($item->getPayload()['promotionId'])) {
@@ -272,12 +278,21 @@ class DatalayerService
                 $checkoutTags['transactionPromoCode'] = $voucher['code'];
             } else {
                 /** @var LineItem $item */
+                $taxRate = $item->getPrice()->getTaxRules()->first();
+                if($taxRate) {
+                    $tax = $taxRate->getTaxRate();
+                }
+                else {
+                    //Bugfix for tax free countries, V6.1.4
+                    $tax = 0;
+                }
+
                 $checkoutTags['transactionProducts'][] = array(
                     'id' => $item->getId(),
                     'name' => $item->getLabel(),
                     'sku' => $item->getPayload()['productNumber'] ?? 'none',
                     //'category' => '', //nicht vorhanden im Array
-                    'price' => $item->getPrice()->getUnitPrice(),
+                    'price' => $this->priceHelper->getPrice($item->getPrice()->getUnitPrice(), $tax),
                     'quantity' => $item->getQuantity(),
                 );
             }

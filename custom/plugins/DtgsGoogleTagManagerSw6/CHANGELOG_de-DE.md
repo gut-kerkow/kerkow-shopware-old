@@ -1,3 +1,9 @@
+# 6.1.28
+- Anpassung für Steuer-Berechnung im Checkout
+
+# 6.1.27
+- Kategorie IDs werden im Datalayer nun auf Listing- und Detailseiten ausgegeben
+
 # 6.1.26
 - neue Plugin Option: UserCentrics Kompatibiltät aktivieren
 - Ausgabe des GTM Codes auf Landingpages

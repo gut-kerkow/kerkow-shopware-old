@@ -1,3 +1,9 @@
+# 6.1.28
+- Corrected net prices in checkout
+
+# 6.1.27
+- added category info to datalayer on listing an detail pages
+
 # 6.1.26
 - new plugin option: enable UserCentrics compatibility
 - GTM code will now also show up on landingpages

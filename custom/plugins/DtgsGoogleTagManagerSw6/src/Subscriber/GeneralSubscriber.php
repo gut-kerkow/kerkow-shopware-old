@@ -195,7 +195,7 @@ class GeneralSubscriber implements EventSubscriberInterface
                 break;
             case NavigationPageLoadedEvent::class:
                 $navigationId = $event->getRequest()->get('navigationId', $event->getSalesChannelContext()->getSalesChannel()->getNavigationCategoryId());
-                $navigationTags = $this->datalayerService->getNavigationTags();
+                $navigationTags = $this->datalayerService->getNavigationTags($navigationId, $event->getSalesChannelContext());
 
                 /** @var SalesChannelProductEntity[] $products */
                 $listing = $this->getListingOnNavigationPage($event->getPage());
