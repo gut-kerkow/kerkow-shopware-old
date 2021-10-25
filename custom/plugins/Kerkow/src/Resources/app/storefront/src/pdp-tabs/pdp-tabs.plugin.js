@@ -84,6 +84,10 @@ export default class PdpTabsPlugin extends Plugin {
     contentText.classList.remove(this.options.hiddenClass);
     closeButton.classList.remove(this.options.hiddenClass);
     openButton.classList.add(this.options.hiddenClass);
+    button.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
   }
 
   /**
@@ -112,5 +116,9 @@ export default class PdpTabsPlugin extends Plugin {
     tab.classList.remove(this.options.openTabclass);
     openButton.classList.remove(this.options.hiddenClass);
     closeButton.classList.add(this.options.hiddenClass);
+    button.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
   }
 }
