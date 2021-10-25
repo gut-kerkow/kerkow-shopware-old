@@ -4,9 +4,10 @@ import Iterator from "src/helper/iterator.helper";
 
 export default class PdpTabsPlugin extends Plugin {
   static options = {
-    tabButtonSelector: ".js_tab_button",
+    tabButtonSelector: ".js_tab_toggle",
+    tabOpenClass: "js_tab_open",
+    tabClosedClass: "js_tab_closed",
     hiddenClass: "d-none",
-    openclass: "open",
     openTabclass: "open_tab",
     closeActionSelector: "js_close_button",
     openActionSelector: "js_open_button",
@@ -42,10 +43,10 @@ export default class PdpTabsPlugin extends Plugin {
    */
   _toggleTab(button) {
     //check state
-    if (button.classList.contains(this.options.openActionSelector)) {
-      this._openTab(button);
-    } else {
+    if (button.classList.contains(this.options.tabOpenClass)) {
       this._closeTab(button);
+    } else {
+      this._openTab(button);
     }
   }
   /**
@@ -65,6 +66,10 @@ export default class PdpTabsPlugin extends Plugin {
       tab,
       `.${this.options.closeActionSelector}`
     );
+    const openButton = DomAccess.querySelector(
+      tab,
+      `.${this.options.openActionSelector}`
+    );
     // Close all open tabs
     Iterator.iterate(openTabs, (tab) => {
       const tabButton = DomAccess.querySelector(
@@ -73,11 +78,12 @@ export default class PdpTabsPlugin extends Plugin {
       );
       this._closeTab(tabButton);
     });
-    contentText.classList.add(this.options.openclass);
+    button.classList.add(this.options.tabOpenClass);
+    button.classList.remove(this.options.tabClosedClass);
     tab.classList.add(this.options.openTabclass);
     contentText.classList.remove(this.options.hiddenClass);
-    button.classList.add(this.options.hiddenClass);
     closeButton.classList.remove(this.options.hiddenClass);
+    openButton.classList.add(this.options.hiddenClass);
   }
 
   /**
@@ -96,11 +102,15 @@ export default class PdpTabsPlugin extends Plugin {
       tab,
       `.${this.options.openActionSelector}`
     );
-    contentText.classList.remove(this.options.openclass);
+    const closeButton = DomAccess.querySelector(
+      tab,
+      `.${this.options.closeActionSelector}`
+    );
+    button.classList.remove(this.options.tabOpenClass);
+    button.classList.add(this.options.tabClosedClass);
     contentText.classList.add(this.options.hiddenClass);
     tab.classList.remove(this.options.openTabclass);
-
-    button.classList.add(this.options.hiddenClass);
     openButton.classList.remove(this.options.hiddenClass);
+    closeButton.classList.add(this.options.hiddenClass);
   }
 }

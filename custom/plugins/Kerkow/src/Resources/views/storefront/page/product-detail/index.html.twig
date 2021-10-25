@@ -75,11 +75,13 @@
 							<div class="{% if page.product.customFields["custom_pdp_additional_content_animalPart"] is empty %}offset-lg-6 {% endif %}col-lg-6 product-detail-accordion-container" data-pdp-tabs="true">
 								{% if page.product.translated.description %}
 									<div class="tab open_tab">
-										{% sw_include '@Kerkow/storefront/page/product-detail/tab-button.html.twig' with {state: "open"} %}
 										<div class="tab-content">
-											<h2>
-												{{ "kerkow.headlineKnowledge"|trans }}
-											</h2>
+											<div class="tab-toggle js_tab_toggle js_tab_open">
+												{% sw_include '@Kerkow/storefront/page/product-detail/tab-button.html.twig' with {state: "open"} %}
+												<h2>
+													{{ "kerkow.headlineKnowledge"|trans }}
+												</h2>
+											</div>
 											<div class="tab-content-text open">
 												{{ page.product.translated.description|raw }}
 											</div>
@@ -88,11 +90,13 @@
 								{% endif %}
 								{% if page.product.customFields["custom_pdp_additional_content_bestBefore"] %}
 									<div class="tab">
-										{% sw_include '@Kerkow/storefront/page/product-detail/tab-button.html.twig' with {state: "closed"} %}
 										<div class="tab-content">
-											<h2>
-												{{ "kerkow.headlineBestBefore"|trans }}
-											</h2>
+											<div class="tab-toggle js_tab_toggle js_tab_closed">
+												{% sw_include '@Kerkow/storefront/page/product-detail/tab-button.html.twig' with {state: "closed"} %}
+												<h2>
+													{{ "kerkow.headlineBestBefore"|trans }}
+												</h2>
+											</div>
 											<div class="tab-content-text d-none">
 												{{ page.product.customFields["custom_pdp_additional_content_bestBefore"]|raw }}
 											</div>
@@ -101,11 +105,13 @@
 								{% endif %}
 								{% if page.product.customFields["custom_pdp_additional_content_storageAdvice"] %}
 									<div class="tab">
-										{% sw_include '@Kerkow/storefront/page/product-detail/tab-button.html.twig' with {state: "closed"} %}
 										<div class="tab-content">
-											<h2>
-												{{ "kerkow.headlineStorageAdvice"|trans }}
-											</h2>
+											<div class="tab-toggle js_tab_toggle js_tab_closed">
+												{% sw_include '@Kerkow/storefront/page/product-detail/tab-button.html.twig' with {state: "closed"} %}
+												<h2>
+													{{ "kerkow.headlineStorageAdvice"|trans }}
+												</h2>
+											</div>
 											<div class="tab-content-text d-none">
 												{{ page.product.customFields["custom_pdp_additional_content_storageAdvice"]|raw }}
 											</div>
@@ -114,12 +120,13 @@
 								{% endif %}
 								{% if page.product.customFields["custom_product_data_show_contents"] %}
 									<div class="tab">
-										{% sw_include '@Kerkow/storefront/page/product-detail/tab-button.html.twig' with {state: "closed"} %}
 										<div class="tab-content">
-
-											<h2>
-												{{ "kerkow.nutritionFacts"|trans }}
-											</h2>
+											<div class="tab-toggle js_tab_toggle js_tab_closed">
+												{% sw_include '@Kerkow/storefront/page/product-detail/tab-button.html.twig' with {state: "closed"} %}
+												<h2>
+													{{ "kerkow.nutritionFacts"|trans }}
+												</h2>
+											</div>
 											<div class="tab-content-text d-none">
 
 												<dl class="row">
@@ -186,11 +193,14 @@
 								{% endif %}
 								{% if page.product.customFields["custom_product_data_ingredients"] %}
 									<div class="tab">
-										{% sw_include '@Kerkow/storefront/page/product-detail/tab-button.html.twig' with {state: "closed"} %}
 										<div class="tab-content">
-											<h2>
-												{{ "kerkow.ingredients"|trans }}
-											</h2>
+											<div class="tab-toggle js_tab_toggle js_tab_closed">
+												{% sw_include '@Kerkow/storefront/page/product-detail/tab-button.html.twig' with {state: "closed"} %}
+
+												<h2>
+													{{ "kerkow.ingredients"|trans }}
+												</h2>
+											</div>
 											<div class="tab-content-text d-none">
 												{{ page.product.customFields["custom_product_data_ingredients"]|sw_sanitize }}
 
@@ -200,11 +210,13 @@
 								{% endif %}
 								{% if page.product.customFields["custom_product_data_show_allergens"] %}
 									<div class="tab">
-										{% sw_include '@Kerkow/storefront/page/product-detail/tab-button.html.twig' with {state: "closed"} %}
 										<div class="tab-content">
-											<h2>
-												{{ "kerkow.allergens"|trans }}
-											</h2>
+											<div class="tab-toggle js_tab_toggle js_tab_closed">
+												{% sw_include '@Kerkow/storefront/page/product-detail/tab-button.html.twig' with {state: "closed"} %}
+												<h2>
+													{{ "kerkow.allergens"|trans }}
+												</h2>
+											</div>
 											<div class="tab-content-text d-none">
 
 												{{ page.product.customFields["custom_product_data_allergens"]|sw_sanitize }}

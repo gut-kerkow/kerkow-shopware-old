@@ -152,13 +152,14 @@
         &:last-of-type {
           border-bottom: rgba($color: $kerkow-blue, $alpha: 0.2) 2px solid;
         }
+        .tab-toggle {
+          cursor: pointer;
+        }
         .tab-button {
           position: absolute;
           right: 1rem;
           top: 0.75rem;
-          span {
-            cursor: pointer;
-          }
+
           .arrow-down {
             svg {
               margin-top: 1rem;
