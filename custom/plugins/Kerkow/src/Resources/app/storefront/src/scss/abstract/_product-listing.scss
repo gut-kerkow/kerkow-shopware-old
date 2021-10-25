@@ -110,7 +110,8 @@
   .cms-block-product-listing {
     .cms-listing-col {
       .product-name {
-        height: 2rem;
+        min-height: 2rem;
+        height: auto;
       }
     }
   }
