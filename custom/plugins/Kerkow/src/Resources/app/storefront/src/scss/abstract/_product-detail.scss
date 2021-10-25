@@ -72,6 +72,7 @@
     }
   }
   .product-detail-content,
+  .product-detail-packing-unit,
   .product-detail-reference-content,
   .product-detail-tax,
   .product-detail-deliver-date {
@@ -300,6 +301,7 @@
       font-size: 1.5rem;
     }
     .product-detail-content,
+    .product-detail-packing-unit,
     .product-detail-reference-content,
     .product-detail-tax,
     .product-detail-deliver-date {
@@ -343,6 +345,7 @@
   }
   .product-detail {
     .product-detail-content,
+    .product-detail-packing-unit,
     .product-detail-reference-content,
     .product-detail-tax,
     .product-detail-deliver-date {
@@ -396,6 +399,8 @@
     .product-detail-buy {
       .product-detail-price-surcharge,
       .product-detail-content,
+      .product-detail-packing-unit,
+      .product-detail-packing-unit,
       .product-detail-reference-content,
       .product-detail-tax-pre {
         line-height: 1.75rem;

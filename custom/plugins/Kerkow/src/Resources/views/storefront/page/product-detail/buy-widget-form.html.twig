@@ -1,15 +1,9 @@
 {% sw_extends '@Storefront/storefront/page/product-detail/buy-widget-form.html.twig' %}
 {% block page_product_detail_buy_quantity_container %}
 	<div class="col-12 product-detail-qty-select">
+
 		{% block page_product_detail_buy_quantity %}
-			<select name="lineItems[{{ product.id }}][quantity]" class="custom-select product-detail-quantity-select">
-				{% for quantity in range(product.minPurchase, product.calculatedMaxPurchase, product.purchaseSteps) %}
-					<option value="{{ quantity }}">
-						{{ quantity }}
-						{{ "product.packUnit"|trans|sw_sanitize }}
-					</option>
-				{% endfor %}
-			</select>
+			{{ parent() }}
 		{% endblock %}
 	</div>
 {% endblock %}

@@ -159,6 +159,22 @@
 							</span>
 						{% endblock %}
 					</div>
+					{% block page_product_detail_packing_unit %}
+						{% if page.product.customFields["custom_product_data_unit"] %}
+							<div class="product-detail-packing-unit">
+								{% block page_product_detail_packing_unit_label %}
+									<span class="packing-unit-label">
+										{{ "kerkow.packingUnitLabel"|trans|sw_sanitize }}
+									</span>
+								{% endblock %}
+								{% block page_product_detail_packing_unit_content %}
+									<span class="packing-unit-content">
+										{{ page.product.customFields["custom_product_data_unit"] }}
+									</span>
+								{% endblock %}
+							</div>
+						{% endif %}
+					{% endblock %}
 					<div class="product-detail-reference-content">
 
 						{% if price.referencePrice is not null %}
