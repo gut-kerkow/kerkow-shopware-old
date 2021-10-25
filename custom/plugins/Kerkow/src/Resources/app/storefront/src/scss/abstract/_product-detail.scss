@@ -139,11 +139,58 @@
     }
   }
 
-  .page-product-detail-description {
+  .page-product-detail-content {
     margin-top: 3rem;
+    margin-bottom: 2rem;
     color: $kerkow-blue;
-    @include gt-medium;
-    font-size: 1rem;
+    @include gt-book;
+    font-size: 18px;
+    .product-detail-accordion-container {
+      .tab {
+        border-top: rgba($color: $kerkow-blue, $alpha: 0.2) 2px solid;
+        position: relative;
+        &:last-of-type {
+          border-bottom: rgba($color: $kerkow-blue, $alpha: 0.2) 2px solid;
+        }
+        .tab-button {
+          position: absolute;
+          right: 1rem;
+          top: 0.75rem;
+          span {
+            cursor: pointer;
+          }
+          .arrow-down {
+            svg {
+              margin-top: 1rem;
+              width: 1rem;
+              height: 1rem;
+              transform: rotate(90deg);
+            }
+          }
+          .arrow-up {
+            svg {
+              width: 1rem;
+              height: 1rem;
+              transform: rotate(-90deg);
+            }
+          }
+        }
+        .tab-content {
+          h2 {
+            @include gt-bold;
+          }
+          margin-top: 1rem;
+          margin-bottom: 1rem;
+          .tab-content-text {
+            margin-top: 1.5rem;
+            overflow: hidden;
+            dt {
+              font-weight: unset;
+            }
+          }
+        }
+      }
+    }
     h2 {
       @include gt-black;
       font-size: 1.2rem;
@@ -151,26 +198,10 @@
       text-transform: unset;
     }
     .product-detail-animal {
-      padding: 2rem;
+      padding: 0 6rem 2rem 6rem;
     }
   }
-  .product-detail-data {
-    margin-top: 2rem;
-    color: $kerkow-blue;
-    @include gt-medium;
-    h2 {
-      @include gt-black;
-      font-size: 1.2rem;
-      color: $kerkow-blue;
-      text-transform: none;
-    }
-    .allergens {
-      margin-top: 2rem;
-    }
-    dt {
-      font-weight: unset;
-    }
-  }
+
   .product-detail-cross-selling {
     .cross-selling-item {
       &:nth-of-type(even) {
@@ -284,10 +315,10 @@
     .product-detail-configurator-container {
       margin-top: 1.5rem;
     }
-    .page-product-detail-description {
+    .page-product-detail-content {
       .product-detail-animal {
-        margin-top: 1.5rem;
-        padding: 0 15rem;
+        margin-top: 0;
+        padding: 0 10rem 2rem 10rem;
       }
     }
     .product-detail-cross-selling {
@@ -321,17 +352,10 @@
       }
     }
   }
-  .product-content-position {
-    div:nth-child(1) {
-      order: 2;
-    }
-    div:nth-child(2) {
-      order: 1;
-    }
-  }
   .product-detail {
-    .page-product-detail-description {
+    .page-product-detail-content {
       .product-detail-animal {
+        margin-top: 7.5rem;
         padding: 0 7rem;
       }
     }
@@ -389,7 +413,12 @@
       }
     }
   }
+  .product-detail-accordion-container {
+    padding: 0;
+    padding-left: 7.5rem;
+  }
 }
+
 @include media-breakpoint-only(md) {
   .product-detail {
     .product-detail-headline {

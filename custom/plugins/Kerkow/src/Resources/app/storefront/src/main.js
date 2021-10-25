@@ -14,6 +14,7 @@ import SurchargeInfo from "./surcharge-info/surcharge-info.plugin";
 //import GoogleAnalyticsPluginExtension from "./google-analytics/google-analytics-extension.plugin";
 import FilterCustomSelectPlugin from "./listing/filter-custom-select.plugin";
 import FormCmsHandlerExtension from "./forms/form-cms-handler-extension.plugin";
+import PdpTabsPlugin from "./pdp-tabs/pdp-tabs.plugin";
 
 // Register them via the existing PluginManager
 const PluginManager = window.PluginManager;
@@ -79,3 +80,5 @@ PluginManager.override(
   FormCmsHandlerExtension,
   ".cms-element-form form"
 );
+
+PluginManager.register("PdpTabs", PdpTabsPlugin, "[data-pdp-tabs]");

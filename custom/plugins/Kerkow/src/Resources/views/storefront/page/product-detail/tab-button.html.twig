@@ -1,0 +1,10 @@
+{% block product_detail_description_tab_button %}
+	<div class="tab-button">
+		<span class="js_tab_button js_close_button arrow-up{% if state == 'closed' %} d-none{% endif %}">
+			{% sw_include '@kerkow/storefront/custom/icons/arrow-icon.html.twig' %}
+		</span>
+		<span class="js_tab_button js_open_button arrow-down{% if state == 'open' %} d-none{% endif %}">
+			{% sw_include '@kerkow/storefront/custom/icons/arrow-icon.html.twig' %}
+		</span>
+	</div>
+{% endblock %}
