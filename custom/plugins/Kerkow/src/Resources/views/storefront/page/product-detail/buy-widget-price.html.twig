@@ -122,6 +122,18 @@
 				{% endblock %}
 			{% endif %}
 		{% endblock %}
+
+		{% block page_product_detail_data_rich_snippet_price_specification %}
+			<span itemprop="priceSpecification" itemscope="" itemtype="https://schema.org/UnitPriceSpecification">
+				<meta itemprop="priceCurrency" content="{{ context.currency.translated.shortName }}"/>
+				<meta itemprop="price" {% if price.referencePrice is not null %} content="{{ price.referencePrice.price }}" {% else %} content="{{ price.unitPrice }}" {% endif %}>
+				<span itemprop="referenceQuantity" itemscope itemtype="https://schema.org/QuantitativeValue">
+					<meta itemprop="value" {% if price.referencePrice is not null %} content="{{ price.referencePrice.referenceUnit }}" {% else %} content="{{ page.product.purchaseUnit }}" {% endif %}>
+					<meta itemprop="unitCode" {% if price.referencePrice is not null %} content="{{ price.referencePrice.unitName }}" {% else %} content="{{ page.product.unit.name }}" {% endif %}>
+				</span>
+			</span>
+		{% endblock %}
+
 		{% block page_product_surcharge %}
 			{% if page.dvsnProductOptions is defined and page.dvsnProductOptions is iterable and page.dvsnProductOptions|length > 0 %}
 				{% set priceSurcharge = 0 %}
