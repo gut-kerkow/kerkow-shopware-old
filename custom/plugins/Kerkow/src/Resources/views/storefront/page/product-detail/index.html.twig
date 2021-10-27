@@ -43,7 +43,7 @@
 								{% endblock %}
 								{% if page.product.customFields["custom_product_description_short_text"] %}
 									<div class="align-items-center product-detail-description-short">
-										<div class="product-short-description-container">
+										<div class="product-short-description-container" itemprop="description">
 											{{ page.product.customFields["custom_product_description_short_text"]|trans|raw }}
 										</div>
 									</div>
