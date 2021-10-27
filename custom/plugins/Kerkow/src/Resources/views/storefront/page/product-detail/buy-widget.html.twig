@@ -174,12 +174,16 @@
 				{% block page_product_detail_buy_form %}
 					{% if page.product.availableStock <= 0 %}
 						<div class="product-detail-sold-out">
+							<link itemprop="availability" href="https://schema.org/OutOfStock"/>
+
 							{{ "kerkow.soldOut"|trans }}
 						</div>
 					{% endif %}
 
 
 					{% if page.product.active and page.product.availableStock > 0 %}
+						<link itemprop="availability" href="https://schema.org/InStock"/>
+
 						{{ parent() }}
 
 					{% endif %}
