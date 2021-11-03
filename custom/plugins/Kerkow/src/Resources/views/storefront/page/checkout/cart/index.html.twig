@@ -14,11 +14,6 @@
 							{%  sw_include '@Storefront/storefront/component/checkout/cart-alerts.html.twig' %}
 						{% endblock %}
 					{% endblock %}
-					<div class="flashbags">
-						{% for type, messages in app.flashes %}
-							{% sw_include '@Storefront/storefront/utilities/alert.html.twig' with { type: type, list: messages } %}
-						{% endfor %}
-					</div>
 				{% endblock %}
 			</div>
 		{% endblock %}
@@ -47,23 +42,28 @@
 						<div class="cart-headline">
 							{{ "kerkow.deliveryDateHeadline"|trans }}
 						</div>
-						{% set dayString =  'general.day.'~deliveryInfos.date|date("D") %}
-						{% set day =  dayString|trans %}
-						{% set monthString =  'general.month.'~deliveryInfos.date|date("M") %}
-						{% set month =  monthString|trans %}
-						{% if deliveryInfos.date|date("m/d/Y") == ("now"|date_modify("+1 day")|date("m/d/Y")) %}
-							<div class="delivery-time">
-								<span class="product-detail-deliver-tomorrow">
-									{{ "kerkow.actualDeliverTomorrow"|trans|raw }}
-								</span>
-							</div>
-						{% else %}
-							<div class="delivery-time">
-								<span class="product-detail-deliver-date">
-									{{ "kerkow.actualDeliverTime"|trans({'%day%': day, '%date%': deliveryInfos.date|date("d"), '%month%': month}) }}
-								</span>
-							</div>
-						{% endif %}
+						{% for deliveryInfo in deliveryInfos %}
+							{% set dayString =  'general.day.'~deliveryInfo.date|date("D") %}
+							{% set day =  dayString|trans %}
+							{% set areaString =  'kerkow.'~deliveryInfo.area %}
+							{% set monthString =  'general.month.'~deliveryInfo.date|date("M") %}
+							{% set month =  monthString|trans %}
+							{% if deliveryInfo.date|date("m/d/Y") == ("now"|date_modify("+1 day")|date("m/d/Y")) %}
+								<div class="delivery-time">
+									{{ areaString|trans }}
+									<span class="product-detail-deliver-tomorrow">
+										{{ "kerkow.actualDeliverTomorrow"|trans|raw }}
+									</span>
+								</div>
+							{% else %}
+								<div class="delivery-time">
+									{{ areaString|trans }}
+									<span class="product-detail-deliver-date">
+										{{ "kerkow.actualDeliverTime"|trans({'%day%': day, '%date%': deliveryInfo.date|date("d"), '%month%': month}) }}
+									</span>
+								</div>
+							{% endif %}
+						{% endfor %}
 					</div>
 					<div class="page-checkout-actions-payment">
 						<div class="cart-headline">

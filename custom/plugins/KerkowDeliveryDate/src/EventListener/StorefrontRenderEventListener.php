@@ -24,28 +24,16 @@ class StorefrontRenderEventListener implements EventSubscriberInterface
     public function onRender(StorefrontRenderEvent $event): void
     {
 
-        $event->setParameter('deliveryInfos', $this->getDelierableDate(
+        $event->setParameter('deliveryInfos', $this->getDeliverableDate(
             $event->getSalesChannelContext()
         ));
     }
 
 
 
-    private function getDelierableDate(SalesChannelContext $context): array
+    private function getDeliverableDate(SalesChannelContext $context): array
     {
 
-        $isAngel = false;
-        $selected_shipping = $context->getShippingMethod()->getName();
-        if ($selected_shipping == "Angel") {
-            $isAngel = true;
-        }
-
-        // Define the deliverable days of the week
-        if ($isAngel) {
-            $deliverable_dates = [1, /*monday*/ 3, /*wednesday*/ 5, /*friday*/];
-        } else {
-            $deliverable_dates = [2, /*tuesday*/ 3, /*wednesday*/ 4, /*wednesday*/ 5, /*friday*/];
-        }
 
         // define holidays
         $holidays = [
@@ -71,19 +59,36 @@ class StorefrontRenderEventListener implements EventSubscriberInterface
             '01 Jan 2022',
         ];
 
-        // Latest Order hour
-        if ($isAngel) {
-            $latest_hour = 9; // One here means 2'o clock in the morning
-        } else {
-            $latest_hour = 1; // One here means 2'o clock in the morning
+        $deliveryInfos = array();
+        $isAngel = false;
+        for ($k = 0; $k < 2; $k++) {
+
+            // Define the deliverable days of the week
+            if ($isAngel) {
+                $deliverable_dates = [1, /*monday*/ 3, /*wednesday*/ 5, /*friday*/];
+            } else {
+                $deliverable_dates = [2, /*tuesday*/ 3, /*wednesday*/ 4, /*wednesday*/ 5, /*friday*/];
+            }
+
+
+
+            // Latest Order hour
+            if ($isAngel) {
+                $latest_hour = 9; // One here means 2'o clock in the morning
+            } else {
+                $latest_hour = 1; // One here means 2'o clock in the morning
+            }
+
+
+            // DateObject of Today
+            $date = new DateTime();
+
+            $deliveryInfos[] = $this->getNextDeliverableDay($date, $deliverable_dates, $holidays, $latest_hour, false, $isAngel);
+            $isAngel = true;
         }
 
 
-        // DateObject of Today
-        $date = new DateTime();
-
-
-        return $this->getNextDeliverableDay($date, $deliverable_dates, $holidays, $latest_hour, false, $isAngel);
+        return $deliveryInfos;
     }
 
     private function getNextDeliverableDay($date, $deliverable_dates, $holidays, $latest_hour, $holiday_mode, $isAngel)
@@ -166,7 +171,9 @@ class StorefrontRenderEventListener implements EventSubscriberInterface
                     $this->getNextDeliverableDay($last, $deliverable_dates, $holidays, $latest_hour, true, $isAngel);
                 }
 
-                return ["date" => $last, "server_time" => new DateTime()]; // found it, return quickly
+                $area = $isAngel ? "berlin" : "germany";
+
+                return ["date" => $last, "server_time" => new DateTime(), "area" => $area]; // found it, return quickly
             }
         }
     }

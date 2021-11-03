@@ -13,7 +13,10 @@
 					</button>
 				</div>
 				<div class="modal-body">
+					{% set minDate = deliveryInfos[0].date %}
 					{% if context.shippingMethod.name == "Angel" %}
+						{% set minDate = deliveryInfos[1].date %}
+
 						<div class="select-delivery-time-slot-container d-flex">
 							<div class="select-delivery-time-slot-label align-self-center">
 								{{ "kerkow.selectTimeSlot"|trans|raw }}
@@ -42,9 +45,9 @@
 								{% if page.extensions["customDeliveryDate"] %}
 									{% set defaultDate = page.extensions["customDeliveryDate"] %}
 								{% else %}
-									{% set defaultDate = deliveryInfos.date %}
+									{% set defaultDate = minDate %}
 								{% endif %}
-								<input class="select-date-picker js-select-date-picker" data-date-picker="true" data-defaultdate="{{ defaultDate|date("Y-m-d") }}" data-mindate="{{ deliveryInfos.date|date("Y-m-d") }}" data-method="{{ context.shippingMethod.name }}">
+								<input class="select-date-picker js-select-date-picker" data-date-picker="true" data-defaultdate="{{ defaultDate|date("Y-m-d") }}" data-mindate="{{ minDate|date("Y-m-d") }}" data-method="{{ context.shippingMethod.name }}">
 							</div>
 						</div>
 					{% endblock %}

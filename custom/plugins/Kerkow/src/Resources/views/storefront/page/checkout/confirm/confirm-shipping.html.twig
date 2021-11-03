@@ -30,8 +30,10 @@
 										{% set slotString = 'kerkow.deliverySlot.'~page.extensions["customDeliverySlot"] %}
 									{% endif %}
 								{% else %}
-									{% set date = deliveryInfos.date %}
+									{% set date = deliveryInfos[0].date %}
 									{% if context.shippingMethod.name == "Angel" %}
+										{% set date = deliveryInfos[1].date %}
+
 										{% set slotString = 'kerkow.deliverySlot.18to20' %}
 									{% endif %}
 								{% endif %}

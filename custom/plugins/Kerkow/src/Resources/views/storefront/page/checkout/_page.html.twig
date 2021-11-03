@@ -13,7 +13,9 @@
 							{% block base_flashbags_checkout %}
 								<div class="flashbags">
 									{% for type, messages in app.flashes %}
-										{% sw_include '@Storefront/storefront/utilities/alert.html.twig' with { type: type, list: messages } %}
+										{% if messages[0] != 'Die Versandart "UPS-Express" ist für Ihren aktuellen Warenkorb gesperrt.' %}
+											{% sw_include '@Storefront/storefront/utilities/alert.html.twig' with { type: type, list: messages } %}
+										{% endif %}
 									{% endfor %}
 								</div>
 							{% endblock %}

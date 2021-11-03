@@ -74,8 +74,7 @@
   .product-detail-content,
   .product-detail-packing-unit,
   .product-detail-reference-content,
-  .product-detail-tax,
-  .product-detail-deliver-date {
+  .product-detail-tax {
     font-size: 14px;
     @include alright-light;
     color: $kerkow-blue;
@@ -84,13 +83,18 @@
       text-decoration: underline;
     }
     .product-detail-delivery-container {
+      font-size: 13px;
+      .product-detail-delivery-headline {
+        text-decoration: underline;
+      }
       padding-top: 1rem;
       p {
         margin-bottom: 0;
       }
     }
     .product-detail-custom-delivery-time {
-      font-size: 0.7rem;
+      margin-top: 0.5rem;
+      font-size: 12px;
       @include alright-light;
       color: $kerkow-blue;
       margin-bottom: 0;
@@ -305,10 +309,11 @@
     .product-detail-reference-content,
     .product-detail-tax,
     .product-detail-deliver-date {
-      font-size: 0.8rem;
+      font-size: 14px;
     }
     .product-detail-content {
       .product-detail-delivery-container {
+        font-size: 14px;
         padding-top: 1rem;
       }
       .product-detail-qty-select {

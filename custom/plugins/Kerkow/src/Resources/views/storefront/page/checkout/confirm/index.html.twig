@@ -204,8 +204,9 @@
 										{% set deliverySlot = page.extensions["customDeliverySlot"] %}
 									{% endif %}
 								{% else %}
-									{% set deliveryDate = deliveryInfos.date %}
+									{% set deliveryDate = deliveryInfos[0].date %}
 									{% if context.shippingMethod.name == "Angel" %}
+										{% set deliveryDate = deliveryInfos[1].date %}
 										{% set deliverySlot = "18to20" %}
 									{% endif %}
 								{% endif %}

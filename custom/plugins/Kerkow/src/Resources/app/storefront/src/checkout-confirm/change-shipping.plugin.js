@@ -37,11 +37,9 @@ export default class changeShippingPlugin extends Plugin {
   }
 
   _selectShippingIfOnlyOne() {
-    if (this._inputFields.length <= 1) {
-      if (!this._inputFields[0].checked) {
-        this._inputFields[0].checked = true;
-        this.el.submit();
-      }
+    if (!this._inputFields[0].checked) {
+      this._inputFields[0].checked = true;
+      this.el.submit();
     }
   }
 }
