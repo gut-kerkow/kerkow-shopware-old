@@ -110,41 +110,57 @@
 						</div>
 					{% endblock %}
 					{% block page_product_delivery_date %}
-						<div class="product-detail-delivery-container">
-							<p class="product-detail-delivery-headline">
-								{{ "kerkow.deliveryDateHeadline"|trans }}
-							</p>
-							{% for deliveryInfo in deliveryInfos %}
+						{% if page.product.customFields["custom_voucher_isVoucher"] %}
+							<div class="product-detail-delivery-container">
+								<p class="product-detail-delivery-headline">
+									{{ "kerkow.voucherHeadline"|trans }}
+								</p>
+								<p>
 
-								{% set dayString =  'general.day.'~deliveryInfo.date|date("D") %}
-								{% set areaString =  'kerkow.'~deliveryInfo.area %}
-								{% set day =  dayString|trans %}
-								{% set monthString =  'general.month.'~deliveryInfo.date|date("M") %}
-								{% set month =  monthString|trans %}
-								{% if deliveryInfo.date|date("m/d/Y") == ("now"|date_modify("+1 day")|date("m/d/Y")) %}
-									<p>
-										{{ areaString|trans }}
-										<span class="product-detail-deliver-tomorrow">
-											{{ "kerkow.actualDeliverTomorrow"|trans|raw }}
-										</span>
-									</p>
-								{% else %}
-									<p>
-										{{ areaString|trans }}
-										<span class="product-detail-deliver-date">
-											{{ "kerkow.actualDeliverTime"|trans({'%day%': day, '%date%': deliveryInfo.date|date("d"), '%month%': month}) }}
-										</span>
-									</p>
-
-								{% endif %}
-							{% endfor %}
-
-						</div>
-						{% block page_product_detail_delivery_notice %}
-							<div class="product-detail-custom-delivery-time">
-								{{ "kerkow.customTime"|trans|raw }}
+									<span>
+										{{ "kerkow.voucherConditions"|trans|raw }}
+									</span>
+								</p>
 							</div>
-						{% endblock %}
+						{% else %}
+
+
+							<div class="product-detail-delivery-container">
+								<p class="product-detail-delivery-headline">
+									{{ "kerkow.deliveryDateHeadline"|trans }}
+								</p>
+								{% for deliveryInfo in deliveryInfos %}
+
+									{% set dayString =  'general.day.'~deliveryInfo.date|date("D") %}
+									{% set areaString =  'kerkow.'~deliveryInfo.area %}
+									{% set day =  dayString|trans %}
+									{% set monthString =  'general.month.'~deliveryInfo.date|date("M") %}
+									{% set month =  monthString|trans %}
+									{% if deliveryInfo.date|date("m/d/Y") == ("now"|date_modify("+1 day")|date("m/d/Y")) %}
+										<p>
+											{{ areaString|trans }}
+											<span class="product-detail-deliver-tomorrow">
+												{{ "kerkow.actualDeliverTomorrow"|trans|raw }}
+											</span>
+										</p>
+									{% else %}
+										<p>
+											{{ areaString|trans }}
+											<span class="product-detail-deliver-date">
+												{{ "kerkow.actualDeliverTime"|trans({'%day%': day, '%date%': deliveryInfo.date|date("d"), '%month%': month}) }}
+											</span>
+										</p>
+
+									{% endif %}
+								{% endfor %}
+
+							</div>
+							{% block page_product_detail_delivery_notice %}
+								<div class="product-detail-custom-delivery-time">
+									{{ "kerkow.customTime"|trans|raw }}
+								</div>
+							{% endblock %}
+						{% endif %}
 					{% endblock %}
 
 					{% set remoteClickOptions = {

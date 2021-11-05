@@ -26,6 +26,11 @@
             "extensions": []
         },
         {
+            "filepath": "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/NetiNextEasyCoupon\/src\/Resources\/app\/storefront\/src\/main.js",
+            "resolveMapping": [],
+            "extensions": []
+        },
+        {
             "filepath": "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/Kerkow\/src\/Resources\/app\/storefront\/src\/main.js",
             "resolveMapping": [],
             "extensions": []
@@ -58,6 +63,11 @@
         },
         {
             "filepath": "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/DvsnProductOption\/src\/Resources\/app\/storefront\/src\/scss\/base.scss",
+            "resolveMapping": [],
+            "extensions": []
+        },
+        {
+            "filepath": "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/NetiNextEasyCoupon\/src\/Resources\/app\/storefront\/src\/scss\/base.scss",
             "resolveMapping": [],
             "extensions": []
         },
