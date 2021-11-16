@@ -122,6 +122,17 @@
 									</span>
 								</p>
 							</div>
+						{% elseif page.product.customFields["custom_preorder_isPreOrder"] %}
+							<div class="product-detail-delivery-container">
+								<p class="product-detail-delivery-headline">
+									{{ "kerkow.voucherHeadline"|trans }}
+								</p>
+								<p>
+									<span>
+										{{ "kerkow.preOrderConditions"|trans|raw }}
+									</span>
+								</p>
+							</div>
 						{% else %}
 
 
