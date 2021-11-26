@@ -1,6 +1,0 @@
-{% autoescape 'csv' %}
-A,B,C,D,E,F,I,L,M,P
-{% for product in products %}
-{{ product.productNumber }},{{ product.ean }},{{ product.manufacturerNumber }},{{ product.manufacturer.name }},{{ product.name }},{{ product.gross }},{{ product.deliveryTime.name }},{{ product.url }},{{ product.image_link }},{{ product.shippingPrice }}
-{% endfor %}
-{% endautoescape %}

@@ -266,6 +266,18 @@
 			{% block page_product_detail_tabs %}
 			{% endblock %}
 
+			{% block page_product_detail_preperation_tipps %}
+				{% if page.product.customFields["custom_preperationtips_recipes_showPreperations"] %}
+					<div class="row product-detail-prep-recipes-block">
+						<div class="product-detail-prep-recipes-content">
+							<div class="product-detail-prep-recipes-prep-content">
+								{{ page.product.customFields["custom_preperationtips_recipes_prepContent"]|sw_sanitize }}
+							</div>
+						</div>
+					</div>
+				{% endif %}				
+			{% endblock %}
+
 			{% block page_product_detail_cross_selling %}
 				{% if page.crossSellings|length > 0 %}
 					<div class="row product-detail-cross-selling">

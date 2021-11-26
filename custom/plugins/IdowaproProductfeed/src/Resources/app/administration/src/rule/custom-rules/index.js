@@ -1,7 +1,0 @@
-import './productfeed-condition-product-name'
-import './productfeed-condition-product-price'
-import './productfeed-condition-product-category'
-import './productfeed-condition-product-id'
-import './productfeed-condition-category-name'
-import './productfeed-condition-manufacturer-name'
-import './productfeed-condition-product-enabled'

@@ -208,6 +208,15 @@
     }
   }
 
+  .product-detail-prep-recipes-block {
+    background-color: $kerkow-light-grey;
+    margin: 2rem -6.25rem;
+    padding: 2rem 0;
+    .product-detail-prep-recipes-content {
+      margin: 0 6.25rem;
+    }
+  }
+
   .product-detail-cross-selling {
     .cross-selling-item {
       &:nth-of-type(even) {
