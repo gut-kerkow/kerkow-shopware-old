@@ -317,12 +317,12 @@
             "styleFiles": []
         }
     },
-    "IdowaproProductfeed": {
-        "basePath": "custom\/plugins\/IdowaproProductfeed\/src\/",
+    "NetiNextEasyCoupon": {
+        "basePath": "custom\/plugins\/NetiNextEasyCoupon\/src\/",
         "views": [
             "Resources\/views"
         ],
-        "technicalName": "idowapro-productfeed",
+        "technicalName": "neti-next-easy-coupon",
         "administration": {
             "path": "Resources\/app\/administration\/src",
             "entryFilePath": "Resources\/app\/administration\/src\/main.js",
@@ -330,9 +330,11 @@
         },
         "storefront": {
             "path": "Resources\/app\/storefront\/src",
-            "entryFilePath": null,
+            "entryFilePath": "Resources\/app\/storefront\/src\/main.js",
             "webpack": null,
-            "styleFiles": []
+            "styleFiles": [
+                "custom\/plugins\/NetiNextEasyCoupon\/src\/Resources\/app\/storefront\/src\/scss\/base.scss"
+            ]
         }
     }
 }

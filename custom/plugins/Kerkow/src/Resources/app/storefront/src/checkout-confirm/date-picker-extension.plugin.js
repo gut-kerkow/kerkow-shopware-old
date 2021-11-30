@@ -42,6 +42,24 @@ export default class DatePickerExtensionPlugin extends DatePickerPlugin {
       "2021-12-31",
       "2022-01-01",
     ],
+    angel_holidays: [
+      "2021-11-30",
+      "2021-12-02",
+      "2021-12-07",
+      "2021-12-09",
+      "2021-12-14",
+      "2021-12-16",
+      "2021-12-28",
+      "2021-12-30",
+      "2022-01-04",
+      "2022-01-06",
+      "2022-01-11",
+      "2022-01-13",
+      "2022-01-18",
+      "2022-01-20",
+      "2022-01-25",
+      "2022-01-27",
+    ],
     defaultDate: null,
   };
 
@@ -58,6 +76,11 @@ export default class DatePickerExtensionPlugin extends DatePickerPlugin {
     };
 
     this.options.shippingMethod = this.el.dataset.method;
+    if (this.options.shippingMethod == "Angel") {
+      this.options.holidays = this.options.holidays.concat(
+        this.options.angel_holidays
+      );
+    }
     this.options.minDate = this.el.dataset.mindate;
     this.options.defaultDate = this.el.dataset.defaultdate;
     const minDateObject = new Date(this.options.minDate);
@@ -94,7 +117,11 @@ export default class DatePickerExtensionPlugin extends DatePickerPlugin {
     ) {
       if (
         (this.options.shippingMethod == "Angel" &&
-          (date.getDay() == 1 || date.getDay() == 3 || date.getDay() == 5)) ||
+          (date.getDay() == 1 ||
+            date.getDay() == 2 ||
+            date.getDay() == 3 ||
+            date.getDay() == 4 ||
+            date.getDay() == 5)) ||
         (this.options.shippingMethod != "Angel" &&
           (date.getDay() == 2 ||
             date.getDay() == 3 ||

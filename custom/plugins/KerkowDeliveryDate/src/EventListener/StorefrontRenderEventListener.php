@@ -59,13 +59,28 @@ class StorefrontRenderEventListener implements EventSubscriberInterface
             '01 Jan 2022',
         ];
 
+        // additional angel holidays
+        $angel_holidays = [
+            '30 Nov 2021',
+            '02 Dec 2021',
+            '07 Dec 2021',
+            '09 Dec 2021',
+            '14 Dec 2021',
+            '16 Dec 2021',
+            '28 Dec 2021',
+            '30 Dec 2021',
+        ];
+
         $deliveryInfos = array();
         $isAngel = false;
         for ($k = 0; $k < 2; $k++) {
+            if ($isAngel) {
+                $holidays = array_merge($holidays, $angel_holidays);
+            }
 
             // Define the deliverable days of the week
             if ($isAngel) {
-                $deliverable_dates = [1, /*monday*/ 3, /*wednesday*/ 5, /*friday*/];
+                $deliverable_dates = [1, /*monday*/ 2, /*tuesday*/ 3, /*wednesday*/ 4, /*wednesday*/ 5, /*friday*/];
             } else {
                 $deliverable_dates = [2, /*tuesday*/ 3, /*wednesday*/ 4, /*wednesday*/ 5, /*friday*/];
             }
