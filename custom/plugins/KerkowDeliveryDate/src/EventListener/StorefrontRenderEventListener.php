@@ -52,6 +52,7 @@ class StorefrontRenderEventListener implements EventSubscriberInterface
             '13 May 2021',
             '24 May 2021',
             '03 Oct 2021',
+            '23 Dec 2021',
             '24 Dec 2021',
             '25 Dec 2021',
             '26 Dec 2021',
@@ -89,14 +90,15 @@ class StorefrontRenderEventListener implements EventSubscriberInterface
 
             // Latest Order hour
             if ($isAngel) {
-                $latest_hour = 9; // One here means 2'o clock in the morning
+                $latest_hour = 5; // One here means 2'o clock in the morning
             } else {
                 $latest_hour = 1; // One here means 2'o clock in the morning
             }
 
 
             // DateObject of Today
-            $date = new DateTime();
+            //$date = new DateTime();
+            $date = new DateTime("2021-12-22 06:01:00");
 
             $deliveryInfos[] = $this->getNextDeliverableDay($date, $deliverable_dates, $holidays, $latest_hour, false, $isAngel);
             $isAngel = true;
