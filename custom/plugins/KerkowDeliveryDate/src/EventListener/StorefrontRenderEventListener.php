@@ -56,6 +56,7 @@ class StorefrontRenderEventListener implements EventSubscriberInterface
             '24 Dec 2021',
             '25 Dec 2021',
             '26 Dec 2021',
+            '27 Dec 2021',
             '31 Dec 2021',
             '01 Jan 2022',
         ];
@@ -98,7 +99,7 @@ class StorefrontRenderEventListener implements EventSubscriberInterface
 
             // DateObject of Today
             //$date = new DateTime();
-            $date = new DateTime("2021-12-22 06:01:00");
+            $date = new DateTime();
 
             $deliveryInfos[] = $this->getNextDeliverableDay($date, $deliverable_dates, $holidays, $latest_hour, false, $isAngel);
             $isAngel = true;
