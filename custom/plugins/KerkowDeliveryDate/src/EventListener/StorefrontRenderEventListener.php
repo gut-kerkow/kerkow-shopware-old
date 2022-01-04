@@ -37,28 +37,23 @@ class StorefrontRenderEventListener implements EventSubscriberInterface
 
         // define holidays
         $holidays = [
-            '22 Dec 2020',
-            '23 Dec 2020',
-            '24 Dec 2020',
-            '25 Dec 2020',
-            '26 Dec 2020',
-            '31 Dec 2020',
-            '01 Jan 2021',
-            '08 Mar 2021',
-            '30 Mar 2021',
-            '02 Apr 2021',
-            '05 Apr 2021',
-            '01 May 2021',
-            '13 May 2021',
-            '24 May 2021',
-            '03 Oct 2021',
-            '23 Dec 2021',
-            '24 Dec 2021',
-            '25 Dec 2021',
-            '26 Dec 2021',
-            '27 Dec 2021',
-            '31 Dec 2021',
             '01 Jan 2022',
+            '08 Mar 2022',
+            '15 Apr 2022',
+            '17 Apr 2022',
+            '18 Apr 2022',
+            '01 May 2022',
+            '26 May 2022',
+            '05 Jun 2022',
+            '06 Jun 2022',
+            '16 Jun 2022',
+            '03 Oct 2022',
+            '31 Oct 2022',
+            '01 Nov 2022',
+            '24 Dec 2022',
+            '25 Dec 2022',
+            '26 Dec 2022',
+            '31 Dec 2022',
         ];
 
         // additional angel holidays
@@ -82,7 +77,7 @@ class StorefrontRenderEventListener implements EventSubscriberInterface
 
             // Define the deliverable days of the week
             if ($isAngel) {
-                $deliverable_dates = [1, /*monday*/ 2, /*tuesday*/ 3, /*wednesday*/ 4, /*wednesday*/ 5, /*friday*/];
+                $deliverable_dates = [1, /*monday*/ 3, /*wednesday*/ 5, /*friday*/];
             } else {
                 $deliverable_dates = [2, /*tuesday*/ 3, /*wednesday*/ 4, /*wednesday*/ 5, /*friday*/];
             }
