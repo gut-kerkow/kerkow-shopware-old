@@ -140,10 +140,10 @@
 								<p class="product-detail-delivery-headline">
 									{{ "kerkow.deliveryDateHeadline"|trans }}
 								</p>
-								{% for deliveryInfo in deliveryInfos %}
+								{% for deliveryInfo in page.deliveryDateData %}
 
 									{% set dayString =  'general.day.'~deliveryInfo.date|date("D") %}
-									{% set areaString =  'kerkow.'~deliveryInfo.area %}
+									{% set areaString =  deliveryInfo.area %}
 									{% set day =  dayString|trans %}
 									{% set monthString =  'general.month.'~deliveryInfo.date|date("M") %}
 									{% set month =  monthString|trans %}

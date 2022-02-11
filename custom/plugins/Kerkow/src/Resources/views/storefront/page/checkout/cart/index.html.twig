@@ -42,10 +42,10 @@
 						<div class="cart-headline">
 							{{ "kerkow.deliveryDateHeadline"|trans }}
 						</div>
-						{% for deliveryInfo in deliveryInfos %}
+						{% for deliveryInfo in page.deliveryDateData %}
 							{% set dayString =  'general.day.'~deliveryInfo.date|date("D") %}
 							{% set day =  dayString|trans %}
-							{% set areaString =  'kerkow.'~deliveryInfo.area %}
+							{% set areaString =  deliveryInfo.area %}
 							{% set monthString =  'general.month.'~deliveryInfo.date|date("M") %}
 							{% set month =  monthString|trans %}
 							{% if deliveryInfo.date|date("m/d/Y") == ("now"|date_modify("+1 day")|date("m/d/Y")) %}

@@ -5,18 +5,29 @@
 
     <services>
 
+        <service id="Kerkow\DeliveryDate\Helper\DeliveryDateHelper">
+            <argument type="service" id="category.repository"/>
+        </service>
+
         <service id="Kerkow\DeliveryDate\Storefront\Subscriber\ConfirmDeliveryDateSubscriber">
             <argument type="service" id="Shopware\Core\System\SalesChannel\Context\SalesChannelContextPersister"/>
             <tag name="kernel.event_subscriber"/>
         </service>
+
         <service id="Kerkow\DeliveryDate\Storefront\Subscriber\OrderDeliveryDateSubscriber">
             <tag name="kernel.event_subscriber"/>
             <argument type="service" id="request_stack" />
             <argument type="service" id="order.repository" />
         </service>
 
-        <service id="Kerkow\DeliveryDate\EventListener\StorefrontRenderEventListener">
+        <service id="Kerkow\DeliveryDate\Storefront\Subscriber\DeliveryDateSubscriber">
             <tag name="kernel.event_subscriber"/>
+            <argument type="service" id="Kerkow\DeliveryDate\Helper\DeliveryDateHelper" />
+        </service>
+
+        <service id="Kerkow\DeliveryDate\Storefront\Subscriber\CheckoutConfirmPageSubscriber">
+            <tag name="kernel.event_subscriber"/>
+            <argument type="service" id="Kerkow\DeliveryDate\Helper\DeliveryDateHelper" />
         </service>
 
         <service id="Kerkow\DeliveryDate\Storefront\Controller\ChangeDeliveryDateController" public="true">

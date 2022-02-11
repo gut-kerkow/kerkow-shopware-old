@@ -34,6 +34,28 @@ class StorefrontRenderEventListener implements EventSubscriberInterface
     private function getDeliverableDate(SalesChannelContext $context): array
     {
 
+        // Get custom holiday for shipping method
+        $customDeliveryDates = [];
+
+        if (isset($context->getShippingMethod()->getCustomFields()["custom_delivery_dates_list"])) {
+            $customDeliveryDates = explode(",", $context->getShippingMethod()->getCustomFields()["custom_delivery_dates_list"]);
+        }
+
+        $deliverable_dates = $context->getShippingMethod()->getCustomFields()["custom_delivery_dates_weekdays"];
+
+        // Create the array
+        $custom_holidays = [];
+
+        // Transform input array to date format
+        foreach ($customDeliveryDates as $customDate) {
+            if (!strtotime($customDate)) {
+                continue;
+            }
+            $customDate = strtotime($customDate);
+            $customDate = date("d M Y", $customDate);
+            array_push($custom_holidays, $customDate);
+        }
+
 
         // define holidays
         $holidays = [
@@ -76,11 +98,11 @@ class StorefrontRenderEventListener implements EventSubscriberInterface
             }
 
             // Define the deliverable days of the week
-            if ($isAngel) {
-                $deliverable_dates = [1, /*monday*/ 3, /*wednesday*/ 5, /*friday*/];
-            } else {
-                $deliverable_dates = [2, /*tuesday*/ 3, /*wednesday*/ 4, /*wednesday*/ 5, /*friday*/];
-            }
+            //if ($isAngel) {
+            //   $deliverable_dates = [1, /*monday*/ 3, /*wednesday*/ 5, /*friday*/];
+            //} else {
+            //   $deliverable_dates = [2, /*tuesday*/ 3, /*wednesday*/ 4, /*wednesday*/ 5, /*friday*/];
+            //}
 
 
 
@@ -96,7 +118,7 @@ class StorefrontRenderEventListener implements EventSubscriberInterface
             //$date = new DateTime();
             $date = new DateTime();
 
-            $deliveryInfos[] = $this->getNextDeliverableDay($date, $deliverable_dates, $holidays, $latest_hour, false, $isAngel);
+            $deliveryInfos[] = $this->getNextDeliverableDay($date, $deliverable_dates, $holidays, $latest_hour, false, $isAngel, $deliverable_dates);
             $isAngel = true;
         }
 
@@ -104,7 +126,7 @@ class StorefrontRenderEventListener implements EventSubscriberInterface
         return $deliveryInfos;
     }
 
-    private function getNextDeliverableDay($date, $deliverable_dates, $holidays, $latest_hour, $holiday_mode, $isAngel)
+    private function getNextDeliverableDay($date, $deliverable_dates, $holidays, $latest_hour, $holiday_mode, $isAngel, $customWeekdays)
     {
 
         if (!$holiday_mode) {
@@ -166,27 +188,30 @@ class StorefrontRenderEventListener implements EventSubscriberInterface
         }
 
         foreach ($deliverable_dates as $day) {
+            $weekday = date('w', strtotime($day));
 
-            if ($day >= $day_of_week) {
+            if ($weekday >= $day_of_week) {
 
                 // Check if day is holiday
-                $days_from_now = $day - $day_of_week;
+                $days_from_now = $weekday - $day_of_week;
                 $next_deliverable_day = $date->add(new DateInterval('P' . $days_from_now . 'D'));
                 $last = $next_deliverable_day;
 
                 if (in_array($next_deliverable_day->format("d M Y"), $holidays, true)) {
                     // reset latest_hour
                     $latest_hour = 23;
-                    $this->getNextDeliverableDay($last, $deliverable_dates, $holidays, $latest_hour, true, $isAngel);
+                    $this->getNextDeliverableDay($last, $deliverable_dates, $holidays, $latest_hour, true, $isAngel, $customWeekdays);
                 } elseif (in_array($packing_day->format("d M Y"), $holidays, true)) {
                     // reset latest_hour
                     $latest_hour = 23;
-                    $this->getNextDeliverableDay($last, $deliverable_dates, $holidays, $latest_hour, true, $isAngel);
+                    $this->getNextDeliverableDay($last, $deliverable_dates, $holidays, $latest_hour, true, $isAngel, $customWeekdays);
                 }
 
                 $area = $isAngel ? "berlin" : "germany";
 
-                return ["date" => $last, "server_time" => new DateTime(), "area" => $area]; // found it, return quickly
+
+
+                return ["date" => $last, "server_time" => new DateTime(), "area" => $area, "custom" => $customWeekdays]; // found it, return quickly
             }
         }
     }
