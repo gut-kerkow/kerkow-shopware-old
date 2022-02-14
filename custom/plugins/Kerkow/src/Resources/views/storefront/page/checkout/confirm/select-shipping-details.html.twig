@@ -13,9 +13,8 @@
 					</button>
 				</div>
 				<div class="modal-body">
-					{% set minDate = deliveryInfos[0].date %}
+					{% set minDate = page.deliveryDateData[0].date %}
 					{% if context.shippingMethod.name == "Angel" %}
-						{% set minDate = deliveryInfos[1].date %}
 
 						<div class="select-delivery-time-slot-container d-flex">
 							<div class="select-delivery-time-slot-label align-self-center">
