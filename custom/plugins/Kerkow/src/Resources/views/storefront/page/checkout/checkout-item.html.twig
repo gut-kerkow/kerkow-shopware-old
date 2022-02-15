@@ -60,7 +60,7 @@
 															{% block page_checkout_item_total_price_label %}
 															{% endblock %}
 															{% block page_checkout_item_total_price_inner %}
-																{{ lineItem.price.totalPrice|currency }}
+																{{ lineItem.price.totalPrice|format_currency('EUR') }}
 																{% block page_checkout_item_total_price_tax_symbol %}
 																{% endblock %}
 															{% endblock %}
@@ -203,7 +203,7 @@
 				{% if priceSurcharge > 0 %}
 					<div class="d-md-flex">
 						<div class="cart-item-product-surcharge">
-							{{ "kerkow.priceSurcharge"|trans({'%price%': priceSurcharge|currency}) }}
+							{{ "kerkow.priceSurcharge"|trans({'%price%': priceSurcharge|format_currency('EUR')}) }}
 						</div>
 					</div>
 				{% endif %}

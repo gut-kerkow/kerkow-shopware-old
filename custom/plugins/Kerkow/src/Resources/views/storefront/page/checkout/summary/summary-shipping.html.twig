@@ -1,0 +1,7 @@
+{% sw_extends '@Storefront/storefront/page/checkout/summary/summary-shipping.html.twig' %}
+
+{% block page_checkout_summary_shipping_value %}
+    <dd class="col-5 checkout-aside-summary-value">
+        {{ delivery.shippingCosts.totalPrice|format_currency('EUR') }}{{ "general.star"|trans|sw_sanitize }}
+    </dd>
+{% endblock %}

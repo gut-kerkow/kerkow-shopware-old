@@ -1,0 +1,7 @@
+{% sw_extends '@Storefront/storefront/page/checkout/summary/summary-position.html.twig' %}
+
+{% block page_checkout_summary_position_value %}
+    <dd class="col-5 checkout-aside-summary-value">
+        {{ summary.price.positionPrice|format_currency('EUR') }}{{ "general.star"|trans|sw_sanitize }}
+    </dd>
+{% endblock %}

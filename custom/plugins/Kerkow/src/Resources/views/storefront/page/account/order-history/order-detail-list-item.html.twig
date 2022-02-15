@@ -1,0 +1,23 @@
+{% sw_extends '@Storefront/storefront/page/account/order-history/order-detail-list-item.html.twig' %}
+
+{% block page_account_order_item_detail_price_value %}
+    <span class="order-item-value order-item-price-value">
+        {% if lineItem.type == 'promotion' %}
+            /
+        {% else %}
+            {{ lineItem.unitPrice|format_currency(order.currency.isoCode) }}{{ "general.star"|trans|sw_sanitize }}
+        {% endif %}
+    </span>
+{% endblock %}
+
+{% block page_account_order_item_detail_total_value %}
+    <span class="order-item-value order-item-total-value">
+        {{ lineItem.totalPrice|format_currency(order.currency.isoCode) }}{{ "general.star"|trans|sw_sanitize }}
+    </span>
+{% endblock %}
+
+{% block page_account_order_item_detail_referenceunit_content %}
+    <span class="order-price-reference-content">
+        ({{ referencePrice.price|format_currency(order.currency.isoCode) }}{{ "general.star"|trans|sw_sanitize }} / {{ referencePrice.referenceUnit }} {{ referencePrice.unitName }})
+    </span>
+{% endblock %}

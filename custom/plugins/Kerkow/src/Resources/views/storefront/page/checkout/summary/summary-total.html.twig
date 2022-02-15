@@ -1,0 +1,7 @@
+{% sw_extends '@Storefront/storefront/page/checkout/summary/summary-total.html.twig' %}
+
+{% block page_checkout_summary_total_value %}
+    <dd class="col-5 checkout-aside-summary-value checkout-aside-summary-total">
+        {{ summary.price.rawTotal|format_currency('EUR') }}{% if page.cart.price.taxStatus == "gross" %}{{ "general.star"|trans|sw_sanitize|trim }}{% endif %}
+    </dd>
+{% endblock %}

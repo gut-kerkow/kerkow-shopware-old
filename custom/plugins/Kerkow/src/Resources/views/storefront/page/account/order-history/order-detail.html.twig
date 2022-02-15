@@ -1,0 +1,15 @@
+{% sw_extends '@Storefront/storefront/page/account/order-history/order-detail.html.twig' %}
+
+{% block page_account_order_item_detail_shipping_costs_value %}
+    <dd class="col-6 col-md-4">{{ order.shippingTotal|format_currency(order.currency.isoCode) }}</dd>
+{% endblock %}
+
+{% block page_account_order_item_detail_amount_value %}
+    <dd class="col-6 col-md-4">
+        {% if order.isTaxFree %}
+            {{ order.amountNet|format_currency(order.currency.isoCode) }}
+        {% else %}
+            {{ order.amountTotal|format_currency(order.currency.isoCode) }}
+        {% endif %}
+    </dd>
+{% endblock %}

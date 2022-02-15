@@ -13,37 +13,37 @@
 				<p class="product-price{% if referncePrice.price.percentage > 0 %} with-list-price{% endif %}">
 					{% if product.priceRange %}
 						{% if referncePrice.unitName == "g" %}
-							{{ "#{referncePrice.price|currency}/#{referncePrice.referenceUnit}#{referncePrice.unitName}" }}
+							{{ "#{referncePrice.price|format_currency('EUR')}/#{referncePrice.referenceUnit}#{referncePrice.unitName}" }}
 						{% else %}
-							{{ "#{referncePrice.price|currency}/#{referncePrice.unitName}" }}
+							{{ "#{referncePrice.price|format_currency('EUR')}/#{referncePrice.unitName}" }}
 						{% endif %}
 					{% elseif product.calculatedPrices|length == 1 %}
-						{{ product.calculatedPrices.first.unitPrice|currency }}
+						{{ product.calculatedPrices.first.unitPrice|format_currency('EUR') }}
 					{% else %}
 						{% if referncePrice %}
 
 							{% if referncePrice.unitName == "g" %}
-								{{ "#{referncePrice.price|currency}/#{referncePrice.referenceUnit}#{referncePrice.unitName}" }}
+								{{ "#{referncePrice.price|format_currency('EUR')}/#{referncePrice.referenceUnit}#{referncePrice.unitName}" }}
 							{% else %}
-								{{ "#{referncePrice.price|currency}/#{referncePrice.unitName}" }}
+								{{ "#{referncePrice.price|format_currency('EUR')}/#{referncePrice.unitName}" }}
 							{% endif %}
 							{% if listPrice.percentage > 0 %}
 								{% set calculatedListPrice = listPrice.price / referncePrice.purchaseUnit * referncePrice.referenceUnit %}
 								<span class="list-price">
-									{{ "(#{calculatedListPrice|currency}/#{referncePrice.referenceUnit}#{referncePrice.unitName})" }}
+									{{ "(#{calculatedListPrice|format_currency('EUR')}/#{referncePrice.referenceUnit}#{referncePrice.unitName})" }}
 								</span>
 
 							{% endif %}
 						{% else %}
 							{% if product.unit.shortCode == "g" %}
-								{{ "#{product.calculatedPrice.unitPrice|currency}/#{product.purchaseUnit}#{product.unit.shortCode}" }}
+								{{ "#{product.calculatedPrice.unitPrice|format_currency('EUR')}/#{product.purchaseUnit}#{product.unit.shortCode}" }}
 							{% else %}
-								{{ "#{product.calculatedPrice.unitPrice|currency}/#{product.unit.shortCode}" }}
+								{{ "#{product.calculatedPrice.unitPrice|format_currency('EUR')}/#{product.unit.shortCode}" }}
 							{% endif %}
 							{% if listPrice.percentage > 0 %}
 								{% set calculatedListPrice = listPrice.price / product.purchaseUnit * product.referenceUnit %}
 								<span class="list-price">
-									{{ "(#{product.calculatedPrice.listPrice.price|currency}/#{product.referenceUnit}#{product.unit.shortCode})" }}
+									{{ "(#{product.calculatedPrice.listPrice.price|format_currency('EUR')}/#{product.referenceUnit}#{product.unit.shortCode})" }}
 								</span>
 
 							{% endif %}
@@ -59,18 +59,18 @@
 
 				<p class="product-price{% if listPrice.percentage > 0 %} with-list-price{% endif %}">
 					{% if product.priceRange %}
-						{{ fromPrice.unitPrice|currency }}
+						{{ fromPrice.unitPrice|format_currency('EUR') }}
 						-
-						{{ listingPrice.to.unitPrice|currency }}
+						{{ listingPrice.to.unitPrice|format_currency('EUR') }}
 					{% elseif product.calculatedPrices|length == 1 %}
-						{{ product.calculatedPrices.first.unitPrice|currency }}
+						{{ product.calculatedPrices.first.unitPrice|format_currency('EUR') }}
 					{% else %}
-						{{ product.calculatedPrice.unitPrice|currency }}
+						{{ product.calculatedPrice.unitPrice|format_currency('EUR') }}
 
 
 						{% if listPrice.percentage > 0 %}
 							<span class="list-price">
-								{{ listPrice.price|currency }}
+								{{ listPrice.price|format_currency('EUR') }}
 							</span>
 
 						{% endif %}
@@ -100,7 +100,7 @@
 								{% if product.priceRange %}
 
 									{{ "listing.listingTextFrom"|trans|sw_sanitize }}
-									{{ fromPrice.referencePrice.price|currency }}
+									{{ fromPrice.referencePrice.price|format_currency('EUR') }}
 									/
 									{{ fromPrice.referencePrice.referenceUnit }}
 									&nbsp;
@@ -108,7 +108,7 @@
 
 								{% else %}
 
-									{{ "(#{referncePrice.price|currency}" }}
+									{{ "(#{referncePrice.price|format_currency('EUR')}" }}
 									/
 									{{ referncePrice.referenceUnit }}
 									{{ "#{referncePrice.unitName})" }}

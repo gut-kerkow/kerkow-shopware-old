@@ -55,7 +55,7 @@
 
 												{% block page_product_detail_price_block_table_body_cell_price %}
 													<td class="product-block-prices-cell">
-														{{ price.unitPrice|currency }}
+														{{ price.unitPrice|format_currency('EUR') }}
 														{{ "general.star"|trans|sw_sanitize }}
 													</td>
 												{% endblock %}
@@ -63,7 +63,7 @@
 												{% block page_product_detail_price_block_table_body_cell_reference_price %}
 													{% if price.referencePrice is not null %}
 														<td class="product-block-prices-cell">
-															{{ price.referencePrice.price|currency }}
+															{{ price.referencePrice.price|format_currency('EUR') }}
 															{{ "general.star"|trans|sw_sanitize }}
 															/
 															{{ price.referencePrice.referenceUnit }}
@@ -102,7 +102,7 @@
 			{% endif %}
 
 			<p class="product-detail-price{% if listPrice.percentage > 0 %} with-list-price{% endif %}">
-				{{ price.unitPrice|currency }}
+				{{ price.unitPrice|format_currency('EUR') }}
 			</p>
 
 			{% if listPrice.percentage > 0 %}
@@ -111,7 +111,7 @@
 					{% block page_product_detail_was_price_wrapper %}
 						<span class="product-detail-list-price-wrapper">
 							<span class="list-price-price">
-								{{ listPrice.price|currency }}
+								{{ listPrice.price|format_currency('EUR') }}
 							</span>
 
 							<span class="list-price-percentage">
@@ -143,7 +143,7 @@
 					{% set priceSurcharge = priceSurcharge + option.price %}
 					{% set priceSurchargePercentage = priceSurchargePercentage + option.surcharge %}
 				{% endfor %}
-				{% set priceSurcharge = priceSurcharge|currency %}
+				{% set priceSurcharge = priceSurcharge|format_currency('EUR') %}
 				{% set priceSurchargePercentage = priceSurchargePercentage|format_number({fraction_digit: 0}) %}
 
 				<div class="product-detail-price-surcharge" data-surcharge-info="true">
@@ -199,7 +199,7 @@
 									</span>
 									<span class="price-unit-reference-content">
 
-										{{ price.referencePrice.price|currency }}
+										{{ price.referencePrice.price|format_currency('EUR') }}
 										/
 										{{ price.referencePrice.referenceUnit }}
 										{{ price.referencePrice.unitName }}
