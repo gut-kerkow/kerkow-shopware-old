@@ -105,6 +105,13 @@
 
 									{% block page_checkout_aside_actions %}
 										{{ parent() }}
+										{% if page.cart.price.positionPrice < 60 %}
+            <div class="row offcanvas-shipping-cost-hint">
+                <span class="col-12 shipping-hint">
+                    {{"kerkow.deliveryHint"|trans|sw_sanitize}}
+                </span>
+            </div>
+    {% endif %}
 									{% endblock %}
 								</div>
 							{% endblock %}

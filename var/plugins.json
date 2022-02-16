@@ -225,26 +225,6 @@
             ]
         }
     },
-    "DvsnProductOption": {
-        "basePath": "custom\/plugins\/DvsnProductOption\/src\/",
-        "views": [
-            "Resources\/views"
-        ],
-        "technicalName": "dvsn-product-option",
-        "administration": {
-            "path": "Resources\/app\/administration\/src",
-            "entryFilePath": "Resources\/app\/administration\/src\/main.js",
-            "webpack": null
-        },
-        "storefront": {
-            "path": "Resources\/app\/storefront\/src",
-            "entryFilePath": "Resources\/app\/storefront\/src\/main.js",
-            "webpack": null,
-            "styleFiles": [
-                "custom\/plugins\/DvsnProductOption\/src\/Resources\/app\/storefront\/src\/scss\/base.scss"
-            ]
-        }
-    },
     "DeliveryDate": {
         "basePath": "custom\/plugins\/KerkowDeliveryDate\/src\/",
         "views": [

@@ -3,10 +3,16 @@
     margin-bottom: 0;
     padding-top: 0;
   }
+  .product-feature-value {
+    color: lighten($sw-text-color, 20);
+    @include alright-regular;
+    //font-weight: 400;
+    //font-size: 80%;
+  }
   .cart-item-price {
+    margin-left: 0;
     color: $kerkow-blue;
     text-align: left;
-    margin-left: 1rem;
     @include alright-regular;
     font-variant-numeric: lining-nums;
   }

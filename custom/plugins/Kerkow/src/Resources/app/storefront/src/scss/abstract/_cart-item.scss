@@ -113,3 +113,18 @@
     line-height: 2.8rem;
   }
 }
+
+.offcanvas-cart {
+  .cart-item-remove {
+    position: unset;
+  }
+  .cart-quantity-price {
+    min-height: unset;
+  }
+}
+.shipping-hint {
+  margin-top: 1rem;
+  color: $kerkow-blue;
+  @include alright-regular;
+  font-size: 14px;
+}

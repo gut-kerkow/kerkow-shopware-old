@@ -16,11 +16,6 @@
             "extensions": []
         },
         {
-            "filepath": "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/DvsnProductOption\/src\/Resources\/app\/storefront\/src\/main.js",
-            "resolveMapping": [],
-            "extensions": []
-        },
-        {
             "filepath": "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/DtgsGoogleTagManagerSw6\/src\/Resources\/app\/storefront\/src\/main.js",
             "resolveMapping": [],
             "extensions": []
@@ -58,11 +53,6 @@
         },
         {
             "filepath": "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/PayonePayment\/src\/Resources\/app\/storefront\/src\/scss\/base.scss",
-            "resolveMapping": [],
-            "extensions": []
-        },
-        {
-            "filepath": "\/Users\/kevin\/Sites\/kerkow_re\/custom\/plugins\/DvsnProductOption\/src\/Resources\/app\/storefront\/src\/scss\/base.scss",
             "resolveMapping": [],
             "extensions": []
         },

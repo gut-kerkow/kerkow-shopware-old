@@ -18,4 +18,11 @@
             <strong>+ {{ activeShipping.shippingCosts.totalPrice|format_currency('EUR') }}</strong>
         </span>
     </div>
+        {% if page.cart.price.positionPrice < 60 %}
+            <div class="row offcanvas-shipping-cost-hint">
+                <span class="col-12 shipping-hint">
+                    {{"kerkow.deliveryHint"|trans|sw_sanitize}}
+                </span>
+            </div>
+    {% endif %}
 {% endblock %}
