@@ -35,7 +35,7 @@
 												{% block page_product_detail_price_block_table_body_cell_quantity %}
 													<th scope="row" class="product-block-prices-cell">
 														<meta itemprop="priceCurrency" content="{{ page.header.activeCurrency.id }}"/>
-														<meta itemprop="price" content="{{ price.unitPrice }}"/>
+														<meta itemprop="price" content="{{ price.unitPrice|number_format(2, '.', ',') }}"/>
 														<link itemprop="availability" href="https://schema.org/InStock"/>
 
 														{% if loop.last %}
@@ -88,7 +88,7 @@
 			{% set price = page.product.calculatedPrices.first %}
 		{% endif %}
 
-		<meta itemprop="price" content="{{ price.unitPrice }}">
+		<meta itemprop="price" content="{{ price.unitPrice|number_format(2, '.', ',') }}">
 
 		{% block page_product_detail_price_content %}
 			{% set listPrice = page.product.priceRange ? null : price.listPrice %}

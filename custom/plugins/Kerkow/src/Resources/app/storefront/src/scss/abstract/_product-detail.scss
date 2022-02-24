@@ -214,6 +214,37 @@
     padding: 2rem 0;
     .product-detail-prep-recipes-content {
       margin: 0 6.25rem;
+      color: $kerkow-blue;
+      @include gt-book;
+      font-size: 18px;
+      h2 {
+        @include gt-bold;
+        color: $kerkow-blue;
+        text-transform: unset;
+        font-size: 24px;
+        margin-bottom: 2rem;
+      }
+      img {
+        width: 150px;
+      }
+      p {
+        max-width: 100%;
+        margin-left: 2rem;
+      }
+      ul {
+        margin-top: 2rem;
+        padding: 0;
+        li {
+          list-style-type: none;
+        }
+        li:before {
+          content: "·";
+          font-size: 40px;
+          vertical-align: middle;
+          line-height: 20px;
+          margin-right: 0.5rem;
+        }
+      }
     }
   }
 
@@ -338,6 +369,7 @@
         padding: 0 10rem 2rem 10rem;
       }
     }
+
     .product-detail-cross-selling {
       .cross-selling-item {
         padding-left: $grid-gutter-width/2;
@@ -388,6 +420,24 @@
       font-size: 18px;
       h2 {
         font-size: 18px;
+      }
+    }
+  }
+  .product-detail {
+    .product-detail-prep-recipes-block {
+      .product-detail-prep-recipes-content {
+        img {
+          width: 100%;
+          max-width: 200px;
+        }
+        p {
+          max-width: 200px;
+          margin: 2rem 0 0;
+          text-align: center;
+        }
+        ul {
+          margin: 0 0 0 2rem;
+        }
       }
     }
   }
