@@ -32,7 +32,7 @@ THUMBNAIL_FOLDER="public/thumbnail"
 LOG_FOLDER="var/log"
 JWT_FOLDER="config/jwt"
 # Login via SSH
-ssh sw6_kerkow << EOF
+ssh deploy@178.15.154.92 << EOF
     cd ${RELEASES_DIR} 
     echo "Create directory for new release ${RELEASE_STAMP}"
     mkdir ${RELEASE_STAMP} 

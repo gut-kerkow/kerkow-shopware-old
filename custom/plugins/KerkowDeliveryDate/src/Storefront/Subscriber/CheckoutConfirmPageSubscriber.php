@@ -72,7 +72,7 @@ class CheckoutConfirmPageSubscriber implements EventSubscriberInterface
                 continue;
             }
             $data = strtotime($data);
-            $data = date("d M Y", $data);
+            $data = date("Y-m-d", $data);
             array_push($general_holidays, $data);
         }
 
@@ -97,7 +97,7 @@ class CheckoutConfirmPageSubscriber implements EventSubscriberInterface
                 continue;
             }
             $data = strtotime($data);
-            $data = date("d M Y", $data);
+            $data = date("Y-m-d", $data);
             array_push($custom_holidays, $data);
         }
 
